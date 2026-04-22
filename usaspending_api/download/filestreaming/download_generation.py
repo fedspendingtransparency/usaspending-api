@@ -11,7 +11,7 @@ import traceback
 from copy import deepcopy
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import List, Optional, Tuple
+from typing import Optional, Tuple
 
 import psutil as ps
 from django.conf import settings
@@ -27,6 +27,7 @@ from usaspending_api.common.helpers.orm_helpers import generate_raw_quoted_query
 from usaspending_api.common.helpers.s3_helpers import download_s3_object, multipart_upload
 from usaspending_api.common.helpers.text_helpers import slugify_text_for_file_names
 from usaspending_api.common.tracing import SubprocessTrace
+from usaspending_api.config import CONFIG
 from usaspending_api.download.download_utils import construct_data_date_range
 from usaspending_api.download.filestreaming import NAMING_CONFLICT_DISCRIMINATOR
 from usaspending_api.download.filestreaming.download_source import DownloadSource
@@ -52,7 +53,7 @@ logger = logging.getLogger(__name__)
 tracer = trace.get_tracer_provider().get_tracer(__name__)
 
 
-def generate_download(download_job: DownloadJob, origination: Optional[str] = None):
+def generate_download(download_job: DownloadJob, origination: Optional[str] = None) -> str | None:  # noqa: PLR0912,PLR0915
     """Create data archive files from the download job object"""
 
     # Parse data from download_job
@@ -97,21 +98,18 @@ def generate_download(download_job: DownloadJob, origination: Optional[str] = No
     working_dir = None
     try:
         if limit is not None and limit > MAX_DOWNLOAD_LIMIT:
+            msg = (
+                "Unable to process this download because it includes more than the current limit of"
+                f" {MAX_DOWNLOAD_LIMIT} records"
+            )
             with SubprocessTrace(
                 name=f"job.{JOB_TYPE}.generate_download_{request_type}",
                 kind=SpanKind.INTERNAL,
                 service="bulk-download",
             ) as limit_exceeded:
-                limit_exceeded.set_attributes(
-                    {
-                        "message": f"Unable to process this download because it includes more than the current limit of {MAX_DOWNLOAD_LIMIT} records",
-                        "limit": limit,
-                    }
-                )
+                limit_exceeded.set_attributes({"message": msg, "limit": limit})
 
-            raise Exception(
-                f"Unable to process this download because it includes more than the current limit of {MAX_DOWNLOAD_LIMIT} records"
-            )
+            raise Exception(msg)
 
         # Create temporary files and working directory
         zip_file_path = settings.CSV_LOCAL_PATH + file_name
@@ -167,7 +165,7 @@ def generate_download(download_job: DownloadJob, origination: Optional[str] = No
                 }
             )
             fail_download(download_job, e, exc_msg)
-            raise InvalidParameterException(e)
+            raise InvalidParameterException(e) from e
     except Exception as e:
         # Set error message; job_status_id will be set in download_sqs_worker.handle()
         exc_msg = "An exception was raised while attempting to process the DownloadJob"
@@ -204,7 +202,7 @@ def generate_download(download_job: DownloadJob, origination: Optional[str] = No
                 {
                     "service": "bulk-download",
                     "span_type": "Internal",
-                    "resource": f"s3://{settings.BULK_DOWNLOAD_S3_BUCKET_NAME}",
+                    "resource": f"s3://{CONFIG.BULK_DOWNLOAD_S3_BUCKET_NAME}",
                     "message": "Push file to S3 bucket, if not local",
                 }
             )
@@ -227,8 +225,8 @@ def generate_download(download_job: DownloadJob, origination: Optional[str] = No
             # NOTE: Traces still not auto-picking-up aws.s3 service upload activity
             # Could be that the patches for boto and botocore don't cover the newer boto3 S3Transfer upload approach
             try:
-                bucket = settings.BULK_DOWNLOAD_S3_BUCKET_NAME
-                region = settings.USASPENDING_AWS_REGION
+                bucket = CONFIG.BULK_DOWNLOAD_S3_BUCKET_NAME
+                region = CONFIG.AWS_REGION
                 s3_span.set_attributes({"bucket": bucket, "region": region, "file": zip_file_path})
                 start_uploading = time.perf_counter()
                 multipart_upload(bucket, region, zip_file_path, os.path.basename(zip_file_path))
@@ -253,7 +251,7 @@ def generate_download(download_job: DownloadJob, origination: Optional[str] = No
                     # Set error message; job_status_id will be set in download_sqs_worker.handle()
                     fail_download(download_job, e, exc_msg)
                     if isinstance(e, InvalidParameterException):
-                        raise InvalidParameterException(e)
+                        raise InvalidParameterException(e) from e
                     else:
                         raise Exception(download_job.error_message) from e
             finally:
@@ -265,9 +263,9 @@ def generate_download(download_job: DownloadJob, origination: Optional[str] = No
     return finish_download(download_job)
 
 
-def get_download_sources(
+def get_download_sources(  # noqa: PLR0912,PLR0915
     json_request: dict, download_job: DownloadJob = None, origination: Optional[str] = None
-) -> List[DownloadSource]:
+) -> list[DownloadSource]:
     download_sources = []
     for download_type in json_request["download_types"]:
         agency_id = json_request.get("agency", "all")
@@ -417,7 +415,7 @@ def get_download_sources(
     return download_sources
 
 
-def build_data_file_name(source, download_job, piid, assistance_id):
+def build_data_file_name(source: DownloadSource, download_job: DownloadJob, piid: str, assistance_id: str) -> str:  # noqa: PLR0912
     if download_job and download_job.monthly_download:
         # For monthly archives, use the existing detailed zip filename for the data files
         # e.g. FY(All)-012_Contracts_Delta_20191108.zip -> FY(All)-012_Contracts_Delta_20191108_%.csv
@@ -471,9 +469,9 @@ def build_data_file_name(source, download_job, piid, assistance_id):
     return file_name_pattern.format(**file_name_values)
 
 
-def parse_source(
+def parse_source(  # noqa: PLR0913
     source: DownloadSource,
-    columns: Optional[List[str]],
+    columns: Optional[list[str]],
     download_job: DownloadJob,
     working_dir: str,
     piid: str,
@@ -481,7 +479,7 @@ def parse_source(
     zip_file_path: str,
     limit: int,
     file_format: str,
-):
+) -> None:
     """Write to delimited text file(s) and zip file(s) using the source data"""
     data_file_name = build_data_file_name(source, download_job, piid, assistance_id)
 
@@ -535,7 +533,9 @@ def parse_source(
         os.remove(temp_file_path)
 
 
-def split_and_zip_data_files(zip_file_path, source_path, data_file_name, file_format, download_job=None):
+def split_and_zip_data_files(
+    zip_file_path: str, source_path: str, data_file_name: str, file_format: str, download_job: DownloadJob | None = None
+) -> None:
     with SubprocessTrace(
         name=f"job.{JOB_TYPE}.download.zip",
         kind=SpanKind.INTERNAL,
@@ -591,7 +591,7 @@ def split_and_zip_data_files(zip_file_path, source_path, data_file_name, file_fo
         raise e
 
 
-def start_download(download_job):
+def start_download(download_job: DownloadJob) -> str:
     # Update job attributes
     download_job.job_status_id = JOB_STATUS_DICT["running"]
     download_job.number_of_rows = 0
@@ -604,7 +604,7 @@ def start_download(download_job):
     return download_job.file_name
 
 
-def finish_download(download_job):
+def finish_download(download_job: DownloadJob) -> str:
     download_job.job_status_id = JOB_STATUS_DICT["finished"]
     download_job.save()
 
@@ -613,7 +613,7 @@ def finish_download(download_job):
     return download_job.file_name
 
 
-def wait_for_process(process, start_time, download_job):
+def wait_for_process(process: multiprocessing.Process, start_time: float, download_job: DownloadJob) -> float:
     """Wait for the process to complete, throw errors for timeouts or Process exceptions"""
     log_time = time.perf_counter()
 
@@ -653,7 +653,7 @@ def wait_for_process(process, start_time, download_job):
 
 
 def generate_export_query(
-    source_query: QuerySet, limit: int, source: DownloadSource, column_subset: Optional[List[str]], file_format: str
+    source_query: QuerySet, limit: int, source: DownloadSource, column_subset: Optional[list[str]], file_format: str
 ) -> str:
     if limit:
         source_query = source_query[:limit]
@@ -680,7 +680,9 @@ def generate_export_query(
     return rf"\COPY ({query_annotated}) TO STDOUT {options}"
 
 
-def generate_export_query_temp_file(export_query, download_job, temp_dir=None):
+def generate_export_query_temp_file(
+    export_query: str, download_job: DownloadJob, temp_dir: str | None = None
+) -> tuple[int, str]:
     write_to_log(message=f"Saving PSQL Query: {export_query}", download_job=download_job, is_debug=True)
     dir_name = "/tmp"
     if temp_dir:
@@ -695,8 +697,8 @@ def generate_export_query_temp_file(export_query, download_job, temp_dir=None):
 
 
 def apply_annotations_to_sql(
-    raw_query: str, aliases: List[str], annotated_group_by_columns: Optional[List[str]] = None
-):
+    raw_query: str, aliases: list[str], annotated_group_by_columns: Optional[list[str]] = None
+) -> str:
     """
     Django's ORM understandably doesn't allow aliases to be the same names as other fields available. However, if we
     want to use the efficiency of psql's COPY method and keep the column names, we need to allow these scenarios. This
@@ -768,7 +770,7 @@ def apply_annotations_to_sql(
     return sql.replace(NAMING_CONFLICT_DISCRIMINATOR, "")
 
 
-def _select_columns(sql: str) -> Tuple[str, List[str]]:
+def _select_columns(sql: str) -> Tuple[str, list[str]]:  # noqa: PLR0912
     in_quotes = False
     in_cte = False
     parens_depth = 0
@@ -811,7 +813,7 @@ def _select_columns(sql: str) -> Tuple[str, List[str]]:
     return cte_sql, retval  # this will almost certainly error out later.
 
 
-def _top_level_split(sql, splitter):
+def _top_level_split(sql: str, splitter: str) -> str:
     in_quotes = False
     parens_depth = 0
     for index, char in enumerate(sql):
@@ -830,7 +832,7 @@ def _top_level_split(sql, splitter):
     raise Exception(f"SQL string ${sql} cannot be split on ${splitter}")
 
 
-def execute_psql(temp_sql_file_path, source_path, download_job):
+def execute_psql(temp_sql_file_path: str, source_path: str, download_job: DownloadJob) -> None:
     """Executes a single PSQL command within its own Subprocess"""
     download_sql = Path(temp_sql_file_path).read_text()
     if download_sql.startswith("\\COPY"):
@@ -870,7 +872,8 @@ def execute_psql(temp_sql_file_path, source_path, download_job):
             log_time = time.perf_counter()
             temp_env = os.environ.copy()
             if download_job and not download_job.monthly_download:
-                # Since terminating the process isn't guaranteed to end the DB statement, add timeout to client connection
+                # Since terminating the process isn't guaranteed to end the DB statement,
+                # add timeout to client connection
                 temp_env["PGOPTIONS"] = (
                     f"--statement-timeout={settings.DOWNLOAD_DB_TIMEOUT_IN_HOURS}h "
                     f"--work-mem={settings.DOWNLOAD_DB_WORK_MEM_IN_MB}MB"
@@ -902,16 +905,16 @@ def execute_psql(temp_sql_file_path, source_path, download_job):
             raise e
 
 
-def retrieve_db_string():
+def retrieve_db_string() -> str:
     """It is necessary for this to be a function so the test suite can mock the connection string"""
     return settings.DOWNLOAD_DATABASE_URL
 
 
-def strip_file_extension(file_name):
+def strip_file_extension(file_name: str) -> str:
     return os.path.splitext(os.path.basename(file_name))[0]
 
 
-def fail_download(download_job, exception, message):
+def fail_download(download_job: DownloadJob, exception: Exception, message: str) -> None:
     write_to_log(message=message, is_error=True, download_job=download_job)
     stack_trace = "".join(traceback.format_exception(type(exception), value=exception, tb=exception.__traceback__))
     download_job.error_message = f"{message}:\n{stack_trace}"
@@ -919,7 +922,7 @@ def fail_download(download_job, exception, message):
     download_job.save()
 
 
-def add_data_dictionary_to_zip(working_dir, zip_file_path):
+def add_data_dictionary_to_zip(working_dir: str, zip_file_path: str) -> None:
     write_to_log(message="Adding data dictionary to zip file")
     data_dictionary_file_name = "Data_Dictionary_Crosswalk.xlsx"
     data_dictionary_file_path = os.path.join(working_dir, data_dictionary_file_name)
@@ -933,7 +936,7 @@ def add_data_dictionary_to_zip(working_dir, zip_file_path):
     append_files_to_zip_file([data_dictionary_file_path], zip_file_path)
 
 
-def _kill_spawned_processes(download_job=None):
+def _kill_spawned_processes(download_job: DownloadJob | None = None) -> None:
     """Cleanup (kill) any spawned child processes during this job run"""
     job = ps.Process(os.getpid())
     for spawn_of_job in job.children(recursive=True):
@@ -949,7 +952,7 @@ def _kill_spawned_processes(download_job=None):
             pass
 
 
-def create_empty_data_file(
+def create_empty_data_file(  # noqa: PLR0913
     source: DownloadSource,
     download_job: DownloadJob,
     working_dir: str,

@@ -3,7 +3,7 @@ import logging
 import math
 import time
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
 
 import boto3
 from boto3.s3.transfer import S3Transfer, TransferConfig
@@ -16,7 +16,7 @@ from usaspending_api.config import CONFIG
 logger = logging.getLogger(__name__)
 
 
-def _get_boto3(method_name: str, *args, region_name=CONFIG.AWS_REGION, **kwargs):
+def _get_boto3(method_name: str, *args, region_name: str = CONFIG.AWS_REGION, **kwargs) -> Any:
     """
     A wrapper for attributes of boto3 that creates a session to support Minio when running in a local dev
     environment. For non-local environments this will function similarly to a normal call to boto3.
@@ -71,15 +71,17 @@ def access_s3_object(bucket_name: str, obj: "boto3.resources.factory.s3.ObjectSu
     return data
 
 
-def upload_download_file_to_s3(file_path, sub_dir=None):
-    bucket = settings.BULK_DOWNLOAD_S3_BUCKET_NAME
-    region = settings.USASPENDING_AWS_REGION
+def upload_download_file_to_s3(file_path: Path, sub_dir: str | None = None) -> None:
+    bucket = CONFIG.BULK_DOWNLOAD_S3_BUCKET_NAME
+    region = CONFIG.AWS_REGION
     keyname = file_path.name
     multipart_upload(bucket, region, str(file_path), keyname, sub_dir)
 
 
-def multipart_upload(bucketname, regionname, source_path, keyname, sub_dir=None):
-    s3_client = _get_boto3("client", "s3", region_name=regionname)
+def multipart_upload(
+    bucket_name: str, region_name: str, source_path: str, keyname: str, sub_dir: str | None = None
+) -> None:
+    s3_client = _get_boto3("client", "s3", region_name=region_name)
     source_size = Path(source_path).stat().st_size
     # Sets the chunksize at minimum ~5MB to sqrt(5MB) * sqrt(source size)
     bytes_per_chunk = max(int(math.sqrt(5242880) * math.sqrt(source_size)), 5242880)
@@ -88,10 +90,10 @@ def multipart_upload(bucketname, regionname, source_path, keyname, sub_dir=None)
     file_name = Path(keyname).name
     if sub_dir is not None:
         file_name = f"{sub_dir}/{file_name}"
-    transfer.upload_file(source_path, bucketname, file_name, extra_args={"ACL": "bucket-owner-full-control"})
+    transfer.upload_file(source_path, bucket_name, file_name, extra_args={"ACL": "bucket-owner-full-control"})
 
 
-def download_s3_object(
+def download_s3_object(  # noqa: PLR0913
     bucket_name: str,
     key: str,
     file_path: str,
@@ -99,7 +101,7 @@ def download_s3_object(
     retry_count: int = 3,
     retry_cooldown: int = 30,
     region_name: str = settings.USASPENDING_AWS_REGION,
-):
+) -> None:
     """Download an S3 object to a file.
     Args:
         bucket_name: The name of the bucket where the key is located.
@@ -119,7 +121,8 @@ def download_s3_object(
             return
         except ClientError as e:
             logger.info(
-                f"Attempt {attempt + 1} of {retry_count + 1} failed to download {key} from bucket {bucket_name}. Error: {e}"
+                f"Attempt {attempt + 1} of {retry_count + 1} failed to download {key} from bucket {bucket_name}."
+                f" Error: {e}"
             )
             if attempt < retry_count:
                 time.sleep(retry_cooldown)
@@ -128,7 +131,7 @@ def download_s3_object(
                 raise e
 
 
-def delete_s3_object(bucket_name: str, key: str, region_name: str = settings.USASPENDING_AWS_REGION):
+def delete_s3_object(bucket_name: str, key: str, region_name: str = settings.USASPENDING_AWS_REGION) -> None:
     """Delete an S3 object
     Args:
         bucket_name: The name of the bucket where the key is located.
@@ -144,20 +147,23 @@ def delete_s3_objects(
     key_list: Optional[list[str]] = None,
     key_prefix: Optional[str] = None,
     region_name: Optional[str] = settings.USASPENDING_AWS_REGION,
-) -> int:
+    dry_run: bool = False,
+) -> list[str]:
     """Deletes all objects based on a list of keys
     Args:
         bucket_name: The name of the bucket where the objects are located
         key_list: A list of keys representing objects in the bucket to delete
         key_prefix: A prefix in the bucket used to generate a list of objects to delete
         region_name: AWS region to use; defaults to the settings provided region
+        dry_run: If objects should actually be deleted from S3
 
     Returns:
-        Number of objects delete
+        List of keys that either were or would be deleted
     """
     object_list = []
 
     if key_prefix:
+        logger.info(f"Gathering objects to delete from S3 that match the prefix: {key_prefix}")
         bucket = get_s3_bucket(bucket_name, region_name)
         objects = bucket.objects.filter(Prefix=key_prefix)
         object_list.extend([{"Key": obj.key} for obj in objects])
@@ -165,13 +171,19 @@ def delete_s3_objects(
     if key_list:
         object_list.extend([{"Key": key} for key in key_list])
 
-    s3_client = _get_boto3("client", "s3", region_name=region_name)
-    resp = s3_client.delete_objects(Bucket=bucket_name, Delete={"Objects": object_list})
+    if dry_run:
+        result = object_list
+    else:
+        s3_client = _get_boto3("client", "s3", region_name=region_name)
+        resp = s3_client.delete_objects(Bucket=bucket_name, Delete={"Objects": object_list})
+        result = resp.get("Deleted", [])
 
-    return len(resp.get("Deleted", []))
+    return [val["Key"] for val in result]
 
 
-def rename_s3_object(bucket_name: str, old_key: str, new_key: str, region_name: str = settings.USASPENDING_AWS_REGION):
+def rename_s3_object(
+    bucket_name: str, old_key: str, new_key: str, region_name: str = settings.USASPENDING_AWS_REGION
+) -> None:
     """Rename an existing S3 object by:
         1) Copying the file (old_key) to a new file with the new name (new_key)
         2) If the copy was successful, delete the old file (old_key)
