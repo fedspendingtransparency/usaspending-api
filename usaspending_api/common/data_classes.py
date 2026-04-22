@@ -59,9 +59,6 @@ class TableSpec:
 
     destination_database: str
     delta_table_create_sql: Union[str, Any]   # pyspark.sql.types.StructType
-    archive_data_field: str = "update_date"
-    is_from_broker: bool = False
-    is_partition_column_unique: bool = False
 
     destination_table_name: Optional[str] = None
     source_table: Optional[str] = None
@@ -69,14 +66,17 @@ class TableSpec:
     model: Optional[str] = None
     partition_column: Optional[str] = None
     partition_column_type: Optional[str] = None
+    is_partition_column_unique: bool = False
     delta_table_create_options: Optional[dict] = None
     delta_table_create_partitions: Optional[List[str]] = None
     source_schema: Optional[Union[List, dict]]
     custom_schema: Optional[str] = None
     column_names: Optional[List[str]] = None
+    is_from_broker: bool = False
     source_query: Optional[Union[str, List[str], Callable]] = None
     source_query_incremental: Optional[Union[str, Callable]] = None
     user_defined_functions: Optional[List[dict]] = None
+    archive_data_field: str = "update_date"
     postgres_seq_name: Optional[str] = None
     postgres_partition_spec: Optional[dict] = None
     tsvectors: Optional[Union[List[str], dict]] = None
