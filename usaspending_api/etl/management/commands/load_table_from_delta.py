@@ -44,7 +44,6 @@ _PG_WORK_MEM_FOR_LARGE_CSV_COPY = 256 * 1024  # MiB of work_mem * KiBs in 1 MiB
 
 
 class Command(BaseCommand):
-
     help = """
     This command reads data from a Delta table and copies it into a corresponding Postgres database table (under a
     temp name). As of now, it only supports a full reload of a table. If the table with the chosen temp name already
@@ -71,7 +70,7 @@ class Command(BaseCommand):
             "--alt-delta-name",
             type=str,
             required=False,
-            help="An alternate delta table name to load, overriding the TABLE_SPEC destination_table" "name",
+            help="An alternate delta table name to load, overriding the TABLE_SPEC destination_tablename",
         )
         parser.add_argument(
             "--jdbc-inserts",
@@ -246,7 +245,7 @@ class Command(BaseCommand):
                         (
                             f"CREATE TABLE "
                             # Below: e.g. my_tbl_temp -> my_tbl_part_temp
-                            f"{temp_table[:-len(temp_table_suffix)]}{pt['table_suffix']}{temp_table_suffix} "
+                            f"{temp_table[: -len(temp_table_suffix)]}{pt['table_suffix']}{temp_table_suffix} "
                             f"PARTITION OF {temp_table} {pt['partitioning_clause']} "
                             f"{storage_parameters}"
                         )
@@ -261,7 +260,7 @@ class Command(BaseCommand):
                 elif postgres_cols:
                     create_temp_sql = f"""
                         CREATE TABLE {temp_table} (
-                            {", ".join([f'{key} {val}' for key, val in postgres_cols.items()])}
+                            {", ".join([f"{key} {val}" for key, val in postgres_cols.items()])}
                         ) {partition_clause} {storage_parameters}
                     """
                 else:
@@ -331,7 +330,7 @@ class Command(BaseCommand):
         use_jdbc_inserts = options["jdbc_inserts"]
         strategy = "JDBC INSERTs" if use_jdbc_inserts else "SQL bulk COPY CSV"
         logger.info(
-            f"LOAD (START): Loading data from Delta table {delta_table} to {temp_table} using {strategy} " f"strategy"
+            f"LOAD (START): Loading data from Delta table {delta_table} to {temp_table} using {strategy} strategy"
         )
 
         try:
@@ -368,7 +367,7 @@ class Command(BaseCommand):
             raise Exception(exc) from exc
 
         logger.info(
-            f"LOAD (FINISH): Loaded data from Delta table {delta_table} to {temp_table} using {strategy} " f"strategy"
+            f"LOAD (FINISH): Loaded data from Delta table {delta_table} to {temp_table} using {strategy} strategy"
         )
 
         # We're done with spark at this point

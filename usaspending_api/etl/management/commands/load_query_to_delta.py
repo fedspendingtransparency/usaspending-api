@@ -541,20 +541,12 @@ class Command(BaseCommand):
         # Resolve Parameters
         destination_table = options["destination_table"]
         table_spec = TABLE_SPEC[destination_table]
-        self.destination_database = (
-            options["alt_db"] or table_spec["destination_database"]
-        )
-        self.destination_table_name = (
-            options["alt_name"] or destination_table.split(".")[-1]
-        )
-        source_query_key = (
-            "source_query_incremental" if options["incremental"] else "source_query"
-        )
+        self.destination_database = options["alt_db"] or table_spec["destination_database"]
+        self.destination_table_name = options["alt_name"] or destination_table.split(".")[-1]
+        source_query_key = "source_query_incremental" if options["incremental"] else "source_query"
         load_query = table_spec.get(source_query_key)
         if load_query is None:
-            raise ArgumentTypeError(
-                f"Invalid source query. `{source_query_key}` must be specified in the TABLE_SPEC."
-            )
+            raise ArgumentTypeError(f"Invalid source query. `{source_query_key}` must be specified in the TABLE_SPEC.")
 
         # Set the database that will be interacted with for all Delta Lake table Spark-based activity
         logger.info(f"Using Spark Database: {self.destination_database}")
@@ -569,9 +561,7 @@ class Command(BaseCommand):
 
         if isinstance(load_query, list):
             for index, query in enumerate(load_query):
-                logger.info(
-                    f"Running query number: {index + 1}\nPreview of query: {query[:100]}"
-                )
+                logger.info(f"Running query number: {index + 1}\nPreview of query: {query[:100]}")
                 self.run_spark_sql(query)
         else:
             self.run_spark_sql(load_query)
@@ -579,9 +569,7 @@ class Command(BaseCommand):
         if spark_created_by_command:
             self.spark.stop()
 
-    def run_spark_sql(
-        self, query: str | Callable[[SparkSession, str, str], None]
-    ) -> None:
+    def run_spark_sql(self, query: str | Callable[[SparkSession, str, str], None]) -> None:
         if isinstance(query, str):
             jdbc_conn_props = get_jdbc_connection_properties()
             self.spark.sql(
@@ -598,6 +586,4 @@ class Command(BaseCommand):
         elif isinstance(query, Callable):
             query(self.spark, self.destination_database, self.destination_table_name)
         else:
-            raise ArgumentTypeError(
-                f"Invalid query. `{query}` must be a string or a Callable."
-            )
+            raise ArgumentTypeError(f"Invalid query. `{query}` must be a string or a Callable.")

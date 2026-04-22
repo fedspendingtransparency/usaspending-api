@@ -32,7 +32,6 @@ TABLE_SPEC = {
 
 
 class Command(BaseCommand):
-
     help = """
     Copies records older than "--archive-period" days ago from Postgres to Delta Lake then deletes
     those records from Postgres.
