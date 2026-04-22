@@ -1,20 +1,23 @@
+import argparse
 import logging
 import zipfile
-
 from contextlib import contextmanager
-from django.core.management.base import BaseCommand
-from django.db import connection, transaction
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from usaspending_api.common.etl.postgres import ETLTable, ETLTemporaryTable
-from usaspending_api.common.etl.postgres import operations
+from typing import Generator
+
+from django.core.management.base import BaseCommand
+from django.db import connection, transaction
+
+from usaspending_api.common.etl.postgres import ETLTable, ETLTemporaryTable, operations
 from usaspending_api.common.helpers.sql_helpers import execute_dml_sql
 from usaspending_api.common.helpers.timing_helpers import ScriptTimer as Timer
 from usaspending_api.common.retrieve_file_from_uri import RetrieveFileFromUri
 from usaspending_api.common.zip import extract_single_file_zip
-from usaspending_api.etl.operations.subaward.update_city_county import update_subaward_city_county
+from usaspending_api.etl.operations.subaward.update_city_county import (
+    update_subaward_city_county,
+)
 from usaspending_api.references.models import CityCountyStateCode
-
 
 logger = logging.getLogger("script")
 
@@ -36,7 +39,7 @@ class Command(BaseCommand):
     force = False
     working_file = None
 
-    def add_arguments(self, parser):
+    def add_arguments(self, parser: argparse.ArgumentParser) -> None:
 
         parser.add_argument(
             "file",
@@ -58,7 +61,7 @@ class Command(BaseCommand):
             ),
         )
 
-    def handle(self, *args, **options):
+    def handle(self, *args, **options) -> None:
 
         self.file = options["file"]
         self.force = options["force"]
@@ -79,7 +82,7 @@ class Command(BaseCommand):
         # Unzipped file should be gone at this point.
         self.working_file = None
 
-    def _process_file(self):
+    def _process_file(self) -> None:
         try:
             with transaction.atomic():
                 with Timer("Load file"):
@@ -105,7 +108,7 @@ class Command(BaseCommand):
 
     @staticmethod
     @contextmanager
-    def _unzip_file(file_path):
+    def _unzip_file(file_path: Path) -> Generator[Path, None, None]:
         """
         ZIP file context manager.  If the file pointed to by file_path is a ZIP file, extracts file to a
         temporary location, yields, and cleans up afterwards.  Otherwise, effectively does nothing.
@@ -120,7 +123,7 @@ class Command(BaseCommand):
 
     @staticmethod
     @contextmanager
-    def _retrieve_file(file_path):
+    def _retrieve_file(file_path: Path) -> Generator[Path, None, None]:
         """
         Remote file context manager.  If file is not local, copies it to a local temporary location, yields, and
         cleans up afterwards.  Otherwise, effectively does nothing.
@@ -137,7 +140,7 @@ class Command(BaseCommand):
         else:
             yield file_path
 
-    def _perform_load(self):
+    def _perform_load(self) -> int:
         self._create_staging_table()
         self._import_input_file()
 
@@ -171,7 +174,7 @@ class Command(BaseCommand):
 
         return change_count
 
-    def _validate_input_file_header(self):
+    def _validate_input_file_header(self) -> None:
         expected_header = (
             "FEATURE_ID|FEATURE_NAME|FEATURE_CLASS|CENSUS_CODE|CENSUS_CLASS_CODE|GSA_CODE|OPM_CODE|STATE_NUMERIC|"
             "STATE_ALPHA|COUNTY_SEQUENCE|COUNTY_NUMERIC|COUNTY_NAME|PRIMARY_LATITUDE|PRIMARY_LONGITUDE|"
@@ -181,17 +184,18 @@ class Command(BaseCommand):
             with open(self.working_file, encoding="utf-8-sig") as csv_file:
                 header = csv_file.readline()
             if header != expected_header:
-                raise RuntimeError(f"Found header does not match expected header.  Invalid file format.")
+                raise RuntimeError("Found header does not match expected header.  Invalid file format.")
 
-    def _create_staging_table(self):
+    def _create_staging_table(self) -> None:
         with Timer("Create temporary staging table"):
             execute_dml_sql(f'drop table if exists "{self.staging_table_name}"')
             execute_dml_sql(
-                f'create temporary table "{self.staging_table_name}" (like "{self.destination_table_name}" including all)'
+                f'create temporary table "{self.staging_table_name}"'
+                f' (like "{self.destination_table_name}" including all)'
             )
             execute_dml_sql(f'alter table "{self.staging_table_name}" drop column "id"')
 
-    def _import_input_file(self):
+    def _import_input_file(self) -> None:
         import_command = (
             f'copy "{self.staging_table_name}" (feature_id, feature_name, feature_class, census_code, '
             f"census_class_code, gsa_code, opm_code, state_numeric, state_alpha, county_sequence, county_numeric, "
@@ -199,11 +203,14 @@ class Command(BaseCommand):
             f"(format csv, header, delimiter '|')"
         )
         with Timer("Importing file to staging table"):
-            with connection.cursor() as cursor:
-                with open(self.working_file, encoding="utf-8-sig") as csv_file:
-                    cursor.cursor.copy_expert(import_command, csv_file, size=10485760)  # 10MB
-                    logger.info(f"{cursor.cursor.rowcount:,} rows imported")
+            psycopg_conn = connection.connection
+            with psycopg_conn.cursor() as psycopg_cursor:
+                with open(self.working_file, "r") as csv_file:
+                    with psycopg_cursor.copy(import_command) as copy:
+                        for row in csv_file:
+                            copy.write(row)
+                    logger.info(f"{psycopg_cursor.rowcount:,} rows imported")
 
-    def _vacuum_tables(self):
+    def _vacuum_tables(self) -> None:
         with Timer(f"Vacuum {self.destination_table_name}"):
             execute_dml_sql(f'vacuum (full, analyze) "{self.destination_table_name}"')

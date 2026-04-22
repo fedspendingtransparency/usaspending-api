@@ -1,13 +1,14 @@
-from psycopg2.sql import Identifier, Literal, SQL
+from psycopg.sql import SQL, Identifier, Literal
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.helpers.sql_helpers import execute_sql_to_ordered_dictionary
-from usaspending_api.common.validator.award import get_internal_or_generated_award_id_model
+from usaspending_api.common.validator.award import (
+    get_internal_or_generated_award_id_model,
+)
 from usaspending_api.common.validator.tinyshield import TinyShield
-
 
 GET_COUNT_SQL = SQL(
     """
@@ -48,7 +49,8 @@ GET_COUNT_SQL = SQL(
 
 
 class IDVFederalAccountCountViewSet(APIView):
-    """Returns the total number of funding transactions for an IDV's child and grandchild awards, but not the IDV itself."""
+    """Returns the total number of funding transactions for an IDV's child and grandchild awards,
+    but not the IDV itself."""
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/idvs/count/federal_account/award_id.md"
 

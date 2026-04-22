@@ -1,31 +1,34 @@
-from datetime import datetime
-import os
-import re
-import boto3
 import csv
 import logging
-import dateutil
+import os
+import re
+from datetime import date, datetime
+from typing import Any
 
+import boto3
+import dateutil
 from django.conf import settings
+from psycopg import Cursor
 
 logger = logging.getLogger("script")
 
 
-def capitalize_if_string(val):
+def capitalize_if_string(val: str) -> str:
     try:
         return val.upper()
     except AttributeError:
         return val
 
 
-# 10/31/2019: According to PO direction, this functionality is NOT desired, and should be phased out as soon as it's safe
-def false_if_null(val):
+# 10/31/2019: According to PO direction, this functionality is NOT desired, and should be phased out as soon as
+# it's safe
+def false_if_null(val: Any) -> bool | Any:
     if val is None:
         return False
     return val
 
 
-def truncate_timestamp(val):
+def truncate_timestamp(val: datetime | str | None) -> date | None:
     if isinstance(val, datetime):
         return val.date()
     elif isinstance(val, str):
@@ -36,11 +39,11 @@ def truncate_timestamp(val):
         raise ValueError("{} is not parsable as a date!".format(val.type))
 
 
-def format_value_for_sql(val, cur):
-    return str(cur.mogrify("%s", (val,)), "utf-8")
+def format_value_for_sql(val: str, cur: Cursor) -> str:
+    return cur.mogrify("%s", (val,))
 
 
-def format_bulk_insert_list_column_sql(cursor, load_objects, type):
+def format_bulk_insert_list_column_sql(cursor: Cursor, load_objects: dict, type: str) -> tuple[str, str]:
     """creates formatted sql text to put into a bulk insert statement"""
     keys = load_objects[0][type].keys()
 
@@ -53,7 +56,7 @@ def format_bulk_insert_list_column_sql(cursor, load_objects, type):
     return col_string, val_string
 
 
-def format_insert_or_update_column_sql(cursor, load_object, type):
+def format_insert_or_update_column_sql(cursor: Cursor, load_object: dict, type: str) -> tuple[str, str, str]:
     """creates formatted sql text to put into a single row insert or update statement"""
     columns = []
     values = []
@@ -72,16 +75,16 @@ def format_insert_or_update_column_sql(cursor, load_object, type):
     return col_string, val_string, pairs_string
 
 
-def get_deleted_fpds_data_from_s3(date):
+def get_deleted_fpds_data_from_s3(_date: date) -> list:
     ids_to_delete = []
     regex_str = ".*_delete_records_(IDV|award).*"
 
-    if not date:
+    if not _date:
         return []
 
     if settings.IS_LOCAL:
         for file in os.listdir(settings.CSV_LOCAL_PATH):
-            if re.search(regex_str, file) and datetime.strptime(file[: file.find("_")], "%m-%d-%Y").date() >= date:
+            if re.search(regex_str, file) and datetime.strptime(file[: file.find("_")], "%m-%d-%Y").date() >= _date:
                 with open(settings.CSV_LOCAL_PATH + file, "r") as current_file:
                     # open file, split string to array, skip the header
                     reader = csv.reader(current_file.read().splitlines())
@@ -112,7 +115,7 @@ def get_deleted_fpds_data_from_s3(date):
             if (
                 re.search(regex_str, item)
                 and "/" not in item
-                and datetime.strptime(item[: item.find("_")], "%m-%d-%Y").date() >= date
+                and datetime.strptime(item[: item.find("_")], "%m-%d-%Y").date() >= _date
             ):
                 s3_item = s3client.get_object(Bucket=DELETED_TRANSACTION_JOURNAL_FILES, Key=item)
                 reader = csv.reader(s3_item["Body"].read().decode("utf-8").splitlines())

@@ -21,6 +21,7 @@ services:
       - type: volume
         source: local_pg_data
         target: /var/lib/postgresql/data
+      - ./:/home
     ports:
       - ${USASPENDING_DB_PORT:-5432}:5432
     environment:

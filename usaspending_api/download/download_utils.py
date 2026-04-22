@@ -1,17 +1,20 @@
 from datetime import datetime, timezone
+from typing import Any
 
 from django.conf import settings
+from rest_framework.request import Request
 
 from usaspending_api.common.helpers.text_helpers import slugify_text_for_file_names
 from usaspending_api.common.logging import get_remote_addr
 from usaspending_api.download.helpers import write_to_download_log
 from usaspending_api.download.lookups import VALUE_MAPPINGS
+from usaspending_api.download.models import DownloadJob
 from usaspending_api.references.models import ToptierAgency
 
 
-def create_unique_filename(json_request, origination=None):
+def create_unique_filename(json_request: dict[str, Any], origination: str | None = None) -> str:
     timestamp = datetime.strftime(datetime.now(timezone.utc), "%Y-%m-%d_H%HM%MS%S%f")
-    request_agency = json_request.get("agency", "all")
+    request_agency = json_request.get("filters", {}).get("agency", "all")
 
     if json_request.get("is_for_idv"):
         download_name = f"IDV_{slugify_text_for_file_names(json_request.get('piid'), 'UNKNOWN', 50)}_{timestamp}.zip"
@@ -36,6 +39,9 @@ def create_unique_filename(json_request, origination=None):
             level=level,
             timestamp=timestamp,
         )
+    elif json_request["request_type"] == "search":
+        # Search Endpoint uses Award download_types, but has set filename
+        download_name = f"PrimeAwardsTransactionsAndSubawards_{timestamp}.zip"
     else:  # "award" downloads
         agency = ""
 
@@ -50,7 +56,7 @@ def create_unique_filename(json_request, origination=None):
     return download_name
 
 
-def obtain_zip_filename_format(download_types):
+def obtain_zip_filename_format(download_types: list[str]) -> str:
     if len(download_types) > 1:
         return "{data_quarters}_{agency}_{level}_AccountData_{timestamp}.zip"
     return f"{VALUE_MAPPINGS[download_types[0]]['zipfile_template']}.zip"
@@ -65,7 +71,7 @@ def obtain_filename_prefix_from_agency_id(request_agency: int | str) -> str:
     return result
 
 
-def create_award_level_string(download_types):
+def create_award_level_string(download_types: list[str]) -> str:
     type_list = []
     for award_level in download_types:
         if "type_name" in VALUE_MAPPINGS[award_level]:
@@ -75,7 +81,7 @@ def create_award_level_string(download_types):
     return "And".join(type_list)
 
 
-def log_new_download_job(request, download_job):
+def log_new_download_job(request: Request, download_job: DownloadJob) -> None:
     write_to_download_log(
         message="Starting new download job [{}]".format(download_job.download_job_id),
         download_job=download_job,
