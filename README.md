@@ -61,7 +61,7 @@ Create a `.envrc` file in the repo root, which will be ignored by git. Change cr
 ```shell
 export DATABASE_URL=postgres://usaspending:usaspender@localhost:5432/data_store_api
 export ES_HOSTNAME=http://localhost:9200
-export BROKER_DB=postgres://admin:root@localhost:5435/data_broker
+export BROKER_DB=postgres://admin:root@localhost:5432/data_broker
 ```
 
 If `direnv` does not pick this up after saving the file, type
