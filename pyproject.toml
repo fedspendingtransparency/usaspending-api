@@ -78,7 +78,7 @@ dependencies = [
     "opentelemetry-instrumentation-elasticsearch==0.49b2",
     "opentelemetry-instrumentation-grpc==0.49b2",
     "opentelemetry-instrumentation-logging==0.49b2",
-    "opentelemetry-instrumentation-psycopg2==0.49b2",
+    "opentelemetry-instrumentation-psycopg==0.49b2",
     "opentelemetry-instrumentation-redis==0.49b2",
     "opentelemetry-instrumentation-requests==0.49b2",
     "opentelemetry-instrumentation-sqlite3==0.49b2",
