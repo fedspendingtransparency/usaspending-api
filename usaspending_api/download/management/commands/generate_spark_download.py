@@ -37,18 +37,6 @@ from usaspending_api.download.delta_downloads.abstract_downloads.base_download i
 from usaspending_api.download.delta_downloads.account_balances import AccountBalancesDownloadFactory
 from usaspending_api.download.delta_downloads.award_financial import AwardFinancialDownloadFactory
 from usaspending_api.download.delta_downloads.filters.account_filters import AccountDownloadFilters
-from usaspending_api.download.delta_downloads.abstract_downloads.base_download import (
-    AbstractDownload,
-)
-from usaspending_api.download.delta_downloads.account_balances import (
-    AccountBalancesDownloadFactory,
-)
-from usaspending_api.download.delta_downloads.award_financial import (
-    AwardFinancialDownloadFactory,
-)
-from usaspending_api.download.delta_downloads.filters.account_filters import (
-    AccountDownloadFilters,
-)
 from usaspending_api.download.delta_downloads.object_class_program_activity import (
     ObjectClassProgramActivityDownloadFactory,
 )
