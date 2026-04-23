@@ -1,13 +1,13 @@
-import pytest
-
-from datetime import datetime, timezone, date
+from datetime import date, datetime, timezone
 from decimal import Decimal
 
+import pytest
 from django.conf import settings
-from django.core.management import call_command, CommandError
-from django.db import connections, DEFAULT_DB_ALIAS
+from django.core.management import CommandError, call_command
+from django.db import DEFAULT_DB_ALIAS, connections
 from django.test import TransactionTestCase
 from model_bakery import baker
+
 from usaspending_api.accounts.models import AppropriationAccountBalances
 from usaspending_api.awards.models import FinancialAccountsByAwards
 from usaspending_api.common.helpers.sql_helpers import ordered_dictionary_fetcher
@@ -57,12 +57,23 @@ class TestWithMultipleDatabases(TransactionTestCase):
             tas_rendering_label="222-X-2222-222",
         )
 
+        baker.make(
+            "accounts.TreasuryAppropriationAccount",
+            treasury_account_identifier=100,
+            agency_id="100",
+            availability_type_code="X",
+            main_account_code="1000",
+            sub_account_code="100",
+            tas_rendering_label="100-X-1000-100",
+        )
+
         baker.make("references.ObjectClass", major_object_class="10", object_class="10.1", direct_reimbursable="D")
         baker.make("references.ObjectClass", major_object_class="01", object_class="01.0", direct_reimbursable="D")
 
         baker.make("references.DisasterEmergencyFundCode", code="B", title="BB")
         baker.make("references.DisasterEmergencyFundCode", code="L", title="LL")
         baker.make("references.DisasterEmergencyFundCode", code="N", title="NN")
+        baker.make("references.DisasterEmergencyFundCode", code="Q", title="QQ")
 
         baker.make(
             "submissions.DABSSubmissionWindowSchedule",
@@ -109,7 +120,6 @@ class TestWithMultipleDatabases(TransactionTestCase):
         baker.make("references.ProgramActivityPark", code="ABCD0000", name="TEST PARK")
         connection = connections[settings.BROKER_DB_ALIAS]
         with connection.cursor() as cursor:
-
             self._nuke_broker_data()
 
             cursor.execute(
@@ -126,7 +136,8 @@ class TestWithMultipleDatabases(TransactionTestCase):
                     display_tas
                 ) (values
                     (1, 1, '111', 'X', '1111', '111', '1900-01-01', '00011100000000X1111111', '000-111-X-1111-111'),
-                    (2, 2, '222', 'X', '2222', '222', '1900-01-01', '00022200000000X2222222', '000-222-X-2222-222')
+                    (2, 2, '222', 'X', '2222', '222', '1900-01-01', '00022200000000X2222222', '000-222-X-2222-222'),
+                    (100, 100, '100', 'X', '1000', '100', '1900-01-01', '00010000000000X1001000', '000-100-X-1000-100')
                 )
                 """
             )
@@ -152,9 +163,11 @@ class TestWithMultipleDatabases(TransactionTestCase):
                     (3, '003', '0003', '2000-02-01', '2000-02-29', 2000, 5, false, false, 2, now()),
                     (4, '004', null, '2000-03-01', '2000-03-31', 2000, 6, false, false, 3, now()),
                     (5, null, '005', '2000-04-01', '2000-06-30', 2000, 9, true, false, 2, now()),
-                    -- submissions that should never return for various reasons
-                    (6, '006', null, '2000-01-01', '2000-03-31', 2000, 4, true, false, 1, now()), -- not publish type 2 or 3
-                    (7, '007', null, '2000-01-01', '2000-03-31', 2000, 4, true, true, 2, now()) -- D2
+                    ----- submissions that should never return for various reasons -----
+                    -- not publish type 2 or 3
+                    (6, '006', null, '2000-01-01', '2000-03-31', 2000, 4, true, false, 1, now()),
+                     -- D2
+                    (7, '007', null, '2000-01-01', '2000-03-31', 2000, 4, true, true, 2, now())
                 )
                 """
             )
@@ -235,16 +248,17 @@ class TestWithMultipleDatabases(TransactionTestCase):
                     (1, 1, 1, '1010', 'D', 1111, null, 'x', 'aBcD0000'),
                     (2, 1, 1, '1010', 'D', 2222, 'b', 'b', 'aBcD0000'),
                     (3, 1, 1, '1010', 'D', 3333, 'L', 'p', 'aBcD0000'),
-                    (4, 2, 1, '1010', 'D', 4444, null, 'X', 'aBcD0000'),
-                    (5, 2, 1, '1010', 'D', 5555, null, 'B', 'aBcD0000'),
-                    (6, 2, 1, '1010', 'D', 6666, null, 'P', 'aBcD0000'),
-                    (7, 3, 2, '1010', 'D', 7777, 'L', 'X', 'aBcD0000'),
-                    (8, 3, 2, '1010', 'D', 8888, 'l', 'X', 'aBcD0000'),
-                    (9, 3, 2, '1010', 'D', 9999, 'L', 'X', 'aBcD0000'),
-                    (10, 4, 2, '1010', 'D', 1010, null, 'X', 'aBcD0000'),
-                    (11, 5, 2, '1010', 'D', 1111, 'B', 'X', 'aBcD0000'),
-                    (12, 6, 2, '1010', 'D', 1212, 'L', 'X', 'aBcD0000'),
-                    (13, 7, 2, '1010', 'D', 1313, 'n', 'X', 'aBcD0000')
+                    (4, 1, 100, '1010', 'D', 0, 'Q', 'p', 'aBcD0000'),
+                    (5, 2, 1, '1010', 'D', 4444, null, 'X', 'aBcD0000'),
+                    (6, 2, 1, '1010', 'D', 5555, null, 'B', 'aBcD0000'),
+                    (7, 2, 1, '1010', 'D', 6666, null, 'P', 'aBcD0000'),
+                    (8, 3, 2, '1010', 'D', 7777, 'L', 'X', 'aBcD0000'),
+                    (9, 3, 2, '1010', 'D', 8888, 'l', 'X', 'aBcD0000'),
+                    (10, 3, 2, '1010', 'D', 9999, 'L', 'X', 'aBcD0000'),
+                    (11, 4, 2, '1010', 'D', 1010, null, 'X', 'aBcD0000'),
+                    (12, 5, 2, '1010', 'D', 1111, 'B', 'X', 'aBcD0000'),
+                    (13, 6, 2, '1010', 'D', 1212, 'L', 'X', 'aBcD0000'),
+                    (14, 7, 2, '1010', 'D', 1313, 'n', 'X', 'aBcD0000')
                 )
                 """
             )
@@ -276,10 +290,12 @@ class TestWithMultipleDatabases(TransactionTestCase):
                     (9, 3, 2, '1010', 'D', 99999, 999990, -99, -999, 'L', 'X', 'aBcD0000'),
                     (10, 4, 2, '1010', 'D', 10101, 101010, -10, -101, null, 'X', 'aBcD0000'),
                     (11, 5, 2, '1010', 'D', 11111, 111110, 0, 0, 'B', 'X', 'aBcD0000'),
-                    (12, 5, 2, '1010', 'D', null, null, 0, 0, 'M', 'X', 'aBcD0000'), -- this should not load because of 0/null values
-                    (13, 5, 2, '1010', 'D', 0, 0, null, 0, 'M', 'X', 'aBcD0000'), -- this should not load because of 0/null values
-                    (14, 5, 2, '1010', 'D', null, 0, null, 0, 'm', 'X', 'aBcD0000'), -- this should not load because of 0/null values
-                    (15, 5, 2, '1010', 'D', 0, null, 0, null, 'M', 'X', 'aBcD0000'), -- this should not load because of 0/null values
+                    ----- records in this section shouldn't load because of 0/null values -----
+                    (12, 5, 2, '1010', 'D', null, null, 0, 0, 'M', 'X', 'aBcD0000'),
+                    (13, 5, 2, '1010', 'D', 0, 0, null, 0, 'M', 'X', 'aBcD0000'),
+                    (14, 5, 2, '1010', 'D', null, 0, null, 0, 'm', 'X', 'aBcD0000'),
+                    (15, 5, 2, '1010', 'D', 0, null, 0, null, 'M', 'X', 'aBcD0000'),
+                    ----- end section -----
                     (16, 6, 2, '1010', 'D', 12121, 121210, -12, -121, 'L', 'X', 'aBcD0000'),
                     (17, 7, 2, '1010', 'D', 13131, 131310, -13, -131, 'n', 'X', 'aBcD0000'),
                     (18, 5, 2, '1010', 'D', 0, 0, 0, -1010, 'N', 'X', 'aBcD0000')
@@ -351,7 +367,7 @@ class TestWithMultipleDatabases(TransactionTestCase):
         call_command("load_multiple_submissions", "--submission-ids", 1, 2, 3)
         assert SubmissionAttributes.objects.count() == 3
         assert AppropriationAccountBalances.objects.count() == 3
-        assert FinancialAccountsByProgramActivityObjectClass.objects.count() == 7
+        assert FinancialAccountsByProgramActivityObjectClass.objects.count() == 8
         assert FinancialAccountsByAwards.objects.count() == 9
 
         # We'll need these later.
@@ -362,7 +378,7 @@ class TestWithMultipleDatabases(TransactionTestCase):
         call_command("load_multiple_submissions", "--incremental")
         assert SubmissionAttributes.objects.count() == 5
         assert AppropriationAccountBalances.objects.count() == 5
-        assert FinancialAccountsByProgramActivityObjectClass.objects.count() == 9
+        assert FinancialAccountsByProgramActivityObjectClass.objects.count() == 10
         assert FinancialAccountsByAwards.objects.count() == 12
 
         # Now that we have everything loaded, let's make sure our data make sense.
@@ -424,9 +440,9 @@ class TestWithMultipleDatabases(TransactionTestCase):
             )
             assert cursor.fetchone() == (
                 Decimal("-52116.00"),
-                "B,B,L,L",
-                "B,B,P,P,X,X,X,X,X",
-                ",".join(["ABCD0000"] * 9),
+                "B,B,L,L,Q",
+                "B,B,P,P,P,X,X,X,X,X",
+                ",".join(["ABCD0000"] * 10),
             )
 
             cursor.execute(
@@ -462,7 +478,7 @@ class TestWithMultipleDatabases(TransactionTestCase):
         call_command("load_multiple_submissions", "--incremental")
         assert SubmissionAttributes.objects.count() == 5
         assert AppropriationAccountBalances.objects.count() == 5
-        assert FinancialAccountsByProgramActivityObjectClass.objects.count() == 9
+        assert FinancialAccountsByProgramActivityObjectClass.objects.count() == 10
         assert FinancialAccountsByAwards.objects.count() == 12
 
         # Make a change to a submission.
