@@ -1,9 +1,11 @@
+import dataclasses
 import json
 from typing import Any, Callable, Dict, TypeVar, Union
 from urllib.parse import ParseResult, parse_qs, urlparse
 
-from pydantic import BaseSettings, SecretStr
-from pydantic.fields import ModelField
+from pydantic import SecretStr
+from pydantic_core.core_schema import ValidationInfo
+from pydantic_settings import BaseSettings
 
 # Placeholder sentinel value indicating a config var that is expected to be overridden in a runtime-env-specific
 # config declaration. If this value emerges, it has not yet been set in the runtime env config and must be.
@@ -27,6 +29,12 @@ CONFIG_VAR_PLACEHOLDERS = [
 TBaseSettings = TypeVar("TBaseSettings", bound=BaseSettings)
 
 
+@dataclasses.dataclass
+class MockValidationInfo:
+    field_name: str
+    data: dict[str, Any]
+
+
 def unveil(possible_secret_str: Union[Any, SecretStr]) -> Any:
     """A way to compare SecretStr wrappers to regular strings"""
     if isinstance(possible_secret_str, SecretStr):
@@ -37,8 +45,7 @@ def unveil(possible_secret_str: Union[Any, SecretStr]) -> Any:
 def eval_default_factory(
     config_class: TBaseSettings,
     assigned_or_sourced_value: Any,
-    configured_vars: Dict[str, Any],
-    config_var: ModelField,
+    info: ValidationInfo | MockValidationInfo,
     factory_func: Callable,
 ) -> Any:
     """A delegate function that acts as a default factory to produce/derive (or transform) a config var value
@@ -50,16 +57,13 @@ def eval_default_factory(
         config_class (TBaseSettings): The class inheriting from pydantic.BaseSettings who is being instantiated. It
             is NOT (necessarily) the class on which this config_var (or its validator) resides.
 
-        config_var (ModelField): The pydantic setting aka field aka configuration variable for which to
-            factory-derive a value
-
         assigned_or_sourced_value (Any): The value that pydantic found for this config var. It could be coming from
             an assignment, or from a config source, like environment variables.
 
-        configured_vars (Dict[str, Any]): Dictionary of configuration variables that have been seen/processed (IN
-            ORDER) by pydantic already. Note: due to the fact that validators are processed in the order of
-            ModelFields in the model being seen, this dictionary may not be inclusive of ALL fields in the model (of
-            all configuration variables), simply because they haven't been seen/processed yet.
+        info (ValidationInfo): Pydantic ValidationInfo object containing:
+            - info.data: Dictionary of configuration variables that have been seen/processed (IN ORDER) by pydantic
+            - info.field_name: The name of the field being validated
+            - info.config: Model configuration
 
         factory_func (Callable): A lambda or callable function passed in
             which will be invoked to produce a value for the field. The provided factory function is assumed to be a
@@ -67,12 +71,17 @@ def eval_default_factory(
             See Example below for a no-param lambda closure
 
         Example:
-            >>> @validator("MY_COMPOSED_FIELD")
-            >>> def _MY_COMPOSED_FIELD(cls, v, values, field: ModelField):
+            >>> @field_validator("MY_COMPOSED_FIELD", mode='before')
+            >>> @classmethod
+            >>> def _MY_COMPOSED_FIELD(cls, v, info: ValidationInfo):
             >>>     def factory_func():
-            >>>         return values["MY_FIELD_1"] + ":" + values["MY_FIELD_2"]
-            >>>     return eval_default_factory(cls, v, values, field, factory_func)
+            >>>         return info.data["MY_FIELD_1"] + ":" + info.data["MY_FIELD_2"]
+            >>>     return eval_default_factory(cls, v, info, factory_func)
     """
+    config_var = config_class.model_fields.get(info.field_name)
+    if config_var is None:
+        raise ValueError(f"Field {info.field_name} not found in model fields")
+
     # This "default_value" is the value that this field was declared with in python code. Note if it is
     #  overridden in a subclass, this will be the value assigned to the field in the subclass, which could differ
     #  from any 'default' value assigned in a super class.
@@ -82,12 +91,12 @@ def eval_default_factory(
     overridable_config_base_classes = [
         bc
         for bc in config_class.__bases__
-        if issubclass(bc, BaseSettings) and "__fields__" in dir(bc)
+        if issubclass(bc, BaseSettings) and hasattr(bc, "model_fields")
     ]
     overridable_config_fields = {
-        k for bc in overridable_config_base_classes for k in bc.__fields__.keys()
+        k for bc in overridable_config_base_classes for k in bc.model_fields.keys()
     }
-    is_override = config_var.name in overridable_config_fields
+    is_override = info.field_name in overridable_config_fields
 
     if (
         not is_override
@@ -95,7 +104,7 @@ def eval_default_factory(
         and unveil(default_value) not in CONFIG_VAR_PLACEHOLDERS
     ):
         raise ValueError(
-            f'The "{config_var.name}" field, which is tied to a default-factory-based validator, must have its '
+            f'The "{info.field_name}" field, which is tied to a default-factory-based validator, must have its '
             f"default value set to None, "
             f"or to one of the CONFIG_VAR_PLACEHOLDERS. This is so that when a value is sourced or assigned "
             f"elsewhere for this field, it can easily be identified as a non-default value, and will take "
@@ -105,6 +114,7 @@ def eval_default_factory(
     if (
         unveil(assigned_or_sourced_value) != unveil(default_value)
         and unveil(assigned_or_sourced_value) not in CONFIG_VAR_PLACEHOLDERS
+        and assigned_or_sourced_value is not None
     ):
         # The value of this field is being explicitly set DIFFERENT than its default value
         # in some source (initializer param, env var, etc.)
@@ -139,41 +149,49 @@ def eval_default_factory_from_root_validator(
     config_var_name: str,
     factory_func: Callable,
 ) -> dict[str, Any]:
-    """Wrapper to allow for the same eval logic when coming from a pydantic root_validator,
+    """Wrapper to allow for the same eval logic when coming from a pydantic model_validator,
     which provides a different set of args.
 
     See Also: eval_default_factory
     """
+
     # Get any parent config class validators
     overridable_config_base_classes = [
         bc
         for bc in config_class.__bases__
-        if issubclass(bc, BaseSettings) and "__fields__" in dir(bc)
+        if issubclass(bc, BaseSettings) and hasattr(bc, "model_fields")
     ]
-    base_class_validated_fields = {
-        k for bc in overridable_config_base_classes for k in bc.__validators__.keys()
-    }
-    is_validated_in_base_class = config_var_name in base_class_validated_fields
+
+    base_class_validated_fields = set()
+    for bc in overridable_config_base_classes:
+        if hasattr(bc, "__pydantic_decorators__"):
+            if hasattr(bc.__pydantic_decorators__, "field_validators"):
+                base_class_validated_fields.update(bc.__pydantic_decorators__.field_validators.keys())
+
+    is_validated_in_base_class = (
+        config_var_name in base_class_validated_fields
+        or f"_{config_var_name}" in base_class_validated_fields
+    )
 
     if is_validated_in_base_class:
         raise ValueError(
-            f'root_validators cannot override validators. The "{config_var_name}" field, which is tied to a '
-            f"default-factory-based root_validator, is not supported for root_validator in a subclass because its "
+            f'model_validators cannot override validators. The "{config_var_name}" field, which is tied to a '
+            f"default-factory-based model_validator, is not supported for model_validator in a subclass because its "
             f"value is produced from a parent class validator. Whether the assigned value comes from the "
             f"environment or from the parent validator cannot be distinguished. Consider making the parent validator "
-            f"into a root_validator and override that."
+            f"into a model_validator and override that."
         )
 
     assigned_or_sourced_value = (
         configured_vars[config_var_name] if config_var_name in configured_vars else None
     )
-    config_var = config_class.__fields__[config_var_name]
+    info = MockValidationInfo(config_var_name, configured_vars)
+
     produced_value = eval_default_factory(
         config_class,
         assigned_or_sourced_value,
-        configured_vars,
-        config_var,
-        factory_func,
+        info,
+        factory_func
     )
     configured_vars[config_var_name] = produced_value
     return configured_vars
@@ -346,7 +364,7 @@ def validate_url_and_parts(
         # NOTE: Keeping password text obfuscated in the error output
         url_config_errors[f"{resource_conf_prefix}_PASSWORD"] = (
             values[f"{resource_conf_prefix}_PASSWORD"],
-            "*" * len(url_password) if url_password is not None else None,
+            "*" * 5 if url_password is not None else None,
         )
     if len(url_config_errors) > 0:
         err_msg = (
@@ -358,7 +376,13 @@ def validate_url_and_parts(
             "Parts not matching:\n"
         )
         for k, v in url_config_errors.items():
-            err_msg += f"\tPart: {k}, Part Value Provided: {v[0]}, Value found in {url_conf_name}: {v[1]}\n"
+            # Obfuscate password in display
+            if 'PASSWORD' in k:
+                display_provided = '*' * 5 if v[0] else None
+            else:
+                display_provided = v[0]
+
+            err_msg += f"\tPart: {k}, Part Value Provided: {display_provided}, Value found in {url_conf_name}: {v[1]}\n"
         raise ValueError(err_msg)
 
 

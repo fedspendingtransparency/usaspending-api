@@ -9,11 +9,11 @@ from pyspark.sql import Column, SparkSession
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.download.delta_downloads.abstract_downloads.monthly_download import (
     AbstractMonthlyDownload,
-    MonthlyType,
 )
 from usaspending_api.download.delta_downloads.filters.monthly_download_filters import (
     MonthlyDownloadFilters,
 )
+from usaspending_api.download.delta_downloads.helpers.enums import MonthlyType
 
 logger = logging.getLogger(__name__)
 
