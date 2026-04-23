@@ -122,18 +122,20 @@ class BaseDownloadViewSet(APIView):
         if settings.IS_LOCAL and settings.RUN_LOCAL_DOWNLOAD_IN_PROCESS:
             # Eagerly execute the download in this running process
             if self.is_spark_download(json_request):
+                spark_jobs = SparkJobs(LocalStrategy())
                 # Use DuckDBStrategy() for DuckDB downloads to avoid starting an unnecessary Spark session, if the
                 #   download is a DuckDB download
-                spark_jobs = (
-                    SparkJobs(DuckDBStrategy()) if self.is_duckdb_download(json_request) else SparkJobs(LocalStrategy())
-                )
+                # TODO Uncomment when we're ready to use DuckDB for downloads
+                # spark_jobs = (
+                #     SparkJobs(DuckDBStrategy()) if self.is_duckdb_download(json_request) else SparkJobs(LocalStrategy())
+                # )
                 spark_jobs.start(
                     job_name=job_name,
                     command_name="generate_spark_download",
                     command_options=[
                         f"--download-job-id={download_job.download_job_id}",
                         "--skip-local-cleanup",
-                        "--use-duckdb" if self.is_duckdb_download(json_request) else ""
+                        # "--use-duckdb" if self.is_duckdb_download(json_request) else ""
                     ],
                     run_as_container=False,
                 )
