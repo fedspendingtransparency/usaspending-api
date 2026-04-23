@@ -16,7 +16,7 @@ from usaspending_api.common.api_versioning import (
 )
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers.dict_helpers import order_nested_object
-from usaspending_api.common.spark.jobs import DuckDBStrategy, LocalStrategy, SparkJobs
+from usaspending_api.common.spark.jobs import LocalStrategy, SparkJobs
 from usaspending_api.common.sqs.sqs_handler import DownloadLogic, get_sqs_queue
 from usaspending_api.config import CONFIG
 from usaspending_api.download.download_utils import (
@@ -127,7 +127,9 @@ class BaseDownloadViewSet(APIView):
                 #   download is a DuckDB download
                 # TODO Uncomment when we're ready to use DuckDB for downloads
                 # spark_jobs = (
-                #     SparkJobs(DuckDBStrategy()) if self.is_duckdb_download(json_request) else SparkJobs(LocalStrategy())
+                #     SparkJobs(
+                #       DuckDBStrategy()) if self.is_duckdb_download(json_request) else SparkJobs(LocalStrategy()
+                #     )
                 # )
                 spark_jobs.start(
                     job_name=job_name,
