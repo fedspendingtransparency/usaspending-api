@@ -694,15 +694,10 @@ def create_ref_temp_views(  # noqa: PLR0912
                         SELECT * FROM delta_scan('{s3_path}');
                     """
                     )
-                    logger.info(f"Successfully created table {table['schema']}.{table['table_name']}")
-                    logger.info(
-                        f"Successfully created table {table_schema}.{table_name}"
-                    )
+                    logger.info(f"Successfully created table {table_schema}.{table_name}")
                 except duckdb.IOException as exc:
                     logger.exception(f"Failed to create table {table_name}")
-                    raise RuntimeError(
-                        f"Failed to create table {table_name}"
-                    ) from exc
+                    raise RuntimeError(f"Failed to create table {table_name}") from exc
 
             # The DuckDB Postgres extension is needed to connect to the USAS Postgres DB
             spark.sql("LOAD postgres; CREATE SCHEMA IF NOT EXISTS global_temp;")
