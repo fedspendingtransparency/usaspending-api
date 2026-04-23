@@ -1,8 +1,9 @@
 import json
 from copy import deepcopy
-from datetime import datetime, MINYEAR, MAXYEAR
+from datetime import MAXYEAR, MINYEAR, datetime
+from typing import Any, Optional
+
 from django.conf import settings
-from typing import Optional
 
 from usaspending_api.awards.models import Award
 from usaspending_api.awards.v2.lookups.lookups import (
@@ -10,9 +11,9 @@ from usaspending_api.awards.v2.lookups.lookups import (
     assistance_type_mapping,
     award_type_mapping,
     contract_type_mapping,
-    idv_type_mapping,
-    grant_type_mapping,
     direct_payment_type_mapping,
+    grant_type_mapping,
+    idv_type_mapping,
     loan_type_mapping,
     other_type_mapping,
 )
@@ -58,18 +59,18 @@ class DownloadValidatorBase:
 
         self.tinyshield_models = []
 
-    def get_validated_request(self):
+    def get_validated_request(self) -> dict:
         models = self.tinyshield_models + self.common_tinyshield_models
         validated_request = TinyShield(models).block(self._json_request)
         validated_request["request_type"] = self.name
         return validated_request
 
-    def set_filter_defaults(self, defaults: dict):
+    def set_filter_defaults(self, defaults: dict) -> None:
         for key, val in defaults.items():
             self._json_request["filters"].setdefault(key, val)
 
     @property
-    def json_request(self):
+    def json_request(self) -> dict:
         return deepcopy(self._json_request)
 
 
@@ -93,7 +94,7 @@ class AwardDownloadValidator(DownloadValidatorBase):
         else:
             raise InvalidParameterException('Invalid parameter: constraint_type must be "row_count" or "year"')
 
-    def _handle_keyword_search_download(self):
+    def _handle_keyword_search_download(self) -> None:
         # Overriding all other filters if the keyword filter is provided in year-constraint download
         self._json_request["filters"] = {"transaction_keyword_search": self._json_request["filters"]["keywords"]}
 
@@ -115,11 +116,12 @@ class AwardDownloadValidator(DownloadValidatorBase):
                 },
             ]
         )
+
         self._json_request = self.get_validated_request()
         self._json_request["limit"] = settings.MAX_DOWNLOAD_LIMIT
         self._json_request["filters"]["award_type_codes"] = list(award_type_mapping)
 
-    def _handle_custom_award_download(self):
+    def _handle_custom_award_download(self) -> None:
         """
         Custom Award Download allows different filters than other Award Download Endpoints
         and thus it needs to be normalized before moving forward
@@ -290,10 +292,16 @@ class AwardDownloadValidator(DownloadValidatorBase):
                 "sub_award_types"
             ]
 
-        if "agency" in custom_award_filters:
-            if "agencies" not in custom_award_filters:
-                final_award_filters["agencies"] = []
+        if "agency" in custom_award_filters or "agencies" in custom_award_filters:
+            final_award_filters["agencies"] = self._update_custom_award_agencies(custom_award_filters,
+                                                                                filter_all_agencies)
 
+        self._json_request["filters"] = final_award_filters
+
+    def _update_custom_award_agencies(self, custom_award_filters: dict, filter_all_agencies: bool) -> list:
+        agency_output = []
+
+        if "agency" in custom_award_filters:
             if filter_all_agencies:
                 toptier_name = "all"
             else:
@@ -307,7 +315,7 @@ class AwardDownloadValidator(DownloadValidatorBase):
                 toptier_name = toptier_name["name"]
 
             if "sub_agency" in custom_award_filters:
-                final_award_filters["agencies"].append(
+                agency_output.append(
                     {
                         "type": "awarding",
                         "tier": "subtier",
@@ -316,16 +324,16 @@ class AwardDownloadValidator(DownloadValidatorBase):
                     }
                 )
             else:
-                final_award_filters["agencies"].append({"type": "awarding", "tier": "toptier", "name": toptier_name})
+                agency_output.append({"type": "awarding", "tier": "toptier", "name": toptier_name})
 
         if "agencies" in custom_award_filters:
-            final_award_filters["agencies"] = [
+            agency_output = [
                 val for val in custom_award_filters["agencies"] if val.get("name", "").lower() != "all"
             ]
 
-        self._json_request["filters"] = final_award_filters
+        return agency_output
 
-    def _handle_advanced_search_download(self):
+    def _handle_advanced_search_download(self) -> None:
         self.tinyshield_models.extend(
             [
                 *AWARD_FILTER_NO_RECIPIENT_ID,
@@ -734,7 +742,70 @@ class DisasterDownloadValidator(DownloadValidatorBase):
         )
 
 
-def _validate_award_id(award_id):
+class SearchDownloadValidator(DownloadValidatorBase):
+    name = "search"
+
+    def __init__(self, request_data: dict):
+        super().__init__(request_data)
+        self.request_data = request_data
+        self._json_request["filters"] = _validate_filters_exist(request_data)
+        self.set_filter_defaults({"award_type_codes": list(award_type_mapping.keys())})
+
+        self.tinyshield_models.extend(
+            [
+                {
+                    "name": "spending_level",
+                    "key": "spending_level",
+                    "type": "array",
+                    "array_type": "enum",
+                    "enum_values": [
+                        "awards",
+                        "transactions",
+                        "subawards"],
+                    "optional": True,
+                    "default": ["awards", "transactions", "subawards"],
+                },
+                *AWARD_FILTER_NO_RECIPIENT_ID,
+                {
+                    "name": "limit",
+                    "key": "limit",
+                    "type": "integer",
+                    "min": 0,
+                    "max": settings.MAX_DOWNLOAD_LIMIT,
+                    "default": settings.MAX_DOWNLOAD_LIMIT,
+                },
+                {
+                    "name": "download_types",
+                    "key": "download_types",
+                    "type": "array",
+                    "array_type": "enum",
+                    "enum_values": [
+                        "elasticsearch_awards",
+                        "elasticsearch_sub_awards",
+                        "elasticsearch_transactions"
+                    ],
+                },
+            ]
+        )
+
+        self._json_request["limit"] = self.request_data.get("limit", settings.MAX_DOWNLOAD_LIMIT)
+        self._json_request = self.get_validated_request()
+
+        dltypes = []
+        for dltype in self.request_data.get("spending_level", ["awards", "transactions", "subawards"]):
+            if dltype.lower() == "subawards":
+                dltypes.append("elasticsearch_sub_awards")
+            elif dltype.lower() in ["awards", "transactions"]:
+                dltypes.append("elasticsearch_" + dltype)
+            else:
+                raise InvalidParameterException(
+                    'Invalid parameter: spending_level must be "awards", "subawards", or "transactions"'
+                )
+
+        self._json_request["download_types"] = dltypes
+
+
+def _validate_award_id(award_id: Any) -> Any:
     if type(award_id) is int or award_id.isdigit():
         filters = {"id": int(award_id)}
     else:
@@ -748,7 +819,7 @@ def _validate_award_id(award_id):
     return award
 
 
-def _validate_filters_exist(request_data):
+def _validate_filters_exist(request_data: dict) -> dict:
     filters = request_data.get("filters")
     if not isinstance(filters, dict):
         raise InvalidParameterException("Filters parameter not provided as a dict")

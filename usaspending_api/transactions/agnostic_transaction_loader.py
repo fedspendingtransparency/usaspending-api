@@ -1,22 +1,29 @@
+import argparse
 import logging
-import psycopg2
-
 from datetime import datetime, timezone
+from pathlib import Path
+from typing import Generator, Tuple
+
+import psycopg
 from django.conf import settings
 from django.core.management import call_command
-from pathlib import Path
-from typing import Tuple
 
-from usaspending_api.broker.helpers.last_load_date import get_last_load_date, update_last_load_date
-from usaspending_api.common.etl.postgres import ETLDBLinkTable, ETLTable
-from usaspending_api.common.etl.postgres import operations
-from usaspending_api.common.helpers.date_helper import datetime_command_line_argument_type
+from usaspending_api.broker.helpers.last_load_date import (
+    get_last_load_date,
+    update_last_load_date,
+)
+from usaspending_api.common.etl.postgres import ETLDBLinkTable, ETLTable, operations
+from usaspending_api.common.helpers.date_helper import (
+    datetime_command_line_argument_type,
+)
 from usaspending_api.common.helpers.sql_helpers import get_broker_dsn_string
 from usaspending_api.common.helpers.timing_helpers import ScriptTimer as Timer
 from usaspending_api.common.retrieve_file_from_uri import SCHEMA_HELP_TEXT
-from usaspending_api.transactions.loader_functions import filepath_command_line_argument_type
-from usaspending_api.transactions.loader_functions import read_file_for_database_ids
-from usaspending_api.transactions.loader_functions import store_ids_in_file
+from usaspending_api.transactions.loader_functions import (
+    filepath_command_line_argument_type,
+    read_file_for_database_ids,
+    store_ids_in_file,
+)
 
 logger = logging.getLogger("script")
 
@@ -28,7 +35,7 @@ class AgnosticTransactionLoader:
     successful_run = False
     upsert_records = 0
 
-    def add_arguments(self, parser):
+    def add_arguments(self, parser: argparse.ArgumentParser) -> None:
         mutually_exclusive_group = parser.add_mutually_exclusive_group(required=True)
 
         mutually_exclusive_group.add_argument(
@@ -72,11 +79,11 @@ class AgnosticTransactionLoader:
             ),
         )
 
-    def handle(self, *args, **options):
+    def handle(self, *args, **options) -> None:
         with Timer(message="Script"):
             self.run_script(*args, **options)
 
-    def run_script(self, *args, **options):
+    def run_script(self, *args, **options) -> None:
         self.start_time = datetime.now(timezone.utc)
         self.options = options
 
@@ -104,7 +111,7 @@ class AgnosticTransactionLoader:
         finally:
             self.cleanup()
 
-    def obtain_last_date(self):
+    def obtain_last_date(self) -> datetime:
         dt = get_last_load_date(self.last_load_record, self.lookback_minutes)
         if not dt:
             raise SystemExit("No datetime stored in the database, unable to use --since-last-load")
@@ -150,10 +157,10 @@ class AgnosticTransactionLoader:
         file_name = f"{self.working_file_prefix}_{self.start_time.strftime('%Y%m%d_%H%M%S_%f')}"
         return store_ids_in_file(ids, file_name, is_numeric=False)
 
-    def generate_ids_from_broker(self):
+    def generate_ids_from_broker(self) -> Generator[int, None, None]:
         sql = self.combine_sql()
 
-        with psycopg2.connect(dsn=get_broker_dsn_string()) as connection:
+        with psycopg.connect(get_broker_dsn_string()) as connection:
             with connection.cursor("usaspending_data_transfer") as cursor:
                 cursor.execute(sql.strip("\n"))
                 while True:
@@ -163,7 +170,7 @@ class AgnosticTransactionLoader:
                     for broker_id in id_list:
                         yield broker_id
 
-    def combine_sql(self):
+    def combine_sql(self) -> str:
         """Create SQL used to fetch transaction ids for records marked to transfer"""
         if self.options["reload_all"]:
             logger.info("FULL RELOAD")
@@ -181,7 +188,7 @@ class AgnosticTransactionLoader:
 
         return sql.format(id=self.shared_pk, table=self.broker_source_table_name, optional_predicate=optional_predicate)
 
-    def copy_broker_table_data(self, source_tablename, dest_tablename, primary_key):
+    def copy_broker_table_data(self, source_tablename: str, dest_tablename: str, primary_key: str) -> None:
         """Loop through the batches of IDs and load using the ETL tables"""
         destination = ETLTable(dest_tablename, schema_name="raw")
         source = ETLDBLinkTable(source_tablename, settings.BROKER_DBLINK_NAME, destination.data_types)
