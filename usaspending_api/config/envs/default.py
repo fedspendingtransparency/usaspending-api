@@ -361,6 +361,7 @@ class DefaultConfig(BaseSettings):
     AWS_PROFILE: str | None = None  # USER_SPECIFIC_OVERRIDE
     SPARK_S3_BUCKET: str | None = os.environ.get("SPARK_S3_BUCKET")
     BULK_DOWNLOAD_S3_BUCKET_NAME: str | None = os.environ.get("BULK_DOWNLOAD_S3_BUCKET_NAME")
+    MONTHLY_DOWNLOAD_S3_BUCKET_NAME: str = os.environ.get("MONTHLY_DOWNLOAD_S3_BUCKET_NAME", "")
     DATABASE_DOWNLOAD_S3_BUCKET_NAME: str | None = os.environ.get(
         "DATABASE_DOWNLOAD_S3_BUCKET_NAME"
     )
