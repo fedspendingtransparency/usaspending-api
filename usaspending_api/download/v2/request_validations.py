@@ -141,7 +141,11 @@ class AwardDownloadValidator(DownloadValidatorBase):
                         "name": {"type": "text", "text_type": "search", "optional": False},
                     },
                 },
-                {"name": "agency", "key": "filters|agency", "type": "integer"},
+                {
+                    "name": "agency", 
+                    "key": "filters|agency", 
+                    "type": "integer"
+                 },
                 {
                     "name": "date_range",
                     "key": "filters|date_range",
@@ -622,7 +626,13 @@ class AccountDownloadValidator(DownloadValidatorBase):
                     "array_type": "enum",
                     "enum_values": VALID_ACCOUNT_SUBMISSION_TYPES,
                 },
-                {"name": "agency", "key": "filters|agency", "type": "text", "text_type": "search", "default": "all"},
+                {
+                    "name": "agency", 
+                    "key": "filters|agency|", 
+                    "type": "text", 
+                    "text_type": "search", 
+                    "default": "all"
+                },
                 {
                     "name": "def_codes",
                     "key": "filters|def_codes",
@@ -660,6 +670,11 @@ class AccountDownloadValidator(DownloadValidatorBase):
         fy = self._json_request["filters"].get("fy")
         quarter = self._json_request["filters"].get("quarter")
         period = self._json_request["filters"].get("period")
+
+        agency_filter = self._json_request["filters"].get("agency")
+        if agency_filter and self._json_request["filters"]["agency"] != "all":
+            if not ToptierAgency.objects.filter(toptier_agency_id=agency_filter).exists():
+                raise InvalidParameterException('Invalid parameter: Agency with that ID does not exist')
 
         fy, quarter, period = _validate_and_bolster_requested_submission_window(fy, quarter, period)
 
