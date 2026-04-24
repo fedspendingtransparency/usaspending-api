@@ -65,7 +65,10 @@ def obtain_zip_filename_format(download_types: list[str]) -> str:
 def obtain_filename_prefix_from_agency_id(request_agency: int | str) -> str:
     result = "All"
     if request_agency and request_agency != "all":
-        toptier_agency_filter = ToptierAgency.objects.filter(toptier_agency_id=request_agency).first()
+        if type(request_agency) == int:
+            toptier_agency_filter = ToptierAgency.objects.filter(toptier_agency_id=request_agency).first()
+        else:
+            toptier_agency_filter = ToptierAgency.objects.filter(abbreviation=request_agency).first()
         if toptier_agency_filter:
             result = toptier_agency_filter.toptier_code
     return result

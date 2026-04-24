@@ -628,7 +628,7 @@ class AccountDownloadValidator(DownloadValidatorBase):
                 },
                 {
                     "name": "agency", 
-                    "key": "filters|agency|", 
+                    "key": "filters|agency", 
                     "type": "text", 
                     "text_type": "search", 
                     "default": "all"
@@ -672,9 +672,13 @@ class AccountDownloadValidator(DownloadValidatorBase):
         period = self._json_request["filters"].get("period")
 
         agency_filter = self._json_request["filters"].get("agency")
-        if agency_filter and self._json_request["filters"]["agency"] != "all":
-            if not ToptierAgency.objects.filter(toptier_agency_id=agency_filter).exists():
-                raise InvalidParameterException('Invalid parameter: Agency with that ID does not exist')
+        if agency_filter and agency_filter.lower() != "all":
+            if agency_filter.isdigit(): 
+                if not ToptierAgency.objects.filter(toptier_agency_id=agency_filter).exists():
+                    raise InvalidParameterException('Invalid parameter: Agency with that ID does not exist')
+            else:
+                if not ToptierAgency.objects.filter(abbreviation=agency_filter).exists():
+                    raise InvalidParameterException('Invalid parameter: Agency with that abbreviation does not exist')
 
         fy, quarter, period = _validate_and_bolster_requested_submission_window(fy, quarter, period)
 

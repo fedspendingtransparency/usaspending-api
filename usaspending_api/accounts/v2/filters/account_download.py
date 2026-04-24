@@ -115,9 +115,16 @@ def build_query_filters(account_type, filters, account_level):
     )
 
     if filters.get("agency") and filters["agency"] != "all":
-        if not ToptierAgency.objects.filter(toptier_agency_id=filters["agency"]).exists():
-            raise InvalidParameterException("Agency with that ID does not exist")
-        query_filters[f"{tas_id}__funding_toptier_agency_id"] = filters["agency"]
+        if filters["agency"].isdigit(): 
+            if not ToptierAgency.objects.filter(toptier_agency_id=filters["agency"]).exists():
+                raise InvalidParameterException('Agency with that ID does not exist')
+            else:
+                query_filters[f"{tas_id}__funding_toptier_agency_id"] = filters["agency"]
+        else:
+            if not ToptierAgency.objects.filter(abbreviation=filters["agency"]).exists():
+                raise InvalidParameterException('Agency with that abbreviation does not exist')
+            else:
+                query_filters[f"{tas_id}__funding_toptier_agency_abbreviation"] = filters["agency"]
 
     if filters.get("federal_account") and filters["federal_account"] != "all":
         if not FederalAccount.objects.filter(id=filters["federal_account"]).exists():
