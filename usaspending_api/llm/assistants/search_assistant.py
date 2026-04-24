@@ -1,4 +1,3 @@
-import json
 from typing import Any, Generator
 
 import boto3
@@ -20,6 +19,7 @@ class SearchAssistant:
         self.client = boto3.client("bedrock-runtime")
         self.system_message = system_message
 
+    # TODO add support for anthropic search and break up and abstract the search functions
     def _amazon_search(self, query: str) -> Generator[dict[str, str], None, None]:
         specs = [tool.description.model_dump() for tool in self.tools]
         tool_config = {

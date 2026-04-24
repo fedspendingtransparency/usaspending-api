@@ -1,6 +1,5 @@
 import json
 import logging
-import time
 from typing import Generator
 
 from django.http import StreamingHttpResponse
@@ -78,61 +77,19 @@ class StreamingSearchView(APIView):
 
             # Execute search with streaming
             for event in assistant.search(query_text):
+                # TODO add the token counts and latency from the response to each event that is emitted
                 if event["type"] == "tool":
-                    yield event["message"]
+                    yield self.format_sse({"type": "tool", "tool_logging": event["message"]})
                 elif event["type"] == "hash":
-                    yield event["result"]
-
-                # elif event["type"] == "content_start":
-                #     # Create assistant message
-                #     current_message = Message.objects.create(
-                #         session=session, role="assistant", message="", order=message_order
-                #     )
-                #     message_order += 1
-                #
-                # elif event["type"] == "content":
-                #     # Stream content chunks
-                #     if current_message:
-                #         current_message.message += event["content"]
-                #         current_message.save()
-                #
-                #     yield self.format_sse({"type": "content", "content": event["content"]})
-                #
-                #
-
-            # # Update final message with token counts
-            # if current_message:
-            # current_message.input_tokens = total_input_tokens
-            # current_message.output_tokens = total_output_tokens
-            # current_message.total_tokens = total_input_tokens + total_output_tokens
-            # current_message.latency = latency_ms
-            # current_message.save()
-
-            # Update session end time
+                    yield self.format_sse({"type": "result", "hash": event["result"]})
             session.ended_at = timezone.now()
             session.save()
-            #
-            # # Send completion event
-            # yield self.format_sse(
-            #     {
-            #         "type": "complete",
-            #         "session_id": session.id,
-            #         "query_id": search_query.id,
-            #         "latency_ms": latency_ms,
-            #         "input_tokens": total_input_tokens,
-            #         "output_tokens": total_output_tokens,
-            #         "total_tokens": total_input_tokens + total_output_tokens,
-            #     }
-            # )
 
         except Exception as e:
-            # Send error event
             yield self.format_sse({"type": "error", "error": str(e), "session_id": session.id})
-
-            # Update session
             session.ended_at = timezone.now()
             session.save()
 
     def format_sse(self, data: dict) -> str:
         """Format data as Server-Sent Event"""
-        return f"data: {json.dumps(data)}\n\n"
+        return f"{json.dumps(data)}\n"

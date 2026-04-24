@@ -11,11 +11,24 @@ def location_search(search_text: str):
     results = {
         geo: [
             {
-                **result,
-                "country_name": [
-                    country["code"] for country in country_codes if country["name"] == result["country_name"]
-                ][0],
-                "state_name": state_codes.get(result.get("state_name", "").title()),
+                "_".join(
+                    [
+                        i
+                        for i in [
+                            [country["code"] for country in country_codes if country["name"] == result["country_name"]][
+                                0
+                            ],
+                            state_codes.get(result.get("state_name", "").title()),
+                        ]
+                        if type(i) == str
+                    ]
+                ): {
+                    **result,
+                    "country_name": [
+                        country["code"] for country in country_codes if country["name"] == result["country_name"]
+                    ][0],
+                    "state_name": state_codes.get(result.get("state_name", "").title()),
+                }
             }
             for result in results
         ]

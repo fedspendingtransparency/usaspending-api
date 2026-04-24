@@ -12,36 +12,15 @@ from usaspending_api.llm.models.py_models import (
 
 
 def advanced_search(**kwargs):
-    if "selectedLocations" in kwargs:
-        converted_locations = {}
-        for key, value in kwargs["selectedLocations"].items():
-            # If it's a simple dict like {'state': 'TX'}, convert it
-            if isinstance(value, dict) and "identifier" not in value:
-                state = value.get("state", "")
-                country = value.get("country", "USA")
-                identifier = f"{country}_{state}" if state else country
-
-                converted_locations[identifier] = SelectedLocation(
-                    identifier=identifier,
-                    filter=LocationFilter(country=country, state=state if state else None),
-                    display=LocationDisplay(
-                        entity="State" if state else "Country",
-                        standalone=state if state else country,
-                        title=state if state else country,
-                    ),
-                )
-            else:
-                # Already in correct format
-                converted_locations[key] = value
-
-        kwargs["selectedLocations"] = converted_locations
-
     filters = Filters(**kwargs)
-    filter_request = FilterRequest(filters=filters)
-    response = requests.post(
-        "https://api.usaspending.gov/api/v2/references/filter/", json=filter_request.model_dump(exclude_none=True)
-    )
-
+    filter_request = FilterRequest(filters=filters).model_dump(exclude_none=True)
+    if "keyword" in filter_request["filters"]:
+        updated_keyword = {v: v for v in filter_request["filters"]["keyword"]}
+        filter_request["filters"]["keyword"] = updated_keyword
+    print(filter_request)
+    response = requests.post("http://usaspending-manage:9000/api/v2/references/filter/", json=filter_request)
+    result = response.json()
+    print(result)
     return response.json()
 
 
