@@ -27,50 +27,54 @@ Account Breakdown by Award (C file):
         2. Group by Federal Account
 """
 
-from datetime import timezone, datetime
+from datetime import datetime, timezone
 
 from django.db.models import (
     Case,
     DateField,
     DecimalField,
+    Exists,
     F,
     Func,
     Max,
+    Model,
+    OuterRef,
     Q,
+    QuerySet,
     Subquery,
     Sum,
     TextField,
     Value,
     When,
-    OuterRef,
-    Exists,
 )
 from django.db.models.functions import Cast, Coalesce, Concat
+
 from usaspending_api.accounts.models import FederalAccount
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers.orm_helpers import (
     ConcatAll,
     FiscalYear,
+    StringAggWithDefault,
     get_fyp_or_q_notation,
     get_gtas_fyp_notation,
-    StringAggWithDefault,
 )
 from usaspending_api.download.filestreaming import NAMING_CONFLICT_DISCRIMINATOR
 from usaspending_api.download.helpers.download_annotation_functions import congressional_district_display_name
 from usaspending_api.download.v2.download_column_historical_lookups import query_paths
-from usaspending_api.references.models import ToptierAgency, CGAC
+from usaspending_api.references.models import CGAC, ToptierAgency
 from usaspending_api.settings import HOST
 from usaspending_api.submissions.helpers import (
     ClosedPeriod,
-    get_submission_ids_for_periods,
     get_last_closed_periods_per_year,
+    get_submission_ids_for_periods,
 )
 from usaspending_api.submissions.models import DABSSubmissionWindowSchedule
 
 AWARD_URL = f"{HOST}/award/" if "localhost" in HOST else f"https://{HOST}/award/"
 
 
-def account_download_filter(account_type, download_table, filters, account_level="treasury_account"):
+def account_download_filter(account_type: str, download_table: Model,
+                            filters: dict, account_level: str = "treasury_account") -> QuerySet:
 
     query_filters, tas_id = build_query_filters(account_type, filters, account_level)
 
@@ -102,7 +106,7 @@ def account_download_filter(account_type, download_table, filters, account_level
     return queryset.filter(nonzero_filter, **query_filters)
 
 
-def build_query_filters(account_type, filters, account_level):
+def build_query_filters(account_type: str, filters: dict, account_level: str) -> tuple[dict, str]:
     if account_level not in ("treasury_account", "federal_account"):
         raise InvalidParameterException(
             'Invalid Parameter: account_level must be either "federal_account" or "treasury_account"'
@@ -114,17 +118,7 @@ def build_query_filters(account_type, filters, account_level):
         "treasury_account_identifier" if account_type in ("account_balances", "gtas_balances") else "treasury_account"
     )
 
-    if filters.get("agency") and filters["agency"] != "all":
-        if filters["agency"].isdigit(): 
-            if not ToptierAgency.objects.filter(toptier_agency_id=filters["agency"]).exists():
-                raise InvalidParameterException('Agency with that ID does not exist')
-            else:
-                query_filters[f"{tas_id}__funding_toptier_agency_id"] = filters["agency"]
-        else:
-            if not ToptierAgency.objects.filter(abbreviation=filters["agency"]).exists():
-                raise InvalidParameterException('Agency with that abbreviation does not exist')
-            else:
-                query_filters[f"{tas_id}__funding_toptier_agency_abbreviation"] = filters["agency"]
+    query_filters = build_agency_filter(query_filters, filters, tas_id)
 
     if filters.get("federal_account") and filters["federal_account"] != "all":
         if not FederalAccount.objects.filter(id=filters["federal_account"]).exists():
@@ -152,7 +146,23 @@ def build_query_filters(account_type, filters, account_level):
     return query_filters, tas_id
 
 
-def get_gtas_submission_filter():
+def build_agency_filter(query_filters: dict, filters: dict, tas_id: str) -> dict:
+    if filters.get("agency") and filters["agency"] != "all":
+        if filters["agency"].isdigit():
+            if not ToptierAgency.objects.filter(toptier_agency_id=filters["agency"]).exists():
+                raise InvalidParameterException('Agency with that ID does not exist')
+            else:
+                query_filters[f"{tas_id}__funding_toptier_agency_id"] = filters["agency"]
+        else:
+            if not ToptierAgency.objects.filter(abbreviation=filters["agency"]).exists():
+                raise InvalidParameterException('Agency with that abbreviation does not exist')
+            else:
+                query_filters[f"{tas_id}__funding_toptier_agency_abbreviation"] = filters["agency"]
+
+    return query_filters
+
+
+def get_gtas_submission_filter() -> QuerySet:
     return (
         DABSSubmissionWindowSchedule.objects.filter(
             submission_reveal_date__lte=datetime.now(timezone.utc), is_quarter=False
@@ -163,7 +173,7 @@ def get_gtas_submission_filter():
     )
 
 
-def get_submission_filter(account_type, filters):
+def get_submission_filter(account_type: str, filters: dict) -> Q:
     """
     Limits the overall File A, B, and C submissions that are looked at.
     For File A and B we only look at the most recent submissions for
@@ -201,7 +211,7 @@ def get_submission_filter(account_type, filters):
     return submission_filter
 
 
-def get_nonzero_filter():
+def get_nonzero_filter() -> Q:
     nonzero_outlay = Q(
         Q(gross_outlay_amount_FYB_to_period_end__gt=0)
         | Q(gross_outlay_amount_FYB_to_period_end__lt=0)
@@ -214,7 +224,7 @@ def get_nonzero_filter():
     return nonzero_outlay | nonzero_toa
 
 
-def _build_submission_queryset(closed_period: ClosedPeriod):
+def _build_submission_queryset(closed_period: ClosedPeriod) -> Q:
     if closed_period.is_final:
         q = closed_period.build_period_q("submission")
     else:
@@ -222,7 +232,7 @@ def _build_submission_queryset(closed_period: ClosedPeriod):
     return q
 
 
-def build_queryset_for_closed_submissions(filters):
+def build_queryset_for_closed_submissions(filters: dict) -> Q:
     filter_year = filters.get("fy")
 
     q = Q()
@@ -237,7 +247,7 @@ def build_queryset_for_closed_submissions(filters):
     return q
 
 
-def _build_submission_queryset_for_derived_fields(submission_closed_period_queryset, column_name):
+def _build_submission_queryset_for_derived_fields(submission_closed_period_queryset: Q, column_name: str) -> F:
     if submission_closed_period_queryset:
         queryset = Case(
             When(submission_closed_period_queryset, then=F(column_name)),
@@ -249,17 +259,17 @@ def _build_submission_queryset_for_derived_fields(submission_closed_period_query
     return queryset
 
 
-def generate_ussgl487200_derived_field(submission_queryset=None):
+def generate_ussgl487200_derived_field(submission_queryset: Q = None) -> F:
     column_name = "ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe"
     return _build_submission_queryset_for_derived_fields(submission_queryset, column_name)
 
 
-def generate_ussgl497200_derived_field(submission_queryset=None):
+def generate_ussgl497200_derived_field(submission_queryset: Q = None) -> F:
     column_name = "ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe"
     return _build_submission_queryset_for_derived_fields(submission_queryset, column_name)
 
 
-def generate_gross_outlay_amount_derived_field(account_type, submission_queryset=None):
+def generate_gross_outlay_amount_derived_field(account_type: str, submission_queryset: Q = None) -> F:
     column_name = {
         "account_balances": "gross_outlay_amount_by_tas_cpe",
         "gtas_balances": "gross_outlay_amount_by_tas_cpe",
@@ -270,7 +280,7 @@ def generate_gross_outlay_amount_derived_field(account_type, submission_queryset
     return _build_submission_queryset_for_derived_fields(submission_queryset, column_name)
 
 
-def generate_treasury_account_query(queryset, account_type):
+def generate_treasury_account_query(queryset: QuerySet, account_type: str) -> QuerySet:
     """Derive necessary fields for a treasury account-grouped query"""
     derived_fields = {
         "submission_period": get_fyp_or_q_notation("submission"),
@@ -307,7 +317,7 @@ def generate_treasury_account_query(queryset, account_type):
     return queryset.annotate(**derived_fields)
 
 
-def generate_federal_account_query(queryset, account_type, tas_id, filters):
+def generate_federal_account_query(queryset: QuerySet, account_type: str, tas_id: str, filters: dict) -> QuerySet:
     """Group by federal account (and budget function/subfunction) and SUM all other fields"""
     # Submission Queryset is only built for Federal Account downloads since the TAS are rolled up into
     # the Federal Account. For cases such as Treasury Account download where there is no GROUP BY in
@@ -454,7 +464,7 @@ def generate_federal_account_query(queryset, account_type, tas_id, filters):
     return queryset
 
 
-def award_financial_derivations(derived_fields):
+def award_financial_derivations(derived_fields: dict) -> dict:
     derived_fields["award_type_code"] = Coalesce(
         "award__latest_transaction_search__contract_award_type",
         "award__latest_transaction_search__type",
@@ -508,7 +518,7 @@ def award_financial_derivations(derived_fields):
     return derived_fields
 
 
-def gtas_balances_derivations(derived_fields):
+def gtas_balances_derivations(derived_fields: dict) -> dict:
     # These derivations are used by the following derivation; however they are NOT included in the final download
     derived_fields["tas_component_count"] = Func(
         Func(F("tas_rendering_label"), Value("-"), function="string_to_array"),

@@ -142,8 +142,8 @@ class AwardDownloadValidator(DownloadValidatorBase):
                     },
                 },
                 {
-                    "name": "agency", 
-                    "key": "filters|agency", 
+                    "name": "agency",
+                    "key": "filters|agency",
                     "type": "integer"
                  },
                 {
@@ -627,10 +627,10 @@ class AccountDownloadValidator(DownloadValidatorBase):
                     "enum_values": VALID_ACCOUNT_SUBMISSION_TYPES,
                 },
                 {
-                    "name": "agency", 
-                    "key": "filters|agency", 
-                    "type": "text", 
-                    "text_type": "search", 
+                    "name": "agency",
+                    "key": "filters|agency",
+                    "type": "text",
+                    "text_type": "search",
                     "default": "all"
                 },
                 {
@@ -673,7 +673,7 @@ class AccountDownloadValidator(DownloadValidatorBase):
 
         agency_filter = self._json_request["filters"].get("agency")
         if agency_filter and agency_filter.lower() != "all":
-            if agency_filter.isdigit(): 
+            if agency_filter.isdigit():
                 if not ToptierAgency.objects.filter(toptier_agency_id=agency_filter).exists():
                     raise InvalidParameterException('Invalid parameter: Agency with that ID does not exist')
             else:
