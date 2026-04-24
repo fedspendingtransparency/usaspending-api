@@ -117,8 +117,9 @@ def build_query_filters(account_type: str, filters: dict, account_level: str) ->
     tas_id = (
         "treasury_account_identifier" if account_type in ("account_balances", "gtas_balances") else "treasury_account"
     )
-
-    query_filters = build_agency_filter(query_filters, filters, tas_id)
+    
+    if filters.get("agency") and filters["agency"] != "all":
+        query_filters = build_agency_filter(query_filters, filters, tas_id)
 
     if filters.get("federal_account") and filters["federal_account"] != "all":
         if not FederalAccount.objects.filter(id=filters["federal_account"]).exists():
@@ -147,17 +148,16 @@ def build_query_filters(account_type: str, filters: dict, account_level: str) ->
 
 
 def build_agency_filter(query_filters: dict, filters: dict, tas_id: str) -> dict:
-    if filters.get("agency") and filters["agency"] != "all":
-        if filters["agency"].isdigit():
-            if not ToptierAgency.objects.filter(toptier_agency_id=filters["agency"]).exists():
-                raise InvalidParameterException('Agency with that ID does not exist')
-            else:
-                query_filters[f"{tas_id}__funding_toptier_agency_id"] = filters["agency"]
+    if filters["agency"].isdigit():
+        if not ToptierAgency.objects.filter(toptier_agency_id=filters["agency"]).exists():
+            raise InvalidParameterException('Agency with that ID does not exist')
         else:
-            if not ToptierAgency.objects.filter(abbreviation=filters["agency"]).exists():
-                raise InvalidParameterException('Agency with that abbreviation does not exist')
-            else:
-                query_filters[f"{tas_id}__funding_toptier_agency_abbreviation"] = filters["agency"]
+            query_filters[f"{tas_id}__funding_toptier_agency_id"] = filters["agency"]
+    else:
+        if not ToptierAgency.objects.filter(abbreviation=filters["agency"]).exists():
+            raise InvalidParameterException('Agency with that abbreviation does not exist')
+        else:
+            query_filters[f"{tas_id}__funding_toptier_agency_abbreviation"] = filters["agency"]
 
     return query_filters
 
