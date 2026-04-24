@@ -14,13 +14,14 @@ services:
       - manage
       - test
       - ci
-    image: postgres:13.8-alpine
+    image: postgres:16-alpine
     shm_size: 1g
     container_name: usaspending-db
     volumes:
       - type: volume
         source: local_pg_data
         target: /var/lib/postgresql/data
+      - ./:/home
     ports:
       - ${USASPENDING_DB_PORT:-5432}:5432
     environment:
