@@ -17,10 +17,7 @@ def advanced_search(**kwargs):
     if "keyword" in filter_request["filters"]:
         updated_keyword = {v: v for v in filter_request["filters"]["keyword"]}
         filter_request["filters"]["keyword"] = updated_keyword
-    print(filter_request)
     response = requests.post("http://usaspending-manage:9000/api/v2/references/filter/", json=filter_request)
-    result = response.json()
-    print(result)
     return response.json()
 
 
@@ -36,7 +33,7 @@ create_advanced_search_filter = AITool(
             This tool performs a search of the USASpending website for federal contracts and assistance.
             Use the keywords parameter to search for spending related to specific topics.
             If the search requires a selected locations parameter you MUST first use the 
-            `get_valid_location_object` tool to get a valid location object.  Use this to populate each selected location filter property.
+            `lookup_location` tool to get a valid location object.  Use this to populate each selected location filter property.
             Use as many parameters as necessary to filter the results to the user's intent.
             This tool return a list of federal contracts and awards filtered by the input parameters.
         """,

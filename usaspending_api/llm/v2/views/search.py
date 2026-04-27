@@ -9,10 +9,10 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework import status
 
-from usaspending_api.llm.models.db_models import Session, Message, ToolUse, LLMSearchQuery, AIModel, Prompts
+from usaspending_api.llm.models.db_models import Session, Message, LLMSearchQuery, AIModel, Prompts
 from usaspending_api.llm.assistants.search_assistant import SearchAssistant
 from usaspending_api.llm.tools.advanced_search_filter import create_advanced_search_filter
-from usaspending_api.llm.tools.location_filter import search_for_location
+from usaspending_api.llm.tools.lookup_location import lookup_location_tool
 
 
 logger = logging.getLogger(__name__)
@@ -71,7 +71,7 @@ class StreamingSearchView(APIView):
             # Create streaming assistant
             assistant = SearchAssistant(
                 model=ai_model,
-                tools=[create_advanced_search_filter, search_for_location],
+                tools=[create_advanced_search_filter, lookup_location_tool],
                 system_message=session.system_prompt.text if session.system_prompt else None,
             )
 
