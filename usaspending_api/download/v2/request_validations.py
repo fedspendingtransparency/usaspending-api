@@ -677,7 +677,7 @@ class AccountDownloadValidator(DownloadValidatorBase):
                 if not ToptierAgency.objects.filter(toptier_agency_id=agency_filter).exists():
                     raise InvalidParameterException('Invalid parameter: Agency with that ID does not exist')
             else:
-                if not ToptierAgency.objects.filter(abbreviation=agency_filter).exists():
+                if not ToptierAgency.objects.get(abbreviation=agency_filter):
                     raise InvalidParameterException('Invalid parameter: Agency with that abbreviation does not exist')
 
         fy, quarter, period = _validate_and_bolster_requested_submission_window(fy, quarter, period)

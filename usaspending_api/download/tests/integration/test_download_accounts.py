@@ -60,6 +60,7 @@ def download_test_data(db):
         website="http://test0.com",
         mission="test0",
         icon_filename="test0",
+        abbreviation="BOT",
     )
     ata2 = baker.make(
         "references.ToptierAgency",
@@ -69,6 +70,7 @@ def download_test_data(db):
         website="http://test1.com",
         mission="test1",
         icon_filename="test1",
+        abbreviation="BOS",
     )
 
     # Create Awarding Agencies
@@ -84,6 +86,7 @@ def download_test_data(db):
         website="http://test.com",
         mission="test",
         icon_filename="test",
+        abbreviation="BOM",
     )
 
     # Create Funding Agency
@@ -257,6 +260,23 @@ def test_agency_filter_success(client, download_test_data):
     )
     assert resp.status_code == status.HTTP_200_OK
     assert "FY2017Q1-Q4_100_FA_AccountBalances" in resp.json()["file_name"]
+
+@pytest.mark.django_db(databases=[settings.DOWNLOAD_DB_ALIAS, settings.DEFAULT_DB_ALIAS])
+def test_agency_filter_success_abbreviation(client, download_test_data):
+    download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
+    resp = client.post(
+        "/api/v2/download/accounts/",
+        content_type="application/json",
+        data=json.dumps(
+            {
+                "account_level": "federal_account",
+                "filters": {"submission_types": ["account_balances"], "fy": "2017", "quarter": "4", "agency": "BOS"},
+                "file_format": "csv",
+            }
+        ),
+    )
+    assert resp.status_code == status.HTTP_200_OK
+    assert "FY2017Q1-Q4_BOS_FA_AccountBalances" in resp.json()["file_name"]
 
 
 @pytest.mark.django_db(databases=[settings.DOWNLOAD_DB_ALIAS, settings.DEFAULT_DB_ALIAS])

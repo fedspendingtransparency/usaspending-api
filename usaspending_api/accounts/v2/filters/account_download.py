@@ -154,10 +154,10 @@ def build_agency_filter(query_filters: dict, filters: dict, tas_id: str) -> dict
             else:
                 query_filters[f"{tas_id}__funding_toptier_agency_id"] = filters["agency"]
         else:
-            if not ToptierAgency.objects.filter(abbreviation=filters["agency"]).exists():
+            if not ToptierAgency.objects.get(abbreviation=filters["agency"]):
                 raise InvalidParameterException('Agency with that abbreviation does not exist')
             else:
-                query_filters[f"{tas_id}__funding_toptier_agency_abbreviation"] = filters["agency"]
+                query_filters[f"{tas_id}__funding_toptier_agency__abbreviation"] = filters["agency"]
 
     return query_filters
 
