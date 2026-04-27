@@ -261,6 +261,7 @@ def test_agency_filter_success(client, download_test_data):
     assert resp.status_code == status.HTTP_200_OK
     assert "FY2017Q1-Q4_100_FA_AccountBalances" in resp.json()["file_name"]
 
+
 @pytest.mark.django_db(databases=[settings.DOWNLOAD_DB_ALIAS, settings.DEFAULT_DB_ALIAS])
 def test_agency_filter_success_abbreviation(client, download_test_data):
     download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
