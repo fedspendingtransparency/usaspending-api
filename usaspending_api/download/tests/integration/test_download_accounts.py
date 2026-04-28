@@ -293,6 +293,30 @@ def test_agency_filter_failure(client, download_test_data):
                     "submission_types": ["object_class_program_activity"],
                     "fy": "2017",
                     "quarter": "4",
+                    "agency": "999",
+                },
+                "file_format": "csv",
+            }
+        ),
+    )
+
+    assert resp.status_code == status.HTTP_404_NOT_FOUND
+    assert resp.json()["detail"] == "No agency was found with id 999"
+
+
+@pytest.mark.django_db(databases=[settings.DOWNLOAD_DB_ALIAS, settings.DEFAULT_DB_ALIAS])
+def test_agency_filter_failure_abbreviation(client, download_test_data):
+    download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
+    resp = client.post(
+        "/api/v2/download/accounts/",
+        content_type="application/json",
+        data=json.dumps(
+            {
+                "account_level": "treasury_account",
+                "filters": {
+                    "submission_types": ["object_class_program_activity"],
+                    "fy": "2017",
+                    "quarter": "4",
                     "agency": "-2",
                 },
                 "file_format": "csv",
@@ -300,7 +324,8 @@ def test_agency_filter_failure(client, download_test_data):
         ),
     )
 
-    assert resp.status_code == status.HTTP_400_BAD_REQUEST
+    assert resp.status_code == status.HTTP_404_NOT_FOUND
+    assert resp.json()["detail"] == "No agency was found with abbreviation -2"
 
 
 @pytest.mark.django_db(databases=[settings.DOWNLOAD_DB_ALIAS, settings.DEFAULT_DB_ALIAS])

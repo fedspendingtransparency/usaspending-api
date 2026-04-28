@@ -48,6 +48,7 @@ from django.db.models import (
     When,
 )
 from django.db.models.functions import Cast, Coalesce, Concat
+from rest_framework.exceptions import NotFound
 
 from usaspending_api.accounts.models import FederalAccount
 from usaspending_api.common.exceptions import InvalidParameterException
@@ -150,14 +151,15 @@ def build_agency_filter(query_filters: dict, filters: dict, tas_id: str) -> dict
     if filters.get("agency") and filters["agency"] != "all":
         if filters["agency"].isdigit():
             if not ToptierAgency.objects.filter(toptier_agency_id=filters["agency"]).exists():
-                raise InvalidParameterException('Agency with that ID does not exist')
+                raise NotFound(f"No agency was found with id {filters['agency']}")
             else:
                 query_filters[f"{tas_id}__funding_toptier_agency_id"] = filters["agency"]
         else:
-            if not ToptierAgency.objects.exists(abbreviation=filters["agency"]):
-                raise InvalidParameterException('Agency with that abbreviation does not exist')
-            else:
+            try:
+                ToptierAgency.objects.get(abbreviation=filters["agency"])
                 query_filters[f"{tas_id}__funding_toptier_agency__abbreviation"] = filters["agency"]
+            except ToptierAgency.DoesNotExist as e:
+                raise NotFound(f"No agency was found with abbreviation {filters['agency']}") from e
 
     return query_filters
 

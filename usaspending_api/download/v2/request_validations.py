@@ -4,6 +4,7 @@ from datetime import MAXYEAR, MINYEAR, datetime
 from typing import Any, Optional
 
 from django.conf import settings
+from rest_framework.exceptions import NotFound
 
 from usaspending_api.awards.models import Award
 from usaspending_api.awards.v2.lookups.lookups import (
@@ -675,10 +676,12 @@ class AccountDownloadValidator(DownloadValidatorBase):
         if agency_filter and agency_filter.lower() != "all":
             if agency_filter.isdigit():
                 if not ToptierAgency.objects.filter(toptier_agency_id=agency_filter).exists():
-                    raise InvalidParameterException('Invalid parameter: Agency with that ID does not exist')
+                    raise NotFound(f"No agency was found with id {agency_filter}")
             else:
-                if not ToptierAgency.objects.exists(abbreviation=agency_filter):
-                    raise InvalidParameterException('Invalid parameter: Agency with that abbreviation does not exist')
+                try:
+                    ToptierAgency.objects.get(abbreviation=agency_filter)
+                except ToptierAgency.DoesNotExist as e:
+                    raise NotFound(f"No agency was found with abbreviation {agency_filter}") from e
 
         fy, quarter, period = _validate_and_bolster_requested_submission_window(fy, quarter, period)
 
