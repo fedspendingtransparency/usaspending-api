@@ -1,6 +1,8 @@
 from collections import OrderedDict
-from psycopg2.sql import SQL
-from typing import List, Optional
+from typing import Any, List, Optional
+
+from psycopg.sql import SQL
+
 from usaspending_api.common.etl.postgres.primatives import (
     ColumnDefinition,
     DataTypes,
@@ -8,7 +10,6 @@ from usaspending_api.common.etl.postgres.primatives import (
     wrap_dblink_query,
 )
 from usaspending_api.common.helpers import sql_helpers
-
 
 _columns = OrderedDict([("column_name", ColumnDefinition("column_name", "text", False))])
 
@@ -21,7 +22,7 @@ _data_types = OrderedDict(
 )
 
 
-def _get_whatever(table_name: str, schema_name: str, dblink_name: str, sql: str, data_types: DataTypes):
+def _get_whatever(table_name: str, schema_name: str, dblink_name: str, sql: str, data_types: DataTypes) -> Any:
     """The common bits of subsequent functions."""
     table = make_composed_qualified_table_name(table_name, schema_name)
     sql = SQL(sql).format(table=table)
@@ -88,8 +89,7 @@ def get_query_columns(sql: str) -> List[str]:
     # IMPORTANT:  Even though this is a read only operation, since this is being run in support of
     # a writable operation, we need to run it against the writable connection else we will be
     # unable to see objects living in our transaction if there is one.
-    cursor = sql_helpers.execute_sql(sql, fetcher=sql_helpers.cursor_fetcher, read_only=False)
-    return [col[0] for col in cursor.description]
+    return sql_helpers.execute_sql(sql, fetcher=sql_helpers.column_fetcher, read_only=False)
 
 
 __all__ = ["get_columns", "get_data_types", "get_primary_key_columns", "get_query_columns"]

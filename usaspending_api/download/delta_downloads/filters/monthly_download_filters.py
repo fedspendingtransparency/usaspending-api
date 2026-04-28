@@ -1,24 +1,18 @@
 from datetime import date, datetime
 from typing import Any
 
-from django.utils.functional import cached_property
-from pydantic import BaseModel, validator
-from pydantic.fields import ModelField
+from pydantic import BaseModel, ValidationInfo, field_validator
 
 from usaspending_api.references.models import ToptierAgency
 
 
 class MonthlyDownloadFilters(BaseModel):
-    as_of_date: str | None
-    awarding_toptier_agency_abbreviation: str | None = None
+
+    as_of_date: str | None = None
+    awarding_toptier_agency_code: str | None = None
     fiscal_year: int | None = None
 
-    class Config:
-        # TODO: Will need to update to use ConfigDict's "ignored_types" after Pydantic upgrade
-        #       https://docs.pydantic.dev/latest/api/config/?query=ignore_types#pydantic.config.ConfigDict.ignored_types
-        keep_untouched = (cached_property,)
-
-    @validator("as_of_date", pre=True, always=True)
+    @field_validator("as_of_date", mode='before')
     @classmethod
     def validate_as_of_date_and_set_default(cls, value: Any) -> str:
         if isinstance(value, str):
@@ -36,27 +30,15 @@ class MonthlyDownloadFilters(BaseModel):
             raise ValueError(f"Received unsupported type of '{type(value)}'; expected 'str'")
         return value
 
-    @cached_property
-    def awarding_toptier_agency_code(self) -> str:
-        result = self.awarding_toptier_agency_abbreviation
-        if result is not None:
-            result = (
-                ToptierAgency.objects.filter(abbreviation=self.awarding_toptier_agency_abbreviation)
-                .values_list("toptier_code", flat=True)
-                .first()
-            )
-        return result
-
-    @validator("awarding_toptier_agency_abbreviation")
+    @field_validator("awarding_toptier_agency_code")
     @classmethod
-    def check_valid_toptier_agency_abbreviation(cls, abbreviation: str, field: ModelField) -> str:
-        abbreviation = abbreviation.upper()
-        if not ToptierAgency.objects.filter(abbreviation=abbreviation).exists():
-            raise ValueError(f"Invalid abbreviation for '{field.name}': {abbreviation}")
+    def check_valid_toptier_agency_code(cls, toptier_code: str, info: ValidationInfo) -> str:
+        if not ToptierAgency.objects.filter(toptier_code=toptier_code).exists():
+            raise ValueError(f"Invalid toptier code for '{info.field_name}': {toptier_code}")
 
-        return abbreviation
+        return toptier_code
 
-    @validator("fiscal_year")
+    @field_validator("fiscal_year")
     @classmethod
     def check_valid_fiscal_year(cls, fiscal_year: int) -> int:
         if fiscal_year < 2008:

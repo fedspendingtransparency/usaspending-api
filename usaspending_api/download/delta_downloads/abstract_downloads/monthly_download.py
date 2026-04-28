@@ -1,5 +1,4 @@
 from abc import abstractmethod
-from enum import Enum
 
 from duckdb.experimental.spark.sql import SparkSession as DuckDBSparkSession
 from duckdb.experimental.spark.sql.dataframe import DataFrame as DuckDBSparkDataFrame
@@ -8,36 +7,7 @@ from pyspark.sql import DataFrame
 from usaspending_api.download.delta_downloads.abstract_downloads.base_download import (
     AbstractDownload,
 )
-
-
-class Category(str, Enum):
-    ASSISTANCE = ("assistance", "Assistance")
-    CONTRACT = ("contract", "Contracts")
-
-    def __new__(cls, category: str, title: str):
-        obj = str.__new__(cls, category)
-        obj._value_ = category
-        obj._title = title
-        return obj
-
-    @property
-    def title(self) -> str:
-        return self._title
-
-
-class MonthlyType(str, Enum):
-    DELTA = ("delta", "Delta")
-    FULL = ("full", "Full")
-
-    def __new__(cls, monthly_type: str, title: str):
-        obj = str.__new__(cls, monthly_type)
-        obj._value_ = monthly_type
-        obj._title = title
-        return obj
-
-    @property
-    def title(self) -> str:
-        return self._title
+from usaspending_api.download.delta_downloads.helpers.enums import AwardCategory, MonthlyType
 
 
 class AbstractMonthlyDownload(AbstractDownload):
@@ -58,7 +28,7 @@ class AbstractMonthlyDownload(AbstractDownload):
 
     @property
     @abstractmethod
-    def category(self) -> Category: ...
+    def category(self) -> AwardCategory: ...
 
     @property
     @abstractmethod
@@ -67,6 +37,16 @@ class AbstractMonthlyDownload(AbstractDownload):
     @property
     def download_table(self) -> DataFrame | DuckDBSparkDataFrame:
         return self.spark.table("rpt.transaction_download")
+
+    @property
+    def file_name_prefix(self) -> str:
+        agency = (
+            self.filters.awarding_toptier_agency_code or "All"
+        )
+        category = self.category.title
+        monthly_type = self.monthly_type.title
+        year = self.filters.fiscal_year or "(All)"
+        return f"FY{year}_{agency}_{category}_{monthly_type}"
 
     def _validate_filters_for_monthly_type(self) -> None:
         """Special handling of the filters due to business logic, not technical limitations"""
@@ -80,9 +60,9 @@ class AbstractMonthlyDownload(AbstractDownload):
 
     def _add_category_filter(self) -> None:
         match self.category:
-            case Category.ASSISTANCE:
+            case AwardCategory.ASSISTANCE:
                 category_filter = ~self.sf.col("is_fpds")
-            case Category.CONTRACT:
+            case AwardCategory.CONTRACT:
                 category_filter = self.sf.col("is_fpds")
             case _:
                 raise NotImplementedError(f"Dynamic filters doesn't support category of '{self.category}'")
@@ -90,10 +70,4 @@ class AbstractMonthlyDownload(AbstractDownload):
         self._dynamic_filters &= category_filter
 
     def _build_file_names(self) -> list[str]:
-        agency = (
-            self.filters.awarding_toptier_agency_code if self.filters.awarding_toptier_agency_abbreviation else "All"
-        )
-        category = self.category.title
-        monthly_type = self.monthly_type.title
-        year = self.filters.fiscal_year or "(All)"
-        return [f"FY{year}_{agency}_{category}_{monthly_type}_{self.filters.as_of_date}"]
+        return [f"{self.file_name_prefix}_{self.filters.as_of_date}"]

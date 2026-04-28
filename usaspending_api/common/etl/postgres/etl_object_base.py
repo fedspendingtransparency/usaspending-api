@@ -1,7 +1,8 @@
-from abc import abstractmethod, ABCMeta
-from django.utils.functional import cached_property
-from psycopg2.sql import Composed
+from abc import ABCMeta, abstractmethod
 from typing import List
+
+from django.utils.functional import cached_property
+from psycopg.sql import Composed
 
 
 class ETLObjectBase(metaclass=ABCMeta):

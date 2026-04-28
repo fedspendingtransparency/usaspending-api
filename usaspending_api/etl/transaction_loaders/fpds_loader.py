@@ -1,35 +1,39 @@
 import logging
-from psycopg2.extras import DictCursor
-from psycopg2 import Error
-from django.db import connection
+from typing import Any
 
+from django.db import connection
+from psycopg import Cursor, Error
+from psycopg.rows import dict_row
+
+from usaspending_api.common.helpers.timing_helpers import ConsoleTimer as Timer
+from usaspending_api.etl.transaction_loaders.data_load_helpers import (
+    capitalize_if_string,
+    false_if_null,
+)
 from usaspending_api.etl.transaction_loaders.field_mappings_fpds import (
-    transaction_fpds_nonboolean_columns,
-    transaction_normalized_nonboolean_columns,
-    transaction_normalized_functions,
-    award_nonboolean_columns,
+    all_broker_columns,
     award_functions,
+    award_nonboolean_columns,
     transaction_fpds_boolean_columns,
     transaction_fpds_functions,
-    all_broker_columns,
+    transaction_fpds_nonboolean_columns,
+    transaction_normalized_functions,
+    transaction_normalized_nonboolean_columns,
 )
-from usaspending_api.etl.transaction_loaders.data_load_helpers import capitalize_if_string, false_if_null
 from usaspending_api.etl.transaction_loaders.generic_loaders import (
+    insert_award,
+    insert_transaction_fpds,
+    insert_transaction_normalized,
     update_transaction_fpds,
     update_transaction_normalized,
-    insert_transaction_normalized,
-    insert_transaction_fpds,
-    insert_award,
 )
-from usaspending_api.common.helpers.timing_helpers import ConsoleTimer as Timer
-
 
 logger = logging.getLogger("script")
 
 failed_ids = []
 
 
-def delete_stale_fpds(detached_award_procurement_ids):
+def delete_stale_fpds(detached_award_procurement_ids: dict) -> list:
     """
     Removed transaction_fpds and transaction_normalized records matching any of the
     provided detached_award_procurement_id list
@@ -82,7 +86,7 @@ def delete_stale_fpds(detached_award_procurement_ids):
         return awards_touched
 
 
-def load_fpds_transactions(chunk):
+def load_fpds_transactions(chunk: list) -> list:
     """
     Run transaction load for the provided ids. This will create any new rows in other tables to support the transaction
     data, but does NOT update "secondary" award values like total obligations or C -> D linkages.
@@ -101,21 +105,23 @@ def load_fpds_transactions(chunk):
     return retval
 
 
-def _extract_broker_objects(id_list):
+def _extract_broker_objects(id_list: list) -> list:
 
     connection.ensure_connection()
-    with connection.connection.cursor(cursor_factory=DictCursor) as cursor:
-        sql = "SELECT {} from source_procurement_transaction where detached_award_procurement_id in %s".format(
+    with connection.connection.cursor(row_factory=dict_row) as cursor:
+        sql = "SELECT {} from source_procurement_transaction where detached_award_procurement_id = ANY(%s)".format(
             ",".join(all_broker_columns())
         )
-        cursor.execute(sql, (tuple(id_list),))
+        cursor.execute(sql, (list(id_list),))
 
         results = cursor.fetchall()
 
     return results
 
 
-def _create_load_object(broker_object, non_boolean_column_map, boolean_column_map, function_map):
+def _create_load_object(
+    broker_object: dict, non_boolean_column_map: dict | None, boolean_column_map: map | None, function_map: map | None
+) -> dict:
     retval = {}
     if non_boolean_column_map:
         retval.update(
@@ -131,7 +137,7 @@ def _create_load_object(broker_object, non_boolean_column_map, boolean_column_ma
     return retval
 
 
-def _transform_objects(broker_objects):
+def _transform_objects(broker_objects: list) -> list:
     retval = []
 
     for broker_object in broker_objects:
@@ -153,11 +159,11 @@ def _transform_objects(broker_objects):
     return retval
 
 
-def _load_transactions(load_objects):
+def _load_transactions(load_objects: list) -> list:
     """returns ids for each award touched"""
     ids_of_awards_created_or_updated = set()
     connection.ensure_connection()
-    with connection.connection.cursor(cursor_factory=DictCursor) as cursor:
+    with connection.connection.cursor(row_factory=dict_row) as cursor:
 
         # Handle transaction-to-award relationship for each transaction to be loaded
         for load_object in load_objects:
@@ -194,7 +200,7 @@ def _load_transactions(load_objects):
     return list(ids_of_awards_created_or_updated)
 
 
-def _matching_award(cursor, load_object):
+def _matching_award(cursor: Cursor, load_object: dict) -> Any | None:
     """Try to find an award for this transaction to belong to by unique_award_key"""
     find_matching_award_sql = "select id from vw_awards where generated_unique_award_id = '{}'".format(
         load_object["transaction_fpds"]["unique_award_key"]
@@ -204,7 +210,7 @@ def _matching_award(cursor, load_object):
     return results[0][0] if results else None
 
 
-def _lookup_existing_transaction(cursor, load_object):
+def _lookup_existing_transaction(cursor: Cursor, load_object: dict) -> Any | None:
     """find existing fpds transaction, if any"""
     find_matching_transaction_sql = (
         "select transaction_id from vw_transaction_fpds "
@@ -215,13 +221,13 @@ def _lookup_existing_transaction(cursor, load_object):
     return results[0][0] if results else None
 
 
-def _update_fpds_transaction(cursor, load_object, transaction_id):
+def _update_fpds_transaction(cursor: Cursor, load_object: dict, transaction_id: str | int) -> None:
     update_transaction_fpds(cursor, load_object)
     update_transaction_normalized(cursor, load_object)
     logger.debug("updated fpds transaction {}".format(transaction_id))
 
 
-def _insert_fpds_transaction(cursor, load_object):
+def _insert_fpds_transaction(cursor: Cursor, load_object: dict) -> Any:
     # transaction_normalized and transaction_fpds should be one-to-one
     transaction_normalized_id = insert_transaction_normalized(cursor, load_object)
 

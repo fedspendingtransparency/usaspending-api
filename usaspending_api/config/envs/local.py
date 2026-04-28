@@ -7,14 +7,15 @@
 # - Set config variables to DefaultConfig.USER_SPECIFIC_OVERRIDE where there is expected to be a
 #   user-provided a config value for a variable (e.g. in the ../.env file)
 ########################################################################################################################
-from typing import ClassVar
+from typing import Any, ClassVar
 
-from pydantic import root_validator
+from pydantic import model_validator
 from pydantic.types import SecretStr
-from usaspending_api.config.envs.default import DefaultConfig, _PROJECT_ROOT_DIR
+
+from usaspending_api.config.envs.default import _PROJECT_ROOT_DIR, DefaultConfig
 from usaspending_api.config.utils import (
-    USER_SPECIFIC_OVERRIDE,
     FACTORY_PROVIDED_VALUE,
+    USER_SPECIFIC_OVERRIDE,
     eval_default_factory_from_root_validator,
 )
 
@@ -50,13 +51,13 @@ class LocalConfig(DefaultConfig):
     USASPENDING_DB_PORT: str = "5432"
 
     # ==== [Postgres Broker] ====
-    BROKER_DB_USER: str = "admin"
-    BROKER_DB_PASSWORD: SecretStr = "root"
+    BROKER_DB_USER: str | None = "admin"
+    BROKER_DB_PASSWORD: SecretStr | None = "root"
 
     # Change to host.docker.internal if you are running a local Postgres. Otherwise leave as-is, so
     # Docker will use the Postgres created by Compose.
-    BROKER_DB_HOST: str = "dataact-broker-db"
-    BROKER_DB_PORT: str = "5432"
+    BROKER_DB_HOST: str | None = "dataact-broker-db"
+    BROKER_DB_PORT: str | None = "5432"
 
     # ==== [Elasticsearch] ====
     # Where to connect to elasticsearch.
@@ -90,20 +91,24 @@ class LocalConfig(DefaultConfig):
     USE_AWS: bool = False
     AWS_ACCESS_KEY: SecretStr = MINIO_ACCESS_KEY
     AWS_SECRET_KEY: SecretStr = MINIO_SECRET_KEY
-    AWS_PROFILE: str = None
-    AWS_REGION: str = ""
+    AWS_PROFILE: str | None = None
     SPARK_S3_BUCKET: str = "data"
     BULK_DOWNLOAD_S3_BUCKET_NAME: str = "bulk-download"
-    DATABASE_DOWNLOAD_S3_BUCKET_NAME = "dti-usaspending-db"
+    MONTHLY_DOWNLOAD_S3_BUCKET_NAME: str = "monthly-download"
+    DATABASE_DOWNLOAD_S3_BUCKET_NAME: str = "dti-usaspending-db"
 
     # Since this config values is built by composing others, we want to late/lazily-evaluate their values,
     # in case the declared value is overridden by a shell env var or .env file value
-    AWS_S3_ENDPOINT: str = FACTORY_PROVIDED_VALUE  # See below validator-based factory
+    AWS_S3_ENDPOINT: str | None = FACTORY_PROVIDED_VALUE  # See below validator-based factory
 
-    @root_validator
-    def _AWS_S3_ENDPOINT_factory(cls, values):
-        def factory_func():
-            return values["MINIO_HOST"] + ":" + values["MINIO_PORT"]
+    @model_validator(mode="before")
+    def _AWS_S3_ENDPOINT_factory(cls, values: dict[str, Any]) -> dict[str, Any]:
+        # Merge defaults into values
+        default_fields = {name: field.default for name, field in cls.model_fields.items()}
+        merged_values = {**default_fields, **values}
+
+        def factory_func() -> str:
+            return merged_values["MINIO_HOST"] + ":" + merged_values["MINIO_PORT"]
 
         return eval_default_factory_from_root_validator(cls, values, "AWS_S3_ENDPOINT", factory_func)
 

@@ -1,9 +1,8 @@
+# ruff: noqa
 import datetime
-
 from decimal import Decimal
 
 import pytest
-
 from django.conf import settings
 from django.core.management import call_command
 from django.db import connections
@@ -451,8 +450,10 @@ def test_delete(load_broker_data):
         "3620_-NONE-_18040416.0120635_64.012_-NONE-",
     )
     with connections[settings.DEFAULT_DB_ALIAS].cursor() as cursor:
-        cursor.execute(
-            f"SELECT COUNT(*) FROM {table} WHERE UPPER({transaction_unique_field}) IN %s", (deleted_transactions,)
+
+        cursor.cursor.execute(
+            f"SELECT COUNT(*) FROM {table} WHERE UPPER({transaction_unique_field}) = ANY(%s)",
+            [list(deleted_transactions)],
         )
         assert cursor.fetchall()[0][0] == len(deleted_transactions), "Transactions under test don't exist"
 
@@ -472,7 +473,7 @@ def test_delete(load_broker_data):
     update_delete_transactions = f"""
         UPDATE "{BROKER_TABLE}"
         SET is_active = False
-        WHERE UPPER({transaction_unique_field}) IN %s
+        WHERE UPPER({transaction_unique_field}) = ANY(%s)
     """
 
     with connections[settings.BROKER_DB_ALIAS].cursor() as cursor:
@@ -480,15 +481,16 @@ def test_delete(load_broker_data):
         cursor.execute(f"SELECT COUNT(*) FROM {BROKER_TABLE}")
         assert cursor.fetchall()[0][0] == NUMBER_OF_SOURCE_RECORDS + 4
 
-        cursor.execute(update_delete_transactions, (deleted_transactions,))
+        cursor.cursor.execute(update_delete_transactions, [list(deleted_transactions)])
 
     # Run deletions
     call_command("delete_assistance_records", "--skip-upload", "--date=2008-10-01")
 
     with connections[settings.DEFAULT_DB_ALIAS].cursor() as cursor:
         # Validate that the deleted records have been removed
-        cursor.execute(
-            f"SELECT COUNT(*) FROM {table} WHERE UPPER({transaction_unique_field}) IN %s", (deleted_transactions,)
+        cursor.cursor.execute(
+            f"SELECT COUNT(*) FROM {table} WHERE UPPER({transaction_unique_field}) = ANY(%s)",
+            [list(deleted_transactions)],
         )
         assert cursor.fetchall()[0][0] == 0, "Failed to delete transactions"
 
