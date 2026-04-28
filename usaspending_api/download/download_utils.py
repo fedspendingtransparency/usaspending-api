@@ -70,7 +70,7 @@ def obtain_filename_prefix_from_agency_id(request_agency: int | str) -> str:
             toptier_agency_filter = ToptierAgency.objects.filter(toptier_agency_id=request_agency).first()
             field = "toptier_code"
         else:
-            toptier_agency_filter = ToptierAgency.objects.get(abbreviation=request_agency)
+            toptier_agency_filter = ToptierAgency.objects.exists(abbreviation=request_agency)
             field = "abbreviation"
         if toptier_agency_filter:
             result = getattr(toptier_agency_filter, field)
