@@ -88,7 +88,7 @@ Generate files and return metadata using filters on custom account
 
 ## AdvancedFilterObject (object)
 + `agency` (optional, string)
-    The agency on which to filter.  This field expects an internal toptier agency identifier also known as the `toptier_agency_id`.
+    The agency on which to filter.  This field expects either an internal toptier agency identifier, also known as the `toptier_agency_id`, or an agency `abbreviation` (`DOJ`, `NRC`, etc.).  If the string submitted contains only numbers, it will search for a matching `toptier_agency_id`.  Otherwise, it will search for a matching `abbreviation`.
     + Default: `all`
 + `budget_function` (optional, string)
     The budget function code on which to filter.
