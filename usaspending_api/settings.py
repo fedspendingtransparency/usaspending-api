@@ -167,8 +167,14 @@ DATA_DICTIONARY_DOWNLOAD_URL = (
 )
 
 # S3 Bucket and Key to retrieve the Data Dictionary
-DATA_DICTIONARY_S3_BUCKET_NAME = f"dti-da-public-files-{'nonprod' if CONFIG.ENV_CODE not in ('prd', 'stg') else 'prod'}"
-DATA_DICTIONARY_S3_KEY = f"user_reference_docs/{DATA_DICTIONARY_FILE_NAME}"
+DATA_DICTIONARY_S3_BUCKET_NAME = os.environ.get(
+    "DATA_DICTIONARY_S3_BUCKET_NAME",
+    f"dti-da-public-files-{'nonprod' if CONFIG.ENV_CODE not in ('prd', 'stg') else 'prod'}"
+)
+DATA_DICTIONARY_S3_KEY = os.environ.get(
+    "DATA_DICTIONARY_S3_BUCKET_NAME",
+    f"user_reference_docs/{DATA_DICTIONARY_FILE_NAME}"
+)
 
 # Local download files
 IDV_DOWNLOAD_README_FILE_PATH = str(APP_DIR / "data" / "idv_download_readme.txt")
@@ -434,6 +440,36 @@ console_log_file_path = logs_dir / "console.log"
 logs_dir.mkdir(parents=True, exist_ok=True)
 console_log_file_path.touch(exist_ok=True)
 
+# Logging settings adjusted based on env
+fapc = os.environ.get("FAPC", "")
+
+if fapc:
+    server_handler = {
+        "level": "DEBUG",
+        "class": "logging.StreamHandler",
+        "stream": "ext://sys.stdout",
+        "formatter": "user_readable"
+    }
+    console_file_handler = {
+        "level": "DEBUG",
+        "class": "logging.StreamHandler",
+        "stream": "ext://sys.stdout",
+        "formatter": "specifics"
+    }
+else:
+    server_handler = {
+        "level": "DEBUG",
+        "class": "logging.handlers.WatchedFileHandler",
+        "filename": str(APP_DIR / "logs" / "server.log"),
+        "formatter": "user_readable",
+    }
+    console_file_handler = {
+        "level": "DEBUG",
+        "class": "logging.handlers.WatchedFileHandler",
+        "filename": str(APP_DIR / "logs" / "console.log"),
+        "formatter": "specifics",
+    }
+
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
@@ -460,18 +496,8 @@ LOGGING = {
         },
     },
     "handlers": {
-        "server": {
-            "level": "DEBUG",
-            "class": "logging.handlers.WatchedFileHandler",
-            "filename": str(APP_DIR / "logs" / "server.log"),
-            "formatter": "user_readable",
-        },
-        "console_file": {
-            "level": "DEBUG",
-            "class": "logging.handlers.WatchedFileHandler",
-            "filename": str(APP_DIR / "logs" / "console.log"),
-            "formatter": "specifics",
-        },
+        "server": server_handler,
+        "console_file": console_file_handler,
         "console": {
             "level": "DEBUG",
             "class": "logging.StreamHandler",
