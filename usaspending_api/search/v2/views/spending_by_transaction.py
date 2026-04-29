@@ -80,7 +80,7 @@ class SpendingByTransactionVisualizationViewSet(APIView):
     )
 
     @cache_response()
-    def post(self, request: Request) -> Response:  # noqa: PLR0912, PLR0915
+    def post(self, request: Request) -> Response:  # noqa: PLR0912, PLR0915, C901
         all_fields = [
             *[enum_val.value for enum_val in TransactionField],
             *[enum_val.value for enum_val in DerivedField],
@@ -202,6 +202,8 @@ class SpendingByTransactionVisualizationViewSet(APIView):
                 ]
             case _:
                 sort_by_fields = [TransactionField(payload_sort_key).full_path]
+        if sort_by_fields[0] == "type_description":
+            sort_by_fields[0] = "type_description.keyword"
         sorts = [{field: validated_payload["order"] for field in sort_by_fields}]
         for sort_dict in sorts:
             key = next(iter(sort_dict))
