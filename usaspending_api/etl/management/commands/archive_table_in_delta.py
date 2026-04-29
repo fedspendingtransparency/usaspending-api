@@ -23,8 +23,8 @@ logger = logging.getLogger(__name__)
 TABLE_SPEC = {
     "download_job": TableSpec(
         destination_database="arc",
-        destination_table="download_job",
-        archive_date_field="update_date",
+        destination_table_name="download_job",
+        archive_data_field="update_date",
         source_table="download_job",
         source_database="public",
         delta_table_create_sql=download_job_create_sql_string,
