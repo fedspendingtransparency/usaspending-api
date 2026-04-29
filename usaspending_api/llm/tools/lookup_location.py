@@ -11,7 +11,7 @@ from usaspending_api.llm.models.py_models import AIToolDescription, AITool
 class LocationLookupTool:
     """Tool for looking up locations in OpenSearch"""
 
-    def lookup_location(self, query: str, location_type: str | None = None, top_k: int = 5) -> list[dict[str, Any]]:
+    def lookup_location(self, query: str, location_type: str | None = None, top_k: int = 15) -> list[dict[str, Any]]:
         query_upper = query.upper()
 
         # Build search query leveraging your custom analyzers
@@ -38,7 +38,7 @@ class LocationLookupTool:
             return {"error": f"OpenSearch query failed: {str(e)}", "results": []}
 
         # Transform results to SelectedLocation format
-        results = []
+        results = {}
         for hit in response["hits"]["hits"]:
             try:
                 location_obj = self._transform_to_selected_location(
@@ -47,7 +47,7 @@ class LocationLookupTool:
                     hit["_source"]["location_type"],
                     hit["_score"],
                 )
-                results.append(location_obj)
+                results[location_obj["identifier"]] = location_obj
             except Exception as e:
                 # Skip malformed results
                 continue

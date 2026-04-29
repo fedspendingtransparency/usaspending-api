@@ -1,18 +1,23 @@
 import requests
 
+from pydantic import ValidationError
+
 from usaspending_api.llm.models.py_models import (
     AITool,
     AIToolDescription,
     FilterRequest,
     Filters,
-    SelectedLocation,
-    LocationFilter,
-    LocationDisplay,
 )
 
 
 def advanced_search(**kwargs):
-    filters = Filters(**kwargs)
+    try:
+        filters = Filters(**kwargs)
+    except ValidationError as e:
+        return {
+            "error": str(e),
+            "message": "The input parameters are invalid.  Look at the error message and try again.",
+        }
     filter_request = FilterRequest(filters=filters).model_dump(exclude_none=True)
     if "keyword" in filter_request["filters"]:
         updated_keyword = {v: v for v in filter_request["filters"]["keyword"]}
@@ -32,10 +37,12 @@ create_advanced_search_filter = AITool(
         description="""
             This tool performs a search of the USASpending website for federal contracts and assistance.
             Use the keywords parameter to search for spending related to specific topics.
+            Do not include locations in the keyword filter.
             If the search requires a selected locations parameter you MUST first use the 
             `lookup_location` tool to get a valid location object.  Use this to populate each selected location filter property.
             Use as many parameters as necessary to filter the results to the user's intent.
             This tool return a list of federal contracts and awards filtered by the input parameters.
+            Do not populate the time period or time period FY unless the user query references a time period. 
         """,
         input_schema=Filters.model_json_schema(),
     ),

@@ -1,5 +1,6 @@
 import json
 import logging
+from datetime import datetime
 from typing import Generator
 
 from django.http import StreamingHttpResponse
@@ -28,6 +29,8 @@ class StreamingSearchView(APIView):
 
         ai_model = AIModel.objects.get(name="nova micro")
         system_prompt = Prompts.objects.get(id=1)
+        current_date_prompt = f"\n The current date is {datetime.today().strftime('%Y-%m-%d')}"
+        system_prompt.description += current_date_prompt
         session = Session.objects.create(
             ai_model=ai_model,
             system_prompt=system_prompt,
@@ -50,9 +53,6 @@ class StreamingSearchView(APIView):
         self, session: Session, search_query: LLMSearchQuery, query_text: str, ai_model: AIModel
     ) -> Generator[str, None, None]:
 
-        message_order = 0
-        current_message = None
-
         try:
             # Send initial event
             yield self.format_sse(
@@ -64,14 +64,11 @@ class StreamingSearchView(APIView):
                 }
             )
 
-            # Create user message
-            user_message = Message.objects.create(session=session, role="user", message=query_text, order=message_order)
-            message_order += 1
-
             # Create streaming assistant
             assistant = SearchAssistant(
                 model=ai_model,
                 tools=[create_advanced_search_filter, lookup_location_tool],
+                session=session,
                 system_message=session.system_prompt.text if session.system_prompt else None,
             )
 

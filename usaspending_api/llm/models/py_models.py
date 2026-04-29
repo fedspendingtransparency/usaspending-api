@@ -1,6 +1,6 @@
 from typing import Annotated, Any, Callable, Literal
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field, model_validator, field_validator
 
 
 class AIToolDescription(BaseModel):
@@ -222,7 +222,42 @@ class Filters(BaseModel):
     selectedRecipientLocations: dict[str, Any] = Field(default_factory=dict)
     awardType: list[str] = Field(default_factory=list)
     selectedAwardIDs: dict[str, Any] = Field(default_factory=dict)
-    awardAmounts: dict[str, list[int]] = Field(default_factory=dict)
+    awardAmounts: dict[str, list[int | None]] = Field(
+        default_factory=dict,
+        description=(
+            "Dictionary of award amount ranges for filtering. "
+            "Each value is a two-element list: [min_amount, max_amount]. "
+            "Use `None` for unbounded ranges.\n\n"
+            "TWO MUTUALLY EXCLUSIVE MODES:\n\n"
+            "MODE 1 - STANDARD RANGES (can select multiple):\n"
+            "- 'range-0': [None, 1000000] - Awards up to $1M\n"
+            "- 'range-1': [1000000, 25000000] - Awards $1M to $25M\n"
+            "- 'range-2': [25000000, 100000000] - Awards $25M to $100M\n"
+            "- 'range-3': [100000000, 500000000] - Awards $100M to $500M\n"
+            "- 'range-4': [500000000, None] - Awards over $500M\n\n"
+            "MODE 2 - SPECIFIC RANGE (must be alone):\n"
+            "- 'specific': [min, max] - Specify exact dollar amounts\n\n"
+            "CRITICAL RULES:\n"
+            "1. You can use multiple standard ranges together (range-0 through range-4)\n"
+            "2. You can use ONE specific range with specific min/max values\n"
+            "3. NEVER mix standard ranges with specific range\n"
+            "4. When using 'specific', it must be the ONLY key in the dictionary"
+        ),
+        json_schema_extra={
+            "examples": [
+                # Example 1: Multiple standard ranges
+                {"range-0": [None, 1000000], "range-2": [25000000, 100000000]},
+                # Example 2: Single standard range
+                {"range-3": [100000000, 500000000]},
+                # Example 3: Custom range with both bounds
+                {"specific": [5000000, 50000000]},
+                # Example 4: Custom range unbounded above
+                {"specific": [10000000, None]},
+                # Example 5: Custom range unbounded below
+                {"specific": [None, 75000000]},
+            ]
+        },
+    )
     selectedCFDA: dict[str, Any] = Field(default_factory=dict)
     naicsCodes: CodeLists = Field(default_factory=CodeLists)
     pscCodes: CodeLists = Field(default_factory=CodeLists)
