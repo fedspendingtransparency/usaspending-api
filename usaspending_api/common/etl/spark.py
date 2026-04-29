@@ -953,9 +953,11 @@ def rename_part_files_threaded(
                 full_file_paths.append(new_path)
 
     if failed_count > 0:
-        logger.info(
-            f"Renamed completed with errors: {len(full_file_paths)} succeeded, {failed_count} failed out of {total_files} total"
-        )
+        logger.info(f"""
+            Renamed completed with errors.\n
+            {len(full_file_paths)} succeeded\n
+            {failed_count} failed out of {total_files} total
+        """)
         raise Exception(f"Failed to rename {failed_count} part files")
     else:
         logger.info(f"Renamed all part files in {(time.perf_counter() - start_time):3f}s")

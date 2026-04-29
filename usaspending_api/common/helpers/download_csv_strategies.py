@@ -170,7 +170,7 @@ class SparkToCSVStrategy(AbstractToCSVStrategy):
 
         self.spark = None
         destination_path_dir = str(destination_path).replace(f"/{destination_file_name}", "")
- 
+
         # The place to write intermediate data files to in s3
         s3_bucket_name = CONFIG.BULK_DOWNLOAD_S3_BUCKET_NAME
         s3_bucket_path = f"s3a://{s3_bucket_name}"
@@ -249,7 +249,7 @@ class SparkToCSVStrategy(AbstractToCSVStrategy):
             bucket_name: The name of the bucket in s3 where file_names and s3_path are
             s3_file_path: A file path to move from s3, name should include s3a:// and bucket name
             s3_bucket_path: The bucket path, e.g. s3a:// + bucket name
-            s3_bucket_sub_path: The path to the s3 files in the bucket, exluding s3a:// + bucket name, e.g. temp_directory/files
+            s3_bucket_sub_path: The path to the s3 files in the bucket, exluding s3a:// + bucket name
             destination_path_dir: The location to move those files from s3 to, must not include the
                 file name in the path. This path should be a directory.
 
