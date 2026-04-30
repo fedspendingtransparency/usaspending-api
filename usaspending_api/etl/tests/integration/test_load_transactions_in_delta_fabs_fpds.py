@@ -5,22 +5,28 @@ NOTE: Uses Pytest Fixtures from immediate parent conftest.py: usaspending_api/et
 
 from copy import deepcopy
 from datetime import datetime, timedelta, timezone
+
 from django.core.management import call_command
 from model_bakery import baker
 from pytest import mark
 
 from usaspending_api.broker.helpers.last_load_date import get_last_load_date, update_last_load_date
-from usaspending_api.etl.tests.integration.test_load_to_from_delta import load_delta_table_from_postgres, equal_datasets
+from usaspending_api.config import CONFIG
+from usaspending_api.etl.management.commands.load_table_to_delta import TABLE_SPEC
+from usaspending_api.etl.tests.integration.test_load_to_from_delta import equal_datasets, load_delta_table_from_postgres
 from usaspending_api.etl.tests.integration.test_load_transactions_in_delta_lookups import (
     _BEGINNING_OF_TIME,
     _INITIAL_SOURCE_TABLE_LOAD_DATETIME,
     _InitialRunWithPostgresLoader,
     _TableLoadInfo,
-    TestInitialRun as InitialRun,  # Remove 'test' prefix to avoid pytest running these tests twice
-    TestInitialRunNoPostgresLoader as InitialRunNoPostgresLoader,  # Remove 'test' prefix to avoid pytest running these tests twice
 )
-from usaspending_api.config import CONFIG
-from usaspending_api.etl.management.commands.load_table_to_delta import TABLE_SPEC
+from usaspending_api.etl.tests.integration.test_load_transactions_in_delta_lookups import (
+    TestInitialRun as InitialRun,  # Remove 'test' prefix to avoid pytest running these tests twice
+)
+from usaspending_api.etl.tests.integration.test_load_transactions_in_delta_lookups import (
+    # Remove 'test' prefix to avoid pytest running these tests twice
+    TestInitialRunNoPostgresLoader as InitialRunNoPostgresLoader,
+)
 
 
 class _TransactionFabsFpdsCore:
@@ -60,7 +66,7 @@ class _TransactionFabsFpdsCore:
         self.spark.sql(f"create database if not exists {raw_db};")
         self.spark.sql(f"use {raw_db};")
         self.spark.sql(
-            TABLE_SPEC["published_fabs"]["delta_table_create_sql"].format(
+            TABLE_SPEC["published_fabs"].delta_table_create_sql.format(
                 DESTINATION_TABLE="published_fabs",
                 DESTINATION_DATABASE=raw_db,
                 SPARK_S3_BUCKET=self.s3_data_bucket,
@@ -68,7 +74,7 @@ class _TransactionFabsFpdsCore:
             )
         )
         self.spark.sql(
-            TABLE_SPEC["detached_award_procurement"]["delta_table_create_sql"].format(
+            TABLE_SPEC["detached_award_procurement"].delta_table_create_sql.format(
                 DESTINATION_TABLE="detached_award_procurement",
                 DESTINATION_DATABASE=raw_db,
                 SPARK_S3_BUCKET=self.s3_data_bucket,
@@ -383,14 +389,16 @@ class _TransactionFabsFpdsCore:
         assert equal_datasets(expected_transaction_id_lookup, delta_data, "")
 
         # Verify country code scalar transformation
-        query = f"SELECT DISTINCT legal_entity_country_code, place_of_perform_country_c FROM int.{self.etl_level} WHERE {self.pk_field} = 4 OR {self.pk_field} = 5"
+        query = f"SELECT DISTINCT legal_entity_country_code, place_of_perform_country_c FROM int.{self.etl_level} "
+        query = query + f"WHERE {self.pk_field} = 4 OR {self.pk_field} = 5"
         delta_data = [row.asDict() for row in self.spark.sql(query).collect()]
         assert len(delta_data) == 1
         assert delta_data[0]["legal_entity_country_code"] == "USA"
         assert delta_data[0]["place_of_perform_country_c"] == "USA"
 
         # Verify country name scalar transformation
-        query = f"SELECT DISTINCT legal_entity_country_name, place_of_perform_country_n FROM int.{self.etl_level} WHERE {self.pk_field} = 4 OR {self.pk_field} = 5"
+        query = f"SELECT DISTINCT legal_entity_country_name, place_of_perform_country_n FROM int.{self.etl_level} "
+        query = query + f"WHERE {self.pk_field} = 4 OR {self.pk_field} = 5"
         delta_data = [row.asDict() for row in self.spark.sql(query).collect()]
         assert len(delta_data) == 1
         assert delta_data[0]["legal_entity_country_name"] == "UNITED STATES"
