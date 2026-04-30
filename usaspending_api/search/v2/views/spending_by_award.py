@@ -17,6 +17,7 @@ from pydantic import BaseModel, Field, ValidationError, model_validator
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from typing_extensions import Self
 
 from usaspending_api.awards.models import Award
 from usaspending_api.awards.v2.filters.sub_award import subaward_filter
@@ -191,7 +192,7 @@ class SpendingByAwardRequest(BaseModel):
     spending_level: Literal["awards", "subawards"] | None = None
 
     @model_validator(mode="after")
-    def set_spending_level_default(self):
+    def set_spending_level_default(self: Self) -> Self:
         # If `spending_level` not provided, derive from `subawards`
         if self.spending_level is None:
             self.spending_level = "subawards" if self.subawards else "awards"
