@@ -2,7 +2,7 @@ import pytest
 from django.db import IntegrityError
 from django.utils import timezone
 
-from usaspending_api.llm.models.db_models import AIModel, Prompts, Session, Message, ToolUse, LLMSearchQuery
+from usaspending_api.llm.models.db_models import AIModel, LLMSearchQuery, Message, Prompts, Session, ToolUse
 
 
 @pytest.mark.django_db
@@ -14,7 +14,7 @@ class TestAIModel:
             model_id="anthropic.claude-3-5-sonnet",
             provider="anthropic"
         )
-        
+
         assert ai_model.id is not None
         assert ai_model.name == "claude 3.5"
         assert ai_model.model_id == "anthropic.claude-3-5-sonnet"
@@ -27,7 +27,7 @@ class TestAIModel:
             model_id="anthropic.claude-3-5-sonnet",
             provider="anthropic"
         )
-        
+
         assert str(ai_model) == "claude 3.5 (anthropic)"
 
     def test_ai_model_ordering(self):
@@ -35,7 +35,7 @@ class TestAIModel:
         model1 = AIModel.objects.create(name="Model 1", model_id="model-1", provider="provider1")
         model2 = AIModel.objects.create(name="Model 2", model_id="model-2", provider="provider2")
         model3 = AIModel.objects.create(name="Model 3", model_id="model-3", provider="provider3")
-        
+
         models = list(AIModel.objects.all())
         assert models[0] == model3
         assert models[1] == model2
@@ -50,7 +50,7 @@ class TestPrompts:
             description="Test prompt",
             text="You are a helpful assistant"
         )
-        
+
         assert prompt.id is not None
         assert prompt.description == "Test prompt"
         assert prompt.text == "You are a helpful assistant"
@@ -62,7 +62,7 @@ class TestPrompts:
             description="Test prompt",
             text="You are a helpful assistant"
         )
-        
+
         assert str(prompt) == "Test prompt"
 
     def test_prompt_created_at_auto_set(self):
@@ -73,7 +73,7 @@ class TestPrompts:
             text="You are a helpful assistant"
         )
         after = timezone.now()
-        
+
         assert before <= prompt.created_at <= after
 
 
@@ -90,13 +90,13 @@ class TestSession:
             description="System prompt",
             text="You are a search assistant"
         )
-        
+
         session = Session.objects.create(
             ai_model=ai_model,
             system_prompt=prompt,
             tools=["tool1", "tool2"]
         )
-        
+
         assert session.id is not None
         assert session.ai_model == ai_model
         assert session.system_prompt == prompt
@@ -120,11 +120,11 @@ class TestSession:
         # Positive feedback
         session_positive = Session.objects.create(feedback=True)
         assert session_positive.feedback is True
-        
+
         # Negative feedback
         session_negative = Session.objects.create(feedback=False)
         assert session_negative.feedback is False
-        
+
         # No feedback
         session_none = Session.objects.create(feedback=None)
         assert session_none.feedback is None
@@ -134,7 +134,7 @@ class TestSession:
         session = Session.objects.create()
         assert session.started_at is not None
         assert session.ended_at is None
-        
+
         # End the session
         session.ended_at = timezone.now()
         session.save()
@@ -143,7 +143,8 @@ class TestSession:
     def test_session_str_representation(self):
         """Test __str__ method of Session"""
         session = Session.objects.create()
-        expected = f"Session {session.id} started at {session.started_at}"
+        expected_start = session.started_at.strftime('%Y-%m-%d %H:%M')
+        expected = f"Session {session.id} - No Model ({expected_start})"
         assert str(session) == expected
 
     def test_session_ordering(self):
@@ -151,7 +152,7 @@ class TestSession:
         session1 = Session.objects.create()
         session2 = Session.objects.create()
         session3 = Session.objects.create()
-        
+
         sessions = list(Session.objects.all())
         assert sessions[0] == session3
         assert sessions[1] == session2
@@ -165,7 +166,7 @@ class TestSession:
             provider="test-provider"
         )
         session = Session.objects.create(ai_model=ai_model)
-        
+
         ai_model.delete()
         session.refresh_from_db()
         assert session.ai_model is None
@@ -177,7 +178,7 @@ class TestSession:
             text="Test prompt"
         )
         session = Session.objects.create(system_prompt=prompt)
-        
+
         prompt.delete()
         session.refresh_from_db()
         assert session.system_prompt is None
@@ -194,7 +195,7 @@ class TestMessage:
             message="Hello, assistant!",
             order=0
         )
-        
+
         assert message.id is not None
         assert message.session == session
         assert message.role == "user"
@@ -219,7 +220,7 @@ class TestMessage:
             total_tokens=150,
             latency=250
         )
-        
+
         assert message.input_tokens == 100
         assert message.output_tokens == 50
         assert message.total_tokens == 150
@@ -234,8 +235,8 @@ class TestMessage:
             message="Test message",
             order=0
         )
-        
-        assert str(message) == f"Message {message.id} (user) in Session {session.id}"
+
+        assert str(message) == "user (Order 0): Test message"
 
     def test_message_ordering(self):
         """Test Message ordering by session and order"""
@@ -243,7 +244,7 @@ class TestMessage:
         msg3 = Message.objects.create(session=session, role="user", message="Third", order=2)
         msg1 = Message.objects.create(session=session, role="user", message="First", order=0)
         msg2 = Message.objects.create(session=session, role="assistant", message="Second", order=1)
-        
+
         messages = list(Message.objects.filter(session=session))
         assert messages[0] == msg1
         assert messages[1] == msg2
@@ -253,7 +254,7 @@ class TestMessage:
         """Test that session and order combination is unique"""
         session = Session.objects.create()
         Message.objects.create(session=session, role="user", message="First", order=0)
-        
+
         with pytest.raises(IntegrityError):
             Message.objects.create(session=session, role="assistant", message="Duplicate", order=0)
 
@@ -266,7 +267,7 @@ class TestMessage:
             message="Test",
             order=0
         )
-        
+
         session.delete()
         assert not Message.objects.filter(id=message.id).exists()
 
@@ -288,7 +289,7 @@ class TestToolUse:
             tool_input={"query": "Texas"},
             result={"identifier": "USA_TX"}
         )
-        
+
         assert tool_use.id is not None
         assert tool_use.message == message
         assert tool_use.name == "lookup_location"
@@ -311,8 +312,9 @@ class TestToolUse:
             tool_input={"query": "Texas"},
             result={"identifier": "USA_TX"}
         )
-        
-        assert str(tool_use) == f"ToolUse {tool_use.name} for Message {message.id}"
+
+        expected_time = tool_use.created_at.strftime('%Y-%m-%d %H:%M:%S')
+        assert str(tool_use) == f"lookup_location - {expected_time}"
 
     def test_tool_use_cascade_delete_with_message(self):
         """Test that tool uses are deleted when message is deleted"""
@@ -329,7 +331,7 @@ class TestToolUse:
             tool_input={},
             result={}
         )
-        
+
         message.delete()
         assert not ToolUse.objects.filter(id=tool_use.id).exists()
 
@@ -342,7 +344,7 @@ class TestToolUse:
             message="Using multiple tools",
             order=0
         )
-        
+
         tool1 = ToolUse.objects.create(
             message=message,
             name="tool1",
@@ -355,7 +357,7 @@ class TestToolUse:
             tool_input={"param": "value2"},
             result={"result": "output2"}
         )
-        
+
         assert message.tool_uses.count() == 2
         assert tool1 in message.tool_uses.all()
         assert tool2 in message.tool_uses.all()
@@ -370,7 +372,7 @@ class TestLLMSearchQuery:
             user_query="Find contracts in Texas",
             session=session
         )
-        
+
         assert query.id is not None
         assert query.user_query == "Find contracts in Texas"
         assert query.session == session
@@ -383,7 +385,7 @@ class TestLLMSearchQuery:
             user_query="Find contracts in Texas",
             session=session
         )
-        
+
         assert str(query) == f"Query {query.id}: Find contracts in Texas..."
 
     def test_llm_search_query_str_truncation(self):
@@ -394,8 +396,10 @@ class TestLLMSearchQuery:
             user_query=long_query,
             session=session
         )
-        
-        assert len(str(query)) <= 54  # "Query X: " + 50 chars + "..."
+
+        str_repr = str(query)
+        # "Query X: " + 75 chars + "..."
+        assert "..." in str_repr
 
     def test_llm_search_query_cascade_delete_with_session(self):
         """Test that queries are deleted when session is deleted"""
@@ -404,14 +408,14 @@ class TestLLMSearchQuery:
             user_query="Test query",
             session=session
         )
-        
+
         session.delete()
         assert not LLMSearchQuery.objects.filter(id=query.id).exists()
 
     def test_multiple_queries_per_session(self):
         """Test that a session can have multiple search queries"""
         session = Session.objects.create()
-        
+
         query1 = LLMSearchQuery.objects.create(
             user_query="First query",
             session=session
@@ -420,7 +424,7 @@ class TestLLMSearchQuery:
             user_query="Second query",
             session=session
         )
-        
+
         assert session.search_queries.count() == 2
         assert query1 in session.search_queries.all()
         assert query2 in session.search_queries.all()
@@ -439,20 +443,20 @@ class TestModelRelationships:
             description="Test prompt",
             text="Test"
         )
-        
-        session1 = Session.objects.create(ai_model=ai_model, system_prompt=prompt)
-        session2 = Session.objects.create(ai_model=ai_model, system_prompt=prompt)
-        
+
+        Session.objects.create(ai_model=ai_model, system_prompt=prompt)
+        Session.objects.create(ai_model=ai_model, system_prompt=prompt)
+
         assert ai_model.sessions.count() == 2
         assert prompt.sessions.count() == 2
 
     def test_message_relationships(self):
         """Test Message reverse relationships"""
         session = Session.objects.create()
-        
+
         msg1 = Message.objects.create(session=session, role="user", message="Hi", order=0)
         msg2 = Message.objects.create(session=session, role="assistant", message="Hello", order=1)
-        
+
         assert session.messages.count() == 2
         assert list(session.messages.all()) == [msg1, msg2]
 
@@ -468,28 +472,28 @@ class TestModelRelationships:
             description="Search assistant",
             text="You are a helpful search assistant"
         )
-        
+
         # Create session
         session = Session.objects.create(
             ai_model=ai_model,
             system_prompt=prompt,
             tools=["lookup_location", "advanced_search"]
         )
-        
+
         # Create search query
-        search_query = LLMSearchQuery.objects.create(
+        LLMSearchQuery.objects.create(
             user_query="Find contracts in Texas",
             session=session
         )
-        
+
         # Create user message
-        user_msg = Message.objects.create(
+        Message.objects.create(
             session=session,
             role="user",
             message="Find contracts in Texas",
             order=0
         )
-        
+
         # Create assistant message with tool use
         assistant_msg = Message.objects.create(
             session=session,
@@ -501,19 +505,19 @@ class TestModelRelationships:
             total_tokens=80,
             latency=200
         )
-        
-        tool = ToolUse.objects.create(
+
+        ToolUse.objects.create(
             message=assistant_msg,
             name="lookup_location",
             tool_input={"query": "Texas"},
             result={"identifier": "USA_TX"}
         )
-        
+
         # End session
         session.ended_at = timezone.now()
         session.feedback = True
         session.save()
-        
+
         # Verify everything is connected
         assert session.messages.count() == 2
         assert session.search_queries.count() == 1

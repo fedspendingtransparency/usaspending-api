@@ -13,6 +13,7 @@ class AIModel(models.Model):
         db_table = "ai_model"
         ordering = ["-id"]
 
+
 class Prompts(models.Model):
     description = models.TextField()
     text = models.TextField()
@@ -34,8 +35,9 @@ class Session(models.Model):
     feedback = models.BooleanField(default=None, null=True, blank=True, help_text="positive=True, negative=False")
 
     def __str__(self):
-        return f"Session {self.id} - {self.ai_model.name if self.ai_model else 'No Model'} ({self.started_at.strftime('%Y-%m-%d %H:%M')})"
-
+        model_name = self.ai_model.name if self.ai_model else 'No Model'
+        timestamp = self.started_at.strftime('%Y-%m-%d %H:%M')
+        return f"Session {self.id} - {model_name} ({timestamp})"
 
     class Meta:
         db_table = "session"
@@ -81,7 +83,6 @@ class ToolUse(models.Model):
     def __str__(self):
         return f"{self.name} - {self.created_at.strftime('%Y-%m-%d %H:%M:%S')}"
 
-
     class Meta:
         db_table = "tool_use"
         ordering = ["created_at"]
@@ -89,6 +90,7 @@ class ToolUse(models.Model):
             models.Index(fields=["name"]),
             models.Index(fields=["created_at"]),
         ]
+
 
 class LLMSearchQuery(models.Model):
     user_query = models.TextField()
@@ -98,7 +100,6 @@ class LLMSearchQuery(models.Model):
     def __str__(self):
         preview = self.user_query[:75] + "..." if len(self.user_query) > 75 else self.user_query
         return f"Query {self.id}: {preview}"
-
 
     class Meta:
         db_table = "llm_search_query"

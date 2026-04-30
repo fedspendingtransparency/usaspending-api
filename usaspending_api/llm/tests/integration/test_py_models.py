@@ -2,19 +2,19 @@ import pytest
 from pydantic import ValidationError
 
 from usaspending_api.llm.models.py_models import (
-    AIToolDescription,
     AITool,
-    LocationFilter,
-    LocationDisplay,
-    SelectedLocation,
-    TimePeriod,
-    ToptierAgency,
-    SubtierAgency,
-    SelectedAgency,
+    AIToolDescription,
     CodeLists,
-    Filters,
     FilterRequest,
     FilterResponse,
+    Filters,
+    LocationDisplay,
+    LocationFilter,
+    SelectedAgency,
+    SelectedLocation,
+    SubtierAgency,
+    TimePeriod,
+    ToptierAgency,
 )
 
 
@@ -26,7 +26,7 @@ class TestAIToolDescription:
             description="A test tool",
             input_schema={"type": "object", "properties": {}}
         )
-        
+
         assert tool_desc.name == "test_tool"
         assert tool_desc.description == "A test tool"
         assert tool_desc.input_schema == {"type": "object", "properties": {}}
@@ -42,18 +42,18 @@ class TestAITool:
         """Test creating an AITool"""
         def test_function():
             return "result"
-        
+
         tool_desc = AIToolDescription(
             name="test_tool",
             description="A test tool",
             input_schema={}
         )
-        
+
         tool = AITool(
             description=tool_desc,
             function=test_function
         )
-        
+
         assert tool.description == tool_desc
         assert tool.function() == "result"
         assert callable(tool.logging)
@@ -63,7 +63,7 @@ class TestLocationFilter:
     def test_create_location_filter_defaults(self):
         """Test LocationFilter with default values"""
         loc_filter = LocationFilter()
-        
+
         assert loc_filter.country == "USA"
         assert loc_filter.state is None
         assert loc_filter.county is None
@@ -75,7 +75,7 @@ class TestLocationFilter:
     def test_create_location_filter_state(self):
         """Test LocationFilter for a state"""
         loc_filter = LocationFilter(country="USA", state="TX")
-        
+
         assert loc_filter.country == "USA"
         assert loc_filter.state == "TX"
 
@@ -86,7 +86,7 @@ class TestLocationFilter:
             state="IL",
             city="CHICAGO"
         )
-        
+
         assert loc_filter.country == "USA"
         assert loc_filter.state == "IL"
         assert loc_filter.city == "CHICAGO"
@@ -94,7 +94,7 @@ class TestLocationFilter:
     def test_create_location_filter_zip(self):
         """Test LocationFilter for a zip code"""
         loc_filter = LocationFilter(country="USA", zip="66208")
-        
+
         assert loc_filter.country == "USA"
         assert loc_filter.zip == "66208"
 
@@ -107,7 +107,7 @@ class TestLocationDisplay:
             standalone="Texas",
             title="TEXAS"
         )
-        
+
         assert display.entity == "State"
         assert display.standalone == "Texas"
         assert display.title == "TEXAS"
@@ -120,7 +120,7 @@ class TestLocationDisplay:
             "Original congressional district",
             "Zip code"
         ]
-        
+
         for entity in valid_entities:
             display = LocationDisplay(
                 entity=entity,
@@ -151,7 +151,7 @@ class TestSelectedLocation:
                 title="TEXAS"
             )
         )
-        
+
         assert location.identifier == "USA_TX"
         assert location.filter.state == "TX"
         assert location.display.standalone == "Texas"
@@ -164,7 +164,7 @@ class TestTimePeriod:
             start_date="2023-01-01",
             end_date="2023-12-31"
         )
-        
+
         assert period.start_date == "2023-01-01"
         assert period.end_date == "2023-12-31"
 
@@ -183,7 +183,7 @@ class TestToptierAgency:
             abbreviation="HHS",
             name="Department of Health and Human Services"
         )
-        
+
         assert agency.id == 1
         assert agency.toptier_code == "075"
         assert agency.abbreviation == "HHS"
@@ -197,7 +197,7 @@ class TestSubtierAgency:
             abbreviation="CDC",
             name="Centers for Disease Control and Prevention"
         )
-        
+
         assert agency.abbreviation == "CDC"
         assert agency.name == "Centers for Disease Control and Prevention"
 
@@ -220,7 +220,7 @@ class TestSelectedAgency:
             ),
             agencyType="awarding"
         )
-        
+
         assert agency.id == 1
         assert agency.toptier_flag is True
         assert agency.toptier_agency.abbreviation == "HHS"
@@ -232,7 +232,7 @@ class TestCodeLists:
     def test_create_code_lists_defaults(self):
         """Test CodeLists with default values"""
         codes = CodeLists()
-        
+
         assert codes.require == []
         assert codes.exclude == []
         assert codes.counts == []
@@ -243,7 +243,7 @@ class TestCodeLists:
             require=["336411", "336412"],
             exclude=["336413"]
         )
-        
+
         assert codes.require == ["336411", "336412"]
         assert codes.exclude == ["336413"]
 
@@ -252,7 +252,7 @@ class TestFilters:
     def test_create_filters_defaults(self):
         """Test Filters with default values"""
         filters = Filters()
-        
+
         assert filters.keyword == []
         assert filters.timePeriodType == "fy"
         assert filters.timePeriodFY == []
@@ -267,7 +267,7 @@ class TestFilters:
             timePeriodType="fy",
             timePeriodFY=["2023", "2024"]
         )
-        
+
         assert filters.timePeriodType == "fy"
         assert filters.timePeriodFY == ["2023", "2024"]
         assert filters.time_period == []
@@ -280,7 +280,7 @@ class TestFilters:
                 TimePeriod(start_date="2023-01-01", end_date="2023-12-31")
             ]
         )
-        
+
         assert filters.timePeriodType == "dr"
         assert len(filters.time_period) == 1
         assert filters.timePeriodFY == []
@@ -295,7 +295,7 @@ class TestFilters:
                     TimePeriod(start_date="2023-01-01", end_date="2023-12-31")
                 ]
             )
-        
+
         assert "time_period" in str(exc_info.value)
 
     def test_filters_validation_dr_with_fiscal_years_fails(self):
@@ -308,7 +308,7 @@ class TestFilters:
                     TimePeriod(start_date="2023-01-01", end_date="2023-12-31")
                 ]
             )
-        
+
         assert "timePeriodFY" in str(exc_info.value)
 
     def test_filters_with_keywords(self):
@@ -316,7 +316,7 @@ class TestFilters:
         filters = Filters(
             keyword=["healthcare", "medical", "hospital"]
         )
-        
+
         assert filters.keyword == ["healthcare", "medical", "hospital"]
 
     def test_filters_with_locations(self):
@@ -334,7 +334,7 @@ class TestFilters:
                 )
             }
         )
-        
+
         assert "USA_TX" in filters.selectedLocations
         assert filters.selectedLocations["USA_TX"].filter.state == "TX"
 
@@ -346,7 +346,7 @@ class TestFilters:
                 exclude=["336413"]
             )
         )
-        
+
         assert filters.naicsCodes.require == ["336411", "336412"]
         assert filters.naicsCodes.exclude == ["336413"]
 
@@ -367,11 +367,11 @@ class TestFilters:
             ),
             agencyType="awarding"
         )
-        
+
         filters = Filters(
             selectedAwardingAgencies={"1": agency}
         )
-        
+
         assert "1" in filters.selectedAwardingAgencies
 
 
@@ -382,14 +382,14 @@ class TestFilterRequest:
             filters=Filters(keyword=["healthcare"]),
             version="2020-06-01"
         )
-        
+
         assert request.version == "2020-06-01"
         assert request.filters.keyword == ["healthcare"]
 
     def test_filter_request_default_version(self):
         """Test FilterRequest default version"""
         request = FilterRequest(filters=Filters())
-        
+
         assert request.version == "2020-06-01"
 
     def test_filter_request_serialization(self):
@@ -401,9 +401,9 @@ class TestFilterRequest:
                 timePeriodFY=["2023"]
             )
         )
-        
+
         data = request.model_dump(exclude_none=True)
-        
+
         assert "filters" in data
         assert data["filters"]["keyword"] == ["test"]
         assert data["version"] == "2020-06-01"
@@ -413,7 +413,7 @@ class TestFilterResponse:
     def test_create_filter_response(self):
         """Test creating a FilterResponse"""
         response = FilterResponse(hash="abc123def456")
-        
+
         assert response.hash == "abc123def456"
 
     def test_filter_response_required_hash(self):
@@ -461,7 +461,7 @@ class TestComplexFilterScenarios:
             setAside=["8AN", "SBA"],
             extentCompeted=["F", "A"]
         )
-        
+
         assert len(filters.keyword) == 3
         assert len(filters.timePeriodFY) == 3
         assert len(filters.selectedLocations) == 2
@@ -472,7 +472,7 @@ class TestComplexFilterScenarios:
     def test_filter_json_schema_generation(self):
         """Test that Filters can generate JSON schema"""
         schema = Filters.model_json_schema()
-        
+
         assert "properties" in schema
         assert "keyword" in schema["properties"]
         assert "timePeriodType" in schema["properties"]

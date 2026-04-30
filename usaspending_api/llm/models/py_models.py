@@ -141,8 +141,8 @@ class Filters(BaseModel):
             description=(
                 "Time period type selector:\n"
                 "- 'fy' (fiscal year): Use timePeriodFY field with year strings like ['2023', '2024']\n"
-                "- 'dr' (date range): Use time_period field with TimePeriod objects containing start_date and end_date\n\n"
-                "IMPORTANT: Only populate the field that matches this type."
+                "- 'dr' (date range): Use time_period field with TimePeriod objects containing start_date and "
+                "end_date\n\nIMPORTANT: Only populate the field that matches this type."
             )
         ),
     ] = "fy"
@@ -240,7 +240,7 @@ class Filters(BaseModel):
     filterNaoActiveFromFyOrDateRange: bool = False
 
     @model_validator(mode="after")
-    def validate_time_period_consistency(self):
+    def validate_time_period_consistency(self) -> "Filters":
         """Ensure only the correct time period field is populated"""
         if self.timePeriodType == "fy":
             if self.time_period:
