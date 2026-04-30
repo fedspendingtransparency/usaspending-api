@@ -2,10 +2,10 @@ import copy
 import json
 import logging
 from ast import literal_eval
-from sys import maxsize
 from typing import (
     Any,
     List,
+    Literal,
 )
 
 from django.conf import settings
@@ -13,9 +13,11 @@ from django.db.models import F, QuerySet
 from django.utils.text import slugify
 from elasticsearch_dsl import Q as ES_Q
 from elasticsearch_dsl.response import Response as ES_Response
+from pydantic import BaseModel, Field, ValidationError, model_validator
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from typing_extensions import Self
 
 from usaspending_api.awards.models import Award
 from usaspending_api.awards.v2.filters.sub_award import subaward_filter
@@ -54,6 +56,18 @@ from usaspending_api.common.helpers.api_helper import (
 from usaspending_api.common.helpers.data_constants import state_name_from_code
 from usaspending_api.common.helpers.generic_helper import (
     get_generic_filters_message,
+)
+from usaspending_api.common.helpers.pydantic_error_formatter import pydantic_error_formatter
+from usaspending_api.common.pydantic_base_models import (
+    AgencyObject,
+    AwardAmount,
+    NAICSCodeObject,
+    ProgramActivityObject,
+    PSCCodeObject,
+    StandardLocationObject,
+    TASCodeObject,
+    TimePeriod,
+    TreasuryAccountComponentsObject,
 )
 from usaspending_api.common.query_with_filters import QueryWithFilters
 from usaspending_api.common.recipient_lookups import annotate_prime_award_recipient_id
@@ -138,6 +152,53 @@ ES_ALTERNATIVE_SORT_FIELDS = {
 }
 
 
+class Filters(BaseModel):
+    agencies: list[AgencyObject] | None = None
+    award_amounts: list[AwardAmount] | None = None
+    award_ids: list[str] | None = None
+    award_type_codes: list[str] | None = None
+    award_unique_id: str | None = None
+    contract_pricing_type_codes: list[str] | None = None
+    def_codes: list[str] | None = None
+    description: str | None = None
+    extent_competed_type_codes: list[str] | None = None
+    keywords: list[str] | None = None
+    naics_codes: NAICSCodeObject | None = None
+    place_of_performance_locations: list[StandardLocationObject] | None = None
+    place_of_performance_scope: Literal["domestic", "foreign"] | None = None
+    program_activities: list[ProgramActivityObject] | None = None
+    program_numbers: list[str] | None = None
+    psc_codes: PSCCodeObject | list[str] | None = None
+    recipient_locations: list[StandardLocationObject] | None = None
+    recipient_scope: Literal["domestic", "foreign"] | None = None
+    recipient_search_text: list[str] | None = None
+    recipient_type_names: list[str] | None = None
+    set_aside_type_codes: list[str] | None = None
+    tas_codes: TASCodeObject | None = None
+    time_period: list[TimePeriod] | None = None
+    treasury_account_components: list[TreasuryAccountComponentsObject] | None = None
+
+
+class SpendingByAwardRequest(BaseModel):
+    fields: list[str]
+    filters: Filters
+    limit: int = 10
+    order: Literal["asc", "desc"] = "desc"
+    page: int | None = Field(default=None, ge=1)
+    sort: str | None = None
+    subawards: bool = False
+    last_record_unique_id: int | None = None
+    last_record_sort_value: str | None = None
+    spending_level: Literal["awards", "subawards"] | None = None
+
+    @model_validator(mode="after")
+    def set_spending_level_default(self: Self) -> Self:
+        # If `spending_level` not provided, derive from `subawards`
+        if self.spending_level is None:
+            self.spending_level = "subawards" if self.subawards else "awards"
+        return self
+
+
 @api_transformations(
     api_version=settings.API_VERSION, function_list=API_TRANSFORM_FUNCTIONS
 )
@@ -151,14 +212,26 @@ class SpendingByAwardVisualizationViewSet(APIView):
     )
 
     @cache_response()
-    def post(self, request: Request) -> Response:
+    def post(self, request: Request) -> Response:  # noqa: PLR0911
         """Return all awards matching the provided filters and limits"""
         self.original_filters = request.data.get("filters")
+
+        try:
+            validated_request = SpendingByAwardRequest(**request.data)
+        except ValidationError as e:
+            message = pydantic_error_formatter(e)
+            return Response({"detail": message}, status=422)
+
+        # By default, Pydantic will include an entry for every field defined in the base class with it's default value.
+        # When we convert this to a dict this means we have a lot of `None` values that query_with_filters
+        #   doesn't expect so we can remove those them here.
+        self.filters = validated_request.filters.model_dump(exclude_none=True)
+
+        self.spending_level = SpendingLevel(validated_request.spending_level)
         json_request, models = self.validate_request_data(request.data)
-        self.spending_level = SpendingLevel(json_request["spending_level"])
+
         self.constants = GLOBAL_MAP[self.spending_level.value]
-        filters = json_request.get("filters", {})
-        self.filters = filters
+
         self.fields = json_request["fields"]
         self.pagination = {
             "limit": json_request["limit"],
@@ -296,13 +369,6 @@ class SpendingByAwardVisualizationViewSet(APIView):
                 "array_type": "text",
                 "text_type": "search",
                 "min": 1,
-            },
-            {
-                "name": "program_activity",
-                "key": "filter|program_activity",
-                "type": "array",
-                "array_type": "integer",
-                "array_max": maxsize,
             },
             {
                 "name": "last_record_unique_id",

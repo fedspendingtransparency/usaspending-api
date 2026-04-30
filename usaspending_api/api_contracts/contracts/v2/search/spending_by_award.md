@@ -33,7 +33,8 @@ This endpoint takes award filters and fields, and returns the fields of the filt
         + `sort` (optional, string)
             Optional parameter indicating what value results should be sorted by. Valid options are any of the fields in the JSON objects in the response. Defaults to the first field provided.
         + `subawards` (optional, boolean)
-            True when you want to group by Subawards instead of Awards. Defaulted to False.
+            True when you want to group by Subawards instead of Awards. 
+            + Default: `false`
         + `last_record_unique_id` (optional, number)
             The unique id of the last record in the results set. Used in the experimental Elasticsearch API functionality.
         + `last_record_sort_value` (optional, string)
@@ -43,8 +44,7 @@ This endpoint takes award filters and fields, and returns the fields of the filt
             + Members
                 + `awards`
                 + `subawards`
-            + Default
-                + `awards`
+            + Default: `awards`
     + Body
 
             {
@@ -322,7 +322,6 @@ Non Loan Assistance Awards can be searched for specifically by using the Non Loa
 + `set_aside_type_codes`: [`NONE`] (optional, array[string])
 + `extent_competed_type_codes`: [`A`] (optional, array[string])
 + `treasury_account_components` (optional, array[TreasuryAccountComponentsObject], fixed-type)
-+ `program_activity` (optional, array[number])
 + `program_activities` (optional, array[ProgramActivityObject])
     A filter option that supports filtering by a program activity name or code. Please note that if this filter is used at least one of the members of the object, ProgramActivityObject, need to be provided.
 + `def_codes` (optional, array[DEFC], fixed-type)
