@@ -13,7 +13,7 @@ from django.db.models import F, QuerySet
 from django.utils.text import slugify
 from elasticsearch_dsl import Q as ES_Q
 from elasticsearch_dsl.response import Response as ES_Response
-from pydantic import BaseModel, Field, ValidationError
+from pydantic import BaseModel, Field, ValidationError, model_validator
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -188,7 +188,14 @@ class SpendingByAwardRequest(BaseModel):
     subawards: bool = False
     last_record_unique_id: int | None = None
     last_record_sort_value: str | None = None
-    spending_level: Literal["awards", "subawards"] = "awards"
+    spending_level: Literal["awards", "subawards"] | None = None
+
+    @model_validator(mode="after")
+    def set_spending_level_default(self):
+        # If `spending_level` not provided, derive from `subawards`
+        if self.spending_level is None:
+            self.spending_level = "subawards" if self.subawards else "awards"
+        return self
 
 
 @api_transformations(

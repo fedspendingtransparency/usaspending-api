@@ -38,8 +38,8 @@ def test_code_objects_validation_pass():
     assert tas.require == [["one", "two"]]
     assert tas.exclude == [["three", "four"]]
 
-    tas = TASCodeObject()
-    assert tas.require is None
+    tas = TASCodeObject(require=[["one", "two"]])
+    assert tas.require == [["one", "two"]]
     assert tas.exclude is None
 
 
