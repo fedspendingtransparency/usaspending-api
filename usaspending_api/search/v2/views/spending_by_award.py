@@ -13,7 +13,7 @@ from django.db.models import F, QuerySet
 from django.utils.text import slugify
 from elasticsearch_dsl import Q as ES_Q
 from elasticsearch_dsl.response import Response as ES_Response
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel, Field, ValidationError
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -183,7 +183,7 @@ class SpendingByAwardRequest(BaseModel):
     filters: Filters
     limit: int = 10
     order: Literal["asc", "desc"] = "desc"
-    page: int | None = None
+    page: int | None = Field(default=None, ge=1)
     sort: str | None = None
     subawards: bool = False
     last_record_unique_id: int | None = None
