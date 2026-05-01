@@ -540,10 +540,10 @@ class Command(BaseCommand):
         # Resolve Parameters
         destination_table = options["destination_table"]
         table_spec = TABLE_SPEC[destination_table]
-        self.destination_database = options["alt_db"] or table_spec["destination_database"]
+        self.destination_database = options["alt_db"] or table_spec.destination_database
         self.destination_table_name = options["alt_name"] or destination_table.split(".")[-1]
         source_query_key = "source_query_incremental" if options["incremental"] else "source_query"
-        load_query = table_spec.get(source_query_key)
+        load_query = getattr(table_spec, source_query_key)
         if load_query is None:
             raise ArgumentTypeError(f"Invalid source query. `{source_query_key}` must be specified in the TABLE_SPEC.")
 
@@ -552,8 +552,8 @@ class Command(BaseCommand):
         self.spark.sql(f"use {self.destination_database};")
 
         # Create User Defined Functions if needed
-        if table_spec.get("user_defined_functions"):
-            for udf_args in table_spec["user_defined_functions"]:
+        if table_spec.user_defined_functions:
+            for udf_args in table_spec.user_defined_functions:
                 self.spark.udf.register(**udf_args)
 
         create_ref_temp_views(self.spark, create_broker_views=True)
