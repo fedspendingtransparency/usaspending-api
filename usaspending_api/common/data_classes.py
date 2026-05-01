@@ -1,6 +1,7 @@
 from dataclasses import dataclass
-from typing import Any, Callable, List, Optional, Union
+from typing import Callable, List, Optional, Union
 
+from pyspark.sql.types import StructType
 from typing_extensions import Literal
 
 
@@ -58,7 +59,7 @@ class TableSpec:
     """
 
     destination_database: str
-    delta_table_create_sql: Union[str, Any]   # pyspark.sql.types.StructType
+    delta_table_create_sql: Union[str, StructType]
 
     destination_table_name: Optional[str] = None
     source_table: Optional[str] = None

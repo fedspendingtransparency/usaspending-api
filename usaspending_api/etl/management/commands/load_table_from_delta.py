@@ -70,7 +70,7 @@ class Command(BaseCommand):
             "--alt-delta-name",
             type=str,
             required=False,
-            help="An alternate delta table name to load, overriding the TABLE_SPEC destination_tablename",
+            help="An alternate delta table name to load, overriding the TABLE_SPEC destination_table_name",
         )
         parser.add_argument(
             "--jdbc-inserts",
@@ -179,7 +179,7 @@ class Command(BaseCommand):
 
         # Postgres side - source
         postgres_table = None
-        postgres_model = table_spec["model"]
+        postgres_model = table_spec.model
         postgres_schema = table_spec.source_database or table_spec.swap_schema
         postgres_table_name = table_spec.source_table or table_spec.swap_table
         postgres_cols = table_spec.source_schema
@@ -225,7 +225,7 @@ class Command(BaseCommand):
             temp_dest_table_exists = False
         make_new_table = not temp_dest_table_exists
 
-        is_postgres_table_partitioned = table_spec.get.postgres_partition_spec is not None
+        is_postgres_table_partitioned = table_spec.postgres_partition_spec is not None
 
         if postgres_table or postgres_cols:
             # Recreate the table if it doesn't exist. Spark's df.write automatically does this but doesn't account for
