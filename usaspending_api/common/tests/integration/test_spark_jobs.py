@@ -5,7 +5,7 @@ from usaspending_api.etl.management.commands.load_query_to_delta import TABLE_SP
 def test_local_spark_jobs_strategy(spark, s3_unittest_data_bucket, hive_unittest_metastore_db):
     expected_table_name = "award_search"
     delta_table_spec = TABLE_SPEC[expected_table_name]
-    expected_db_name = delta_table_spec["destination_database"]
+    expected_db_name = delta_table_spec.destination_database
 
     spark_jobs = SparkJobs(LocalStrategy())
     spark_jobs.start(

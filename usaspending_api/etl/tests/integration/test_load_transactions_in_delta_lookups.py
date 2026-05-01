@@ -3,29 +3,29 @@
 NOTE: Uses Pytest Fixtures from immediate parent conftest.py: usaspending_api/etl/tests/conftest.py
 """
 
-import dateutil
 import re
-import pyspark
-
 from copy import deepcopy
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
-from django.db import connection
-from django.core.management import call_command
-from model_bakery import baker
-from pyspark.sql import SparkSession
-from pytest import mark, raises
 from typing import Any, Dict, Optional, Sequence
 from unittest.mock import patch
 
+import dateutil
+import pyspark
+from django.core.management import call_command
+from django.db import connection
+from model_bakery import baker
+from pyspark.sql import SparkSession
+from pytest import mark, raises
+
 from usaspending_api.broker.helpers.last_load_date import get_last_load_date, update_last_load_date
 from usaspending_api.common.helpers.spark_helpers import load_dict_to_delta_table
-from usaspending_api.etl.tests.integration.test_load_to_from_delta import load_delta_table_from_postgres, equal_datasets
+from usaspending_api.config import CONFIG
+from usaspending_api.etl.management.commands.load_table_to_delta import TABLE_SPEC
+from usaspending_api.etl.tests.integration.test_load_to_from_delta import equal_datasets, load_delta_table_from_postgres
 from usaspending_api.transactions.delta_models.transaction_fabs import TRANSACTION_FABS_COLUMNS
 from usaspending_api.transactions.delta_models.transaction_fpds import TRANSACTION_FPDS_COLUMNS
 from usaspending_api.transactions.delta_models.transaction_normalized import TRANSACTION_NORMALIZED_COLUMNS
-from usaspending_api.config import CONFIG
-from usaspending_api.etl.management.commands.load_table_to_delta import TABLE_SPEC
 
 _BEGINNING_OF_TIME = datetime(1970, 1, 1, tzinfo=timezone.utc)
 _INITIAL_DATETIME = datetime(2022, 10, 31, tzinfo=timezone.utc)
@@ -273,7 +273,7 @@ class TestInitialRun:
         assert actual_count == 0
 
         # Make sure int.transaction_[normalized,fabs,fpds] tables have been created and have the expected sizes.
-        for table_name, expected_count, expected_last_load, col_names in zip(
+        for table_name, expected_count, _expected_last_load, col_names in zip(
             (f"transaction_{t}" for t in ("normalized", "fabs", "fpds")),
             (expected_normalized_count, expected_fabs_count, expected_fpds_count),
             (
@@ -281,7 +281,7 @@ class TestInitialRun:
                 expected_last_load_transaction_fabs,
                 expected_last_load_transaction_fpds,
             ),
-            (list(TRANSACTION_NORMALIZED_COLUMNS), TRANSACTION_FABS_COLUMNS, TRANSACTION_FPDS_COLUMNS),
+            (list(TRANSACTION_NORMALIZED_COLUMNS), TRANSACTION_FABS_COLUMNS, TRANSACTION_FPDS_COLUMNS), strict=False,
         ):
             actual_count = spark.sql(f"SELECT COUNT(*) AS count from int.{table_name}").collect()[0]["count"]
             assert actual_count == expected_count
@@ -309,7 +309,7 @@ class TestInitialRun:
         spark.sql(f"create database if not exists {raw_db};")
         spark.sql(f"use {raw_db};")
         spark.sql(
-            TABLE_SPEC["published_fabs"]["delta_table_create_sql"].format(
+            TABLE_SPEC["published_fabs"].delta_table_create_sql.format(
                 DESTINATION_TABLE="published_fabs",
                 DESTINATION_DATABASE=raw_db,
                 SPARK_S3_BUCKET=s3_unittest_data_bucket,
@@ -317,7 +317,7 @@ class TestInitialRun:
             )
         )
         spark.sql(
-            TABLE_SPEC["detached_award_procurement"]["delta_table_create_sql"].format(
+            TABLE_SPEC["detached_award_procurement"].delta_table_create_sql.format(
                 DESTINATION_TABLE="detached_award_procurement",
                 DESTINATION_DATABASE=raw_db,
                 SPARK_S3_BUCKET=s3_unittest_data_bucket,
@@ -749,7 +749,7 @@ class TestInitialRunNoPostgresLoader:
         spark.sql(f"create database if not exists {raw_db};")
         spark.sql(f"use {raw_db};")
         spark.sql(
-            TABLE_SPEC["published_fabs"]["delta_table_create_sql"].format(
+            TABLE_SPEC["published_fabs"].delta_table_create_sql.format(
                 DESTINATION_TABLE="published_fabs",
                 DESTINATION_DATABASE=raw_db,
                 SPARK_S3_BUCKET=s3_unittest_data_bucket,
@@ -757,7 +757,7 @@ class TestInitialRunNoPostgresLoader:
             )
         )
         spark.sql(
-            TABLE_SPEC["detached_award_procurement"]["delta_table_create_sql"].format(
+            TABLE_SPEC["detached_award_procurement"].delta_table_create_sql.format(
                 DESTINATION_TABLE="detached_award_procurement",
                 DESTINATION_DATABASE=raw_db,
                 SPARK_S3_BUCKET=s3_unittest_data_bucket,
@@ -765,7 +765,7 @@ class TestInitialRunNoPostgresLoader:
             )
         )
         spark.sql(
-            TABLE_SPEC["transaction_normalized"]["delta_table_create_sql"].format(
+            TABLE_SPEC["transaction_normalized"].delta_table_create_sql.format(
                 DESTINATION_TABLE="transaction_normalized",
                 DESTINATION_DATABASE=raw_db,
                 SPARK_S3_BUCKET=s3_unittest_data_bucket,
@@ -870,7 +870,7 @@ class TestInitialRunNoPostgresLoader:
         spark.sql(f"create database if not exists {raw_db};")
         spark.sql(f"use {raw_db};")
         spark.sql(
-            TABLE_SPEC["published_fabs"]["delta_table_create_sql"].format(
+            TABLE_SPEC["published_fabs"].delta_table_create_sql.format(
                 DESTINATION_TABLE="published_fabs",
                 DESTINATION_DATABASE=raw_db,
                 SPARK_S3_BUCKET=s3_unittest_data_bucket,
@@ -878,7 +878,7 @@ class TestInitialRunNoPostgresLoader:
             )
         )
         spark.sql(
-            TABLE_SPEC["detached_award_procurement"]["delta_table_create_sql"].format(
+            TABLE_SPEC["detached_award_procurement"].delta_table_create_sql.format(
                 DESTINATION_TABLE="detached_award_procurement",
                 DESTINATION_DATABASE=raw_db,
                 SPARK_S3_BUCKET=s3_unittest_data_bucket,
@@ -953,7 +953,7 @@ class TestTransactionIdLookup:
         spark.sql(f"create database if not exists {raw_db};")
         spark.sql(f"use {raw_db};")
         spark.sql(
-            TABLE_SPEC["published_fabs"]["delta_table_create_sql"].format(
+            TABLE_SPEC["published_fabs"].delta_table_create_sql.format(
                 DESTINATION_TABLE="published_fabs",
                 DESTINATION_DATABASE=raw_db,
                 SPARK_S3_BUCKET=s3_unittest_data_bucket,
@@ -961,7 +961,7 @@ class TestTransactionIdLookup:
             )
         )
         spark.sql(
-            TABLE_SPEC["detached_award_procurement"]["delta_table_create_sql"].format(
+            TABLE_SPEC["detached_award_procurement"].delta_table_create_sql.format(
                 DESTINATION_TABLE="detached_award_procurement",
                 DESTINATION_DATABASE=raw_db,
                 SPARK_S3_BUCKET=s3_unittest_data_bucket,
@@ -991,7 +991,7 @@ class TestTransactionIdLookup:
 
         # First, create blank raw.transaction_normalized and raw.awards tables
         spark.sql(
-            TABLE_SPEC["transaction_normalized"]["delta_table_create_sql"].format(
+            TABLE_SPEC["transaction_normalized"].delta_table_create_sql.format(
                 DESTINATION_TABLE="transaction_normalized",
                 DESTINATION_DATABASE=raw_db,
                 SPARK_S3_BUCKET=s3_unittest_data_bucket,
@@ -999,7 +999,7 @@ class TestTransactionIdLookup:
             )
         )
         spark.sql(
-            TABLE_SPEC["awards"]["delta_table_create_sql"].format(
+            TABLE_SPEC["awards"].delta_table_create_sql.format(
                 DESTINATION_TABLE="awards",
                 DESTINATION_DATABASE=raw_db,
                 SPARK_S3_BUCKET=s3_unittest_data_bucket,
@@ -1047,7 +1047,7 @@ class TestTransactionIdLookup:
         spark.sql(f"create database if not exists {raw_db};")
         spark.sql(f"use {raw_db};")
         spark.sql(
-            TABLE_SPEC["published_fabs"]["delta_table_create_sql"].format(
+            TABLE_SPEC["published_fabs"].delta_table_create_sql.format(
                 DESTINATION_TABLE="published_fabs",
                 DESTINATION_DATABASE=raw_db,
                 SPARK_S3_BUCKET=s3_data_bucket,
@@ -1055,7 +1055,7 @@ class TestTransactionIdLookup:
             )
         )
         spark.sql(
-            TABLE_SPEC["detached_award_procurement"]["delta_table_create_sql"].format(
+            TABLE_SPEC["detached_award_procurement"].delta_table_create_sql.format(
                 DESTINATION_TABLE="detached_award_procurement",
                 DESTINATION_DATABASE=raw_db,
                 SPARK_S3_BUCKET=s3_data_bucket,
@@ -1252,7 +1252,7 @@ class TestAwardIdLookup:
         spark.sql(f"create database if not exists {raw_db};")
         spark.sql(f"use {raw_db};")
         spark.sql(
-            TABLE_SPEC["published_fabs"]["delta_table_create_sql"].format(
+            TABLE_SPEC["published_fabs"].delta_table_create_sql.format(
                 DESTINATION_TABLE="published_fabs",
                 DESTINATION_DATABASE=raw_db,
                 SPARK_S3_BUCKET=s3_unittest_data_bucket,
@@ -1260,7 +1260,7 @@ class TestAwardIdLookup:
             )
         )
         spark.sql(
-            TABLE_SPEC["detached_award_procurement"]["delta_table_create_sql"].format(
+            TABLE_SPEC["detached_award_procurement"].delta_table_create_sql.format(
                 DESTINATION_TABLE="detached_award_procurement",
                 DESTINATION_DATABASE=raw_db,
                 SPARK_S3_BUCKET=s3_unittest_data_bucket,
@@ -1290,7 +1290,7 @@ class TestAwardIdLookup:
 
         # First, create blank raw.transaction_normalized and raw.awards tables
         spark.sql(
-            TABLE_SPEC["transaction_normalized"]["delta_table_create_sql"].format(
+            TABLE_SPEC["transaction_normalized"].delta_table_create_sql.format(
                 DESTINATION_TABLE="transaction_normalized",
                 DESTINATION_DATABASE=raw_db,
                 SPARK_S3_BUCKET=s3_unittest_data_bucket,
@@ -1298,7 +1298,7 @@ class TestAwardIdLookup:
             )
         )
         spark.sql(
-            TABLE_SPEC["awards"]["delta_table_create_sql"].format(
+            TABLE_SPEC["awards"].delta_table_create_sql.format(
                 DESTINATION_TABLE="awards",
                 DESTINATION_DATABASE=raw_db,
                 SPARK_S3_BUCKET=s3_unittest_data_bucket,
@@ -1346,7 +1346,7 @@ class TestAwardIdLookup:
         spark.sql(f"create database if not exists {raw_db};")
         spark.sql(f"use {raw_db};")
         spark.sql(
-            TABLE_SPEC["published_fabs"]["delta_table_create_sql"].format(
+            TABLE_SPEC["published_fabs"].delta_table_create_sql.format(
                 DESTINATION_TABLE="published_fabs",
                 DESTINATION_DATABASE=raw_db,
                 SPARK_S3_BUCKET=s3_data_bucket,
@@ -1354,7 +1354,7 @@ class TestAwardIdLookup:
             )
         )
         spark.sql(
-            TABLE_SPEC["detached_award_procurement"]["delta_table_create_sql"].format(
+            TABLE_SPEC["detached_award_procurement"].delta_table_create_sql.format(
                 DESTINATION_TABLE="detached_award_procurement",
                 DESTINATION_DATABASE=raw_db,
                 SPARK_S3_BUCKET=s3_data_bucket,

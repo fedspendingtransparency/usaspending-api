@@ -1,5 +1,7 @@
 from dataclasses import dataclass
-from typing import Optional
+from typing import Callable, List, Optional, Union
+
+from pyspark.sql.types import StructType
 from typing_extensions import Literal
 
 
@@ -48,3 +50,36 @@ class TransactionColumn:
     #   to be applied on this input. For example, a valid scalar_transformation string is
     #   "CASE {input} WHEN 'UNITED STATES' THEN 'USA' ELSE {input} END"
     scalar_transformation: str = None
+
+
+@dataclass(slots=True)
+class TableSpec:
+    """
+    Delta table metadata class
+    """
+
+    destination_database: str
+    delta_table_create_sql: Union[str, StructType]
+
+    destination_table_name: Optional[str] = None
+    source_table: Optional[str] = None
+    source_database: Optional[str] = None
+    model: Optional[str] = None
+    partition_column: Optional[str] = None
+    partition_column_type: Optional[str] = None
+    is_partition_column_unique: bool = False
+    delta_table_create_options: Optional[dict] = None
+    delta_table_create_partitions: Optional[List[str]] = None
+    source_schema: Optional[Union[List, dict]] = None
+    custom_schema: Optional[str] = None
+    column_names: Optional[List[str]] = None
+    is_from_broker: bool = False
+    source_query: Optional[Union[str, List[str], Callable]] = None
+    source_query_incremental: Optional[Union[str, Callable]] = None
+    user_defined_functions: Optional[List[dict]] = None
+    archive_data_field: str = "update_date"
+    postgres_seq_name: Optional[str] = None
+    postgres_partition_spec: Optional[dict] = None
+    tsvectors: Optional[Union[List[str], dict]] = None
+    swap_table: Optional[str] = None
+    swap_schema: Optional[str] = None
