@@ -148,18 +148,15 @@ def build_query_filters(account_type: str, filters: dict, account_level: str) ->
 
 
 def build_agency_filter(query_filters: dict, filters: dict, tas_id: str) -> dict:
-    if filters.get("agency") and filters["agency"] != "all":
-        if filters["agency"].isdigit():
-            if not ToptierAgency.objects.filter(toptier_agency_id=filters["agency"]).exists():
-                raise NotFound(f"No agency was found with id {filters['agency']}")
-            else:
-                query_filters[f"{tas_id}__funding_toptier_agency_id"] = filters["agency"]
-        else:
-            try:
-                ToptierAgency.objects.get(abbreviation=filters["agency"])
-                query_filters[f"{tas_id}__funding_toptier_agency__abbreviation"] = filters["agency"]
-            except ToptierAgency.DoesNotExist as e:
-                raise NotFound(f"No agency was found with abbreviation {filters['agency']}") from e
+    filter_param, query_filter_suffix = (
+        ("toptier_agency_id", "id") if filters["agency"].isdigit()
+        else ("abbreviation", "_abbreviation")
+    )
+
+    if ToptierAgency.objects.filter(**{filter_param: filters["agency"]}).exists():
+        query_filters[f"{tas_id}__funding_toptier_agency_{query_filter_suffix}"] = filters["agency"]
+    else:
+        raise NotFound(f"No agency was found with {query_filter_suffix} {filters['agency']}")
 
     return query_filters
 

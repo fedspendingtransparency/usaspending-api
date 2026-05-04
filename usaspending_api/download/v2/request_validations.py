@@ -673,15 +673,16 @@ class AccountDownloadValidator(DownloadValidatorBase):
         period = self._json_request["filters"].get("period")
 
         agency_filter = self._json_request["filters"].get("agency")
-        if agency_filter and agency_filter.lower() != "all":
-            if agency_filter.isdigit():
-                if not ToptierAgency.objects.filter(toptier_agency_id=agency_filter).exists():
-                    raise NotFound(f"No agency was found with id {agency_filter}")
-            else:
-                try:
-                    ToptierAgency.objects.get(abbreviation=agency_filter)
-                except ToptierAgency.DoesNotExist as e:
-                    raise NotFound(f"No agency was found with abbreviation {agency_filter}") from e
+        has_agency_filter = agency_filter and agency_filter.lower() != "all"
+        is_valid_id = (
+            agency_filter.isdigit()
+            and ToptierAgency.objects.filter(toptier_agency_id=agency_filter).exists()
+        )
+        is_valid_abbr = ToptierAgency.objects.filter(abbreviation=agency_filter).exists()
+        if has_agency_filter and not (is_valid_id or is_valid_abbr):
+            raise NotFound(
+                f"No agency was found with {'id' if agency_filter.isdigit() else 'abbreviation'} {agency_filter}"
+            )
 
         fy, quarter, period = _validate_and_bolster_requested_submission_window(fy, quarter, period)
 
