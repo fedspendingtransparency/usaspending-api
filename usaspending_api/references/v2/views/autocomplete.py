@@ -1,5 +1,6 @@
 from django.db.models import Case, F, IntegerField, Q, When
 from django.db.models.functions import Upper
+from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -13,7 +14,7 @@ from usaspending_api.search.models import AgencyAutocompleteMatview, AgencyOffic
 
 class BaseAutocompleteViewSet(APIView):
     @staticmethod
-    def get_request_payload(request):
+    def get_request_payload(request: Request) -> Response:
         """
         Retrieves all the request attributes needed for the autocomplete endpoints.
 
@@ -30,7 +31,7 @@ class BaseAutocompleteViewSet(APIView):
         try:
             limit = int(json_request.get("limit", 10))
         except ValueError:
-            raise InvalidParameterException("Limit request parameter is not a valid, positive integer")
+            raise InvalidParameterException("Limit request parameter is not a valid, positive integer")  # noqa: B904
 
         # required query parameters were not provided
         if not search_text:
@@ -39,7 +40,7 @@ class BaseAutocompleteViewSet(APIView):
         return search_text, limit
 
     # Shared autocomplete...
-    def agency_autocomplete(self, request):
+    def agency_autocomplete(self, request: Request) -> Response:
         """Search by subtier agencies, return those with award data, toptiers first"""
 
         search_text, limit = self.get_request_payload(request)
@@ -89,7 +90,7 @@ class BaseAutocompleteViewSet(APIView):
         results["messages"] = messages
         return Response(results)
 
-    def agency_office_autocomplete(self, request):
+    def agency_office_autocomplete(self, request: Request) -> Response:  # noqa: PLR0912, PLR0915
         """Returns a collection of agencies, sub-agencies, and offices that match the request."""
 
         search_text, limit = self.get_request_payload(request)
@@ -111,7 +112,11 @@ class BaseAutocompleteViewSet(APIView):
         for toptier_agency in toptier_agency_search_text_matches:
             # This key is created so that we can treat multiple records with the same
             # toptier values as a single result
-            key = f'{toptier_agency["toptier_abbreviation"]}{toptier_agency["toptier_code"]}{toptier_agency["toptier_name"]}'
+            key = (
+                f'{toptier_agency["toptier_abbreviation"]}'
+                f'{toptier_agency["toptier_code"]}'
+                f'{toptier_agency["toptier_name"]}'
+            )
             if key not in toptier_agency_tracker:
                 toptier_agency_tracker[key] = {}
                 toptier_result = self._agency_office_toptier_agency_response_object(toptier_agency)
@@ -149,7 +154,11 @@ class BaseAutocompleteViewSet(APIView):
         for subtier_agency in subtier_agency_search_text_matches:
             # This key is created so that we can treat multiple records with the same
             # subtier values as a single result
-            key = f'{subtier_agency["subtier_abbreviation"]}{subtier_agency["subtier_code"]}{subtier_agency["subtier_name"]}'
+            key = (
+                f'{subtier_agency["subtier_abbreviation"]}'
+                f'{subtier_agency["subtier_code"]}'
+                f'{subtier_agency["subtier_name"]}'
+            )
             if key not in subtier_agency_tracker:
                 subtier_agency_tracker[key] = {}
                 subtier_result = self._agency_office_subtier_agency_response_object(subtier_agency)
@@ -247,7 +256,7 @@ class AwardingAgencyAutocompleteViewSet(BaseAutocompleteViewSet):
     filter_field = "has_awarding_data"
 
     @cache_response()
-    def post(self, request):
+    def post(self, request: Request) -> Response:
         return self.agency_autocomplete(request)
 
 
@@ -261,7 +270,7 @@ class AwardingAgencyOfficeAutocompleteViewSet(BaseAutocompleteViewSet):
     filter_field = "has_awarding_data"
 
     @cache_response()
-    def post(self, request):
+    def post(self, request: Request) -> Response:
         return self.agency_office_autocomplete(request)
 
 
@@ -275,7 +284,7 @@ class FundingAgencyOfficeAutocompleteViewSet(BaseAutocompleteViewSet):
     filter_field = "has_funding_data"
 
     @cache_response()
-    def post(self, request):
+    def post(self, request: Request) -> Response:
         return self.agency_office_autocomplete(request)
 
 
@@ -288,7 +297,7 @@ class FundingAgencyAutocompleteViewSet(BaseAutocompleteViewSet):
     filter_field = "has_funding_data"
 
     @cache_response()
-    def post(self, request):
+    def post(self, request: Request) -> Response:
         return self.agency_autocomplete(request)
 
 
@@ -300,19 +309,22 @@ class CFDAAutocompleteViewSet(BaseAutocompleteViewSet):
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/autocomplete/cfda.md"
 
     @cache_response()
-    def post(self, request):
+    def post(self, request: Request) -> Response:
         """Return CFDA matches by number, title, or name"""
         search_text, limit = self.get_request_payload(request)
 
         queryset = Cfda.objects.all()
+        print("4444444444444444444444444")
+        print(search_text)
 
-        # Program numbers are 10.4839, 98.2718, etc...
-        if search_text.replace(".", "").isnumeric():
-            queryset = queryset.filter(program_number__icontains=search_text)
-        else:
-            title_filter = queryset.filter(program_title__icontains=search_text)
-            popular_name_filter = queryset.filter(popular_name__icontains=search_text)
-            queryset = title_filter | popular_name_filter
+        # Program numbers are 10.4839, 98.2718, 93.HDN, etc... Alpha and numeric characters
+        program_number_filter = queryset.filter(program_number__icontains=search_text)
+        title_filter = queryset.filter(program_title__icontains=search_text)
+        popular_name_filter = queryset.filter(popular_name__icontains=search_text)
+        queryset = program_number_filter | title_filter | popular_name_filter
+
+        print("5555555555555555555555555555555")
+        print(queryset)
 
         return Response(
             {
@@ -332,7 +344,7 @@ class NAICSAutocompleteViewSet(BaseAutocompleteViewSet):
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/autocomplete/naics.md"
 
     @cache_response()
-    def post(self, request):
+    def post(self, request: Request) -> Response:
         """Return all NAICS table entries matching the provided search text"""
         search_text, limit = self.get_request_payload(request)
 
@@ -362,7 +374,7 @@ class PSCAutocompleteViewSet(BaseAutocompleteViewSet):
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/autocomplete/psc.md"
 
     @cache_response()
-    def post(self, request):
+    def post(self, request: Request) -> Response:
         """Return all PSC table entries matching the provided search text"""
         search_text, limit = self.get_request_payload(request)
 
@@ -389,7 +401,7 @@ class ProgramActivityAutocompleteViewSet(BaseAutocompleteViewSet):
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/autocomplete/program_activity.md"
 
     @cache_response()
-    def post(self, request):
+    def post(self, request: Request) -> Response:
         search_text, limit = self.get_request_payload(request)
 
         queryset = RefProgramActivity.objects.distinct("program_activity_code", "program_activity_name")
@@ -410,7 +422,7 @@ class GlossaryAutocompleteViewSet(BaseAutocompleteViewSet):
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/autocomplete/glossary.md"
 
     @cache_response()
-    def post(self, request):
+    def post(self, request: Request) -> Response:
         search_text, limit = self.get_request_payload(request)
 
         queryset = Definition.objects.all()
