@@ -157,12 +157,16 @@ loan_type_mapping = {
     "F003": "Direct Loan",
     "F004": "Loan Guarantee",
 }
+# This is broken out from the rest of "other_type_mapping" to accommodate an "insurance" award category
+insurance_type_mapping = {
+    "09": "Insurance",
+    "F005": "Indemnity / Insurance (non-loan)",
+}
 # -1 is a derived type that we added as a "catch-all" for any invalid `type` values
 other_type_mapping = {
-    "09": "Insurance",
+    **insurance_type_mapping,
     "11": "Other Financial Assistance",
     "-1": "Not Specified",
-    "F005": "Indemnity / Insurance (non-loan)",
     "F008": "Asset Forfeiture / Equitable Sharing",
     "F009": "Sale, Exchange, or Donation of Property and Goods",
     "F010": "Other Financial Assistance",

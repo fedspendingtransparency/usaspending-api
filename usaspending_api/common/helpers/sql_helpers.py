@@ -380,3 +380,9 @@ def get_parent_partitioned_table(table: str, cursor: Cursor) -> Any | None:
     )
     parent_partition_results = cursor.fetchone()
     return parent_partition_results[0] if parent_partition_results else None
+
+
+def convert_list_to_sql_array(list_to_convert: list[Any] | set[Any]) -> str:
+    list_to_convert = [f"'{val}'" if isinstance(val, str) else str(val) for val in list_to_convert]
+    result = ",".join(list_to_convert)
+    return result
