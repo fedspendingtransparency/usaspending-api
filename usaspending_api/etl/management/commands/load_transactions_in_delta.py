@@ -185,7 +185,7 @@ class Command(BaseCommand):
             update_last_load_date(self.etl_level, next_last_load)
 
     @contextmanager
-    def prepare_spark(self) -> Generator[None]:
+    def prepare_spark(self) -> Generator[None, None, None]:
         extra_conf = {
             # Config for additional packages needed
             # "spark.jars.packages": "org.postgresql:postgresql:42.2.23,io.delta:delta-core_2.12:1.2.1,
@@ -1082,7 +1082,7 @@ class Command(BaseCommand):
 
         # Creating 2 context managers to be able to handle error if either temp table is not created correctly.
         @contextmanager
-        def prepare_orphaned_transaction_temp_table() -> Generator[None]:
+        def prepare_orphaned_transaction_temp_table() -> Generator[None, None, None]:
             # Since the table to track the orphaned transactions is only needed for this function, just using a
             # managed table in the temp database.
             self.spark.sql("CREATE DATABASE IF NOT EXISTS temp")
@@ -1107,7 +1107,7 @@ class Command(BaseCommand):
                 self.spark.sql("DROP TABLE IF EXISTS temp.orphaned_transaction_info")
 
         @contextmanager
-        def prepare_orphaned_award_temp_table() -> Generator[None]:
+        def prepare_orphaned_award_temp_table() -> Generator[None, None, None]:
             # We actually need another temporary table to handle orphaned awards
             self.spark.sql(
                 f"""
