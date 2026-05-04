@@ -3,14 +3,24 @@ import logging
 import re
 from contextlib import contextmanager
 from datetime import datetime, timezone
+from typing import Generator
 
-from django.core.management import BaseCommand, call_command
+from django.core.management import BaseCommand, CommandParser, call_command
 from django.db import connection
 from pyspark.sql import SparkSession
 from pyspark.sql.types import ArrayType, StringType
 from pyspark.sql.utils import AnalysisException
 
 from usaspending_api.awards.delta_models.awards import AWARDS_COLUMNS
+from usaspending_api.awards.v2.lookups.lookups import (
+    contract_type_mapping,
+    direct_payment_type_mapping,
+    grant_type_mapping,
+    idv_type_mapping,
+    insurance_type_mapping,
+    loan_type_mapping,
+    other_type_mapping,
+)
 from usaspending_api.broker.helpers.build_business_categories_boolean_dict import fpds_boolean_columns
 from usaspending_api.broker.helpers.get_business_categories import (
     get_business_categories_fabs,
@@ -27,6 +37,7 @@ from usaspending_api.common.helpers.spark_helpers import (
     configure_spark_session,
     get_active_spark_session,
 )
+from usaspending_api.common.helpers.sql_helpers import convert_list_to_sql_array
 from usaspending_api.config import CONFIG
 from usaspending_api.transactions.delta_models.transaction_fabs import (
     FABS_TO_NORMALIZED_COLUMN_INFO,
@@ -48,8 +59,8 @@ class Command(BaseCommand):
         This command reads transaction data from source / bronze tables in delta and creates the delta silver tables
         specified via the "etl_level" argument. Each "etl_level" uses an exclusive value for "last_load_date" from the
         "external_data_load_date" table in Postgres to determine the subset of transactions to load. For a full
-        pipeline run the "award_id_lookup" and "transaction_id_lookup" levels should be run first in order to populate the
-        lookup tables. These lookup tables are used to keep track of PK values across the different silver tables.
+        pipeline run the "award_id_lookup" and "transaction_id_lookup" levels should be run first in order to populate
+        the lookup tables. These lookup tables are used to keep track of PK values across the different silver tables.
 
         *****NOTE*****: Before running this command for the first time on a usual basis, it should be run with the
             "etl_level" set to "initial_run" to set up the needed lookup tables and populate the needed sequences and
@@ -87,7 +98,7 @@ class Command(BaseCommand):
         WHERE pfabs.afa_generated_unique IS NULL
     """
 
-    def add_arguments(self, parser):
+    def add_arguments(self, parser: CommandParser) -> None:
         parser.add_argument(
             "--etl-level",
             type=str,
@@ -117,7 +128,7 @@ class Command(BaseCommand):
             help="Whether to skip copying tables from the 'raw' database to the 'int' database during initial_run.",
         )
 
-    def handle(self, *args, **options):
+    def handle(self, *args, **options) -> None:
         with self.prepare_spark():
             self.etl_level = options["etl_level"]
             self.spark_s3_bucket = options["spark_s3_bucket"]
@@ -174,10 +185,11 @@ class Command(BaseCommand):
             update_last_load_date(self.etl_level, next_last_load)
 
     @contextmanager
-    def prepare_spark(self):
+    def prepare_spark(self) -> Generator[None]:
         extra_conf = {
             # Config for additional packages needed
-            # "spark.jars.packages": "org.postgresql:postgresql:42.2.23,io.delta:delta-core_2.12:1.2.1,org.apache.hadoop:hadoop-aws:3.3.1,org.apache.spark:spark-hive_2.12:3.2.1",
+            # "spark.jars.packages": "org.postgresql:postgresql:42.2.23,io.delta:delta-core_2.12:1.2.1,
+            #  org.apache.hadoop:hadoop-aws:3.3.1,org.apache.spark:spark-hive_2.12:3.2.1",
             # Config for Delta Lake tables and SQL. Need these to keep Dela table metadata in the metastore
             "spark.sql.extensions": "io.delta.sql.DeltaSparkSessionExtension",
             "spark.sql.catalog.spark_catalog": "org.apache.spark.sql.delta.catalog.DeltaCatalog",
@@ -207,7 +219,7 @@ class Command(BaseCommand):
         if spark_created_by_command:
             self.spark.stop()
 
-    def award_id_lookup_pre_delete(self):
+    def award_id_lookup_pre_delete(self) -> list[str]:
         """
         Return a list of the award ids corresponding to the transaction_unique_ids that are about to be deleted.
         """
@@ -229,7 +241,7 @@ class Command(BaseCommand):
         possibly_modified_award_ids = [str(row["award_id"]) for row in self.spark.sql(sql).collect()]
         return possibly_modified_award_ids
 
-    def delete_records_sql(self):
+    def delete_records_sql(self) -> str:
         if self.etl_level == "transaction_id_lookup":
             id_col = "transaction_id"
             subquery = """
@@ -300,7 +312,7 @@ class Command(BaseCommand):
 
         return sql
 
-    def award_id_lookup_post_delete(self, possibly_modified_award_ids):
+    def award_id_lookup_post_delete(self, possibly_modified_award_ids: list[str]) -> None:
         """
         Now that deletion from the award_id_lookup table is done, we need to figure out which awards in
         possibly_modified_award_ids remain.
@@ -322,11 +334,22 @@ class Command(BaseCommand):
                 """
             )
 
-    def update_awards(self):
+    def update_awards(self) -> None:
         load_datetime = datetime.now(timezone.utc)
 
         set_insert_special_columns = ["total_subaward_amount", "create_date", "update_date"]
         subquery_ignored_columns = set_insert_special_columns + ["id", "subaward_count"]
+
+        # Capture different Award types for pairing with an Award category
+        contract_types = convert_list_to_sql_array(contract_type_mapping.keys())
+        idv_types = convert_list_to_sql_array(idv_type_mapping.keys())
+        grant_types = convert_list_to_sql_array(grant_type_mapping.keys())
+        direct_payment_types = convert_list_to_sql_array(direct_payment_type_mapping.keys())
+        loan_types = convert_list_to_sql_array(loan_type_mapping.keys())
+        insurance_types = convert_list_to_sql_array(insurance_type_mapping.keys())
+
+        # Remove both "Insurance" and "Not Specified" type to carry forward previous functionality
+        other_types = convert_list_to_sql_array(set(other_type_mapping.keys() - {*insurance_type_mapping.keys(), "-1"}))
 
         # Use a UNION in award_ids_to_update, not UNION ALL because there could be duplicates among the award ids
         # between the query parts or in int.award_ids_delete_modified.
@@ -371,13 +394,13 @@ class Command(BaseCommand):
                         tn.award_id AS id,
                         tn.awarding_agency_id,
                         CASE
-                            WHEN tn.type IN ('A', 'B', 'C', 'D')      THEN 'contract'
-                            WHEN tn.type IN ('02', '03', '04', '05')  THEN 'grant'
-                            WHEN tn.type IN ('06', '10')              THEN 'direct payment'
-                            WHEN tn.type IN ('07', '08')              THEN 'loans'
-                            WHEN tn.type = '09'                       THEN 'insurance'
-                            WHEN tn.type = '11'                       THEN 'other'
-                            WHEN tn.type LIKE 'IDV%%'                 THEN 'idv'
+                            WHEN tn.type IN ({contract_types})       THEN 'contract'
+                            WHEN tn.type IN ({grant_types})          THEN 'grant'
+                            WHEN tn.type IN ({direct_payment_types}) THEN 'direct payment'
+                            WHEN tn.type IN ({loan_types})           THEN 'loans'
+                            WHEN tn.type IN ({insurance_types})      THEN 'insurance'
+                            WHEN tn.type IN ({other_types})          THEN 'other'
+                            WHEN tn.type IN ({idv_types})            THEN 'idv'
                             ELSE NULL
                         END AS category,
                         tn.action_date AS certified_date,
@@ -521,7 +544,7 @@ class Command(BaseCommand):
         # Note that an external (unmanaged) table can't be TRUNCATED; use blanket DELETE instead.
         self.spark.sql("DELETE FROM int.award_ids_delete_modified")
 
-    def source_subquery_sql(self, transaction_type=None):
+    def source_subquery_sql(self, transaction_type: str | None = None) -> str:  # noqa: C901,PLR0915
         def build_date_format_sql(col: TransactionColumn, is_casted_to_date: bool = True) -> str:
             """Builder function to wrap a column in date-parsing logic.
 
@@ -572,7 +595,7 @@ class Command(BaseCommand):
 
             return sql_snippet
 
-        def handle_column(col: TransactionColumn, bronze_table_name, is_result_aliased=True):
+        def handle_column(col: TransactionColumn, bronze_table_name: str, is_result_aliased: bool = True) -> str:
             """
             Args:
                 is_result_aliased (bool) if true, aliases the parsing result with the given ``col``'s ``dest_name``
@@ -606,7 +629,7 @@ class Command(BaseCommand):
             retval = f"{retval}{' AS ' + col.dest_name if is_result_aliased else ''}"
             return retval
 
-        def select_columns_transaction_fabs_fpds(bronze_table_name):
+        def select_columns_transaction_fabs_fpds(bronze_table_name: str) -> list[str]:
             if self.etl_level == "transaction_fabs":
                 col_info = copy.copy(TRANSACTION_FABS_COLUMN_INFO)
             elif self.etl_level == "transaction_fpds":
@@ -623,7 +646,7 @@ class Command(BaseCommand):
 
             return select_cols
 
-        def select_columns_transaction_normalized(bronze_table_name):
+        def select_columns_transaction_normalized(bronze_table_name: str) -> list[str]:
             action_date_col = next(
                 filter(
                     lambda c: c.dest_name == "action_date" and c.source == "action_date",
@@ -779,7 +802,7 @@ class Command(BaseCommand):
 
         return sql
 
-    def transaction_fabs_fpds_merge_into_sql(self):
+    def transaction_fabs_fpds_merge_into_sql(self) -> str:
         if self.etl_level == "transaction_fabs":
             col_info = copy.copy(TRANSACTION_FABS_COLUMN_INFO)
         elif self.etl_level == "transaction_fpds":
@@ -810,7 +833,7 @@ class Command(BaseCommand):
 
         return sql
 
-    def transaction_normalized_merge_into_sql(self, transaction_type):
+    def transaction_normalized_merge_into_sql(self, transaction_type: str) -> str:
         if transaction_type != "fabs" and transaction_type != "fpds":
             raise ValueError(
                 f"Invalid value for 'transaction_type': {transaction_type}. Must select either: 'fabs' or 'fpds'"
@@ -858,7 +881,7 @@ class Command(BaseCommand):
 
         return sql
 
-    def update_transaction_lookup_ids(self):
+    def update_transaction_lookup_ids(self) -> None:
         logger.info("Getting the next transaction_id from transaction_id_seq")
         with connection.cursor() as cursor:
             cursor.execute("SELECT nextval('transaction_id_seq')")
@@ -944,7 +967,7 @@ class Command(BaseCommand):
             #     and previous_max_id.
             cursor.execute(f"SELECT setval('transaction_id_seq', {max(poss_max_id, previous_max_id)}, false)")
 
-    def update_award_lookup_ids(self):
+    def update_award_lookup_ids(self) -> None:
         logger.info("Getting the next award_id from award_id_seq")
         with connection.cursor() as cursor:
             cursor.execute("SELECT nextval('award_id_seq')")
@@ -1051,7 +1074,7 @@ class Command(BaseCommand):
             #     set the current value of award_id_seq to the maximum of poss_max_id and previous_max_id.
             cursor.execute(f"SELECT setval('award_id_seq', {max(poss_max_id, previous_max_id)}, false)")
 
-    def initial_run(self, next_last_load):
+    def initial_run(self, next_last_load: datetime) -> None:  # noqa: C901,PLR0912,PLR0915
         """
         Procedure to create & set up transaction_id_lookup and award_id_lookup tables and create other tables in
         int database that will be populated by subsequent calls.
@@ -1059,7 +1082,7 @@ class Command(BaseCommand):
 
         # Creating 2 context managers to be able to handle error if either temp table is not created correctly.
         @contextmanager
-        def prepare_orphaned_transaction_temp_table():
+        def prepare_orphaned_transaction_temp_table() -> Generator[None]:
             # Since the table to track the orphaned transactions is only needed for this function, just using a
             # managed table in the temp database.
             self.spark.sql("CREATE DATABASE IF NOT EXISTS temp")
@@ -1084,7 +1107,7 @@ class Command(BaseCommand):
                 self.spark.sql("DROP TABLE IF EXISTS temp.orphaned_transaction_info")
 
         @contextmanager
-        def prepare_orphaned_award_temp_table():
+        def prepare_orphaned_award_temp_table() -> Generator[None]:
             # We actually need another temporary table to handle orphaned awards
             self.spark.sql(
                 f"""
@@ -1142,7 +1165,8 @@ class Command(BaseCommand):
                 self.spark.sql("SELECT 1 FROM raw.transaction_normalized")
             except AnalysisException as e:
                 if re.match(
-                    r"^\[TABLE_OR_VIEW_NOT_FOUND\] The table or view `raw`\.`transaction_normalized` cannot be found\..*$",
+                    r"^\[TABLE_OR_VIEW_NOT_FOUND\] The table or view `raw`\.`transaction_normalized` "
+                    r"cannot be found\..*$",
                     str(e),
                     re.MULTILINE,
                 ):
@@ -1170,7 +1194,8 @@ class Command(BaseCommand):
                     self.spark.sql("SELECT 1 FROM raw.transaction_fabs")
                 except AnalysisException as e:
                     if re.match(
-                        r"^\[TABLE_OR_VIEW_NOT_FOUND\] The table or view `raw`\.`transaction_fabs` cannot be found\..*$",
+                        r"^\[TABLE_OR_VIEW_NOT_FOUND\] The table or view `raw`\.`transaction_fabs` "
+                        r"cannot be found\..*$",
                         str(e),
                         re.MULTILINE,
                     ):
@@ -1198,7 +1223,8 @@ class Command(BaseCommand):
                     self.spark.sql("SELECT 1 FROM raw.transaction_fpds")
                 except AnalysisException as e:
                     if re.match(
-                        r"^\[TABLE_OR_VIEW_NOT_FOUND\] The table or view `raw`\.`transaction_fpds` cannot be found\..*$",
+                        r"^\[TABLE_OR_VIEW_NOT_FOUND\] The table or view `raw`\.`transaction_fpds` "
+                        r"cannot be found\..*$",
                         str(e),
                         re.MULTILINE,
                     ):
@@ -1493,6 +1519,7 @@ class Command(BaseCommand):
                     list(AWARDS_COLUMNS),
                 ),
                 ("transaction_id", "transaction_id", "id", "id"),
+                strict=False
             ):
                 call_command(
                     "create_delta_table",
@@ -1510,7 +1537,8 @@ class Command(BaseCommand):
                         self.spark.sql(f"SELECT 1 FROM raw.{destination_table}")
                     except AnalysisException as e:
                         if re.match(
-                            rf"^\[TABLE_OR_VIEW_NOT_FOUND\] The table or view `raw`\.`{destination_table}` cannot be found\..*$",
+                            rf"^\[TABLE_OR_VIEW_NOT_FOUND\] The table or view `raw`\.`{destination_table}` "
+                            r"cannot be found\..*$",
                             str(e),
                             re.MULTILINE,
                         ):
@@ -1553,7 +1581,7 @@ class Command(BaseCommand):
                             # it should be reset
                             update_last_load_date("es_deletes", next_last_load)
 
-    def _insert_orphaned_transactions(self):
+    def _insert_orphaned_transactions(self) -> None:
         # First, find orphaned transactions
         logger.info(
             "Finding orphaned transactions in raw.transaction_normalized (those with missing records in "
