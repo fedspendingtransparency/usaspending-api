@@ -167,7 +167,6 @@ other_type_mapping = {
     **insurance_type_mapping,
     "11": "Other Financial Assistance",
     "-1": "Not Specified",
-    "F005": "Indemnity / Insurance (non-loan)",
     "F008": "Asset Forfeiture / Equitable Sharing",
     "F009": "Sale, Exchange, or Donation of Property and Goods",
     "F010": "Other Financial Assistance",
