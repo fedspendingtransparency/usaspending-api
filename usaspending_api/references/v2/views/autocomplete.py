@@ -1,3 +1,5 @@
+import re
+
 from django.db.models import Case, F, IntegerField, Q, When
 from django.db.models.functions import Upper
 from rest_framework.request import Request
@@ -314,17 +316,15 @@ class CFDAAutocompleteViewSet(BaseAutocompleteViewSet):
         search_text, limit = self.get_request_payload(request)
 
         queryset = Cfda.objects.all()
-        print("4444444444444444444444444")
-        print(search_text)
+        pattern = r'^(\d{2}\.|\d{3}\.)'
 
-        # Program numbers are 10.4839, 98.2718, 93.HDN, etc... Alpha and numeric characters
-        program_number_filter = queryset.filter(program_number__icontains=search_text)
-        title_filter = queryset.filter(program_title__icontains=search_text)
-        popular_name_filter = queryset.filter(popular_name__icontains=search_text)
-        queryset = program_number_filter | title_filter | popular_name_filter
-
-        print("5555555555555555555555555555555")
-        print(queryset)
+        if bool(re.match(pattern, search_text)):
+            # Program numbers are 10.4839, 98.2718, 93.HDN, etc... Alpha and numeric characters
+            queryset = queryset.filter(program_number__icontains=search_text)
+        else:
+            title_filter = queryset.filter(program_title__icontains=search_text)
+            popular_name_filter = queryset.filter(popular_name__icontains=search_text)
+            queryset = title_filter | popular_name_filter
 
         return Response(
             {
