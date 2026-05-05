@@ -40,7 +40,11 @@ from usaspending_api.download.delta_downloads.filters.account_filters import Acc
 from usaspending_api.download.delta_downloads.object_class_program_activity import (
     ObjectClassProgramActivityDownloadFactory,
 )
-from usaspending_api.download.lookups import FILE_FORMATS, JOB_STATUS_DICT, JOB_STATUS_DICT_BY_ID
+from usaspending_api.download.lookups import (
+    FILE_FORMATS,
+    JOB_STATUS_DICT,
+    JOB_STATUS_DICT_BY_ID,
+)
 from usaspending_api.download.models import DownloadJob
 from usaspending_api.settings import TRACE_ENV
 
@@ -98,7 +102,7 @@ class Command(BaseCommand):
 
         if not self.working_dir_path.exists():
             self.working_dir_path.mkdir()
-        create_ref_temp_views(self.spark)
+        create_ref_temp_views(self.spark, download_job=self.download_job)
         self.process_download()
         if spark_created_by_command:
             self.spark.stop()
