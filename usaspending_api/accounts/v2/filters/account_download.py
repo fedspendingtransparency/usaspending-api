@@ -157,7 +157,7 @@ def build_agency_filter(query_filters: dict, filters: dict, tas_id: str) -> dict
         if ToptierAgency.objects.filter(**{filter_param: filters["agency"]}).exists():
             query_filters[f"{tas_id}__funding_toptier_agency_{query_filter_suffix}"] = filters["agency"]
         else:
-            raise NotFound(f"No agency was found with {query_filter_suffix} {filters['agency']}")
+            raise NotFound(f"No agency was found with {query_filter_suffix.split('_')[-1]} {filters['agency']}")
 
     return query_filters
 
