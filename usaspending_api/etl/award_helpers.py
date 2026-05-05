@@ -4,28 +4,14 @@ from django.db import connection
 from psycopg.sql import SQL, Placeholder
 
 from usaspending_api.awards.v2.lookups.lookups import (
-    contract_type_mapping,
-    direct_payment_type_mapping,
-    grant_type_mapping,
-    idv_type_mapping,
-    insurance_type_mapping,
-    loan_type_mapping,
-    other_type_mapping,
+    contract_types_sql_string,
+    direct_payment_types_sql_string,
+    grant_types_sql_string,
+    idv_types_sql_string,
+    insurance_types_sql_string,
+    loan_types_sql_string,
+    other_types_sql_string,
 )
-from usaspending_api.common.helpers.sql_helpers import convert_list_to_sql_array
-
-# TODO: These type strings and the corresponding SQL are mostly used for validation and historical jobs since the move
-#       to Spark pipeline. Should look to remove these and cleanup older jobs.
-# Capture different Award types for pairing with an Award category
-_contract_types = convert_list_to_sql_array(contract_type_mapping.keys())
-_idv_types = convert_list_to_sql_array(idv_type_mapping.keys())
-_grant_types = convert_list_to_sql_array(grant_type_mapping.keys())
-_direct_payment_types = convert_list_to_sql_array(direct_payment_type_mapping.keys())
-_loan_types = convert_list_to_sql_array(loan_type_mapping.keys())
-_insurance_types = convert_list_to_sql_array(insurance_type_mapping.keys())
-
-# Remove both "Insurance" and "Not Specified" type to carry forward previous functionality
-_other_types = convert_list_to_sql_array(set(other_type_mapping.keys() - {*insurance_type_mapping.keys(), "-1"}))
 
 general_award_update_sql_string = f"""
 WITH
@@ -52,13 +38,13 @@ txn_latest AS (
     tn.last_modified_date,
     tn.period_of_performance_current_end_date,
     CASE
-      WHEN tn.type IN ({_contract_types})       THEN 'contract'
-      WHEN tn.type IN ({_grant_types})          THEN 'grant'
-      WHEN tn.type IN ({_direct_payment_types}) THEN 'direct payment'
-      WHEN tn.type IN ({_loan_types})           THEN 'loans'
-      WHEN tn.type IN ({_insurance_types})      THEN 'insurance'
-      WHEN tn.type IN ({_other_types})          THEN 'other'
-      WHEN tn.type IN ({_idv_types})            THEN 'idv'
+      WHEN tn.type IN ({contract_types_sql_string})       THEN 'contract'
+      WHEN tn.type IN ({grant_types_sql_string})          THEN 'grant'
+      WHEN tn.type IN ({direct_payment_types_sql_string}) THEN 'direct payment'
+      WHEN tn.type IN ({loan_types_sql_string})           THEN 'loans'
+      WHEN tn.type IN ({insurance_types_sql_string})      THEN 'insurance'
+      WHEN tn.type IN ({other_types_sql_string})          THEN 'other'
+      WHEN tn.type IN ({idv_types_sql_string})            THEN 'idv'
       ELSE NULL
     END AS category
   FROM vw_transaction_normalized tn

@@ -13,13 +13,13 @@ from pyspark.sql.utils import AnalysisException
 
 from usaspending_api.awards.delta_models.awards import AWARDS_COLUMNS
 from usaspending_api.awards.v2.lookups.lookups import (
-    contract_type_mapping,
-    direct_payment_type_mapping,
-    grant_type_mapping,
-    idv_type_mapping,
-    insurance_type_mapping,
-    loan_type_mapping,
-    other_type_mapping,
+    contract_types_sql_string,
+    direct_payment_types_sql_string,
+    grant_types_sql_string,
+    idv_types_sql_string,
+    insurance_types_sql_string,
+    loan_types_sql_string,
+    other_types_sql_string,
 )
 from usaspending_api.broker.helpers.build_business_categories_boolean_dict import fpds_boolean_columns
 from usaspending_api.broker.helpers.get_business_categories import (
@@ -37,7 +37,6 @@ from usaspending_api.common.helpers.spark_helpers import (
     configure_spark_session,
     get_active_spark_session,
 )
-from usaspending_api.common.helpers.sql_helpers import convert_list_to_sql_array
 from usaspending_api.config import CONFIG
 from usaspending_api.transactions.delta_models.transaction_fabs import (
     FABS_TO_NORMALIZED_COLUMN_INFO,
@@ -340,17 +339,6 @@ class Command(BaseCommand):
         set_insert_special_columns = ["total_subaward_amount", "create_date", "update_date"]
         subquery_ignored_columns = set_insert_special_columns + ["id", "subaward_count"]
 
-        # Capture different Award types for pairing with an Award category
-        contract_types = convert_list_to_sql_array(contract_type_mapping.keys())
-        idv_types = convert_list_to_sql_array(idv_type_mapping.keys())
-        grant_types = convert_list_to_sql_array(grant_type_mapping.keys())
-        direct_payment_types = convert_list_to_sql_array(direct_payment_type_mapping.keys())
-        loan_types = convert_list_to_sql_array(loan_type_mapping.keys())
-        insurance_types = convert_list_to_sql_array(insurance_type_mapping.keys())
-
-        # Remove both "Insurance" and "Not Specified" type to carry forward previous functionality
-        other_types = convert_list_to_sql_array(set(other_type_mapping.keys() - {*insurance_type_mapping.keys(), "-1"}))
-
         # Use a UNION in award_ids_to_update, not UNION ALL because there could be duplicates among the award ids
         # between the query parts or in int.award_ids_delete_modified.
         subquery = f"""
@@ -394,13 +382,13 @@ class Command(BaseCommand):
                         tn.award_id AS id,
                         tn.awarding_agency_id,
                         CASE
-                            WHEN tn.type IN ({contract_types})       THEN 'contract'
-                            WHEN tn.type IN ({grant_types})          THEN 'grant'
-                            WHEN tn.type IN ({direct_payment_types}) THEN 'direct payment'
-                            WHEN tn.type IN ({loan_types})           THEN 'loans'
-                            WHEN tn.type IN ({insurance_types})      THEN 'insurance'
-                            WHEN tn.type IN ({other_types})          THEN 'other'
-                            WHEN tn.type IN ({idv_types})            THEN 'idv'
+                            WHEN tn.type IN ({contract_types_sql_string})       THEN 'contract'
+                            WHEN tn.type IN ({grant_types_sql_string})          THEN 'grant'
+                            WHEN tn.type IN ({direct_payment_types_sql_string}) THEN 'direct payment'
+                            WHEN tn.type IN ({loan_types_sql_string})           THEN 'loans'
+                            WHEN tn.type IN ({insurance_types_sql_string})      THEN 'insurance'
+                            WHEN tn.type IN ({other_types_sql_string})          THEN 'other'
+                            WHEN tn.type IN ({idv_types_sql_string})            THEN 'idv'
                             ELSE NULL
                         END AS category,
                         tn.action_date AS certified_date,
@@ -1519,7 +1507,7 @@ class Command(BaseCommand):
                     list(AWARDS_COLUMNS),
                 ),
                 ("transaction_id", "transaction_id", "id", "id"),
-                strict=False
+                strict=False,
             ):
                 call_command(
                     "create_delta_table",
