@@ -1335,7 +1335,7 @@ def test_load_award_financial_download(
             "ussgl497200_downward_adj_of_prior_year_paid_deliv_orders_oblig": 0.00,
             "award_base_action_date_fiscal_year": 2020,
             "award_latest_action_date_fiscal_year": 2020,
-            "award_type_code": "07",
+            "award_type_code": "F003",
             "prime_award_summary_recipient_cd_current": None,
             "recipient_zip_code": None,
             "prime_award_summary_place_of_performance_cd_current": None,

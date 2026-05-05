@@ -17,7 +17,14 @@ SELECT
     ELSE NULL
   END AS generated_unique_transaction_id,
   CASE
-    WHEN "type" IN ('02', '03', '04', '05', '06', '10', '07', '08', '09', '11') AND "fain" IS NOT NULL THEN "fain"
+    -- TODO: Should refactor to avoid hard coding this SQL file with Award types
+    WHEN "type" IN (
+      '02', '03', '04', '05', 'F001', 'F002', -- grants
+      '06', '10', 'F006', 'F007', -- direct payment
+      '07', '08', 'F003', 'F004', -- loan
+      '09', 'F005', -- insurance
+      '11', 'F008', 'F009', 'F010' -- other
+    ) AND "fain" IS NOT NULL THEN "fain"
     WHEN "piid" IS NOT NULL THEN "piid"  -- contracts. Did it this way to easily handle IDV contracts
     ELSE "uri"
   END AS display_award_id,
