@@ -1,3 +1,13 @@
+from usaspending_api.awards.v2.lookups.lookups import (
+    contract_types_sql_string,
+    direct_payment_types_sql_string,
+    grant_types_sql_string,
+    idv_types_sql_string,
+    insurance_types_sql_string,
+    loan_types_sql_string,
+    other_types_sql_string,
+)
+
 RECIPIENT_PROFILE_COLUMNS_WITHOUT_ID = {
     "recipient_level": {"delta": "STRING NOT NULL", "postgres": "TEXT NOT NULL"},
     "recipient_hash": {"delta": "STRING", "postgres": "UUID"},
@@ -34,26 +44,31 @@ recipient_profile_load_sql_strings = [
     #   --------------------------------------------------------------------------------
     #     -- Step 1, create the temporary matview of recipients from transactions
     #   --------------------------------------------------------------------------------
-    r"""
+    fr"""
     CREATE OR REPLACE TEMPORARY VIEW temporary_recipients_from_transactions_view AS (
     SELECT
         REGEXP_REPLACE(MD5(UPPER(
-        CASE
-            WHEN COALESCE(fpds.awardee_or_recipient_uei, fabs.uei) IS NOT NULL THEN CONCAT('uei-', COALESCE(fpds.awardee_or_recipient_uei, fabs.uei))
-            WHEN COALESCE(fpds.awardee_or_recipient_uniqu, fabs.awardee_or_recipient_uniqu) IS NOT NULL THEN CONCAT('duns-', COALESCE(fpds.awardee_or_recipient_uniqu, fabs.awardee_or_recipient_uniqu))
-            ELSE CONCAT('name-', COALESCE(fpds.awardee_or_recipient_legal, fabs.awardee_or_recipient_legal, '')) END
-        )), '^(\.{{8}})(\.{{4}})(\.{{4}})(\.{{4}})(\.{{12}})$', '\$1-\$2-\$3-\$4-\$5') AS recipient_hash,
+            CASE
+                WHEN COALESCE(fpds.awardee_or_recipient_uei, fabs.uei) IS NOT NULL
+                    THEN CONCAT('uei-', COALESCE(fpds.awardee_or_recipient_uei, fabs.uei))
+                WHEN COALESCE(fpds.awardee_or_recipient_uniqu, fabs.awardee_or_recipient_uniqu) IS NOT NULL
+                    THEN CONCAT('duns-', COALESCE(fpds.awardee_or_recipient_uniqu, fabs.awardee_or_recipient_uniqu))
+                ELSE CONCAT('name-', COALESCE(fpds.awardee_or_recipient_legal, fabs.awardee_or_recipient_legal, '')) END
+            )),
+            '^(\.{{{{8}}}})(\.{{{{4}}}})(\.{{{{4}}}})(\.{{{{4}}}})(\.{{{{12}}}})$', '\$1-\$2-\$3-\$4-\$5'
+        ) AS recipient_hash,
         COALESCE(fpds.awardee_or_recipient_uniqu, fabs.awardee_or_recipient_uniqu) AS recipient_unique_id,
         COALESCE(fpds.ultimate_parent_unique_ide, fabs.ultimate_parent_unique_ide) AS parent_recipient_unique_id,
         COALESCE(fpds.awardee_or_recipient_uei, fabs.uei) AS uei,
         COALESCE(fpds.ultimate_parent_uei, fabs.ultimate_parent_uei) AS parent_uei,
         CASE
-            WHEN tn.type IN ('A', 'B', 'C', 'D')      THEN 'contract'
-            WHEN tn.type IN ('02', '03', '04', '05')  THEN 'grant'
-            WHEN tn.type IN ('06', '10')              THEN 'direct payment'
-            WHEN tn.type IN ('07', '08')              THEN 'loans'
-            WHEN tn.type IN ('09', '11')              THEN 'other'     -- collapsing insurance into other
-            WHEN tn.type LIKE 'IDV%'                  THEN 'contract'  -- collapsing idv into contract
+            -- collapsing idv into contract
+            WHEN tn.type IN ({contract_types_sql_string}, {idv_types_sql_string}) THEN 'contract'
+            WHEN tn.type IN ({grant_types_sql_string})                            THEN 'grant'
+            WHEN tn.type IN ({direct_payment_types_sql_string})                   THEN 'direct payment'
+            WHEN tn.type IN ({loan_types_sql_string})                             THEN 'loans'
+            -- collapsing insurance into other
+            WHEN tn.type IN ({insurance_types_sql_string}, {other_types_sql_string})  THEN 'other'
             ELSE NULL
         END AS award_category,
         CASE
@@ -61,7 +76,7 @@ recipient_profile_load_sql_strings = [
             ELSE 'R' END AS recipient_level,
         tn.action_date,
         CAST(COALESCE(CASE
-            WHEN tn.type IN('07','08') THEN tn.original_loan_subsidy_cost
+            WHEN tn.type IN({loan_types_sql_string}) THEN tn.original_loan_subsidy_cost
             ELSE tn.federal_action_obligation
         END, 0) AS NUMERIC(23, 2)) AS generated_pragmatic_obligation
     FROM
@@ -75,7 +90,7 @@ recipient_profile_load_sql_strings = [
     # --------------------------------------------------------------------------------
     # -- Step 2, Populate table with 100% of combinations
     # --------------------------------------------------------------------------------
-    f"""
+    """
         CREATE OR REPLACE TEMPORARY VIEW step_2 AS (
             SELECT
                 'P' as recipient_level,
@@ -141,7 +156,7 @@ recipient_profile_load_sql_strings = [
     # --------------------------------------------------------------------------------
     # -- Step 3, Obligation for past 12 months
     # --------------------------------------------------------------------------------
-    f"""
+    """
     CREATE OR REPLACE TEMPORARY VIEW step_3 AS (
         WITH grouped_by_category AS (
             WITH grouped_by_category_inner AS (
@@ -152,11 +167,29 @@ recipient_profile_load_sql_strings = [
                         WHEN award_category NOT IN ('contract', 'grant', 'direct payment', 'loans')
                         THEN 'other' ELSE award_category
                     END AS award_category,
-                    CAST(CASE WHEN award_category = 'contract' THEN SUM(generated_pragmatic_obligation) ELSE 0 END AS NUMERIC(23,2)) AS inner_contracts,
-                    CAST(CASE WHEN award_category = 'grant' THEN SUM(generated_pragmatic_obligation) ELSE 0 END AS NUMERIC(23,2)) AS inner_grants,
-                    CAST(CASE WHEN award_category = 'direct payment' THEN SUM(generated_pragmatic_obligation) ELSE 0 END AS NUMERIC(23,2)) AS inner_direct_payments,
-                    CAST(CASE WHEN award_category = 'loans' THEN SUM(generated_pragmatic_obligation) ELSE 0 END AS NUMERIC(23,2)) AS inner_loans,
-                    CAST(CASE WHEN award_category NOT IN ('contract', 'grant', 'direct payment', 'loans') THEN SUM(generated_pragmatic_obligation) ELSE 0 END AS NUMERIC(23,2)) AS inner_other,
+                    CAST(
+                        CASE WHEN award_category = 'contract' THEN SUM(generated_pragmatic_obligation) ELSE 0 END
+                        AS NUMERIC(23,2)
+                    ) AS inner_contracts,
+                    CAST(
+                        CASE WHEN award_category = 'grant' THEN SUM(generated_pragmatic_obligation) ELSE 0 END
+                        AS NUMERIC(23,2)
+                    ) AS inner_grants,
+                    CAST(
+                        CASE WHEN award_category = 'direct payment' THEN SUM(generated_pragmatic_obligation) ELSE 0 END
+                        AS NUMERIC(23,2)
+                    ) AS inner_direct_payments,
+                    CAST(
+                        CASE WHEN award_category = 'loans' THEN SUM(generated_pragmatic_obligation) ELSE 0 END
+                        AS NUMERIC(23,2)
+                    ) AS inner_loans,
+                    CAST(
+                        CASE
+                            WHEN award_category NOT IN ('contract', 'grant', 'direct payment', 'loans')
+                            THEN SUM(generated_pragmatic_obligation)
+                            ELSE 0
+                        END AS NUMERIC(23,2)
+                    ) AS inner_other,
                     SUM(generated_pragmatic_obligation) AS inner_amount,
                     COUNT(*) AS inner_count
                 FROM
@@ -208,7 +241,7 @@ recipient_profile_load_sql_strings = [
     # --------------------------------------------------------------------------------
     # -- Step 4, Populate the Parent Obligation for past 12 months
     # --------------------------------------------------------------------------------
-    f"""
+    """
     CREATE OR REPLACE TEMPORARY VIEW step_4 AS (
         WITH grouped_by_parent AS (
             WITH grouped_by_parent_inner AS (
@@ -218,11 +251,29 @@ recipient_profile_load_sql_strings = [
                         WHEN award_category NOT IN ('contract', 'grant', 'direct payment', 'loans')
                         THEN 'other' ELSE award_category
                     END AS award_category,
-                    CAST(CASE WHEN award_category = 'contract' THEN SUM(generated_pragmatic_obligation) ELSE 0 END AS NUMERIC(23,2)) AS inner_contracts,
-                    CAST(CASE WHEN award_category = 'grant' THEN SUM(generated_pragmatic_obligation) ELSE 0 END AS NUMERIC(23,2)) AS inner_grants,
-                    CAST(CASE WHEN award_category = 'direct payment' THEN SUM(generated_pragmatic_obligation) ELSE 0 END AS NUMERIC(23,2)) AS inner_direct_payments,
-                    CAST(CASE WHEN award_category = 'loans' THEN SUM(generated_pragmatic_obligation) ELSE 0 END AS NUMERIC(23,2)) AS inner_loans,
-                    CAST(CASE WHEN award_category NOT IN ('contract', 'grant', 'direct payment', 'loans') THEN SUM(generated_pragmatic_obligation) ELSE 0 END AS NUMERIC(23,2)) AS inner_other,
+                    CAST(
+                        CASE WHEN award_category = 'contract' THEN SUM(generated_pragmatic_obligation) ELSE 0
+                        END AS NUMERIC(23,2)
+                    ) AS inner_contracts,
+                    CAST(
+                        CASE WHEN award_category = 'grant' THEN SUM(generated_pragmatic_obligation) ELSE 0 END
+                        AS NUMERIC(23,2)
+                    ) AS inner_grants,
+                    CAST(
+                        CASE WHEN award_category = 'direct payment' THEN SUM(generated_pragmatic_obligation) ELSE 0 END
+                        AS NUMERIC(23,2)
+                    ) AS inner_direct_payments,
+                    CAST(
+                        CASE WHEN award_category = 'loans' THEN SUM(generated_pragmatic_obligation) ELSE 0 END
+                        AS NUMERIC(23,2)
+                    ) AS inner_loans,
+                    CAST(
+                        CASE
+                            WHEN award_category NOT IN ('contract', 'grant', 'direct payment', 'loans')
+                            THEN SUM(generated_pragmatic_obligation)
+                            ELSE 0
+                        END AS NUMERIC(23,2)
+                    ) AS inner_other,
                     SUM(generated_pragmatic_obligation) AS inner_amount,
                     COUNT(*) AS inner_count
                 FROM
@@ -274,7 +325,7 @@ recipient_profile_load_sql_strings = [
     # --------------------------------------------------------------------------------
     # -- Step 5, Populating child recipient list in parents
     # --------------------------------------------------------------------------------
-    f"""
+    """
     CREATE OR REPLACE TEMPORARY VIEW step_5 AS (
         WITH parent_recipients AS (
             SELECT
@@ -314,7 +365,7 @@ recipient_profile_load_sql_strings = [
     # --------------------------------------------------------------------------------
     # -- Step 6, Populate parent recipient list in children
     # --------------------------------------------------------------------------------
-    f"""
+    """
     CREATE OR REPLACE TEMPORARY VIEW step_6 AS (
         WITH all_recipients AS (
             SELECT
@@ -355,7 +406,7 @@ recipient_profile_load_sql_strings = [
     # --------------------------------------------------------------------------------
     # -- Step 7, Mark recipient profile rows older than 12 months as valid
     # --------------------------------------------------------------------------------
-    f"""
+    """
     CREATE OR REPLACE TEMPORARY VIEW step_7 AS (
         WITH grouped_by_old_recipients AS (
             SELECT
@@ -394,7 +445,7 @@ recipient_profile_load_sql_strings = [
     # --------------------------------------------------------------------------------
     # -- Step 8, Mark Parent recipient profile rows older than 12 months as valid
     # --------------------------------------------------------------------------------
-    f"""
+    """
     CREATE OR REPLACE TEMPORARY VIEW step_8 AS (
         WITH grouped_by_parent_old AS (
             SELECT
