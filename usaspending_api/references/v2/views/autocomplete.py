@@ -32,8 +32,8 @@ class BaseAutocompleteViewSet(APIView):
 
         try:
             limit = int(json_request.get("limit", 10))
-        except ValueError:
-            raise InvalidParameterException("Limit request parameter is not a valid, positive integer")  # noqa: B904
+        except ValueError as ve:
+            raise InvalidParameterException("Limit request parameter is not a valid, positive integer") from ve
 
         # required query parameters were not provided
         if not search_text:
@@ -317,11 +317,11 @@ class CFDAAutocompleteViewSet(BaseAutocompleteViewSet):
 
         queryset = Cfda.objects.all()
         # allow 2 digits, or 2 digits with a dot followed by 1-3 digits or letters
-        # INCLUDE 25, 25.G, 25.HI, 25.HIJ
-        # EXCLUDE 25.HIJK, 25., 256, 256.J, 256.JK, 2567, 25HIJK
-        pattern = r'^\d{2}(\.[a-zA-Z0-9]{1,3})?$'
+        # INCLUDE 2, 25, 25., 25.G, 25.HI, 25.HIJ
+        # EXCLUDE 25.HIJK, 256, 256.J, 256.JK, 2567, 25HIJK
+        pattern = r'^\d{2}\.?[a-zA-Z0-9]{0,3}$'
         if bool(re.match(pattern, search_text)):
-            # Program numbers are 10.4839, 98.2718, 93.HDN, etc... 1-3 Alpha or numeric characters following dot
+            # Program numbers are 10.483, 98.271, 93.HDN, etc... 1-3 Alpha or numeric characters following dot
             queryset = queryset.filter(program_number__icontains=search_text)
         else:
             title_filter = queryset.filter(program_title__icontains=search_text)
