@@ -3,7 +3,7 @@ from usaspending_api.awards.v2.lookups.lookups import (
     direct_payment_types_sql_string,
     grant_types_sql_string,
     idv_types_sql_string,
-    insurance_type_mapping,
+    insurance_types_sql_string,
     loan_types_sql_string,
     other_types_sql_string,
 )
@@ -68,7 +68,7 @@ recipient_profile_load_sql_strings = [
             WHEN tn.type IN ({direct_payment_types_sql_string})                   THEN 'direct payment'
             WHEN tn.type IN ({loan_types_sql_string})                             THEN 'loans'
             -- collapsing insurance into other
-            WHEN tn.type IN ({insurance_type_mapping}, {other_types_sql_string})  THEN 'other'
+            WHEN tn.type IN ({insurance_types_sql_string}, {other_types_sql_string})  THEN 'other'
             ELSE NULL
         END AS award_category,
         CASE
