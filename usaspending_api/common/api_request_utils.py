@@ -3,6 +3,13 @@ from django.contrib.postgres.search import SearchVector
 from django.db.models import Q
 from django.utils import timezone
 from usaspending_api.common.exceptions import InvalidParameterException
+import os
+import json
+import boto3
+from botocore.exceptions import ClientError
+from functools import wraps
+from rest_framework.response import Response
+from rest_framework import status
 
 
 class FiscalYear:
@@ -436,3 +443,127 @@ class AutoCompleteHandler:
                 raise InvalidParameterException(
                     "Invalid mode, autocomplete modes are 'contains', 'startswith', but got " + body["mode"]
                 )
+
+
+class LLMAPIKeyHandler:
+    """Handles LLM API key validation via AWS Secrets Manager"""
+
+    @staticmethod
+    def require_api_key(function):
+        """
+        Decorator to validate LLM API access via UUID in request header.
+        Checks against UUID stored in AWS Secrets Manager.
+
+        Must be applied before cache decorators to prevent unauthorized cache access.
+
+        Environment Variables:
+            LLM_API_SECRET_NAME: Name of the AWS secret containing the LLM API UUID
+            AWS_REGION: AWS region for Secrets Manager (defaults to us-gov-west-1)
+
+        Request Headers:
+            X-LLM-API-Key: UUID for LLM API authentication
+
+        Returns 403 Forbidden with appropriate message if:
+            - X-LLM-API-Key header is not included in the API request
+            - AWS doesn't contain the requested secret
+            - UUID in the header doesn't match the AWS secret
+
+        Example:
+            @LLMAPIKeyHandler.require_api_key
+            @cache_response()
+            @api_view(['GET', 'POST'])
+            def llm_endpoint(request):
+                return Response({"message": "LLM endpoint"})
+        """
+
+        @wraps(function)
+        def wrapper(*args, **kwargs):
+            # Extract request from args
+            request = args[0] if args else kwargs.get('request')
+
+            if not request:
+                return Response(
+                    {"detail": "Request object not found"},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                )
+
+            # Check for UUID in header
+            llm_api_key = request.headers.get('X-LLM-API-Key')
+
+            if not llm_api_key:
+                return Response(
+                    {"detail": "X-LLM-API-Key header is required for LLM API access"},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+
+            # Get secret name from environment variable
+            secret_name = os.environ.get('LLM_API_SECRET_NAME')
+
+            if not secret_name:
+                return Response(
+                    {"detail": "LLM API secret configuration is not set"},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+
+            # Retrieve secret from AWS Secrets Manager
+            try:
+                session = boto3.session.Session()
+                client = session.client(
+                    service_name='secretsmanager',
+                    region_name=os.environ.get('AWS_REGION', 'us-gov-west-1')
+                )
+
+                get_secret_value_response = client.get_secret_value(SecretId=secret_name)
+
+                # Parse secret string
+                if 'SecretString' in get_secret_value_response:
+                    secret = get_secret_value_response['SecretString']
+                    # Handle both plain string and JSON formatted secrets
+                    try:
+                        secret_dict = json.loads(secret)
+                        # Support multiple key names in the secret JSON
+                        stored_uuid = secret_dict.get('uuid') or secret_dict.get('LLM_API_KEY') or secret_dict.get(
+                            'api_key')
+                        if not stored_uuid:
+                            return Response(
+                                {"detail": "LLM API secret does not contain a valid UUID key"},
+                                status=status.HTTP_403_FORBIDDEN
+                            )
+                    except json.JSONDecodeError:
+                        # Secret is a plain string UUID
+                        stored_uuid = secret
+                else:
+                    return Response(
+                        {"detail": "LLM API secret format is invalid"},
+                        status=status.HTTP_403_FORBIDDEN
+                    )
+
+            except ClientError as e:
+                error_code = e.response['Error']['Code']
+                if error_code == 'ResourceNotFoundException':
+                    return Response(
+                        {"detail": f"LLM API secret '{secret_name}' not found in AWS Secrets Manager"},
+                        status=status.HTTP_403_FORBIDDEN
+                    )
+                else:
+                    return Response(
+                        {"detail": f"Error retrieving LLM API secret: {error_code}"},
+                        status=status.HTTP_403_FORBIDDEN
+                    )
+            except Exception as e:
+                return Response(
+                    {"detail": f"Unexpected error accessing LLM API secret: {str(e)}"},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+
+            # Validate UUID matches the secret
+            if llm_api_key.strip() != stored_uuid.strip():
+                return Response(
+                    {"detail": "Invalid LLM API key"},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+
+            # UUID is valid, proceed with the view
+            return function(*args, **kwargs)
+
+        return wrapper
