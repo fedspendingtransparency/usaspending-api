@@ -148,15 +148,16 @@ def build_query_filters(account_type: str, filters: dict, account_level: str) ->
 
 
 def build_agency_filter(query_filters: dict, filters: dict, tas_id: str) -> dict:
-    filter_param, query_filter_suffix = (
-        ("toptier_agency_id", "id") if filters["agency"].isdigit()
-        else ("abbreviation", "_abbreviation")
-    )
+    if filters.get("agency") and filters["agency"] != "all":
+        filter_param, query_filter_suffix = (
+            ("toptier_agency_id", "id") if filters["agency"].isdigit()
+            else ("abbreviation", "_abbreviation")
+        )
 
-    if ToptierAgency.objects.filter(**{filter_param: filters["agency"]}).exists():
-        query_filters[f"{tas_id}__funding_toptier_agency_{query_filter_suffix}"] = filters["agency"]
-    else:
-        raise NotFound(f"No agency was found with {query_filter_suffix} {filters['agency']}")
+        if ToptierAgency.objects.filter(**{filter_param: filters["agency"]}).exists():
+            query_filters[f"{tas_id}__funding_toptier_agency_{query_filter_suffix}"] = filters["agency"]
+        else:
+            raise NotFound(f"No agency was found with {query_filter_suffix} {filters['agency']}")
 
     return query_filters
 
