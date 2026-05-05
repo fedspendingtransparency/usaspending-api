@@ -91,6 +91,8 @@ class BaseDownloadViewSet(APIView):
 
     @staticmethod
     def is_duckdb_download(json_request: dict) -> bool:
+        # TODO: Update the `spark_jobs` line in `process_request()` below to use DuckDB locally when
+        #  DuckDB is fully integrated and tested
         return (
             json_request["request_type"] == "account"
             and not (
@@ -123,14 +125,6 @@ class BaseDownloadViewSet(APIView):
             # Eagerly execute the download in this running process
             if self.is_spark_download(json_request):
                 spark_jobs = SparkJobs(LocalStrategy())
-                # Use DuckDBStrategy() for DuckDB downloads to avoid starting an unnecessary Spark session, if the
-                #   download is a DuckDB download
-                # TODO Uncomment when we're ready to use DuckDB for downloads
-                # spark_jobs = (
-                #     SparkJobs(
-                #       DuckDBStrategy()) if self.is_duckdb_download(json_request) else SparkJobs(LocalStrategy()
-                #     )
-                # )
                 spark_jobs.start(
                     job_name=job_name,
                     command_name="generate_spark_download",
