@@ -1,4 +1,6 @@
-file_d1_sql_string = """
+from usaspending_api.awards.v2.lookups.lookups import loan_types_sql_string
+
+file_d1_sql_string = f"""
     WITH valid_file_c AS (
     SELECT
         distinct
@@ -97,9 +99,9 @@ file_d1_sql_string = """
     )
     WHERE
         (
-    (a.type IN ('07', '08')
+    (a.type IN ({loan_types_sql_string})
             AND a.total_subsidy_cost > 0)
-        OR a.type not IN ('07', '08')
+        OR a.type not IN ({loan_types_sql_string})
     )
             AND a.certified_date >= '2016-10-01'
         GROUP BY
