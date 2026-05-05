@@ -2,7 +2,7 @@ import os
 import re
 from collections import OrderedDict, namedtuple
 from pathlib import Path
-from typing import Any, Callable, Literal
+from typing import Any, Callable, Iterable, Literal
 
 from django.conf import settings
 from django.db import DEFAULT_DB_ALIAS, connection, connections, router
@@ -382,7 +382,7 @@ def get_parent_partitioned_table(table: str, cursor: Cursor) -> Any | None:
     return parent_partition_results[0] if parent_partition_results else None
 
 
-def convert_list_to_sql_array(list_to_convert: list[Any] | set[Any]) -> str:
+def convert_list_to_sql_array(list_to_convert: Iterable[Any]) -> str:
     list_to_convert = [f"'{val}'" if isinstance(val, str) else str(val) for val in list_to_convert]
     result = ",".join(list_to_convert)
     return result
