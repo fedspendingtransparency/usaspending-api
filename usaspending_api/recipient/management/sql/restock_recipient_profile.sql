@@ -23,12 +23,12 @@ CREATE MATERIALIZED VIEW public.temporary_recipients_from_transactions_view AS (
     COALESCE(fpds.awardee_or_recipient_uei, fabs.uei) AS uei,
     COALESCE(fpds.ultimate_parent_uei, fabs.ultimate_parent_uei) AS parent_uei,
     CASE
-      WHEN tn.type IN ('A', 'B', 'C', 'D')      THEN 'contract'
-      WHEN tn.type IN ('02', '03', '04', '05')  THEN 'grant'
-      WHEN tn.type IN ('06', '10')              THEN 'direct payment'
-      WHEN tn.type IN ('07', '08')              THEN 'loans'
-      WHEN tn.type IN ('09', '11')              THEN 'other'     -- collapsing insurance into other
-      WHEN tn.type LIKE 'IDV%'                  THEN 'contract'  -- collapsing idv into contract
+      WHEN tn.type IN ('A', 'B', 'C', 'D')                         THEN 'contract'
+      WHEN tn.type IN ('02', '03', '04', '05', 'F001', 'F002')     THEN 'grant'
+      WHEN tn.type IN ('06', '10', 'F006', 'F007')                 THEN 'direct payment'
+      WHEN tn.type IN ('07', '08', 'F003', 'F004')                 THEN 'loans'
+      WHEN tn.type IN ('09', '11', 'F005', 'F008', 'F009', 'F010') THEN 'other'     -- collapsing insurance into other
+      WHEN tn.type LIKE 'IDV%'                                     THEN 'contract'  -- collapsing idv into contract
       ELSE NULL
     END AS award_category,
     CASE
@@ -36,7 +36,7 @@ CREATE MATERIALIZED VIEW public.temporary_recipients_from_transactions_view AS (
     ELSE 'R' END AS recipient_level,
     tn.action_date,
     COALESCE(CASE
-        WHEN tn.type IN('07','08') THEN tn.original_loan_subsidy_cost
+        WHEN tn.type IN('07','08', 'F003', 'F004') THEN tn.original_loan_subsidy_cost
         ELSE tn.federal_action_obligation
       END, 0)::NUMERIC(23, 2) AS generated_pragmatic_obligation
   FROM
