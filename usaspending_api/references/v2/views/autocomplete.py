@@ -366,18 +366,33 @@ class PSCAutocompleteViewSet(BaseAutocompleteViewSet):
         """Return all PSC table entries matching the provided search text"""
         search_text, limit = self.get_request_payload(request)
 
-        queryset = PSC.objects.all()
-
         # PSC codes are 4-digit, but we have some numeric PSC descriptions, so limit to 4...
-        if len(search_text) == 4 and queryset.filter(code=search_text.upper()).exists():
-            queryset = queryset.filter(code=search_text.upper())
+        if len(search_text) == 4:
+            queryset = PSC.objects.filter(code=search_text.upper())
+            results = list(
+                queryset.annotate(
+                    product_or_service_code=F("code"),
+                    psc_description=F("description")
+                ).values("product_or_service_code", "psc_description")[:limit]
+            )
+
+            if not results:
+                queryset = PSC.objects.filter(description__icontains=search_text)
+                results = list(
+                    queryset.annotate(product_or_service_code=F("code"), psc_description=F("description")).values(
+                        "product_or_service_code", "psc_description"
+                    )[:limit]
+                )
+
         else:
-            queryset = queryset.filter(description__icontains=search_text)
+            queryset = PSC.objects.filter(description__icontains=search_text)
+            results = list(
+                queryset.annotate(product_or_service_code=F("code"), psc_description=F("description")).values(
+                    "product_or_service_code", "psc_description"
+                )[:limit]
+            )
 
-        # rename columns...
-        queryset = queryset.annotate(product_or_service_code=F("code"), psc_description=F("description"))
-
-        return Response({"results": list(queryset.values("product_or_service_code", "psc_description")[:limit])})
+        return Response({"results": results})
 
 
 class ProgramActivityAutocompleteViewSet(BaseAutocompleteViewSet):
@@ -409,8 +424,7 @@ class ProgramActivityAutocompleteViewSet(BaseAutocompleteViewSet):
                 "program_activity_code", "program_activity_name"
             )
 
-            results = list(queryset.values("program_activity_code", "program_activity_name")[:limit])
-
+        results = list(queryset.values("program_activity_code", "program_activity_name")[:limit])
         return Response({"results": results})
 
 
