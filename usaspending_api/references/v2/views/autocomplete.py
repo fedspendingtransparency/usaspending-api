@@ -67,7 +67,7 @@ class BaseAutocompleteViewSet(APIView):
             "toptier_name",
             "subtier_abbreviation",
             "subtier_name",
-        )
+        )[:limit]
 
         results = [
             {
@@ -80,7 +80,7 @@ class BaseAutocompleteViewSet(APIView):
                 },
                 "subtier_agency": {"abbreviation": agency["subtier_abbreviation"], "name": agency["subtier_name"]},
             }
-            for agency in agencies[:limit]
+            for agency in agencies
         ]
 
         results = {"results": results}
@@ -391,15 +391,27 @@ class ProgramActivityAutocompleteViewSet(BaseAutocompleteViewSet):
     @cache_response()
     def post(self, request):
         search_text, limit = self.get_request_payload(request)
+        if len(search_text) == 4:
+            queryset = RefProgramActivity.objects.filter(
+                program_activity_code=search_text.upper()
+            ).distinct("program_activity_code", "program_activity_name")
 
-        queryset = RefProgramActivity.objects.distinct("program_activity_code", "program_activity_name")
+            results = list(queryset.values("program_activity_code", "program_activity_name")[:limit])
 
-        if len(search_text) == 4 and queryset.filter(program_activity_code=search_text.upper()).exists():
-            queryset = queryset.filter(program_activity_code=search_text.upper())
+            if not results:
+                queryset = RefProgramActivity.objects.filter(program_activity_name__icontains=search_text).distinct(
+                    "program_activity_code", "program_activity_name"
+                )
+
+                results = list(queryset.values("program_activity_code", "program_activity_name")[:limit])
         else:
-            queryset = queryset.filter(program_activity_name__icontains=search_text)
+            queryset = RefProgramActivity.objects.filter(program_activity_name__icontains=search_text).distinct(
+                "program_activity_code", "program_activity_name"
+            )
 
-        return Response({"results": list(queryset.values("program_activity_code", "program_activity_name")[:limit])})
+            results = list(queryset.values("program_activity_code", "program_activity_name")[:limit])
+
+        return Response({"results": results})
 
 
 class GlossaryAutocompleteViewSet(BaseAutocompleteViewSet):
