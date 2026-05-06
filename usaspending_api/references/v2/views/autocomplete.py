@@ -320,7 +320,7 @@ class CFDAAutocompleteViewSet(BaseAutocompleteViewSet):
         # INCLUDE 2, 25, 25., 25.G, 25.HI, 25.HIJ
         # EXCLUDE 25.HIJK, 256, 256.J, 256.JK, 2567, 25HIJK
         pattern = r'^\d{2}\.?[a-zA-Z0-9]{0,3}$'
-        if bool(re.match(pattern, search_text)):
+        if re.match(pattern, search_text):
             # Program numbers are 10.483, 98.271, 93.HDN, etc... 1-3 Alpha or numeric characters following dot
             queryset = queryset.filter(program_number__icontains=search_text)
         else:
