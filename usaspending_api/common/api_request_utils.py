@@ -1,21 +1,24 @@
-from datetime import date, time, datetime
+import json
+import os
+from datetime import date, datetime, time
+from functools import wraps
+from typing import Any, Dict, List, Optional, Union
+
+import boto3
+from botocore.exceptions import ClientError
 from django.contrib.postgres.search import SearchVector
 from django.db.models import Q
 from django.utils import timezone
-from usaspending_api.common.exceptions import InvalidParameterException
-import os
-import json
-import boto3
-from botocore.exceptions import ClientError
-from functools import wraps
-from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.response import Response
+
+from usaspending_api.common.exceptions import InvalidParameterException
 
 
 class FiscalYear:
     """Represents a federal fiscal year."""
 
-    def __init__(self, fy):
+    def __init__(self, fy: int) -> None:
         self.fy = fy
         tz = time(0, 0, 1, tzinfo=timezone.utc)
         # FY start previous year on Oct 1st. i.e. FY 2017 starts 10-1-2016
@@ -23,7 +26,7 @@ class FiscalYear:
         # FY ends current FY year on Sept 30th i.e. FY 2017 ends 9-30-2017
         self.fy_end_date = datetime.combine(date(int(fy), 9, 30), tz)
 
-    def get_filter_object(self, date_field, as_dict=False):
+    def get_filter_object(self, date_field: str, as_dict: bool = False) -> Union[Q, Dict[str, Any]]:
         """
         Create a filter object using date field, will return a Q object
         such that Q(date_field__gte=start_date) & Q(date_field__lte=end_date)
@@ -71,15 +74,21 @@ class FilterGenerator:
         "range_intersect": "range_intersect",
     }
 
-    def __init__(self, model, filter_map={}, ignored_parameters=[]):
-        self.filter_map = filter_map
+    def __init__(
+        self,
+        model: Any,
+        filter_map: Optional[Dict[str, str]] = None,
+        ignored_parameters: Optional[List[str]] = None,
+    ) -> None:
+        self.filter_map = filter_map if filter_map is not None else {}
         self.model = model
-        self.ignored_parameters = ["page", "limit", "last", "req", "verbose"] + ignored_parameters
+        base_ignored = ["page", "limit", "last", "req", "verbose"]
+        self.ignored_parameters = base_ignored + (ignored_parameters if ignored_parameters is not None else [])
         # When using full-text search the surrounding code must check for search vectors!
         self.search_vectors = []
 
     # Attaches this generator's search vectors to the query_set, if there are any
-    def attach_search_vectors(self, query_set):
+    def attach_search_vectors(self, query_set: Any) -> Any:
         qs = query_set
         if len(self.search_vectors) > 0:
             vector_sum = self.search_vectors[0]
@@ -93,7 +102,7 @@ class FilterGenerator:
     # method that can create filters based on passed-in
     # parameters without needing to know about the structure
     # of the request itself (e.g., GET vs POST)
-    def create_from_query_params(self, parameters):
+    def create_from_query_params(self, parameters: Dict[str, Any]) -> Dict[str, Any]:
         """
         Create filters using a request's query parameters.
 
@@ -113,7 +122,7 @@ class FilterGenerator:
                 return_arguments[key] = parameters[key]
         return return_arguments
 
-    def create_from_request_body(self, parameters):
+    def create_from_request_body(self, parameters: Dict[str, Any]) -> Q:
         """
         Creates a Q object from a POST query.
 
@@ -147,7 +156,7 @@ class FilterGenerator:
             raise
         return self.create_q_from_filter_list(parameters.get("filters", []))
 
-    def create_q_from_filter_list(self, filter_list, combine_method="AND"):
+    def create_q_from_filter_list(self, filter_list: List[Dict[str, Any]], combine_method: str = "AND") -> Q:
         q_object = Q()
         for filt in filter_list:
             if combine_method == "AND":
@@ -156,7 +165,7 @@ class FilterGenerator:
                 q_object |= self.create_q_from_filter(filt)
         return q_object
 
-    def create_q_from_filter(self, filt):
+    def create_q_from_filter(self, filt: Dict[str, Any]) -> Q:  # noqa: C901, PLR0911, PLR0912, PLR0915
         if "combine_method" in filt:
             return self.create_q_from_filter_list(filt["filters"], filt["combine_method"])
         else:
@@ -239,7 +248,7 @@ class FilterGenerator:
                 return ~Q(**q_kwargs)
             return Q(**q_kwargs)
 
-    def validate_post_request(self, request):
+    def validate_post_request(self, request: Dict[str, Any]) -> None:  # noqa: C901, PLR0912, PLR1702
         if "filters" in request:
             for filt in request["filters"]:
                 if "combine_method" in filt:
@@ -304,7 +313,7 @@ class FilterGenerator:
 
     # Special operation functions follow
 
-    def range_intersect(self, fields, values):
+    def range_intersect(self, fields: List[str], values: List[Any]) -> Q:
         """
         Range intersect function - evaluates if a range defined by two fields overlaps
         a range of values
@@ -327,7 +336,7 @@ class FilterGenerator:
         q_case[fields[1] + "__gte"] = values[0]  # f2 >= r1
         return Q(**q_case)
 
-    def is_string_field(self, field):
+    def is_string_field(self, field: str) -> bool:
         fields = field.split("__")
         model_to_check = self.model
 
@@ -356,14 +365,15 @@ class FilterGenerator:
 class AutoCompleteHandler:
     @staticmethod
     # Data set to be searched for the value, and which ids to match
-    def get_values_and_counts(data_set, filter_matched_ids, pk_name):
+    def get_values_and_counts(data_set: Any, filter_matched_ids: Dict[str, Any], pk_name: str) -> tuple:
         value_dict = {}
         count_dict = {}
 
         for field in filter_matched_ids.keys():
             q_args = {pk_name + "__in": filter_matched_ids[field]}
             # Why this weirdness? To ensure we eliminate duplicates
-            value_dict[field] = list(set(data_set.all().filter(Q(**q_args)).values_list(field, flat=True)))
+            value_dict[field] = list(
+                set(data_set.all().filter(Q(**q_args)).values_list(field, flat=True)))
             count_dict[field] = len(value_dict[field])
 
         return value_dict, count_dict
@@ -373,7 +383,9 @@ class AutoCompleteHandler:
     """
 
     @staticmethod
-    def get_filter_matched_ids(data_set, fields, value, mode="contains", limit=10):
+    def get_filter_matched_ids(
+            data_set: Any, fields: List[str], value: str, mode: str = "contains", limit: int = 10
+    ) -> tuple:
         if mode == "contains":
             mode = "__icontains"
         elif mode == "startswith":
@@ -384,12 +396,14 @@ class AutoCompleteHandler:
         for field in fields:
             q_args = {}
             q_args[field + mode] = value
-            filter_matched_ids[field] = data_set.all().filter(Q(**q_args))[:limit].values_list(pk_name, flat=True)
+            filter_matched_ids[field] = data_set.all().filter(Q(**q_args))[:limit].values_list(pk_name,
+                                                                                               flat=True)
 
         return filter_matched_ids, pk_name
 
     @staticmethod
-    def get_objects(data_set, filter_matched_ids, pk_name, serializer):
+    def get_objects(data_set: Any, filter_matched_ids: Dict[str, Any], pk_name: str, serializer: Any) -> \
+    Dict[str, Any]:
         matched_objects = {}
 
         for field in filter_matched_ids.keys():
@@ -401,7 +415,7 @@ class AutoCompleteHandler:
         return matched_objects
 
     @staticmethod
-    def handle(data_set, body, serializer=None):
+    def handle(data_set: Any, body: Dict[str, Any], serializer: Any = None) -> Dict[str, Any]:
         try:
             AutoCompleteHandler.validate(body)
         except Exception:
@@ -415,11 +429,13 @@ class AutoCompleteHandler:
         return_object = {}
 
         filter_matched_ids, pk_name = AutoCompleteHandler.get_filter_matched_ids(
-            data_set.all(), body["fields"], body["value"], body.get("mode", "contains"), body.get("limit", 10)
+            data_set.all(), body["fields"], body["value"], body.get("mode", "contains"),
+            body.get("limit", 10)
         )
 
         # Get matching string values, and their counts
-        value_dict, count_dict = AutoCompleteHandler.get_values_and_counts(data_set.all(), filter_matched_ids, pk_name)
+        value_dict, count_dict = AutoCompleteHandler.get_values_and_counts(data_set.all(),
+                                                                           filter_matched_ids, pk_name)
 
         # Get the matching objects, if requested
         if body.get("matched_objects", False) and serializer:
@@ -430,10 +446,11 @@ class AutoCompleteHandler:
         return {**return_object, "counts": count_dict, "results": value_dict}
 
     @staticmethod
-    def validate(body):
+    def validate(body: Dict[str, Any]) -> None:
         if "fields" in body and "value" in body:
             if not isinstance(body["fields"], list):
-                raise InvalidParameterException("Invalid field, autocomplete fields value must be a list")
+                raise InvalidParameterException(
+                    "Invalid field, autocomplete fields value must be a list")
         else:
             raise InvalidParameterException(
                 "Invalid request, autocomplete requests need parameters 'fields' and 'value'"
@@ -441,7 +458,8 @@ class AutoCompleteHandler:
         if "mode" in body:
             if body["mode"] not in ["contains", "startswith"]:
                 raise InvalidParameterException(
-                    "Invalid mode, autocomplete modes are 'contains', 'startswith', but got " + body["mode"]
+                    "Invalid mode, autocomplete modes are 'contains', 'startswith', but got " + body[
+                        "mode"]
                 )
 
 
@@ -449,7 +467,7 @@ class LLMAPIKeyHandler:
     """Handles LLM API key validation via AWS Secrets Manager"""
 
     @staticmethod
-    def require_api_key(function):
+    def require_api_key(function: Any) -> Any:
         """
         Decorator to validate LLM API access via UUID in request header.
         Checks against UUID stored in AWS Secrets Manager.
@@ -477,7 +495,7 @@ class LLMAPIKeyHandler:
         """
 
         @wraps(function)
-        def wrapper(*args, **kwargs):
+        def wrapper(*args: Any, **kwargs: Any) -> Response:  # noqa: PLR0911, PLR0912
             # Extract request from args
             request = args[0] if args else kwargs.get('request')
 
@@ -522,7 +540,8 @@ class LLMAPIKeyHandler:
                     try:
                         secret_dict = json.loads(secret)
                         # Support multiple key names in the secret JSON
-                        stored_uuid = secret_dict.get('uuid') or secret_dict.get('LLM_API_KEY') or secret_dict.get(
+                        stored_uuid = secret_dict.get('uuid') or secret_dict.get(
+                            'LLM_API_KEY') or secret_dict.get(
                             'api_key')
                         if not stored_uuid:
                             return Response(

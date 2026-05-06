@@ -1,9 +1,11 @@
+from unittest.mock import MagicMock, patch
+
 import pytest
-from unittest.mock import patch, MagicMock
 from botocore.exceptions import ClientError
-from rest_framework.test import APIRequestFactory
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
+from rest_framework.test import APIRequestFactory
+
 from usaspending_api.common.api_request_utils import LLMAPIKeyHandler
 
 
