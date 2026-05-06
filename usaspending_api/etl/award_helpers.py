@@ -3,7 +3,17 @@ from typing import Optional
 from django.db import connection
 from psycopg.sql import SQL, Placeholder
 
-general_award_update_sql_string = """
+from usaspending_api.awards.v2.lookups.lookups import (
+    contract_types_sql_string,
+    direct_payment_types_sql_string,
+    grant_types_sql_string,
+    idv_types_sql_string,
+    insurance_types_sql_string,
+    loan_types_sql_string,
+    other_types_sql_string,
+)
+
+general_award_update_sql_string = f"""
 WITH
 txn_earliest AS (
   SELECT DISTINCT ON (tn.award_id)
@@ -13,7 +23,7 @@ txn_earliest AS (
     tn.description,
     tn.period_of_performance_start_date
   FROM vw_transaction_normalized tn
-  {predicate}
+  {{predicate}}
   ORDER BY tn.award_id, tn.action_date ASC, tn.modification_number ASC, tn.transaction_unique_id ASC
 ),
 txn_latest AS (
@@ -28,17 +38,17 @@ txn_latest AS (
     tn.last_modified_date,
     tn.period_of_performance_current_end_date,
     CASE
-      WHEN tn.type IN ('A', 'B', 'C', 'D')      THEN 'contract'
-      WHEN tn.type IN ('02', '03', '04', '05')  THEN 'grant'
-      WHEN tn.type IN ('06', '10')              THEN 'direct payment'
-      WHEN tn.type IN ('07', '08')              THEN 'loans'
-      WHEN tn.type = '09'                       THEN 'insurance'
-      WHEN tn.type = '11'                       THEN 'other'
-      WHEN tn.type LIKE 'IDV%%'                 THEN 'idv'
+      WHEN tn.type IN ({contract_types_sql_string})       THEN 'contract'
+      WHEN tn.type IN ({grant_types_sql_string})          THEN 'grant'
+      WHEN tn.type IN ({direct_payment_types_sql_string}) THEN 'direct payment'
+      WHEN tn.type IN ({loan_types_sql_string})           THEN 'loans'
+      WHEN tn.type IN ({insurance_types_sql_string})      THEN 'insurance'
+      WHEN tn.type IN ({other_types_sql_string})          THEN 'other'
+      WHEN tn.type IN ({idv_types_sql_string})            THEN 'idv'
       ELSE NULL
     END AS category
   FROM vw_transaction_normalized tn
-  {predicate}
+  {{predicate}}
   ORDER BY tn.award_id, tn.action_date DESC, tn.modification_number DESC, tn.transaction_unique_id DESC
 ),
 txn_totals AS (
@@ -51,7 +61,7 @@ txn_totals AS (
     SUM(tn.non_federal_funding_amount)  AS non_federal_funding_amount,
     SUM(tn.indirect_federal_sharing)    AS total_indirect_federal_sharing
   FROM vw_transaction_normalized tn
-  {predicate}
+  {{predicate}}
   GROUP BY tn.award_id
 )
 UPDATE award_search a
@@ -325,9 +335,7 @@ def prune_empty_awards(award_tuple: Optional[tuple] = None) -> int:
         FROM vw_awards a
         LEFT JOIN vw_transaction_normalized tn ON tn.award_id = a.id
         WHERE tn IS NULL {}
-    """.format(
-        inner_predicate
-    )
+    """.format(inner_predicate)
 
     _modify_subawards_sql = "UPDATE subaward_search SET award_id = null WHERE award_id IN ({});".format(
         _find_empty_awards_sql
@@ -339,9 +347,7 @@ def prune_empty_awards(award_tuple: Optional[tuple] = None) -> int:
           update_date = now(),
           award_id = null
       WHERE award_id IN ({});
-    """.format(
-        _find_empty_awards_sql
-    )
+    """.format(_find_empty_awards_sql)
 
     _delete_parent_award_sql = "DELETE FROM parent_award WHERE award_id in ({});".format(_find_empty_awards_sql)
 

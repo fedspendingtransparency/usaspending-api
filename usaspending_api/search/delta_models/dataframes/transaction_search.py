@@ -7,7 +7,7 @@ from pyspark.sql.types import (
     TimestampType,
 )
 
-from usaspending_api.awards.v2.lookups.lookups import award_type_mapping
+from usaspending_api.awards.v2.lookups.lookups import award_type_mapping, loan_type_mapping
 from usaspending_api.recipient.v2.lookups import SPECIAL_CASES
 from usaspending_api.search.delta_models.dataframes.abstract_search import (
     AbstractSearch,
@@ -214,7 +214,7 @@ class TransactionSearch(AbstractSearch):
         return [
             sf.coalesce(
                 sf.when(
-                    self.transaction_normalized["type"].isin(["07", "08"]),
+                    self.transaction_normalized["type"].isin([*loan_type_mapping.keys()]),
                     self.awards.total_subsidy_cost,
                 ).otherwise(self.awards.total_obligation),
                 sf.lit(0),
@@ -223,7 +223,7 @@ class TransactionSearch(AbstractSearch):
             .alias("award_amount"),
             sf.coalesce(
                 sf.when(
-                    self.transaction_normalized["type"].isin(["07", "08"]),
+                    self.transaction_normalized["type"].isin([*loan_type_mapping.keys()]),
                     self.transaction_normalized.original_loan_subsidy_cost,
                 ).otherwise(self.transaction_normalized.federal_action_obligation),
                 sf.lit(0),
