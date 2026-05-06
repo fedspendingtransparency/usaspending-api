@@ -46,3 +46,16 @@ class TASCodeObject(BaseModel):
                 {"expected_type": "array, object"}
             )
         return self
+
+
+class TASCodeComponentObject(BaseModel):
+    aid: str | None = None
+    main: str | None = None
+    ata: str | None = None
+    bpoa: str | None = None
+    epoa: str | None = None
+    a: str | None = None
+    sub: str | None = None
+    agency: str | None = None
+    faaid: str | None = None
+    famain: str | None = None

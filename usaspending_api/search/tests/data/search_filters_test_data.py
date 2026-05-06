@@ -25,7 +25,7 @@ def non_legacy_filters():
         "recipient_type_names": ["Small Business", "Alaskan Native Corporation Owned Firm"],
         "set_aside_type_codes": ["SAMPLECODE123"],
         "time_period": [{"start_date": "2016-10-01", "end_date": "2017-09-30"}],
-        "treasury_account_components": [
+        "tas_codes": [
             {"ata": "012", "aid": "016", "bpoa": "2013", "epoa": "2016", "main": "0181", "sub": "000"},
             {"ata": "012", "aid": "069", "a": "X", "main": "0500", "sub": "011"},
         ],
