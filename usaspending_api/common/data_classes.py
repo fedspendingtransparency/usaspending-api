@@ -1,7 +1,8 @@
 from dataclasses import dataclass
-from typing import Callable, Optional
+from typing import TYPE_CHECKING, Callable, Optional
 
-from pyspark.sql.types import StructType
+if TYPE_CHECKING:
+    from pyspark.sql.types import StructType
 from typing_extensions import Literal
 
 
