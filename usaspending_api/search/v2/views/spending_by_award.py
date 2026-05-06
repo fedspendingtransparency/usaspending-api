@@ -65,6 +65,7 @@ from usaspending_api.common.pydantic_base_models import (
     ProgramActivityObject,
     PSCCodeObject,
     StandardLocationObject,
+    TASCodeComponentObject,
     TASCodeObject,
     TimePeriod,
     TreasuryAccountComponentsObject,
@@ -174,7 +175,7 @@ class Filters(BaseModel):
     recipient_search_text: list[str] | None = None
     recipient_type_names: list[str] | None = None
     set_aside_type_codes: list[str] | None = None
-    tas_codes: TASCodeObject | None = None
+    tas_codes: TASCodeObject | list[TASCodeComponentObject] | None = None
     time_period: list[TimePeriod] | None = None
     treasury_account_components: list[TreasuryAccountComponentsObject] | None = None
 

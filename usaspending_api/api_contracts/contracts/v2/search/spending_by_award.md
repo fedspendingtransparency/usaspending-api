@@ -315,7 +315,7 @@ Non Loan Assistance Awards can be searched for specifically by using the Non Loa
 + `award_amounts` (optional, array[AwardAmounts], fixed-type)
 + `program_numbers`: [`10.331`] (optional, array[string])
 + `naics_codes` (optional, NAICSCodeObject)
-+ `tas_codes` (optional, array[TASCodeObject], fixed-type)
++ `tas_codes` (optional, array[TASCodeObject, TASCodeComponentObject])
 + `psc_codes` (optional, enum[PSCCodeObject, array[string]])
     Supports new PSCCodeObject or legacy array of codes.
 + `contract_pricing_type_codes`: [`J`] (optional, array[string])
@@ -378,6 +378,27 @@ At least one of the following fields are required when using the ProgramActivity
 ### TASCodeObject (object)
 + `require`: [[`091`]] (optional, array[array[string]], fixed-type)
 + `exclude`: [[`091`, `091-0800`]] (optional, array[array[string]], fixed-type)
+
+### TASCodeComponentObject (object)
++ `ata` (optional, string, nullable)
+    Allocation Transfer Agency Identifier - three characters
++ `aid` (optional, string)
+    Agency Identifier - three characters
++ `bpoa` (optional, string, nullable)
+    Beginning Period of Availability - four digits
++ `epoa` (optional, string, nullable)
+    Ending Period of Availability - four digits
++ `a` (optional, string, nullable)
+    Availability Type Code - X or null
++ `main` (optional, string)
+    Main Account Code - four digits
++ `sub` (optional, string, nullable)
+    Sub-Account Code - three digits
++ `agency` (optional, string, nullable)
++ `faaid` (optional, string, nullable)
+    Federal Account Agency Identifier
++ `famain` (optional, string, nullable)
+    Federal Account Main Account Code
 
 ### TreasuryAccountComponentsObject (object)
 + `ata` (optional, string, nullable)
