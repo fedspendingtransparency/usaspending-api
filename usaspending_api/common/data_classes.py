@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Callable, List, Optional, Union
+from typing import Callable, Optional
 
 from pyspark.sql.types import StructType
 from typing_extensions import Literal
@@ -59,27 +59,27 @@ class TableSpec:
     """
 
     destination_database: str
-    delta_table_create_sql: Union[str, StructType]
+    delta_table_create_sql: str | StructType
 
-    destination_table_name: Optional[str] = None
-    source_table: Optional[str] = None
-    source_database: Optional[str] = None
-    model: Optional[str] = None
-    partition_column: Optional[str] = None
-    partition_column_type: Optional[str] = None
+    destination_table_name: str | None = None
+    source_table: str | None = None
+    source_database: str | None = None
+    model: str | None = None
+    partition_column: str | None = None
+    partition_column_type: str | None = None
     is_partition_column_unique: bool = False
-    delta_table_create_options: Optional[dict] = None
-    delta_table_create_partitions: Optional[List[str]] = None
-    source_schema: Optional[Union[List, dict]] = None
-    custom_schema: Optional[str] = None
-    column_names: Optional[List[str]] = None
+    delta_table_create_options: dict | None = None
+    delta_table_create_partitions: list[str] | None = None
+    source_schema: list | dict | None = None
+    custom_schema: str | None = None
+    column_names: list[str] | None = None
     is_from_broker: bool = False
-    source_query: Optional[Union[str, List[str], Callable]] = None
-    source_query_incremental: Optional[Union[str, Callable]] = None
-    user_defined_functions: Optional[List[dict]] = None
+    source_query: str | list[str] | Callable | None = None
+    source_query_incremental: str | Callable | None = None
+    user_defined_functions: list[dict] | None = None
     archive_data_field: str = "update_date"
-    postgres_seq_name: Optional[str] = None
-    postgres_partition_spec: Optional[dict] = None
-    tsvectors: Optional[Union[List[str], dict]] = None
-    swap_table: Optional[str] = None
-    swap_schema: Optional[str] = None
+    postgres_seq_name: str | None = None
+    postgres_partition_spec: dict | None = None
+    tsvectors: list[str] | dict | None = None
+    swap_table: str | None = None
+    swap_schema: str | None = None
