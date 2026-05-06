@@ -51,7 +51,6 @@ def test_cfda_autocomplete_success(client, cfda_data):
         "/api/v2/autocomplete/cfda/", content_type="application/json", data=json.dumps({"search_text": "93.HDN"})
     )
     assert resp.status_code == status.HTTP_200_OK
-    print(resp.data)
     assert len(resp.data["results"]) == 1
     assert resp.data["results"][0]["program_title"] == (
         "Child Health and Human Development Research Training – Institutional Awards"
