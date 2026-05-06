@@ -42,9 +42,8 @@ class StandardLocationObject(BaseModel):
     @field_validator('zip')
     @classmethod
     def validate_zip(cls, v: str) -> str | None:
-        if v is not None and len(v) != 5 and not v.isdigit():
+        if v is None or len(v) != 5 or not v.isdigit():
             raise ValueError("ZIP code must be exactly 5 digits")
-
         return v
 
     @model_validator(mode='after')
