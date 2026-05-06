@@ -89,5 +89,6 @@ When an error occurs, the stream will include a chunk with `type` set to either 
 {
     "search_id": "12345",
     "type": "search_error",
-    "message": "Failed to process query: Invalid filter syntax",
+    "message": "Failed to process query: Invalid filter syntax"
 }
+```
