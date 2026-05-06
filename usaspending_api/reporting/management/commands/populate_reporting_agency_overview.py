@@ -1,10 +1,10 @@
 import logging
-
 from enum import Enum
 
 from django.core.management import BaseCommand
-from django.db import transaction, connection
+from django.db import connection, transaction
 
+from usaspending_api.awards.v2.lookups.lookups import loan_types_sql_string
 from usaspending_api.common.helpers.timing_helpers import ScriptTimer as Timer
 
 logger = logging.getLogger("script")
@@ -154,8 +154,8 @@ TEMP_TABLE_CONTENTS = {
             )
         WHERE
             (
-                (award_search.type IN ('07', '08') AND award_search.total_subsidy_cost > 0)
-                OR award_search.type NOT IN ('07', '08')
+                (award_search.type IN ({loan_types_sql_string}) AND award_search.total_subsidy_cost > 0)
+                OR award_search.type NOT IN ({loan_types_sql_string})
             ) AND award_search.certified_date >= '2016-10-01'
         GROUP BY
             fa.toptier_code,
@@ -170,7 +170,7 @@ TEMP_TABLE_CONTENTS = {
                 ELSE transactions.fiscal_period
             END
     """,
-    TempTableName.REPORTING_OVERVIEW: f"""
+    TempTableName.REPORTING_OVERVIEW: """
         WITH sum_reporting_agency_tas AS (
             SELECT
                 fiscal_period,
@@ -372,15 +372,15 @@ CREATE_OVERVIEW_SQL = f"""
     WHERE EXTRACT('MONTH' FROM a + INTERVAL '3 months') != 1;
     UPDATE public.{OVERVIEW_TABLE_NAME} n
     SET
-        total_dollars_obligated_gtas = {OVERVIEW_TABLE_NAME}_content.total_dollars_obligated_gtas,
-        total_budgetary_resources = {OVERVIEW_TABLE_NAME}_content.total_budgetary_resources,
-        total_diff_approp_ocpa_obligated_amounts = {OVERVIEW_TABLE_NAME}_content.total_diff_approp_ocpa_obligated_amounts,
-        unlinked_procurement_c_awards = {OVERVIEW_TABLE_NAME}_content.unlinked_procurement_c_awards,
-        unlinked_assistance_c_awards = {OVERVIEW_TABLE_NAME}_content.unlinked_assistance_c_awards,
-        unlinked_procurement_d_awards = {OVERVIEW_TABLE_NAME}_content.unlinked_procurement_d_awards,
-        unlinked_assistance_d_awards = {OVERVIEW_TABLE_NAME}_content.unlinked_assistance_d_awards,
-        linked_procurement_awards = {OVERVIEW_TABLE_NAME}_content.linked_procurement_awards,
-        linked_assistance_awards = {OVERVIEW_TABLE_NAME}_content.linked_assistance_awards
+      total_dollars_obligated_gtas = {OVERVIEW_TABLE_NAME}_content.total_dollars_obligated_gtas,
+      total_budgetary_resources = {OVERVIEW_TABLE_NAME}_content.total_budgetary_resources,
+      total_diff_approp_ocpa_obligated_amounts = {OVERVIEW_TABLE_NAME}_content.total_diff_approp_ocpa_obligated_amounts,
+      unlinked_procurement_c_awards = {OVERVIEW_TABLE_NAME}_content.unlinked_procurement_c_awards,
+      unlinked_assistance_c_awards = {OVERVIEW_TABLE_NAME}_content.unlinked_assistance_c_awards,
+      unlinked_procurement_d_awards = {OVERVIEW_TABLE_NAME}_content.unlinked_procurement_d_awards,
+      unlinked_assistance_d_awards = {OVERVIEW_TABLE_NAME}_content.unlinked_assistance_d_awards,
+      linked_procurement_awards = {OVERVIEW_TABLE_NAME}_content.linked_procurement_awards,
+      linked_assistance_awards = {OVERVIEW_TABLE_NAME}_content.linked_assistance_awards
     FROM (
         SELECT
             fiscal_period,
@@ -411,7 +411,7 @@ CREATE_OVERVIEW_SQL = f"""
 class Command(BaseCommand):
     """Used to calculate values and populate reporting_agency_overview"""
 
-    def handle(self, *args, **options):
+    def handle(self, *args, **options) -> None:
         with Timer("Refresh Reporting Agency Overview"):
             try:
                 self.perform_load()
@@ -420,7 +420,7 @@ class Command(BaseCommand):
                 raise
 
     @transaction.atomic
-    def perform_load(self):
+    def perform_load(self) -> None:
         with connection.cursor() as cursor:
             with Timer("Create temporary tables"):
                 cursor.execute(CREATE_AND_PREP_TEMP_TABLES)
