@@ -1,8 +1,7 @@
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Callable
+from typing import Callable
 
-if TYPE_CHECKING:
-    from pyspark.sql.types import StructType
+from pyspark.sql.types import StructType
 
 
 @dataclass(slots=True)
