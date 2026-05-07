@@ -533,94 +533,126 @@ class LLMAPIKeyHandler:
         """
 
         @wraps(function)
-        def wrapper(*args: Any, **kwargs: Any) -> Response:  # noqa: PLR0911, PLR0912
+        def wrapper(*args: Any, **kwargs: Any) -> Response:
             # Extract request from args
             request = args[0] if args else kwargs.get('request')
 
-            if not request:
-                return Response(
-                    {"detail": "Request object not found"},
-                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
-                )
-
-            # Check for UUID in header
-            llm_api_key = request.headers.get('X-LLM-API-Key')
-
-            if not llm_api_key:
-                return Response(
-                    {"detail": "X-LLM-API-Key header is required for LLM API access"},
-                    status=status.HTTP_403_FORBIDDEN
-                )
-
-            # Get secret name from environment variable
-            secret_name = os.environ.get('LLM_API_SECRET_NAME')
-
-            if not secret_name:
-                return Response(
-                    {"detail": "LLM API secret configuration is not set"},
-                    status=status.HTTP_403_FORBIDDEN
-                )
-
-            # Retrieve secret from AWS Secrets Manager
-            try:
-                session = boto3.session.Session()
-                client = session.client(
-                    service_name='secretsmanager',
-                    region_name=os.environ.get('AWS_REGION', 'us-gov-west-1')
-                )
-
-                get_secret_value_response = client.get_secret_value(SecretId=secret_name)
-
-                # Parse secret string
-                if 'SecretString' in get_secret_value_response:
-                    secret = get_secret_value_response['SecretString']
-                    # Handle both plain string and JSON formatted secrets
-                    try:
-                        secret_dict = json.loads(secret)
-                        # Support multiple key names in the secret JSON
-                        stored_uuid = secret_dict.get('uuid') or secret_dict.get(
-                            'LLM_API_KEY') or secret_dict.get(
-                            'api_key')
-                        if not stored_uuid:
-                            return Response(
-                                {"detail": "LLM API secret does not contain a valid UUID key"},
-                                status=status.HTTP_403_FORBIDDEN
-                            )
-                    except json.JSONDecodeError:
-                        # Secret is a plain string UUID
-                        stored_uuid = secret
-                else:
-                    return Response(
-                        {"detail": "LLM API secret format is invalid"},
-                        status=status.HTTP_403_FORBIDDEN
-                    )
-
-            except ClientError as e:
-                error_code = e.response['Error']['Code']
-                if error_code == 'ResourceNotFoundException':
-                    return Response(
-                        {"detail": f"LLM API secret '{secret_name}' not found in AWS Secrets Manager"},
-                        status=status.HTTP_403_FORBIDDEN
-                    )
-                else:
-                    return Response(
-                        {"detail": f"Error retrieving LLM API secret: {error_code}"},
-                        status=status.HTTP_403_FORBIDDEN
-                    )
-            except Exception as e:
-                return Response(
-                    {"detail": f"Unexpected error accessing LLM API secret: {str(e)}"},
-                    status=status.HTTP_403_FORBIDDEN
-                )
-
-            # Validate UUID matches the secret
-            if llm_api_key.strip() != stored_uuid.strip():
-                return Response(
-                    {"detail": "Invalid LLM API key"},
-                    status=status.HTTP_403_FORBIDDEN
-                )
+            # Validate request and authentication
+            error_response = LLMAPIKeyHandler._validate_llm_request(request)
+            if error_response:
+                return error_response
 
             # UUID is valid, proceed with the view
             return function(*args, **kwargs)
 
         return wrapper
+
+    @staticmethod
+    def _validate_llm_request(request: Any) -> Optional[Response]:
+        """
+        Validate LLM API request and authenticate via AWS Secrets Manager.
+        Returns error Response if validation fails, None if successful.
+        """
+        if not request:
+            return LLMAPIKeyHandler._error_response(
+                "Request object not found",
+                status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+        llm_api_key = request.headers.get('X-LLM-API-Key')
+        if not llm_api_key:
+            return LLMAPIKeyHandler._error_response(
+                "X-LLM-API-Key header is required for LLM API access",
+                status.HTTP_403_FORBIDDEN
+            )
+
+        secret_name = os.environ.get('LLM_API_SECRET_NAME')
+        if not secret_name:
+            return LLMAPIKeyHandler._error_response(
+                "LLM API secret configuration is not set",
+                status.HTTP_403_FORBIDDEN
+            )
+
+        # Retrieve and validate secret from AWS
+        stored_uuid = LLMAPIKeyHandler._get_secret_uuid(secret_name)
+        if isinstance(stored_uuid, Response):
+            return stored_uuid
+
+        # Validate UUID matches
+        if llm_api_key.strip() != stored_uuid.strip():
+            return LLMAPIKeyHandler._error_response(
+                "Invalid LLM API key",
+                status.HTTP_403_FORBIDDEN
+            )
+
+        return None
+
+    @staticmethod
+    def _get_secret_uuid(secret_name: str) -> Union[str, Response]:
+        """
+        Retrieve UUID from AWS Secrets Manager.
+        Returns UUID string on success or error Response on failure.
+        """
+        try:
+            session = boto3.session.Session()
+            client = session.client(
+                service_name='secretsmanager',
+                region_name=os.environ.get('AWS_REGION', 'us-gov-west-1')
+            )
+
+            get_secret_value_response = client.get_secret_value(SecretId=secret_name)
+
+            if 'SecretString' not in get_secret_value_response:
+                return LLMAPIKeyHandler._error_response(
+                    "LLM API secret format is invalid",
+                    status.HTTP_403_FORBIDDEN
+                )
+
+            return LLMAPIKeyHandler._parse_secret_uuid(get_secret_value_response['SecretString'])
+
+        except ClientError as e:
+            return LLMAPIKeyHandler._handle_client_error(e, secret_name)
+        except Exception as e:
+            return LLMAPIKeyHandler._error_response(
+                f"Unexpected error accessing LLM API secret: {str(e)}",
+                status.HTTP_403_FORBIDDEN
+            )
+
+    @staticmethod
+    def _parse_secret_uuid(secret: str) -> Union[str, Response]:
+        """
+        Parse UUID from secret string (handles both JSON and plain text).
+        Returns UUID string or error Response.
+        """
+        try:
+            secret_dict = json.loads(secret)
+            stored_uuid = (
+                secret_dict.get('uuid') or
+                secret_dict.get('LLM_API_KEY') or
+                secret_dict.get('api_key')
+            )
+            if not stored_uuid:
+                return LLMAPIKeyHandler._error_response(
+                    "LLM API secret does not contain a valid UUID key",
+                    status.HTTP_403_FORBIDDEN
+                )
+            return stored_uuid
+        except json.JSONDecodeError:
+            # Secret is a plain string UUID
+            return secret
+
+    @staticmethod
+    def _handle_client_error(error: ClientError, secret_name: str) -> Response:
+        """Handle AWS ClientError and return appropriate error response."""
+        error_code = error.response['Error']['Code']
+        if error_code == 'ResourceNotFoundException':
+            detail = f"LLM API secret '{secret_name}' not found in AWS Secrets Manager"
+        else:
+            detail = f"Error retrieving LLM API secret: {error_code}"
+
+        return LLMAPIKeyHandler._error_response(detail, status.HTTP_403_FORBIDDEN)
+
+    @staticmethod
+    def _error_response(detail: str, status_code: int) -> Response:
+        """Create a standardized error response."""
+        return Response({"detail": detail}, status=status_code)
