@@ -1,6 +1,6 @@
 from django.db import models
-from django_cte import CTEManager
 from django.db.models import Q
+from django_cte import CTEManager
 
 from usaspending_api.common.models import DataSourceTrackedModel
 

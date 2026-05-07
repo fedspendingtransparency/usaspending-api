@@ -152,7 +152,7 @@ class TransactionNormalized(models.Model):
     class Meta:
         managed = False
         db_table = "vw_transaction_normalized"
-        indexes=[
+        indexes = [
             models.Index(fields=["award", "action_date"])
         ]
 
