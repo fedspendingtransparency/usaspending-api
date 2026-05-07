@@ -703,7 +703,7 @@ def generate_export_query_temp_file(
     return temp_sql_file, temp_sql_file_path
 
 
-def apply_annotations_to_sql(
+def apply_annotations_to_sql(  # noqa: PLR0912
     raw_query: str,
     aliases: list[str],
     annotated_group_by_columns: Optional[list[str]] = None,
@@ -874,7 +874,7 @@ def _top_level_split(sql: str, splitter: str) -> str:
     raise Exception(f"SQL string ${sql} cannot be split on ${splitter}")
 
 
-def execute_psql(temp_sql_file_path: str, source_path: str, download_job: DownloadJob) -> None:
+def execute_psql(temp_sql_file_path: str, source_path: str, download_job: DownloadJob) -> None:  # noqa: PLR0912, PLR0915
     """Executes a single PSQL command within its own Subprocess"""
     download_sql = Path(temp_sql_file_path).read_text()
     if download_sql.startswith("\\COPY"):
