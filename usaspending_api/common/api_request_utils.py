@@ -248,68 +248,106 @@ class FilterGenerator:
                 return ~Q(**q_kwargs)
             return Q(**q_kwargs)
 
-    def validate_post_request(self, request: Dict[str, Any]) -> None:  # noqa: C901, PLR0912, PLR1702
+    def validate_post_request(self, request: Dict[str, Any]) -> None:
         if "filters" in request:
             for filt in request["filters"]:
-                if "combine_method" in filt:
-                    try:
-                        self.validate_post_request(filt)
-                    except Exception:
-                        raise
-                else:
-                    if "field" in filt and "operation" in filt and "value" in filt:
-                        if (
-                            filt["operation"] not in FilterGenerator.operators
-                            and filt["operation"][:4] != "not_"
-                            and filt["operation"][4:] not in FilterGenerator.operators
-                        ):
-                            raise InvalidParameterException("Invalid operation: " + filt["operation"])
-                        if filt["operation"] == "in":
-                            if not isinstance(filt["value"], list):
-                                raise InvalidParameterException("Invalid value, operation 'in' requires an array value")
-                        if filt["operation"] == "range":
-                            if not isinstance(filt["value"], list) or len(filt["value"]) != 2:
-                                raise InvalidParameterException(
-                                    "Invalid value, operation 'range' requires an array value of length 2"
-                                )
-                        if filt["operation"] == "range_intersect":
-                            if not isinstance(filt["field"], list) or len(filt["field"]) != 2:
-                                raise InvalidParameterException(
-                                    "Invalid field, operation 'range_intersect' "
-                                    "requires an array of length 2 for field"
-                                )
-                            if (
-                                not isinstance(filt["value"], list) or len(filt["value"]) != 2
-                            ) and "value_format" not in filt:
-                                raise InvalidParameterException(
-                                    "Invalid value, operation 'range_intersect' requires "
-                                    "an array value of length 2, or a single value with "
-                                    "value_format set to a ranged format (such as fy)"
-                                )
-                        if filt["operation"] in ["overlap", "contained_by"] and not isinstance(filt["value"], list):
-                            raise InvalidParameterException(
-                                "Invalid value. When using operation {}, value must be an "
-                                "array of strings.".format(filt["operation"])
-                            )
-                        if filt["operation"] == "search":
-                            if not isinstance(filt["field"], list) and not self.is_string_field(filt["field"]):
-                                raise InvalidParameterException(
-                                    "Invalid field: '"
-                                    + filt["field"]
-                                    + "', operation 'search' requires a text-field for "
-                                    "searching"
-                                )
-                            elif isinstance(filt["field"], list):
-                                for search_field in filt["field"]:
-                                    if not self.is_string_field(search_field):
-                                        raise InvalidParameterException(
-                                            "Invalid field: '"
-                                            + search_field
-                                            + "', operation 'search' requires a text-field "
-                                            "for searching"
-                                        )
-                    else:
-                        raise InvalidParameterException("Malformed filter - missing field, operation, or value")
+                self._validate_single_filter(filt)
+
+    def _validate_single_filter(self, filt: Dict[str, Any]) -> None:
+        """Validate a single filter object"""
+        if "combine_method" in filt:
+            self.validate_post_request(filt)
+        elif "field" in filt and "operation" in filt and "value" in filt:
+            self._validate_filter_operation(filt)
+        else:
+            raise InvalidParameterException("Malformed filter - missing field, operation, or value")
+
+    def _validate_filter_operation(self, filt: Dict[str, Any]) -> None:
+        """Validate the operation and value for a filter"""
+        operation = filt["operation"]
+
+        # Validate operation exists
+        if not self._is_valid_operation(operation):
+            raise InvalidParameterException("Invalid operation: " + operation)
+
+        # Validate operation-specific requirements
+        if operation == "in":
+            self._validate_in_operation(filt)
+        elif operation == "range":
+            self._validate_range_operation(filt)
+        elif operation == "range_intersect":
+            self._validate_range_intersect_operation(filt)
+        elif operation in ["overlap", "contained_by"]:
+            self._validate_array_operation(filt)
+        elif operation == "search":
+            self._validate_search_operation(filt)
+
+    def _is_valid_operation(self, operation: str) -> bool:
+        """Check if operation is valid (including negated operations)"""
+        if operation in FilterGenerator.operators:
+            return True
+        if operation[:4] == "not_" and operation[4:] in FilterGenerator.operators:
+            return True
+        return False
+
+    def _validate_in_operation(self, filt: Dict[str, Any]) -> None:
+        """Validate 'in' operation requires array value"""
+        if not isinstance(filt["value"], list):
+            raise InvalidParameterException("Invalid value, operation 'in' requires an array value")
+
+    def _validate_range_operation(self, filt: Dict[str, Any]) -> None:
+        """Validate 'range' operation requires array of length 2"""
+        if not isinstance(filt["value"], list) or len(filt["value"]) != 2:
+            raise InvalidParameterException(
+                "Invalid value, operation 'range' requires an array value of length 2"
+            )
+
+    def _validate_range_intersect_operation(self, filt: Dict[str, Any]) -> None:
+        """Validate 'range_intersect' operation requirements"""
+        if not isinstance(filt["field"], list) or len(filt["field"]) != 2:
+            raise InvalidParameterException(
+                "Invalid field, operation 'range_intersect' "
+                "requires an array of length 2 for field"
+            )
+
+        has_valid_value = isinstance(filt["value"], list) and len(filt["value"]) == 2
+        has_value_format = "value_format" in filt
+
+        if not has_valid_value and not has_value_format:
+            raise InvalidParameterException(
+                "Invalid value, operation 'range_intersect' requires "
+                "an array value of length 2, or a single value with "
+                "value_format set to a ranged format (such as fy)"
+            )
+
+    def _validate_array_operation(self, filt: Dict[str, Any]) -> None:
+        """Validate 'overlap' and 'contained_by' operations require array values"""
+        if not isinstance(filt["value"], list):
+            raise InvalidParameterException(
+                "Invalid value. When using operation {}, value must be an "
+                "array of strings.".format(filt["operation"])
+            )
+
+    def _validate_search_operation(self, filt: Dict[str, Any]) -> None:
+        """Validate 'search' operation requires text fields"""
+        field = filt["field"]
+
+        if isinstance(field, list):
+            self._validate_search_field_list(field)
+        elif not self.is_string_field(field):
+            raise InvalidParameterException(
+                "Invalid field: '" + field +
+                "', operation 'search' requires a text-field for searching"
+            )
+
+    def _validate_search_field_list(self, field_list: List[str]) -> None:
+        """Validate all fields in a search operation are text fields"""
+        for search_field in field_list:
+            if not self.is_string_field(search_field):
+                raise InvalidParameterException(
+                    "Invalid field: '" + search_field +
+                    "', operation 'search' requires a text-field for searching"
+                )
 
     # Special operation functions follow
 
