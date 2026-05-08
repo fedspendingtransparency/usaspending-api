@@ -10,13 +10,14 @@ env:
   ES_SCHEME: http
   ES_HOST: usaspending-es
   ES_PORT: 9200
+  IS_LOCAL: true
   MINIO_HOST: minio
+  PROJECT_DIRECTORY: usaspending-api
   USASPENDING_DB_HOST: usaspending-db
   USASPENDING_DB_PORT: 5432
   USASPENDING_DB_USER: usaspending
   USASPENDING_DB_PASSWORD: usaspender
   USASPENDING_DB_NAME: data_store_api
-  IS_LOCAL: true
 
 on:
   workflow_call:

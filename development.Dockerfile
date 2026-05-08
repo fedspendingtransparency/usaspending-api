@@ -62,7 +62,7 @@ ENV UV_PROJECT_ENVIRONMENT=/usr/local
 ENV UV_SYSTEM_PYTHON=1
 
 # Copy the project into the image
-COPY . /dockermount
+COPY pyproject.toml uv.lock /dockermount/
 
 # Install dev dependencies
 RUN --mount=type=cache,target=/root/.cache/uv \
