@@ -1,12 +1,13 @@
 from delta.tables import DeltaTable
-from pyspark.sql import DataFrame, SparkSession, functions as sf, Column
+from pyspark.sql import Column, DataFrame, SparkSession
+from pyspark.sql import functions as sf
 from pyspark.sql.types import (
     DateType,
     DecimalType,
     StringType,
 )
 
-from usaspending_api.awards.v2.lookups.lookups import award_type_mapping
+from usaspending_api.awards.v2.lookups.lookups import assistance_type_mapping, award_type_mapping, loan_type_mapping
 from usaspending_api.recipient.v2.lookups import SPECIAL_CASES
 from usaspending_api.search.delta_models.dataframes.abstract_search import AbstractSearch, extract_numbers_as_string
 
@@ -14,7 +15,6 @@ ALL_AWARD_TYPES = list(award_type_mapping.keys())
 
 
 class AwardSearch(AbstractSearch):
-
     def __init__(self, spark: SparkSession):
         super().__init__(spark)
         self.submission_attributes = spark.table("global_temp.submission_attributes")
@@ -22,7 +22,7 @@ class AwardSearch(AbstractSearch):
         self.disaster_emergency_fund_code = spark.table("global_temp.disaster_emergency_fund_code")
 
     @property
-    def transaction_cfdas(self):
+    def transaction_cfdas(self) -> DataFrame:
         return (
             self.transaction_fabs.join(
                 self.transaction_normalized,
@@ -154,7 +154,7 @@ class AwardSearch(AbstractSearch):
         )
 
     @property
-    def treasury_account(self):
+    def treasury_account(self) -> DataFrame:
         return (
             self.treasury_appropriation_account.join(
                 self.faba,
@@ -185,7 +185,7 @@ class AwardSearch(AbstractSearch):
     @property
     def total_obligation_bin(self) -> Column:
         total_ob = sf.coalesce(
-            sf.when(self.awards.type.isin(["07", "08"]), self.awards.total_subsidy_cost).otherwise(
+            sf.when(self.awards.type.isin([*loan_type_mapping.keys()]), self.awards.total_subsidy_cost).otherwise(
                 self.awards.total_obligation
             ),
             sf.lit(0),
@@ -328,7 +328,13 @@ class AwardSearch(AbstractSearch):
                 .otherwise(sf.lit(None))
                 .alias("generated_unique_award_id_legacy"),
                 sf.when(
-                    self.awards.type.isin([str(i).zfill(2) for i in range(2, 12)]) & self.awards.fain.isNotNull(),
+                    self.awards.type.isin(
+                        [
+                            # Removing Not Specified to carry forward previous functionality
+                            *(set(assistance_type_mapping.keys()) - {"-1"})
+                        ]
+                    )
+                    & self.awards.fain.isNotNull(),
                     self.awards.fain,
                 )
                 .when(self.awards.piid.isNotNull(), self.awards.piid)
@@ -342,15 +348,17 @@ class AwardSearch(AbstractSearch):
                 self.awards.uri,
                 self.awards.parent_award_piid,
                 sf.coalesce(
-                    sf.when(self.awards.type.isin(["07", "08"]), self.awards.total_subsidy_cost).otherwise(
-                        self.awards.total_obligation
-                    ),
+                    sf.when(
+                        self.awards.type.isin([*loan_type_mapping.keys()]), self.awards.total_subsidy_cost
+                    ).otherwise(self.awards.total_obligation),
                     sf.lit(0),
                 )
                 .cast(DecimalType(23, 2))
                 .alias("award_amount"),
                 sf.coalesce(
-                    sf.when(self.awards.type.isin(["07", "08"]), sf.lit(0)).otherwise(self.awards.total_obligation),
+                    sf.when(self.awards.type.isin([*loan_type_mapping.keys()]), sf.lit(0)).otherwise(
+                        self.awards.total_obligation
+                    ),
                     sf.lit(0),
                 )
                 .cast(DecimalType(23, 2))
@@ -358,13 +366,17 @@ class AwardSearch(AbstractSearch):
                 self.awards.description,
                 self.total_obligation_bin,
                 sf.coalesce(
-                    sf.when(self.awards.type.isin(["07", "08"]), self.awards.total_subsidy_cost).otherwise(sf.lit(0)),
+                    sf.when(
+                        self.awards.type.isin([*loan_type_mapping.keys()]), self.awards.total_subsidy_cost
+                    ).otherwise(sf.lit(0)),
                     sf.lit(0),
                 )
                 .cast(DecimalType(23, 2))
                 .alias("total_subsidy_cost"),
                 sf.coalesce(
-                    sf.when(self.awards.type.isin(["07", "08"]), self.awards.total_loan_value).otherwise(sf.lit(0)),
+                    sf.when(self.awards.type.isin([*loan_type_mapping.keys()]), self.awards.total_loan_value).otherwise(
+                        sf.lit(0)
+                    ),
                     sf.lit(0),
                 )
                 .cast(DecimalType(23, 2))
@@ -609,9 +621,9 @@ class AwardSearch(AbstractSearch):
                 sf.col("total_iija_obligation"),
                 sf.col("total_outlays").cast(DecimalType(23, 2)).alias("total_outlays"),
                 sf.coalesce(
-                    sf.when(self.awards.type.isin(["07", "08"]), self.awards.total_subsidy_cost).otherwise(
-                        self.awards.total_obligation
-                    ),
+                    sf.when(
+                        self.awards.type.isin([*loan_type_mapping.keys()]), self.awards.total_subsidy_cost
+                    ).otherwise(self.awards.total_obligation),
                     sf.lit(0),
                 )
                 .cast(DecimalType(23, 2))
