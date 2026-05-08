@@ -54,7 +54,6 @@ jobs:
         run: |
           pwd
           ls
-          docker compose run --rm --entrypoint "python -c 'import sys; print(sys.path)'" usaspending-test
           docker compose run --rm --entrypoint "pwd" usaspending-test
           docker compose run --rm --entrypoint "ls" usaspending-test
           docker compose run --rm --entrypoint "env" usaspending-test
