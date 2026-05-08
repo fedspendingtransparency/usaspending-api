@@ -52,6 +52,8 @@ jobs:
       always() &&
       needs.Cancel-If-Draft-Pull-Request.result == 'skipped'
     uses: ./.github/workflows/build-broker-docker-image-for-test.yaml
+    with:
+      broker-branch: ${{ needs.Setup-Broker-Branch.outputs.branch }}
 
   # The test suite is broken into multiple groups based on a combination of what is under test
   # and the time that it takes to run tests for that group.
