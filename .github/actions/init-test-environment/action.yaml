@@ -48,6 +48,13 @@ runs:
       if: ${{ inputs.is-integration-test == 'true' }}
       run: docker load --input /tmp/dataact-broker-backend.tar
 
+    - name: Wait on DB and ES containers to be available
+      if: ${{ inputs.is-integration-test == 'true' }}
+      shell: bash
+      run: |
+        ttl=30; container_name="usaspending-db"; echo "Wait for $container_name to be healthy for $ttl seconds"; until [ $ttl -le 0 ] || [ "$(docker inspect $container_name --format='{{.State.Health.Status}}')" = "healthy" ]; do echo $ttl; ((ttl--)); sleep 1; done; [ $ttl -gt 0 ]
+        ttl=30; container_name="usaspending-es"; echo "Wait for $container_name to be healthy for $ttl seconds"; until [ $ttl -le 0 ] || [ "$(docker inspect $container_name --format='{{.State.Health.Status}}')" = "healthy" ]; do echo $ttl; ((ttl--)); sleep 1; done; [ $ttl -gt 0 ]
+
     - name: Add DB users and set search_path
       if: ${{ inputs.is-integration-test == 'true' }}
       shell: bash

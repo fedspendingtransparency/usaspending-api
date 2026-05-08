@@ -56,7 +56,7 @@ class LocalConfig(DefaultConfig):
 
     # Change to host.docker.internal if you are running a local Postgres. Otherwise leave as-is, so
     # Docker will use the Postgres created by Compose.
-    BROKER_DB_HOST: str | None = "dataact-broker-db"
+    BROKER_DB_HOST: str | None = "usaspending-db"
     BROKER_DB_PORT: str | None = "5432"
 
     # ==== [Elasticsearch] ====
