@@ -20,19 +20,24 @@ env:
 
 on:
   workflow_call:
+    inputs:
+      broker-branch:
+        required: true
+        type: string
 
 defaults:
   run:
     working-directory: usaspending-api
 
 jobs:
-  Setup-Broker-Branch:
-    uses: ./.github/workflows/determine-broker-branch.yaml
-
   Run:
     name: Run
     runs-on: ${{ vars.RUNNER_VERSION }}
     steps:
+      - name: Placeholder test broke branch
+        shell: bash
+        run: echo ${{ inputs.broker-branch }}
+
       - name: Checkout Source Repository
         uses: actions/checkout@v4
         with:
@@ -43,7 +48,7 @@ jobs:
         with:
           repository: fedspendingtransparency/data-act-broker-backend
           path: data-act-broker-backend
-          ref: ${{ needs.Setup-Broker-Branch.outputs.branch }}
+          ref: ${{ inputs.broker-branch }}
 
       - name: Init Test Environment
         uses: ./usaspending-api/.github/actions/init-test-environment
