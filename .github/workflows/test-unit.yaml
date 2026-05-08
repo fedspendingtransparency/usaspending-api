@@ -15,6 +15,7 @@ env:
   MINIO_PORT: 10001
   MINIO_ACCESS_KEY: usaspending
   MINIO_SECRET_KEY: usaspender
+  PROJECT_LOG_DIR: ./usaspending_api/logs
   USASPENDING_DB_HOST: usaspending-db
   USASPENDING_DB_PORT: 5432
   USASPENDING_DB_USER: usaspending
@@ -23,6 +24,10 @@ env:
 
 on:
   workflow_call:
+
+defaults:
+  run:
+    working-directory: usaspending-api
 
 jobs:
   Run:
@@ -35,7 +40,6 @@ jobs:
           path: usaspending-api
 
       - name: Validate file structure
-        working-directory: ./usaspending-api
         shell: bash
         run: |
           pwd
@@ -49,7 +53,6 @@ jobs:
           working-directory: ./usaspending-api
 
       - name: Troubleshoot
-        working-directory: ./usaspending-api
         shell: bash
         run: |
           pwd

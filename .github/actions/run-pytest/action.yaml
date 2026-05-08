@@ -73,7 +73,7 @@ runs:
     - name: Run tests
       working-directory: ${{ inputs.working-directory }}
       shell: bash
-      run: docker compose --project-directory ${{ inputs.working-directory }} run --rm usaspending-test ${{ steps.build-pytest-args.outputs.pytest-args }}
+      run: docker compose run --rm usaspending-test ${{ steps.build-pytest-args.outputs.pytest-args }}
 
     - name: Upload Artifact
       uses: actions/upload-artifact@v4

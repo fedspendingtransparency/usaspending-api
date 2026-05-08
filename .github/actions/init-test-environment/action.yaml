@@ -34,7 +34,7 @@ runs:
       working-directory: ${{ inputs.working-directory }}
       if: ${{ inputs.is-integration-test == 'true' }}
       shell: bash
-      run: docker compose --project-directory ${{ inputs.working-directory }} up -d usaspending-db usaspending-es minio
+      run: docker compose up -d usaspending-db usaspending-es minio
 
     - name: Download broker docker image
       if: ${{ inputs.is-integration-test == 'true' }}
@@ -68,7 +68,7 @@ runs:
     - name: Build the usaspending-development image
       working-directory: ${{ inputs.working-directory }}
       shell: bash
-      run: docker compose --project-directory ${{ inputs.working-directory }} build usaspending-test
+      run: docker compose build usaspending-test
 
     - name: Run initial test to trigger DB creation
       if: ${{ inputs.is-integration-test == 'true' }}
