@@ -164,7 +164,7 @@ services:
       - -c
       - |
         printf -- "-------\nRunning non-spark integration tests:\n"
-        pytest --override-ini=python_files="**/tests/integration/*" -m "(not signal_handling and not spark)" --no-cov --disable-warnings --reuse-db --numprocesses logical
+        pytest --override-ini=python_files="**/tests/integration/*" -m "(not signal_handling and not spark)" --no-cov --disable-warnings --reuse-db --numprocesses auto
         printf -- "-------\nRunning non-spark integration tests with signal handling:\n"
         pytest --override-ini=python_files="**/tests/integration/*" -m "(signal_handling and not spark)" --no-cov --disable-warnings --reuse-db --numprocesses 0
         printf -- "-------\nRunning spark integration tests -- load to / from delta:\n"
@@ -174,9 +174,9 @@ services:
         printf -- "-------\nRunning spark integration tests -- load transaction lookup:\n"
         pytest --override-ini=python_files="test_*.py *_test.py" -m "(spark)" -k "test_load_transactions_in_delta_lookups.py" --no-cov --disable-warnings --reuse-db --numprocesses 0
         printf -- "-------\nRunning spark integration tests -- other:\n"
-        pytest --override-ini=python_files="test_*.py *_test.py" -m "(spark)" -k "(not test_load_to_from_delta.py and not test_load_transactions_in_delta_lookups.py and not test_load_transactions_in_delta_fabs_fpds.py)" --no-cov --disable-warnings --reuse-db --numprocesses logical
+        pytest --override-ini=python_files="test_*.py *_test.py" -m "(spark)" -k "(not test_load_to_from_delta.py and not test_load_transactions_in_delta_lookups.py and not test_load_transactions_in_delta_fabs_fpds.py)" --no-cov --disable-warnings --reuse-db --numprocesses auto
         printf -- "-------\nRunning unit tests:\n"
-        pytest --override-ini=python_files="test_*.py *_test.py" -m "(not signal_handling)" --ignore-glob="**/tests/integration/*" --no-cov --disable-warnings --reuse-db --numprocesses logical
+        pytest --override-ini=python_files="test_*.py *_test.py" -m "(not signal_handling)" --ignore-glob="**/tests/integration/*" --no-cov --disable-warnings --reuse-db --numprocesses auto
         printf -- "-------\nRunning unit tests with signal handling:\n"
         pytest --override-ini=python_files="test_*.py *_test.py" -m "(signal_handling)" --ignore-glob="**/tests/integration/*" --no-cov --disable-warnings --reuse-db --numprocesses 0
     environment:

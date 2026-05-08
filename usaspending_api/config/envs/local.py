@@ -62,7 +62,7 @@ class LocalConfig(DefaultConfig):
     # ==== [Elasticsearch] ====
     # Where to connect to elasticsearch.
     ES_SCHEME: str = "http"
-    ES_HOST: str = "localhost"
+    ES_HOST: str = "usaspending-es"
     ES_PORT: str = "9200"
 
     # ==== [Spark] ====
@@ -71,7 +71,7 @@ class LocalConfig(DefaultConfig):
     HIVE_METASTORE_DERBY_DB_DIR: str = str(_PROJECT_ROOT_DIR / "spark-warehouse" / "metastore_db")
 
     # ==== [MinIO] ====
-    MINIO_HOST: str = "localhost"
+    MINIO_HOST: str = "minio"
     # Changing MinIO ports from defaults. Known to have port conflicts with proxies on developer laptops
     MINIO_PORT: str = "10001"
     MINIO_CONSOLE_PORT: str = "10002"

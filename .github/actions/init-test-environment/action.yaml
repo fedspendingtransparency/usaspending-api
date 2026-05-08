@@ -48,13 +48,6 @@ runs:
       if: ${{ inputs.is-integration-test == 'true' }}
       run: docker load --input /tmp/dataact-broker-backend.tar
 
-    - name: Wait on DB and ES containers to be available
-      if: ${{ inputs.is-integration-test == 'true' }}
-      shell: bash
-      run: |
-        ttl=30; echo "Try DB conn from container for $ttl seconds"; until [ $ttl -le 0 ] || psql $DATABASE_URL -c 'select 1 where 1=1'; do echo $ttl; ((ttl--)); sleep 1; done; [ $ttl -gt 0 ]
-        ttl=30; echo "Try ES conn from container for $ttl seconds"; until [ $ttl -le 0 ] || curl --silent -XGET --fail $ES_HOSTNAME; do echo $ttl; ((ttl--)); sleep 1; done; [ $ttl -gt 0 ]
-
     - name: Add DB users and set search_path
       if: ${{ inputs.is-integration-test == 'true' }}
       shell: bash
@@ -66,10 +59,15 @@ runs:
         psql $DATABASE_URL -c "SELECT 'GRANT SELECT ON ALL TABLES IN SCHEMA ' || nspname || ' TO readonly' FROM pg_namespace WHERE nspname IN ('raw','int','rpt','temp','public')"
         psql $DATABASE_URL -c "SELECT 'ALTER DEFAULT PRIVILEGES IN SCHEMA ' || nspname || ' GRANT SELECT ON TABLES TO readonly' FROM pg_namespace WHERE nspname IN ('raw','int','rpt','temp','public')"
 
+    - name: Build the usaspending-development image
+      working-directory: ${{ inputs.working-directory }}
+      shell: bash
+      run: docker compose build usaspending-test
+
     - name: Run initial test to trigger DB creation
       if: ${{ inputs.is-integration-test == 'true' }}
       working-directory: ${{ inputs.working-directory }}
       shell: bash
       run: >
-        docker compose run --rm usaspending-test --create-db --numprocesses logical --no-cov --disable-warnings -r=fEs --verbosity=3 --capture=no --log-cli-level=WARNING --show-capture=log
+        docker compose run --rm usaspending-test --create-db --numprocesses auto --no-cov --disable-warnings -r=fEs --verbosity=3 --capture=no --log-cli-level=WARNING --show-capture=log
         2> /dev/null "usaspending_api/tests/integration/test_setup_of_test_dbs.py::test_trigger_test_db_setup"
