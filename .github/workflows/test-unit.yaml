@@ -12,6 +12,9 @@ env:
   ES_PORT: 9200
   IS_LOCAL: true
   MINIO_HOST: minio
+  MINIO_PORT: 10001
+  MINIO_ACCESS_KEY: usaspending
+  MINIO_SECRET_KEY: usaspender
   USASPENDING_DB_HOST: usaspending-db
   USASPENDING_DB_PORT: 5432
   USASPENDING_DB_USER: usaspending
@@ -45,12 +48,16 @@ jobs:
           is-spark-test: false
           working-directory: ./usaspending-api
 
-      - name: Validate file structure
+      - name: Troubleshoot
         working-directory: ./usaspending-api
         shell: bash
         run: |
           pwd
           ls
+          docker compose run --rm --entrypoint "python -c 'import sys; print(sys.path)'" usaspending-test
+          docker compose run --rm --entrypoint "pwd" usaspending-test
+          docker compose run --rm --entrypoint "ls" usaspending-test
+          docker compose run --rm --entrypoint "env" usaspending-test
 
       - name: Run Test Cases
         id: run-test-cases

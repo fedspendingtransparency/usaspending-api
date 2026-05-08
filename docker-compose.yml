@@ -22,7 +22,7 @@ x-application-variables: &application-vars
 x-spark-submit-variables: &spark-submit-vars
   <<: *application-vars
   AWS_ACCESS_KEY_ID: ${MINIO_ACCESS_KEY}
-  AWS_ENDPOINT_URL: ${MINIO_HOSTNAME}
+  AWS_ENDPOINT_URL: http://${MINIO_HOST}:{MINIO_PORT}
   AWS_SECRET_ACCESS_KEY: ${MINIO_SECRET_KEY}
   PYTHONPATH: "/dockermount"
   #SPARK_HIVE_METASTORE_DB_TYPE: derby

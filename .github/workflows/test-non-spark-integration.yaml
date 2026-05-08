@@ -12,6 +12,9 @@ env:
   ES_PORT: 9200
   IS_LOCAL: true
   MINIO_HOST: minio
+  MINIO_PORT: 10001
+  MINIO_ACCESS_KEY: usaspending
+  MINIO_SECRET_KEY: usaspender
   USASPENDING_DB_HOST: usaspending-db
   USASPENDING_DB_PORT: 5432
   USASPENDING_DB_USER: usaspending
@@ -34,10 +37,6 @@ jobs:
     name: Run
     runs-on: ${{ vars.RUNNER_VERSION }}
     steps:
-      - name: Placeholder test broke branch
-        shell: bash
-        run: echo ${{ inputs.broker-branch }}
-
       - name: Checkout Source Repository
         uses: actions/checkout@v4
         with:
