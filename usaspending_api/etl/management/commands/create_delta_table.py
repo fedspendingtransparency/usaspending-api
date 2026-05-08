@@ -16,6 +16,31 @@ from usaspending_api.etl.management.commands.load_query_to_delta import TABLE_SP
 from usaspending_api.etl.management.commands.load_table_to_delta import TABLE_SPEC as LOAD_TABLE_TABLE_SPEC
 from usaspending_api.transactions.delta_models.transaction_id_lookup import TRANSACTION_ID_LOOKUP_SCHEMA
 
+CURATED_LIST = [
+    "award_search",
+    "recipient_lookup",
+    "recipient_profile",
+    "summary_state_view",
+    "sam_recipient",
+    "transaction_search",
+    "transaction_search_gold",
+    "transaction_current_cd_lookup",
+    "subaward_search",
+    "covid_faba_spending",
+    "account_balances_download",
+    "award_financial_download",
+    "object_class_program_activity_download",
+    "awards",
+    "financial_accounts_by_awards",
+    "transaction_fabs",
+    "transaction_fpds",
+    "transaction_normalized",
+    "subaward",
+    "zips",
+    "award_id_lookup",
+    "transaction_id_lookup",
+]
+
 TABLE_SPEC = {
     **ARCHIVE_TABLE_SPEC,
     **LOAD_TABLE_TABLE_SPEC,
@@ -39,17 +64,17 @@ class Command(BaseCommand):
     """
 
     def add_arguments(self, parser: CommandParser) -> None:
-        parser.add_argument(
+        mutually_exclusive = parser.add_mutually_exclusive_group(required=True)
+        mutually_exclusive.add_argument(
             "--all-tables",
             nargs="*",
             type=str,
-            required=False,
-            help="The switch to create a curated list of tables in their default schemas",
+            help="Optional list of table names to create. If no list is provided, "
+                "this will create a curated list of tables",
         )
-        parser.add_argument(
+        mutually_exclusive.add_argument(
             "--destination-table",
             type=str,
-            required=True,
             help="The destination Delta Table to write the data",
             choices=list(TABLE_SPEC),
         )
@@ -64,14 +89,15 @@ class Command(BaseCommand):
             "--alt-db",
             type=str,
             required=False,
-            help="An alternate database (aka schema) in which to create this table, overriding the TABLE_SPEC db",
+            help="An alternate database (aka schema) in which to create this table, "
+                "overriding the TABLE_SPEC db",
         )
         parser.add_argument(
             "--alt-name",
             type=str,
             required=False,
-            help="An alternate delta table name for the created table, overriding the TABLE_SPEC destination_table "
-            "name",
+            help="An alternate delta table name for the created table, overriding "
+                "the TABLE_SPEC destination_table name",
         )
 
     def handle(self, *args, **options) -> None:  # noqa: PLR0912
@@ -89,15 +115,15 @@ class Command(BaseCommand):
         alt_name = options.get("alt_name")
 
         if all_tables is not None:
-            if alt_db is not None or alt_name is not None or destination_table is not None:
-                raise ValueError("--all-tables cannot be used with --alt-db or --alt-name or --destination-table flags")
+            if alt_db is not None or alt_name is not None:
+                raise ValueError("--all-tables cannot be used with --alt-db or --alt-name")
 
         tables_to_create = []
         if all_tables is not None:
             if len(all_tables) > 0:
                 tables_to_create = all_tables
             else:
-                tables_to_create = list(TABLE_SPEC)  # curate list
+                tables_to_create = CURATED_LIST
         elif destination_table:
             tables_to_create = [destination_table]
 
