@@ -12,7 +12,6 @@ env:
   ES_PORT: 9200
   IS_LOCAL: true
   MINIO_HOST: minio
-  PROJECT_DIRECTORY: usaspending-api
   USASPENDING_DB_HOST: usaspending-db
   USASPENDING_DB_PORT: 5432
   USASPENDING_DB_USER: usaspending
@@ -32,12 +31,26 @@ jobs:
         with:
           path: usaspending-api
 
+      - name: Validate file structure
+        working-directory: ./usaspending-api
+        shell: bash
+        run: |
+          pwd
+          ls
+
       - name: Init Test Environment
         uses: ./usaspending-api/.github/actions/init-test-environment
         with:
           is-integration-test: false
           is-spark-test: false
           working-directory: ./usaspending-api
+
+      - name: Validate file structure
+        working-directory: ./usaspending-api
+        shell: bash
+        run: |
+          pwd
+          ls
 
       - name: Run Test Cases
         id: run-test-cases
