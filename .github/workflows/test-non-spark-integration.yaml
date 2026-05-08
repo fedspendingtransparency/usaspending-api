@@ -1,17 +1,17 @@
 name: Non-Spark Integration Tests
 
 env:
-  BROKER_DB_HOST: localhost
+  BROKER_DB_HOST: usaspending-db
   BROKER_DB_PORT: 5432
   BROKER_DB_USER: admin
   BROKER_DB_PASSWORD: root
   BROKER_DB_NAME: data_broker
   DJANGO_SETTINGS_MODULE: usaspending_api.settings
   ES_SCHEME: http
-  ES_HOST: localhost
+  ES_HOST: usaspending-es
   ES_PORT: 9200
-  MINIO_HOST: localhost
-  USASPENDING_DB_HOST: localhost
+  MINIO_HOST: minio
+  USASPENDING_DB_HOST: usaspending-db
   USASPENDING_DB_PORT: 5432
   USASPENDING_DB_USER: usaspending
   USASPENDING_DB_PASSWORD: usaspender
@@ -44,11 +44,6 @@ jobs:
           repository: fedspendingtransparency/data-act-broker-backend
           path: data-act-broker-backend
           ref: ${{ needs.Setup-Broker-Branch.outputs.branch }}
-
-      - name: Init Python Environment
-        uses: ./usaspending-api/.github/actions/init-python-environment
-        with:
-          working-directory: ./usaspending-api
 
       - name: Init Test Environment
         uses: ./usaspending-api/.github/actions/init-test-environment

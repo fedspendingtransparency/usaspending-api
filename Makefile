@@ -28,7 +28,8 @@ ENV_CODE ?= lcl
 PYTHON_VERSION ?= 3.10.12
 venv_name := usaspending-api
 docker_compose_file := docker-compose.yml
-dockerfile_for_spark := Dockerfile.spark
+dockerfile_for_backend := Dockerfile
+dockerfile_for_development := development.Dockerfile
 # Root directories under which python (namespace) packages start, for all python code in this project
 src_root_paths = "."
 
@@ -53,13 +54,10 @@ printvars: ## Print the Environment variables present in calls to make, plus var
 	@printenv
 
 uv-sync:
-	uv sync --no-cache --extra dev --locked
-
-.ivy2: ## Ensure user has a ~/.ivy2 dir, which will be bound to in a docker container volume to save on dependency downloads
-	@mkdir -p ~/.ivy2
+	uv sync --no-cache --extra dev --extra spark --locked
 
 .PHONY: local-dev-setup
-local-dev-setup: uv-sync check-dependencies .ivy2 ## Setup virtual environment and pip dependencies, then check version info
+local-dev-setup: uv-sync check-dependencies ## Setup virtual environment and pip dependencies, then check version info
 
 .PHONY: check-dependencies
 check-dependencies: ## Prints out the versions of dependencies in use
@@ -68,12 +66,6 @@ check-dependencies: ## Prints out the versions of dependencies in use
 	@uv run python3 --version
 	@printf "\n==== [PIP PACKAGE VERSIONS] ====\n\n"
 	@uv pip list
-	@printf "\n==== [SPARK VERSION] ====\n\n"
-	@uv run --no-project pyspark --version
-	@printf "\n==== [HADOOP VERSION] ====\n\n"
-	@uv run python3 -c "from pyspark.sql import SparkSession; \
-spark = spark = SparkSession.builder.getOrCreate(); \
-print('Hadoop ' + spark.sparkContext._gateway.jvm.org.apache.hadoop.util.VersionInfo.getVersion());"
 
 .PHONY: env-code
 env-code:  ## Print the value of ENV_CODE environment variable
@@ -82,19 +74,15 @@ env-code:  ## Print the value of ENV_CODE environment variable
 .PHONY: test-dbs
 createdb :=  #unset it
 test-dbs:  ## Trigger the setup of multiple test DBs that can be reused with pytest --numprocesses. Add createdb=true to force (re-)creation of Test DBs rather than reuse.
-	uv run pytest ${if ${createdb},--create-db,} --reuse-db --numprocesses=auto --no-cov --disable-warnings -rP -vvv --capture=no --log-cli-level=WARNING --show-capture=log 2> /dev/null 'usaspending_api/tests/integration/test_setup_of_test_dbs.py::test_trigger_test_db_setup'
-
-.PHONY: test-spark-deps
-test-spark-deps:  ## Trigger a singular test in one pytest session that does nothing but cause Maven dependencies to be downloaded and cached through Ivy; reduces contention when parallel spark builds need the depdencies
-	uv run pytest --no-cov --disable-warnings -r=fEs --verbosity=3 'usaspending_api/tests/integration/test_setup_of_spark_dependencies.py::test_preload_spark_jars'
+	docker compose run --rm usaspending-test ${if ${createdb},--create-db,} --reuse-db --numprocesses=auto --no-cov --disable-warnings -rP -vvv --capture=no --log-cli-level=WARNING --show-capture=log 2> /dev/null 'usaspending_api/tests/integration/test_setup_of_test_dbs.py::test_trigger_test_db_setup'
 
 .PHONY: tests
 tests: local-dev-setup test-dbs test-spark-deps ## Run automated unit/integration tests. Configured for useful logging. add args="..." to append additional pytest args
-	uv run pytest --failed-first --reuse-db --numprocesses=auto --dist=worksteal -rP -vv --capture=no --show-capture=log 2> /dev/null ${args} 'usaspending_api/'
+	docker compose run --rm usaspending-test --failed-first --reuse-db --numprocesses=auto --dist=worksteal -rP -vv --capture=no --show-capture=log 2> /dev/null ${args} 'usaspending_api/'
 
 .PHONY: tests-failed
 tests-failed: local-dev-setup test-dbs test-spark-deps ## Re-run only automated unit/integration tests that failed on the previous run. Configured for verbose logging to get more detail on failures. logging. add args="..." to append additional pytest args
-	uv run pytest --last-failed --reuse-db --numprocesses=auto --dist=worksteal -rP -vvv ${args}
+	docker compose run --rm usaspending-test --last-failed --reuse-db --numprocesses=auto --dist=worksteal -rP -vvv ${args}
 
 .PHONY: confirm-clean-all
 no-prompt := 'false'
@@ -159,11 +147,10 @@ docker-compose-down: ## Run docker compose down to bring down services listed in
 	# NOTE: [See NOTE in docker compose rule about .env file]
 	docker compose --project-directory . --file ${docker_compose_file} down ${args}
 
-.PHONY: docker-build-spark
-docker-build-spark: ## Run docker build to build a base container image for spark, hadoop, and python installed
+.PHONY: docker-build-development
+docker-build-development: ## Run docker build to build a base container image for development
 	# NOTE: [See NOTE in above docker compose rule about .env file]
-	echo "docker build --tag spark-base --build-arg PROJECT_LOG_DIR=${PROJECT_LOG_DIR} ${args} --file ${dockerfile_for_spark} $$(dirname ${dockerfile_for_spark})"
-	docker build --tag spark-base --build-arg PROJECT_LOG_DIR=${PROJECT_LOG_DIR} ${args} --file ${dockerfile_for_spark} $$(dirname ${dockerfile_for_spark})
+	docker build --tag usaspending-development --build-arg PROJECT_LOG_DIR=${PROJECT_LOG_DIR} ${args} --file ${dockerfile_for_development} $$(dirname ${dockerfile_for_development})
 
 .PHONY: docker-compose-build
 docker-compose-build: ## Ensure ALL services in the docker-compose.yaml file have an image built for them according to their build: key
@@ -179,48 +166,23 @@ docker-compose-build: ## Ensure ALL services in the docker-compose.yaml file hav
 	echo "docker compose --profile usaspending --project-directory . --file ${docker_compose_file} build --build-arg PROJECT_LOG_DIR=${PROJECT_LOG_DIR} ${args}"
 	docker compose --profile usaspending --project-directory . --file ${docker_compose_file} build --build-arg PROJECT_LOG_DIR=${PROJECT_LOG_DIR} ${args}
 
-.PHONY: docker-compose-build-spark
-docker-compose-build-spark: ## See: docker-compose-build rule. This builds just the subset of spark services.
+.PHONY: docker-compose-build-development
+docker-compose-build-development: ## See: docker-compose-build rule. This builds just the subset of spark services.
 	# NOTE: [See NOTE in above docker compose rule about .env file]=
 	echo "docker compose --profile spark --project-directory . --file ${docker_compose_file} build --build-arg PROJECT_LOG_DIR=${PROJECT_LOG_DIR} ${args}"
 	docker compose --profile spark --project-directory . --file ${docker_compose_file} build --build-arg PROJECT_LOG_DIR=${PROJECT_LOG_DIR} ${args}
 
 .PHONY: docker-compose-spark-submit
-docker-compose-spark-submit: ## Run spark-submit from within local docker containerized infrastructure (which must be running first). Set params with django_command="..."
-	docker compose --profile=spark --project-directory . --file ${docker_compose_file} run \
-		-e MINIO_HOST=minio \
+spark-submit: ## Run spark-submit from within local docker containerized infrastructure (which must be running first). Set params with django_command="..."
+	docker compose --profile=spark --project-directory . --file ${docker_compose_file} run --rm \
 		-e COMPONENT_NAME='${django_command}${python_script}' \
-		-e DATABASE_URL=${DATABASE_URL} \
 	spark-submit \
 	--driver-memory "2g" \
-	--packages org.postgresql:postgresql:42.2.23,io.delta:delta-spark_2.12:3.1.0,org.apache.hadoop:hadoop-aws:3.3.4,org.apache.spark:spark-hive_2.12:3.5.0 \
 	${if ${python_script}, \
 		${python_script}, \
-		/project/manage.py ${django_command} \
-	}
-
-.PHONY: localhost-spark-submit
-localhost-spark-submit: ## Run spark-submit from with localhost as the driver and worker (single node). Set params with django_command="..."
-	SPARK_LOCAL_IP=127.0.0.1 \
-	spark-submit \
-	--driver-memory "2g" \
-	--packages org.postgresql:postgresql:42.2.23,io.delta:delta-spark_2.12:3.1.0,org.apache.hadoop:hadoop-aws:3.3.4,org.apache.spark:spark-hive_2.12:3.5.0 \
-	${if ${python_script}, \
-		${python_script}, \
-		manage.py ${django_command} \
+		/dockermount/manage.py ${django_command} \
 	}
 
 .PHONY: pyspark-shell
 pyspark-shell: ## Launch a local pyspark REPL shell with all of the packages and spark config pre-set
-	SPARK_LOCAL_IP=127.0.0.1 pyspark \
-	--packages org.postgresql:postgresql:42.2.23,io.delta:delta-spark_2.12:3.1.0,org.apache.hadoop:hadoop-aws:3.3.4 \
-	--conf spark.sql.extensions=io.delta.sql.DeltaSparkSessionExtension \
-	--conf spark.sql.catalog.spark_catalog=org.apache.spark.sql.delta.catalog.DeltaCatalog \
-	--conf spark.hadoop.fs.s3a.endpoint=localhost:${MINIO_PORT} \
-	--conf spark.hadoop.fs.s3a.access.key=usaspending \
-	--conf spark.hadoop.fs.s3a.secret.key=usaspender \
-	--conf spark.hadoop.fs.s3a.connection.ssl.enabled=false \
-	--conf spark.hadoop.fs.s3a.path.style.access=true \
-	--conf spark.sql.catalogImplementation=hive \
-	--conf spark.sql.warehouse.dir='$(PWD)/spark-warehouse' \
-	--conf spark.hadoop.javax.jdo.option.ConnectionURL='jdbc:derby:;databaseName=$(PWD)/spark-warehouse/metastore_db;create=true'
+	docker compose --profile=spark --project-directory . --file ${docker_compose_file} run --rm spark-shell

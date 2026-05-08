@@ -13,9 +13,9 @@ from databricks.sdk.service.jobs import BaseJob, RunLifeCycleState
 from django.conf import settings
 from django.core.management import call_command
 from duckdb.experimental.spark.sql import SparkSession as DuckDBSparkSession
-from usaspending_api.config import CONFIG
 
-from usaspending_api.common.spark.configs import LOCAL_EXTENDED_EXTRA_CONF, OPTIONAL_SPARK_HIVE_JAR, SPARK_SESSION_JARS
+from usaspending_api.common.spark.configs import LOCAL_EXTENDED_EXTRA_CONF
+from usaspending_api.config import CONFIG
 
 if TYPE_CHECKING:
     from pyspark.sql import SparkSession
@@ -153,9 +153,9 @@ class EmrServerlessStrategy(_AbstractStrategy):
         execution_role_arn = kwargs.get("execution_role_arn")
 
         if not execution_role_arn:
-            raise ValueError(f"Execution role ARN is required to start an EMR Serverless job")
+            raise ValueError("Execution role ARN is required to start an EMR Serverless job")
         elif not application_name and not application_id:
-            raise ValueError(f"Application Name or ID is required to start an EMR Serverless job")
+            raise ValueError("Application Name or ID is required to start an EMR Serverless job")
         elif application_name and not application_id:
             application_id = self._get_application_id(application_name)
 
@@ -230,16 +230,11 @@ class LocalStrategy(_AbstractStrategy):
         network = template_container.attrs["HostConfig"]["NetworkMode"]
         options_as_string = " ".join(command_options)
         container_name = f"spark-submit_{job_name}_{datetime.now().strftime('%Y-%m-%d-%H-%M-%S')}"
-        required_jars = ",".join([*SPARK_SESSION_JARS, OPTIONAL_SPARK_HIVE_JAR])
         client.containers.run(
             image_name,
             name=container_name,
             network=network,
-            command=(
-                'spark-submit --driver-memory "2g"'
-                f" --packages {required_jars}"
-                f" /project/manage.py {command_name} {options_as_string}"
-            ),
+            command=(f'spark-submit --driver-memory "2g" /dockermount/manage.py {command_name} {options_as_string}'),
             environment=[
                 f"COMPONENT_NAME={command_name} {options_as_string}",
                 *environment_variables,

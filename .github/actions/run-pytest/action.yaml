@@ -40,14 +40,13 @@ runs:
         echo "MARKER=${{ inputs.marker }}" >> $GITHUB_ENV
         echo "NUM_PROCESSES=${{ inputs.num-processes }}" >> $GITHUB_ENV
 
-    - name: Build pytest command
+    - name: Build pytest args
       working-directory: ${{ inputs.working-directory }}
       id: build-pytest-command
       shell: bash
       run: >
         echo pytest-command=$(python -c 'import os;print(
-        "pytest
-        -r=fEs
+        "-r=fEs
         -x
         --cov=usaspending_api
         --cov-report term
@@ -74,7 +73,7 @@ runs:
     - name: Run tests
       working-directory: ${{ inputs.working-directory }}
       shell: bash
-      run: ${{ steps.build-pytest-command.outputs.pytest-command }}
+      run: docker compose run --rm ${{ steps.build-pytest-command.outputs.pytest-command }}
 
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
