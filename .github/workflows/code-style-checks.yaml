@@ -70,6 +70,8 @@ jobs:
         if: steps.changed-python-files.outputs.all_changed_files != ''
         run: ruff check ${{ steps.changed-python-files.outputs.all_changed_files }}
 
+      # TODO: Should rethink placement of this check. This runs as a Django management command which requires similar
+      #       setup steps as the rest of the test suite. Removing would reduce setup time and overall CI/CD time.
       - name: Run Check For Endpoint Documentation
         run: python manage.py check_for_endpoint_documentation
 
