@@ -2,9 +2,11 @@ from decimal import Decimal
 from typing import List
 
 from django.db.models import F, QuerySet
+from rest_framework.request import Request
 from rest_framework.response import Response
 
 from usaspending_api.accounts.models import TreasuryAppropriationAccount
+from usaspending_api.awards.v2.lookups.lookups import loan_type_mapping
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.helpers.generic_helper import get_pagination_metadata
 from usaspending_api.disaster.v2.views.disaster_base import (
@@ -21,8 +23,8 @@ class LoansViewSet(LoansMixin, LoansPaginationMixin, DisasterBase, FabaOutlayMix
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/disaster/federal_account/loans.md"
 
     @cache_response()
-    def post(self, request):
-        self.filters.update({"award_type_codes": ["07", "08"]})
+    def post(self, request: Request) -> Response:
+        self.filters.update({"award_type_codes": [*loan_type_mapping.keys()]})
         self.has_children = True
 
         account_db_results = self.get_covid_faba_spending(
@@ -128,7 +130,7 @@ class LoansViewSet(LoansMixin, LoansPaginationMixin, DisasterBase, FabaOutlayMix
         return response
 
     @property
-    def queryset(self):
+    def queryset(self) -> QuerySet:
         query = self.construct_loan_queryset(
             "treasury_account__treasury_account_identifier", TreasuryAppropriationAccount, "treasury_account_identifier"
         )
