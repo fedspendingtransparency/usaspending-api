@@ -942,7 +942,7 @@ def rename_part_files_threaded(
             logger.info(f"Successfully renamed {part_file} to {new_key}")
             return f"s3a://{bucket_name}/{new_key}", True
         except Exception as e:
-            logger.error(f"Failed to rename {part_file} to {new_key}: {e}", exc_info=True)
+            logger.exception(f"Failed to rename {part_file} to {new_key}: {e}", exc_info=True)
             return None, False
 
     full_file_paths = []
@@ -955,11 +955,17 @@ def rename_part_files_threaded(
         ]
 
         for future in as_completed(futures):
-            new_path, success = future.result()
-            completed_count += 1
+            try:
+                new_path, success = future.result()
+                completed_count += 1
 
-            if success:
-                full_file_paths.append(new_path)
+                if success:
+                    full_file_paths.append(new_path)
+                else:
+                    failed_count += 1
+            except Exception as e:
+                failed_count += 1
+                logger.error(str(e))
 
     if failed_count > 0:
         logger.info(f"""
