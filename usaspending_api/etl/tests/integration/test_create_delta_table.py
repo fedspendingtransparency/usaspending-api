@@ -2,7 +2,7 @@
 
 NOTE: Uses Pytest Fixtures from immediate parent conftest.py: usaspending_api/etl/tests/conftest.py
 """
-
+import pytest
 from django.core.management import call_command
 from pyspark.sql import SparkSession
 
@@ -43,6 +43,52 @@ def _verify_delta_table_creation(
     assert len(delta_table_metadata_rows) == 1
     assert delta_table_metadata_rows[0]["namespace"] == expected_db_name
     assert delta_table_metadata_rows[0]["isTemporary"] is False
+
+
+def test_create_delta_table_for_all_tables_empty(spark, s3_unittest_data_bucket, hive_unittest_metastore_db):
+    call_command("create_delta_table", "--all-tables", f"--spark-s3-bucket={s3_unittest_data_bucket}")
+    for table in TABLE_SPEC:
+        delta_table_spec = TABLE_SPEC[table]
+
+        schemas = spark.sql("show schemas").collect()
+        expected_db_name = delta_table_spec.destination_database
+        assert expected_db_name in [s["namespace"] for s in schemas]
+
+        tables = spark.sql("show tables").collect()
+        expected_table_name = delta_table_spec.destination_table_name
+        assert expected_table_name in [t["tableName"] for t in tables]
+        delta_table_metadata_rows = [
+            t for t in tables if t["namespace"] == expected_db_name and t["tableName"] == expected_table_name
+        ]
+        assert len(delta_table_metadata_rows) == 1
+        assert delta_table_metadata_rows[0]["namespace"] == expected_db_name
+        assert delta_table_metadata_rows[0]["isTemporary"] is False
+
+
+def test_create_delta_table_for_all_tables_three(spark, s3_unittest_data_bucket, hive_unittest_metastore_db):
+    call_command("create_delta_table", "--all-tables", "sam_recipient", "award_financial_download", "zips")
+    _verify_delta_table_creation(spark, "sam_recipient", s3_unittest_data_bucket)
+    _verify_delta_table_creation(spark, "award_financial_download", s3_unittest_data_bucket)
+    _verify_delta_table_creation(spark, "zips", s3_unittest_data_bucket)
+
+
+VALUE_ERROR_LITERAL = "--all-tables cannot be used with --alt-db or --alt-name or --destination-table"
+
+
+def test_create_delta_table_all_tables_with_alt_db(spark, s3_unittest_data_bucket, hive_unittest_metastore_db):
+    with pytest.raises(ValueError, match=VALUE_ERROR_LITERAL):
+        call_command("create_delta_table", "--all-tables", "--alt-db", "foodb")
+
+
+def test_create_delta_table_all_tables_with_alt_name(spark, s3_unittest_data_bucket, hive_unittest_metastore_db):
+    with pytest.raises(ValueError, match=VALUE_ERROR_LITERAL):
+        call_command("create_delta_table", "--all-tables", "--alt-name", "fooname")
+
+
+def test_create_delta_table_all_tables_with_destination_table(
+        spark, s3_unittest_data_bucket, hive_unittest_metastore_db):
+    with pytest.raises(ValueError, match=VALUE_ERROR_LITERAL):
+        call_command("create_delta_table", "--all-tables", "--destination-table", "awards")
 
 
 def test_create_delta_table_for_award_search(spark, s3_unittest_data_bucket, hive_unittest_metastore_db):

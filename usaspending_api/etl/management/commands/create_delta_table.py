@@ -22,7 +22,6 @@ CURATED_LIST = [
     "recipient_profile",
     "summary_state_view",
     "sam_recipient",
-    "transaction_search",
     "transaction_search_gold",
     "transaction_current_cd_lookup",
     "subaward_search",
@@ -64,18 +63,22 @@ class Command(BaseCommand):
     """
 
     def add_arguments(self, parser: CommandParser) -> None:
-        mutually_exclusive = parser.add_mutually_exclusive_group(required=True)
-        mutually_exclusive.add_argument(
+        # mutually_exclusive = parser.add_mutually_exclusive_group(required=True)
+        # mutually_exclusive.add_argument(
+        parser.add_argument(
             "--all-tables",
             nargs="*",
             type=str,
+            required=False,
             help="Optional list of table names to create. If no list is provided, "
                 "this will create a curated list of tables",
         )
-        mutually_exclusive.add_argument(
+        # mutually_exclusive.add_argument(
+        parser.add_argument(
             "--destination-table",
             type=str,
             help="The destination Delta Table to write the data",
+            required=False,
             choices=list(TABLE_SPEC),
         )
         parser.add_argument(
@@ -99,8 +102,15 @@ class Command(BaseCommand):
             help="An alternate delta table name for the created table, overriding "
                 "the TABLE_SPEC destination_table name",
         )
+        parser.add_argument(
+            "--dump",
+            nargs="*",
+            type=str,
+            required=False,
+            help="Dump the table name and database name",
+        )
 
-    def handle(self, *args, **options) -> None:  # noqa: PLR0912
+    def handle(self, *args, **options) -> None:  # noqa: PLR0912, PLR0915
         spark = get_active_spark_session()
         spark_created_by_command = False
         if not spark:
@@ -113,12 +123,24 @@ class Command(BaseCommand):
         all_tables = options.get("all_tables")  # None or list of tables
         alt_db = options.get("alt_db")
         alt_name = options.get("alt_name")
+        dump = options.get("dump")
+
+        # dump and exit
+        if dump is not None:
+            print(f"{'Key':<40} | {'Database Name'}")
+            print("-" * 60)
+            for dest_table in CURATED_LIST:
+                destination_database = TABLE_SPEC[dest_table].destination_database
+                print(f"{dest_table:<40} | {destination_database}")
+            return
 
         if all_tables is not None:
-            if alt_db is not None or alt_name is not None:
-                raise ValueError("--all-tables cannot be used with --alt-db or --alt-name")
+            if alt_db is not None or alt_name is not None or destination_table:
+                raise ValueError("--all-tables cannot be used with --alt-db or --alt-name or --destination-table")
+        else:
+            if destination_table is None:
+                raise ValueError("--destination_table <tablename(s)> is required")
 
-        tables_to_create = []
         if all_tables is not None:
             if len(all_tables) > 0:
                 tables_to_create = all_tables
