@@ -3,8 +3,10 @@ from typing import List
 
 from django.db.models import F, Min, QuerySet, TextField, Value
 from django.db.models.functions import Cast
+from rest_framework.request import Request
 from rest_framework.response import Response
 
+from usaspending_api.awards.v2.lookups.lookups import loan_type_mapping
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.helpers.generic_helper import get_pagination_metadata
 from usaspending_api.common.helpers.orm_helpers import ConcatAll
@@ -23,8 +25,8 @@ class ObjectClassLoansViewSet(LoansMixin, FabaOutlayMixin, LoansPaginationMixin,
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/disaster/object_class/loans.md"
 
     @cache_response()
-    def post(self, request):
-        self.filters.update({"award_type_codes": ["07", "08"]})
+    def post(self, request: Request) -> Response:
+        self.filters.update({"award_type_codes": [*loan_type_mapping.keys()]})
         self.has_children = True
 
         object_class_spending = self.get_covid_faba_spending(
@@ -129,7 +131,7 @@ class ObjectClassLoansViewSet(LoansMixin, FabaOutlayMixin, LoansPaginationMixin,
         return response
 
     @property
-    def queryset(self):
+    def queryset(self) -> QuerySet:
         query = self.construct_loan_queryset(
             ConcatAll("object_class__major_object_class", Value(":"), "object_class__object_class"),
             ObjectClass.objects.annotate(join_key=ConcatAll("major_object_class", Value(":"), "object_class")),
