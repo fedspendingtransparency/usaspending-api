@@ -667,6 +667,21 @@ def generate_export_query(
         else:
             query_path_to_human_name[human_name] = human_name
 
+    # TODO remove
+    print(f"\n=== DEBUG generate_export_query ===")
+    print(f"selected_columns (first 35): {selected_columns[:35]}")
+    print(f"\nquery_path_to_human_name entries around position 32:")
+    for i, (query_path, human_name) in enumerate(list(query_path_to_human_name.items())[28:36]):
+        print(f"  {i + 28}: {query_path} -> {human_name}")
+
+    # TODO remove
+    if "obligations_delivered_orders_unpaid_total" in selected_columns:
+        idx = selected_columns.index("obligations_delivered_orders_unpaid_total")
+        print(f"\n'obligations_delivered_orders_unpaid_total' is at index {idx} in selected_columns")
+        query_path = source.query_paths.get("obligations_delivered_orders_unpaid_total")
+        print(f"Its query_path from source.query_paths: {query_path}")
+        print(f"Is it in query_path_to_human_name? {query_path in query_path_to_human_name if query_path else 'N/A'}")
+
     annotated_group_by_columns = []
     if isinstance(source_query.query.group_by, tuple):
         annotation_select = source_query.query.annotation_select
@@ -720,9 +735,16 @@ def apply_annotations_to_sql(  # noqa: PLR0912
 
     cte_sql, select_statements = _select_columns(raw_query)
 
+    # ADD DEBUG OUTPUT HERE
+    print(f"\nDEBUG _select_columns output:")
+    print(f"select_statements: {select_statements}")
+
     DIRECT_SELECT_QUERY_REGEX = r'^[^ ]*\."[^"]*"$'  # Django is pretty consistent with how it prints out queries
     # Create a list from the non-derived values between SELECT and FROM
     selects_list = [val for val in select_statements if re.search(DIRECT_SELECT_QUERY_REGEX, val)]
+
+    # ADD DEBUG OUTPUT HERE
+    print(f"selects_list (direct columns): {selects_list}")
 
     # Create a list from the derived values between SELECT and FROM
     aliased_list = [
@@ -731,6 +753,9 @@ def apply_annotations_to_sql(  # noqa: PLR0912
         if not re.search(DIRECT_SELECT_QUERY_REGEX, val.strip())
     ]
     deriv_dict = {}
+
+    # ADD DEBUG OUTPUT HERE
+    print(f"aliased_list (derived columns): {aliased_list}")
 
     # In the upgrade to Django 4.2 it was found that the change from psycopg2 to 3 by Django resulted in some
     # breaking changes for they way we manage our downloads. In this particular change the GROUP BY was changed to
@@ -744,6 +769,12 @@ def apply_annotations_to_sql(  # noqa: PLR0912
         split_string = _top_level_split(val, " AS ")
         sql_alias = split_string[1].replace('"', "").replace(",", "").strip()
 
+        # TODO remove
+        print(f"Parsing aliased column: {val[:100]}...")  # First 100 chars
+        print(f"  Extracted SQL alias: '{sql_alias}'")
+        print(f"  Is in aliases list? {sql_alias in aliases}")
+        print(f"  Is in query_path_to_human_name? {sql_alias in query_path_to_human_name}")
+
         # Map SQL alias (Django query path) to human-readable name
         if sql_alias in query_path_to_human_name:
             human_name = query_path_to_human_name[sql_alias]
@@ -751,10 +782,11 @@ def apply_annotations_to_sql(  # noqa: PLR0912
             # Direct match (for annotated fields)
             human_name = sql_alias
         else:
-            raise Exception(
-                f'SQL alias "{sql_alias}" not found! '
-                f"Available human names: {aliases}, "
-                f"Query path mappings: {query_path_to_human_name}"
+            human_name = sql_alias
+            write_to_log(
+                message=f'Warning: SQL alias "{sql_alias}" not found in mappings, using as-is',
+                is_debug=True,
+                download_job=None,
             )
 
         col_select = split_string[0]
@@ -762,6 +794,9 @@ def apply_annotations_to_sql(  # noqa: PLR0912
 
         if annotated_group_by_columns and human_name in annotated_group_by_columns:
             group_by_to_replace.append((idx, col_select))
+
+    # TODO remove
+    print(f"deriv_dict: {deriv_dict}")
 
     if group_by_to_replace:
         first_half_query, second_half_query = _top_level_split(raw_query, " GROUP BY ")
@@ -782,20 +817,35 @@ def apply_annotations_to_sql(  # noqa: PLR0912
 
     # Match aliases with their values
     values_list = []
-    for alias in deriv_dict:
+    for alias in aliases:
+        # TODO remove
+        print(f"Processing alias: {alias}")
+        print(f"  - In deriv_dict? {alias in deriv_dict}")
+        print(f"  - selects_list has items? {len(selects_list) > 0}")
+
         if alias in deriv_dict:
             # This is an annotated/derived field
             values_list.append(f'{deriv_dict[alias]} AS "{alias}"')
+            # TODO remove
+            print(f"  - Added from deriv_dict")
         elif selects_list:
             # This is a direct table column
-            values_list.append(f'{selects_list.pop(0)} AS "{alias}"')
+            select_item = selects_list.pop(0)
+            values_list.append(f'{select_item} AS "{alias}"')
+            # TODO remove
+            print(f"  - Added from selects_list: {select_item}")
         else:
+            # TODO remove
+            print(f"  - ERROR: No column found!")
             raise Exception(
                 f'Column "{alias}" not found in either derived columns or direct selects. '
                 f"Derived columns: {list(deriv_dict.keys())}, "
                 f"Remaining direct selects: {selects_list}, "
                 f"All requested aliases: {aliases}"
             )
+
+    # TODO remove
+    print(f"Final values_list: {values_list}")
 
     sql = raw_query.replace(_top_level_split(raw_query, "FROM")[0], f"SELECT {', '.join(values_list)} ", 1)
 
