@@ -28,7 +28,7 @@ class StreamingSearchView(APIView):
             return Response({"error": "Query text is required"}, status=status.HTTP_400_BAD_REQUEST)
 
         ai_model = AIModel.objects.get(name="nova micro")
-        system_prompt = Prompts.objects.get(id=1)
+        system_prompt = Prompts.objects.get(id=2)
         current_date_prompt = f"\n The current date is {datetime.today().strftime('%Y-%m-%d')}"
         system_prompt.description += current_date_prompt
         session = Session.objects.create(
