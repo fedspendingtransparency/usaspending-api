@@ -4806,3 +4806,131 @@ def test_spending_by_award_sort_recipient_uei(
         data=json.dumps(test_payload),
     )
     assert resp.status_code == status.HTTP_200_OK
+
+
+def test_spending_by_award_sort_award_type(
+    client,
+    monkeypatch,
+    elasticsearch_award_index,
+    spending_by_award_test_data,
+):
+    """Test sorting by Award Type for assistance awards"""
+    setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
+
+    test_payload = {
+        "spending_level": "awards",
+        "fields": [
+            "Award ID",
+            "Award Type",
+        ],
+        "filters": {"award_type_codes": ["02", "03", "04", "05"]},
+        "sort": "Award Type",
+        "order": "asc",
+    }
+
+    resp = client.post(
+        "/api/v2/search/spending_by_award/",
+        content_type="application/json",
+        data=json.dumps(test_payload),
+    )
+
+    assert resp.status_code == status.HTTP_200_OK
+    results = resp.json().get("results")
+    assert len(results) > 0
+
+    # Test descending order
+    test_payload["order"] = "desc"
+
+    resp = client.post(
+        "/api/v2/search/spending_by_award/",
+        content_type="application/json",
+        data=json.dumps(test_payload),
+    )
+
+    assert resp.status_code == status.HTTP_200_OK
+    results = resp.json().get("results")
+    assert len(results) > 0
+
+
+def test_spending_by_award_sort_award_type_loans(
+    client,
+    monkeypatch,
+    elasticsearch_award_index,
+    spending_by_award_test_data,
+):
+    """Test sorting by Award Type for loan awards"""
+    setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
+
+    test_payload = {
+        "spending_level": "awards",
+        "fields": [
+            "Award ID",
+            "Award Type",
+        ],
+        "filters": {"award_type_codes": ["07", "08"]},
+        "sort": "Award Type",
+        "order": "asc",
+    }
+
+    resp = client.post(
+        "/api/v2/search/spending_by_award/",
+        content_type="application/json",
+        data=json.dumps(test_payload),
+    )
+
+    assert resp.status_code == status.HTTP_200_OK
+
+    # Test descending order
+    test_payload["order"] = "desc"
+
+    resp = client.post(
+        "/api/v2/search/spending_by_award/",
+        content_type="application/json",
+        data=json.dumps(test_payload),
+    )
+
+    assert resp.status_code == status.HTTP_200_OK
+
+
+def test_spending_by_award_sort_contract_award_type_enhanced(
+    client,
+    monkeypatch,
+    elasticsearch_award_index,
+    spending_by_award_test_data,
+):
+    """Test sorting by Contract Award Type"""
+    setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
+
+    test_payload = {
+        "spending_level": "awards",
+        "fields": [
+            "Award ID",
+            "Contract Award Type",
+        ],
+        "filters": {"award_type_codes": ["A", "B", "C", "D"]},
+        "sort": "Contract Award Type",
+        "order": "asc",
+    }
+
+    resp = client.post(
+        "/api/v2/search/spending_by_award/",
+        content_type="application/json",
+        data=json.dumps(test_payload),
+    )
+
+    assert resp.status_code == status.HTTP_200_OK
+    results = resp.json().get("results")
+    assert len(results) > 0
+
+    # Test descending order
+    test_payload["order"] = "desc"
+
+    resp = client.post(
+        "/api/v2/search/spending_by_award/",
+        content_type="application/json",
+        data=json.dumps(test_payload),
+    )
+
+    assert resp.status_code == status.HTTP_200_OK
+    results = resp.json().get("results")
+    assert len(results) > 0
