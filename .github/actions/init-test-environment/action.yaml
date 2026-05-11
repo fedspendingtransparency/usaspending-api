@@ -14,14 +14,10 @@ inputs:
 runs:
   using: composite
   steps:
-    - name: Set combined ENV
+    - name: Create .env for docker compose
+      working-directory: ${{ inputs.working-directory }}
       shell: bash
-      run: |
-        echo "BROKER_DB=postgres://$BROKER_DB_USER:$BROKER_DB_PASSWORD@$BROKER_DB_HOST:$BROKER_DB_PORT/$BROKER_DB_NAME" >> $GITHUB_ENV
-        echo "DATABASE_URL=postgres://$USASPENDING_DB_USER:$USASPENDING_DB_PASSWORD@$USASPENDING_DB_HOST:$USASPENDING_DB_PORT/$USASPENDING_DB_NAME" >> $GITHUB_ENV
-        echo "DOWNLOAD_DATABASE_URL=postgres://$USASPENDING_DB_USER:$USASPENDING_DB_PASSWORD@$USASPENDING_DB_HOST:$USASPENDING_DB_PORT/$USASPENDING_DB_NAME" >> $GITHUB_ENV
-        echo "ES_HOSTNAME=$ES_SCHEME://$ES_HOST:$ES_PORT" >> $GITHUB_ENV
-        echo "MINIO_DATA_DIR=$HOME/Development/data/usaspending/docker/usaspending-s3" >> $GITHUB_ENV
+      run: cp .env.template .env
 
     # The conditionals below this all check against a string because inputs for actions are actually
     # strings, not booleans: https://github.com/actions/runner/issues/1483
@@ -59,11 +55,10 @@ runs:
       if: ${{ inputs.is-integration-test == 'true' }}
       shell: bash
       run: |
-        docker exec usaspending-db psql -U usaspending -d data_store_api -c "CREATE USER $BROKER_DB_USER PASSWORD '$BROKER_DB_PASSWORD' SUPERUSER"
         docker exec usaspending-db psql -U usaspending -d data_store_api -c "CREATE ROLE readonly"
-        docker exec usaspending-db psql -U usaspending -d data_store_api -c "SELECT 'GRANT USAGE ON SCHEMA ' || nspname || ' TO readonly' FROM pg_namespace WHERE nspname IN ('raw','int','rpt','temp','public')"
-        docker exec usaspending-db psql -U usaspending -d data_store_api -c "SELECT 'GRANT SELECT ON ALL TABLES IN SCHEMA ' || nspname || ' TO readonly' FROM pg_namespace WHERE nspname IN ('raw','int','rpt','temp','public')"
-        docker exec usaspending-db psql -U usaspending -d data_store_api -c "SELECT 'ALTER DEFAULT PRIVILEGES IN SCHEMA ' || nspname || ' GRANT SELECT ON TABLES TO readonly' FROM pg_namespace WHERE nspname IN ('raw','int','rpt','temp','public')"
+        docker exec usaspending-db psql -U usaspending -d data_store_api -c "SELECT 'GRANT USAGE ON SCHEMA ' || nspname || ' TO readonly' FROM pg_namespace WHERE nspname IN ('public','raw','int','rpt','temp')"
+        docker exec usaspending-db psql -U usaspending -d data_store_api -c "SELECT 'GRANT SELECT ON ALL TABLES IN SCHEMA ' || nspname || ' TO readonly' FROM pg_namespace WHERE nspname IN ('public','raw','int','rpt','temp')"
+        docker exec usaspending-db psql -U usaspending -d data_store_api -c "SELECT 'ALTER DEFAULT PRIVILEGES IN SCHEMA ' || nspname || ' GRANT SELECT ON TABLES TO readonly' FROM pg_namespace WHERE nspname IN ('public','raw','int','rpt','temp')"
 
     - name: Build the usaspending-development image
       working-directory: ${{ inputs.working-directory }}

@@ -4,13 +4,15 @@ volumes:
     driver: local
   local_es_data:
     driver: local
+  venv:
+    driver: local
 
 # There are populated by .env when using docker compose
 x-application-variables: &application-vars
   BROKER_DB: ${BROKER_DB}
-  DB_SOURCE: ${DATABASE_URL}
-  DB_R1: ${DATABASE_URL}
+  DATABASE_URL: ${DATABASE_URL}
   DJANGO_DEBUG: ${DJANGO_DEBUG}
+  DJANGO_SETTINGS_MODULE : ${DJANGO_SETTINGS_MODULE}
   DOWNLOAD_DATABASE_URL: ${DOWNLOAD_DATABASE_URL}
   ES_HOSTNAME: ${ES_HOSTNAME}
   IS_LOCAL: ${IS_LOCAL:-true}
@@ -78,6 +80,8 @@ services:
     container_name: usaspending-manage
     volumes:
       - .:/dockermount
+      # Python is installed and managed in the image using uv; avoid conflicts with local python .venv
+      - venv:/dockermount/.venv
     depends_on:
       - usaspending-db
     # For an interactive shell, override this command with: docker compose run --rm usaspending-manage python3 -u manage.py shell
@@ -98,13 +102,14 @@ services:
       # Required to interact with host's docker daemon from within this running container,
       # to spin up the data-act-broker-init-test-db container used for broker integration tests (see: conftest.broker_db_setup)
       - /var/run/docker.sock:/var/run/docker.sock
+      # Python is installed and managed in the image using uv; avoid conflicts with local python .venv
+      - venv:/dockermount/.venv
     depends_on:
       - minio
       - usaspending-db
       - usaspending-es
     # , "--reuse-db", "--no-cov", "--disable-warnings", "--reuse-db", "--numprocesses", "auto"
-    entrypoint: ["uv", "run", "pytest"]
-    command: make tests
+    entrypoint: []  # override entrypoint
     environment:
       <<: *spark-submit-vars
       # Location in host machine where broker src code root can be found
@@ -122,6 +127,8 @@ services:
     container_name: usaspending-style-checks
     volumes:
       - .:/dockermount
+      # Python is installed and managed in the image using uv; avoid conflicts with local python .venv
+      - venv:/dockermount/.venv
     entrypoint: []  # override entrypoint
     command:
       - sh
@@ -152,6 +159,8 @@ services:
       # Required to interact with host's docker daemon from within this running container,
       # to spin up the data-act-broker-init-test-db container used for broker integration tests (see: conftest.broker_db_setup)
       - /var/run/docker.sock:/var/run/docker.sock
+      # Python is installed and managed in the image using uv; avoid conflicts with local python .venv
+      - venv:/dockermount/.venv
     depends_on:
       usaspending-db:
         condition: service_healthy
@@ -184,7 +193,7 @@ services:
       # Location in host machine where broker src code root can be found
       DATA_BROKER_SRC_PATH: "${PWD}/../data-act-broker-backend"
 
-  usaspending-api:
+  usaspending-api:  # builds using the default Dockerfile to mirror deployed environments for local testing
     profiles:
       - usaspending  # must pass --profile usaspending to docker compose for this to come up
     image: usaspending-backend  # when an image by this name is not found in the local repo, and it is forced to build, it will use this as the tag
@@ -259,6 +268,10 @@ services:
     - type: volume
       source: local_es_data
       target: /usr/share/opensearch/data
+      # Python is installed and managed in the image, the volume prevents needing to reinstall dependencies
+    - type: volume
+      source: venv
+      target: /dockermount/.venv
     ports:
       - 9200:9200
 
@@ -344,6 +357,10 @@ services:
         source: .
         target: /dockermount
         read_only: false
+      # Python is installed and managed in the image, the volume prevents needing to reinstall dependencies
+      - type: volume
+        source: venv
+        target: /dockermount/.venv
 
   spark-worker:
     profiles:
@@ -370,6 +387,10 @@ services:
         source: .
         target: /dockermount
         read_only: false
+      # Python is installed and managed in the image, the volume prevents needing to reinstall dependencies
+      - type: volume
+        source: venv
+        target: /dockermount/.venv
 
   spark-history-server:
     profiles:
@@ -394,6 +415,10 @@ services:
         source: .
         target: /dockermount
         read_only: false
+      # Python is installed and managed in the image, the volume prevents needing to reinstall dependencies
+      - type: volume
+        source: venv
+        target: /dockermount/.venv
 
   # Example of running spark-submit container:
   #  NOTE: double check package dependency versions here with those used in unit tests (conftest_spark.py), as these docs could have gotten stale
@@ -454,6 +479,10 @@ services:
       - type: bind
         source: ${SPARK_SQL_WAREHOUSE_DIR:-./spark-warehouse}
         target: /spark-warehouse
+      # Python is installed and managed in the image, the volume prevents needing to reinstall dependencies
+      - type: volume
+        source: venv
+        target: /dockermount/.venv
 
   spark-shell:
     profiles:
@@ -500,6 +529,10 @@ services:
         source: ${SPARK_SQL_WAREHOUSE_DIR:-./spark-warehouse}
         target: /spark-warehouse
         read_only: false
+      # Python is installed and managed in the image, the volume prevents needing to reinstall dependencies
+      - type: volume
+        source: venv
+        target: /dockermount/.venv
 
   otel-collector:
     profiles:

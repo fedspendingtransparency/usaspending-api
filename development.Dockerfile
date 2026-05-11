@@ -1,5 +1,4 @@
 # Dockerfile to support local developement and tests
-
 FROM public.ecr.aws/emr-serverless/spark/emr-7.12.0:latest
 
 USER root
@@ -20,27 +19,6 @@ RUN dnf update \
         zlib-devel \
     && dnf clean all
 
-# Install python
-ARG PYTHON_VERSION=3.10.12
-RUN wget -q https://www.python.org/ftp/python/${PYTHON_VERSION}/Python-${PYTHON_VERSION}.tgz && \
-    tar -xf Python-${PYTHON_VERSION}.tgz && \
-    cd Python-${PYTHON_VERSION} && \
-    ./configure \
-        --prefix=/usr/local \
-        --enable-optimizations \
-        --with-lto \
-        --enable-shared \
-        LDFLAGS="-Wl,-rpath /usr/local/lib" && \
-    make -j"$(nproc)" && \
-    make altinstall && \
-    cd / && rm -rf Python-${PYTHON_VERSION} Python-${PYTHON_VERSION}.tgz
-
-# Symlinks so `python3` and `pip3` resolve to correct version
-RUN ln -sf /usr/local/bin/python3.10 /usr/local/bin/python3  \
-    && ln -sf /usr/local/bin/pip3.10    /usr/local/bin/pip3 \
-    && ln -sf /usr/local/bin/python3.10 /usr/local/bin/python  \
-    && ln -sf /usr/local/bin/pip3.10    /usr/local/bin/pip
-
 # Download the Postgres JAR
 RUN wget -P /usr/lib/spark/jars/ https://jdbc.postgresql.org/download/postgresql-42.7.5.jar
 
@@ -57,22 +35,26 @@ ENV UV_COMPILE_BYTECODE=1
 # Copy from the cache instead of linking since it's a mounted volume
 ENV UV_LINK_MODE=copy
 
-# Use the system Python environment since the container is already isolated
-ENV UV_PROJECT_ENVIRONMENT=/usr/local
-ENV UV_SYSTEM_PYTHON=1
-
 # Copy the project into the image
-COPY pyproject.toml uv.lock /dockermount/
+COPY . /dockermount
 
-# Install dev dependencies
+# Install Python and dev dependencies
+ARG PYTHON_VERSION=3.10.12
 RUN --mount=type=cache,target=/root/.cache/uv \
     --mount=type=bind,source=uv.lock,target=uv.lock \
     --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
-    uv sync --extra dev --extra spark --locked --no-install-project
+    uv sync --extra dev --extra spark --locked --no-install-project --python ${PYTHON_VERSION}
+
+# Make sure uv environment is active
+ENV PATH="/dockermount/.venv/bin:$PATH"
+
+# Create a symlink for the python commands
+RUN ln -sf .venv/bin/python3 /usr/local/bin/python3 & \
+    ln -sf .venv/bin/python /usr/local/bin/python
 
 # Set Python 3.10.12 as the default Python for PySpark
-ENV PYSPARK_PYTHON=/usr/local/bin/python3.10
-ENV PYSPARK_DRIVER_PYTHON=/usr/local/bin/python3.10
+ENV PYSPARK_PYTHON=/dockermount/.venv/bin/python3
+ENV PYSPARK_DRIVER_PYTHON=/dockermount/.venv/bin/python3
 
 # Limit Spark logging to WARN level
 RUN cat <<'EOF' | sed 's/^[[:space:]]*//' >> $SPARK_HOME/conf/log4j2.properties
