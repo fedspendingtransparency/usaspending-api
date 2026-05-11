@@ -27,6 +27,7 @@ class Prompts(models.Model):
         db_table = "prompts"
         ordering = ["-created_at"]
 
+
 class Session(models.Model):
     ai_model = models.ForeignKey(AIModel, on_delete=models.SET_NULL, null=True, related_name="sessions")
     tools = models.JSONField(default=list)
