@@ -7,7 +7,7 @@ class AIModel(models.Model):
     provider = models.CharField(max_length=100)
 
     def __str__(self):
-        return f"{self.name} ({self.provider})"
+        return f"{self.name} - {self.model_id} ({self.provider})"
 
     class Meta:
         db_table = "ai_model"
@@ -15,16 +15,17 @@ class AIModel(models.Model):
 
 
 class Prompts(models.Model):
+    name = models.CharField(max_length=100, unique=True)
     description = models.TextField()
     text = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return self.description[:100]
+        return self.name
 
     class Meta:
         db_table = "prompts"
-
+        ordering = ["-created_at"]
 
 class Session(models.Model):
     ai_model = models.ForeignKey(AIModel, on_delete=models.SET_NULL, null=True, related_name="sessions")
@@ -56,7 +57,6 @@ class Message(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     input_tokens = models.IntegerField(default=0)
     output_tokens = models.IntegerField(default=0)
-    total_tokens = models.IntegerField(default=0)
     latency = models.IntegerField(default=0, help_text="latency in milliseconds")
 
     def __str__(self):
@@ -89,20 +89,4 @@ class ToolUse(models.Model):
         indexes = [
             models.Index(fields=["name"]),
             models.Index(fields=["created_at"]),
-        ]
-
-
-class LLMSearchQuery(models.Model):
-    user_query = models.TextField()
-    session = models.ForeignKey(Session, on_delete=models.CASCADE, related_name="search_queries")
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        preview = self.user_query[:75] + "..." if len(self.user_query) > 75 else self.user_query
-        return f"Query {self.id}: {preview}"
-
-    class Meta:
-        db_table = "llm_search_query"
-        indexes = [
-            models.Index(fields=["-created_at"]),
         ]
