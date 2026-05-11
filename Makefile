@@ -74,15 +74,15 @@ env-code:  ## Print the value of ENV_CODE environment variable
 .PHONY: test-dbs
 createdb :=  #unset it
 test-dbs:  ## Trigger the setup of multiple test DBs that can be reused with pytest --numprocesses. Add createdb=true to force (re-)creation of Test DBs rather than reuse.
-	docker compose run --rm usaspending-test ${if ${createdb},--create-db,} --reuse-db --numprocesses=auto --no-cov --disable-warnings -rP -vvv --capture=no --log-cli-level=WARNING --show-capture=log 2> /dev/null 'usaspending_api/tests/integration/test_setup_of_test_dbs.py::test_trigger_test_db_setup'
+	docker compose run --rm usaspending-test pytest ${if ${createdb},--create-db,} --reuse-db --numprocesses=auto --no-cov --disable-warnings -rP -vvv --capture=no --log-cli-level=WARNING --show-capture=log 2> /dev/null 'usaspending_api/tests/integration/test_setup_of_test_dbs.py::test_trigger_test_db_setup'
 
 .PHONY: tests
 tests: local-dev-setup test-dbs test-spark-deps ## Run automated unit/integration tests. Configured for useful logging. add args="..." to append additional pytest args
-	docker compose run --rm usaspending-test --failed-first --reuse-db --numprocesses=auto --dist=worksteal -rP -vv --capture=no --show-capture=log 2> /dev/null ${args} 'usaspending_api/'
+	docker compose run --rm usaspending-test pytest --failed-first --reuse-db --numprocesses=auto --dist=worksteal -rP -vv --capture=no --show-capture=log 2> /dev/null ${args} 'usaspending_api/'
 
 .PHONY: tests-failed
 tests-failed: local-dev-setup test-dbs test-spark-deps ## Re-run only automated unit/integration tests that failed on the previous run. Configured for verbose logging to get more detail on failures. logging. add args="..." to append additional pytest args
-	docker compose run --rm usaspending-test --last-failed --reuse-db --numprocesses=auto --dist=worksteal -rP -vvv ${args}
+	docker compose run --rm usaspending-test pytest --last-failed --reuse-db --numprocesses=auto --dist=worksteal -rP -vvv ${args}
 
 .PHONY: confirm-clean-all
 no-prompt := 'false'
