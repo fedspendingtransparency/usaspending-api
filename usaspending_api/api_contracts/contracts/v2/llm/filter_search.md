@@ -1,9 +1,13 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# LLM Filter Search [/api/v2/llm/filter-search/]
+# LLM Filter Search [UNDER DEVELOPMENT | NOT AVAILABLE] [/api/v2/llm/filter-search/]
 
 This endpoint provides a streaming response for LLM-powered search operations with advanced filtering capabilities. The response is delivered as a series of JSON chunks, allowing real-time updates on search progress, tool execution, and results.
+
+**Status:** Under Development, Not currently available  
+
+
 
 ## POST
 
