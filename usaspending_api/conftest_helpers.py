@@ -1,6 +1,5 @@
 import os
 from builtins import Exception
-from datetime import datetime, timezone
 from pathlib import Path
 from string import Template
 
@@ -235,8 +234,7 @@ class TestElasticSearchIndex:
         elif self.index_type == "recipient":
             required_suffix = "-" + settings.ES_RECIPIENTS_NAME_SUFFIX
         return (
-            f"test-{datetime.now(timezone.utc).strftime('%Y-%m-%d-%H-%M-%S-%f')}"
-            f"-{generate_random_string()}"
+            f"test-{generate_random_string()}"
             f"{required_suffix}"
         )
 
@@ -251,9 +249,12 @@ def ensure_broker_server_dblink_exists():
     NOTE: An alternative way to run this through bash scripting is to first ``EXPORT`` the referenced environment
     variables, then run::
 
-        psql --username ${USASPENDING_DB_USER} --dbname ${USASPENDING_DB_NAME} --echo-all --set ON_ERROR_STOP=on --set VERBOSITY=verbose --file usaspending_api/database_scripts/extensions/extensions.sql
-        eval "cat <<< \"$(<usaspending_api/database_scripts/servers/broker_server.sql)\"" > usaspending_api/database_scripts/servers/broker_server.sql
-        psql --username ${USASPENDING_DB_USER} --dbname ${USASPENDING_DB_NAME} --echo-all --set ON_ERROR_STOP=on --set VERBOSITY=verbose --file usaspending_api/database_scripts/servers/broker_server.sql
+        psql --username ${USASPENDING_DB_USER} --dbname ${USASPENDING_DB_NAME} --echo-all\"
+        --set ON_ERROR_STOP=on --set VERBOSITY=verbose --file usaspending_api/database_scripts/extensions/extensions.sql
+        eval "cat <<< \"$(<usaspending_api/database_scripts/servers/broker_server.sql)\"
+        " > usaspending_api/database_scripts/servers/broker_server.sql
+        psql --username ${USASPENDING_DB_USER} --dbname ${USASPENDING_DB_NAME} --echo-all\"
+        --set ON_ERROR_STOP=on --set VERBOSITY=verbose --file usaspending_api/database_scripts/servers/broker_server.sql
 
     """
     # Gather tokens from database connection strings

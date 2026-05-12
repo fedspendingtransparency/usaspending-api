@@ -1,9 +1,10 @@
 import logging
 import re
-
 from collections import defaultdict
+from typing import OrderedDict
 
-from usaspending_api.accounts.models import AppropriationAccountBalances
+from django.db.backends.utils import CursorWrapper
+
 from usaspending_api.etl.broker_etl_helpers import dictfetchall
 from usaspending_api.etl.management.load_base import load_data_into_model
 from usaspending_api.etl.submission_loader_helpers.bulk_create_manager import BulkCreateManager
@@ -16,12 +17,12 @@ from usaspending_api.etl.submission_loader_helpers.treasury_appropriation_accoun
     get_treasury_appropriation_account_tas_lookup,
 )
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
-
+from usaspending_api.submissions.models import SubmissionAttributes
 
 logger = logging.getLogger("script")
 
 
-def get_file_b(submission_attributes, db_cursor):
+def get_file_b(submission_attributes: SubmissionAttributes, db_cursor: CursorWrapper) -> list[OrderedDict]:
     """
     Get broker File B data for a specific submission.
     This function was added as a workaround for the fact that a few agencies (two, as of April, 2017: DOI and ACHP)
@@ -45,7 +46,7 @@ def get_file_b(submission_attributes, db_cursor):
     submission_id = submission_attributes.submission_id
 
     # does this file B have the dupe object class edge case?
-    check_dupe_oc = f"""
+    check_dupe_oc = """
         select      count(*)
         from        published_object_class_program_activity
         where       submission_id = %s and length(object_class) = 4
@@ -169,7 +170,9 @@ def get_file_b(submission_attributes, db_cursor):
     return data
 
 
-def load_file_b(submission_attributes, prg_act_obj_cls_data, db_cursor):
+def load_file_b(
+    submission_attributes: SubmissionAttributes, prg_act_obj_cls_data: list[OrderedDict], db_cursor: CursorWrapper
+) -> None:
     """Process and load file B broker data (aka TAS balances by program activity and object class)."""
     reverse = re.compile(r"(_(cpe|fyb)$)|^transaction_obligated_amount$")
     skipped_tas = defaultdict(int)  # tracks count of rows skipped due to "missing" TAS
@@ -183,11 +186,6 @@ def load_file_b(submission_attributes, prg_act_obj_cls_data, db_cursor):
             skipped_tas[tas_rendering_label] += 1
             continue
 
-        # get the corresponding account balances row (aka "File A" record)
-        account_balances = AppropriationAccountBalances.objects.get(
-            treasury_account_identifier=treasury_account, submission_id=submission_attributes.submission_id
-        )
-
         financial_by_prg_act_obj_cls = FinancialAccountsByProgramActivityObjectClass()
 
         value_map = {
@@ -195,7 +193,6 @@ def load_file_b(submission_attributes, prg_act_obj_cls_data, db_cursor):
             "reporting_period_start": submission_attributes.reporting_period_start,
             "reporting_period_end": submission_attributes.reporting_period_end,
             "treasury_account": treasury_account,
-            "appropriation_account_balances": account_balances,
             "object_class": get_object_class(row["object_class"], row["by_direct_reimbursable_fun"]),
             "program_activity": get_program_activity(row, submission_attributes),
             "disaster_emergency_fund": get_disaster_emergency_fund(row),
