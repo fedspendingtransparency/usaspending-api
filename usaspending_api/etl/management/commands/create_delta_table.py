@@ -17,28 +17,36 @@ from usaspending_api.etl.management.commands.load_table_to_delta import TABLE_SP
 from usaspending_api.transactions.delta_models.transaction_id_lookup import TRANSACTION_ID_LOOKUP_SCHEMA
 
 CURATED_LIST = [
-    "award_search",
-    "recipient_lookup",
-    "recipient_profile",
-    "summary_state_view",
-    "sam_recipient",
-    "transaction_search_gold",
-    "transaction_current_cd_lookup",
-    "subaward_search",
-    "covid_faba_spending",
     "account_balances_download",
     "award_financial_download",
-    "object_class_program_activity_download",
+    "award_id_lookup",
+    "award_search",
     "awards",
+
+    "covid_faba_spending",
+
     "financial_accounts_by_awards",
+
+    "object_class_program_activity_download",
+
+    "recipient_lookup",
+    "recipient_profile",
+
+    "sam_recipient",
+    "subaward",
+    "subaward_search",
+    "summary_state_view",
+
+    "transaction_current_cd_lookup",
     "transaction_fabs",
     "transaction_fpds",
-    "transaction_normalized",
-    "subaward",
-    "zips",
-    "award_id_lookup",
     "transaction_id_lookup",
+    "transaction_normalized",
+    "transaction_search_gold",
+
+    "zips",
 ]
+
 
 TABLE_SPEC = {
     **ARCHIVE_TABLE_SPEC,
@@ -63,8 +71,6 @@ class Command(BaseCommand):
     """
 
     def add_arguments(self, parser: CommandParser) -> None:
-        # mutually_exclusive = parser.add_mutually_exclusive_group(required=True)
-        # mutually_exclusive.add_argument(
         parser.add_argument(
             "--all-tables",
             nargs="*",
@@ -102,13 +108,6 @@ class Command(BaseCommand):
             help="An alternate delta table name for the created table, overriding "
                 "the TABLE_SPEC destination_table name",
         )
-        parser.add_argument(
-            "--dump",
-            nargs="*",
-            type=str,
-            required=False,
-            help="Dump the table name and database name",
-        )
 
     def handle(self, *args, **options) -> None:  # noqa: PLR0912, PLR0915, C901
         spark = get_active_spark_session()
@@ -118,23 +117,11 @@ class Command(BaseCommand):
             spark = configure_spark_session(**DEFAULT_EXTRA_CONF, spark_context=spark)
 
         # Resolve Parameters
-        destination_table = options["destination_table"]
+        destination_table = options.get("destination_table")
         spark_s3_bucket = options["spark_s3_bucket"]
         all_tables = options.get("all_tables")  # None or list of tables
         alt_db = options.get("alt_db")
         alt_name = options.get("alt_name")
-        dump = options.get("dump")
-
-        # dump and exit
-        if dump is not None:
-            print(f"{'Key':<40} | {'Database Name':<15} | {'destination_table_name':<30}")
-            print("-" * 90)
-            for dest_table in CURATED_LIST:
-                spec = TABLE_SPEC[dest_table]
-                print(f"{dest_table:<40} | "
-                      f"{spec.destination_database:<15} | "
-                      f"{spec.destination_table_name or 'NONE':<30}")
-            return
 
         if all_tables is not None:
             if alt_db is not None or alt_name is not None or destination_table is not None:
