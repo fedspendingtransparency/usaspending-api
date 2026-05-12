@@ -110,7 +110,7 @@ class Command(BaseCommand):
             help="Dump the table name and database name",
         )
 
-    def handle(self, *args, **options) -> None:  # noqa: PLR0912, PLR0915
+    def handle(self, *args, **options) -> None:  # noqa: PLR0912, PLR0915, C901
         spark = get_active_spark_session()
         spark_created_by_command = False
         if not spark:
@@ -127,15 +127,17 @@ class Command(BaseCommand):
 
         # dump and exit
         if dump is not None:
-            print(f"{'Key':<40} | {'Database Name'}")
-            print("-" * 60)
+            print(f"{'Key':<40} | {'Database Name':<15} | {'destination_table_name':<30}")
+            print("-" * 90)
             for dest_table in CURATED_LIST:
-                destination_database = TABLE_SPEC[dest_table].destination_database
-                print(f"{dest_table:<40} | {destination_database}")
+                spec = TABLE_SPEC[dest_table]
+                print(f"{dest_table:<40} | "
+                      f"{spec.destination_database:<15} | "
+                      f"{spec.destination_table_name or 'NONE':<30}")
             return
 
         if all_tables is not None:
-            if alt_db is not None or alt_name is not None or destination_table:
+            if alt_db is not None or alt_name is not None or destination_table is not None:
                 raise ValueError("--all-tables cannot be used with --alt-db or --alt-name or --destination-table")
         else:
             if destination_table is None:
@@ -151,8 +153,11 @@ class Command(BaseCommand):
 
         for dest_table in tables_to_create:
             table_spec = TABLE_SPEC[dest_table]
+            # since destination_table parameter WAS mandatory, if it is now None, then set it to the active table
+            if destination_table is None:
+                destination_table = dest_table
             destination_database = options["alt_db"] or table_spec.destination_database
-            destination_table_name = options["alt_name"] or destination_table
+            destination_table_name = options["alt_name"] or table_spec.destination_table_name or dest_table
 
             # Set the database that will be interacted with for all Delta Lake table Spark-based activity
             logger.info(f"Using Spark Database: {destination_database}")
