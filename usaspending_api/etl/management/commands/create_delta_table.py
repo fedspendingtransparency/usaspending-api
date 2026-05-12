@@ -1,6 +1,7 @@
 import logging
 
 from django.core.management.base import BaseCommand, CommandParser
+from pyspark.sql import SparkSession
 from pyspark.sql.types import StructType
 
 from usaspending_api.awards.delta_models.award_id_lookup import AWARD_ID_LOOKUP_SCHEMA
@@ -108,7 +109,7 @@ class Command(BaseCommand):
                 "the TABLE_SPEC destination_table name",
         )
 
-    def handle(self, *args, **options) -> None:  # noqa: PLR0912, PLR0915, C901
+    def handle(self, *args, **options) -> None:  # noqa: C901
         spark = get_active_spark_session()
         spark_created_by_command = False
         if not spark:
@@ -125,66 +126,75 @@ class Command(BaseCommand):
         if all_tables is not None:
             if alt_db is not None or alt_name is not None or destination_table is not None:
                 raise ValueError("--all-tables cannot be used with --alt-db or --alt-name or --destination-table")
-        else:
-            if destination_table is None:
-                raise ValueError("--destination_table <tablename(s)> is required")
-
-        if all_tables is not None:
             if len(all_tables) > 0:
                 tables_to_create = all_tables
             else:
                 tables_to_create = CURATED_LIST
-        elif destination_table:
-            tables_to_create = [destination_table]
+        else:
+            if destination_table is None:
+                raise ValueError("--destination_table <tablename(s)> is required")
+            else:
+                tables_to_create = [destination_table]
+
+        destination_database = options["alt_db"]
+        destination_table_name = options["alt_name"]
 
         for dest_table in tables_to_create:
-            table_spec = TABLE_SPEC[dest_table]
-            # since destination_table parameter WAS mandatory, if it is now None, then set it to the active table
-            if destination_table is None:
-                destination_table = dest_table
-            destination_database = options["alt_db"] or table_spec.destination_database
-            destination_table_name = options["alt_name"] or table_spec.destination_table_name or dest_table
-
-            # Set the database that will be interacted with for all Delta Lake table Spark-based activity
-            logger.info(f"Using Spark Database: {destination_database}")
-            spark.sql(f"create database if not exists {destination_database};")
-            spark.sql(f"use {destination_database};")
-            if isinstance(table_spec.delta_table_create_sql, str):
-                # Define Schema Using CREATE TABLE AS command
-                spark.sql(
-                    table_spec.delta_table_create_sql.format(
-                        DESTINATION_TABLE=destination_table_name,
-                        DESTINATION_DATABASE=destination_database,
-                        SPARK_S3_BUCKET=spark_s3_bucket,
-                        DELTA_LAKE_S3_PATH=CONFIG.DELTA_LAKE_S3_PATH,
-                    )
-                )
-            elif isinstance(table_spec.delta_table_create_sql, StructType):
-                schema = table_spec.delta_table_create_sql
-                additional_options = table_spec.delta_table_create_options or {}
-                partition_cols = table_spec.delta_table_create_partitions or []
-                df = spark.createDataFrame([], schema)
-
-                default_options = {
-                    "path": f"s3a://{spark_s3_bucket}/{CONFIG.DELTA_LAKE_S3_PATH}/{destination_database}/{destination_table_name}",
-                    "overwriteSchema": "true",
-                }
-
-                # Create the initial DataFrameWriter
-                df_writer = df.write.format("delta")
-
-                # Optional changes to the DataFrameWriter
-                if partition_cols:
-                    df_writer = df_writer.partitionBy(partition_cols)
-
-                # Apply all options
-                (
-                    df_writer.mode("overwrite")
-                    .options(**default_options, **additional_options)
-                    .saveAsTable(f"{destination_database}.{destination_table_name}")
-                )
-            else:
-                raise ValueError("Invalid Table Spec value for Delta Table creation.")
+            process_table(dest_table, spark, destination_database, destination_table_name, spark_s3_bucket)
 
         if spark_created_by_command:
             spark.stop()
+
+
+def process_table(dest_table: str,
+                  spark: SparkSession,
+                  destination_database: str,
+                  destination_table_name: str,
+                  spark_s3_bucket: str) -> None:
+    table_spec = TABLE_SPEC[dest_table]
+
+    if destination_database is None:
+        destination_database = table_spec.destination_database
+    if destination_table_name is None:
+        destination_table_name = table_spec.destination_table_name or dest_table
+
+    # Set the database that will be interacted with for all Delta Lake table Spark-based activity
+    logger.info(f"Using Spark Database: {destination_database}")
+    spark.sql(f"create database if not exists {destination_database};")
+    spark.sql(f"use {destination_database};")
+    if isinstance(table_spec.delta_table_create_sql, str):
+        # Define Schema Using CREATE TABLE AS command
+        spark.sql(
+            table_spec.delta_table_create_sql.format(
+                DESTINATION_TABLE=destination_table_name,
+                DESTINATION_DATABASE=destination_database,
+                SPARK_S3_BUCKET=spark_s3_bucket,
+                DELTA_LAKE_S3_PATH=CONFIG.DELTA_LAKE_S3_PATH,
+            )
+        )
+    elif isinstance(table_spec.delta_table_create_sql, StructType):
+        schema = table_spec.delta_table_create_sql
+        additional_options = table_spec.delta_table_create_options or {}
+        partition_cols = table_spec.delta_table_create_partitions or []
+        df = spark.createDataFrame([], schema)
+
+        default_options = {
+            "path": f"s3a://{spark_s3_bucket}/{CONFIG.DELTA_LAKE_S3_PATH}/{destination_database}/{destination_table_name}",
+            "overwriteSchema": "true",
+        }
+
+        # Create the initial DataFrameWriter
+        df_writer = df.write.format("delta")
+
+        # Optional changes to the DataFrameWriter
+        if partition_cols:
+            df_writer = df_writer.partitionBy(partition_cols)
+
+        # Apply all options
+        (
+            df_writer.mode("overwrite")
+            .options(**default_options, **additional_options)
+            .saveAsTable(f"{destination_database}.{destination_table_name}")
+        )
+    else:
+        raise ValueError("Invalid Table Spec value for Delta Table creation.")
