@@ -1,16 +1,19 @@
-import logging
 import datetime
 import json
-import boto3
+import logging
 import re
 
+import boto3
 from django.conf import settings
+from django.core.management import CommandParser
 from django.core.management.base import BaseCommand
-from usaspending_api.awards.v2.lookups.lookups import procurement_type_mapping, assistance_type_mapping
+
+from usaspending_api.awards.v2.lookups.lookups import assistance_type_mapping, procurement_type_mapping
 from usaspending_api.common.helpers.dict_helpers import order_nested_object
 from usaspending_api.common.helpers.fiscal_year_helpers import generate_fiscal_year
 from usaspending_api.common.helpers.s3_helpers import multipart_upload
 from usaspending_api.common.sqs.sqs_handler import get_sqs_queue
+from usaspending_api.config import CONFIG
 from usaspending_api.download.filestreaming import download_generation
 from usaspending_api.download.helpers import pull_modified_agencies_cgacs
 from usaspending_api.download.lookups import JOB_STATUS_DICT
@@ -27,22 +30,24 @@ award_mappings = {
 
 
 class Command(BaseCommand):
-    def download(
+    def download(  # noqa: PLR0913
         self,
-        file_name,
-        prime_award_types=None,
-        agency=None,
-        sub_agency=None,
-        date_type=None,
-        start_date=None,
-        end_date=None,
-        columns=[],
-        file_format="csv",
-        monthly_download=False,
-        cleanup=False,
-        use_sqs=False,
-    ):
+        file_name: str,
+        prime_award_types: list[str] | None = None,
+        agency: str | None = None,
+        sub_agency: str | None = None,
+        date_type: str | None = None,
+        start_date: str | None = None,
+        end_date: str | None = None,
+        columns: list | None = None,
+        file_format: str = "csv",
+        monthly_download: bool = False,
+        cleanup: bool = False,
+        use_sqs: bool = False,
+    ) -> None:
         date_range = {}
+        if columns is None:
+            columns = []
         if start_date:
             date_range["start_date"] = start_date
         if end_date:
@@ -70,7 +75,7 @@ class Command(BaseCommand):
         if not use_sqs:
             # Note: Because of the line below, it's advised to only run this script on a separate instance as this will
             #       modify your bulk download settings.
-            settings.BULK_DOWNLOAD_S3_BUCKET_NAME = settings.MONTHLY_DOWNLOAD_S3_BUCKET_NAME
+            CONFIG.BULK_DOWNLOAD_S3_BUCKET_NAME = CONFIG.MONTHLY_DOWNLOAD_S3_BUCKET_NAME
             download_generation.generate_download(download_job=download_job)
             if cleanup:
                 # Get all the files that have the same prefix except for the update date
@@ -85,14 +90,14 @@ class Command(BaseCommand):
             queue = get_sqs_queue(queue_name=settings.BULK_DOWNLOAD_SQS_QUEUE_NAME)
             queue.send_message(MessageBody=str(download_job.download_job_id))
 
-    def upload_placeholder(self, file_name, empty_file):
-        bucket = settings.BULK_DOWNLOAD_S3_BUCKET_NAME
-        region = settings.USASPENDING_AWS_REGION
+    def upload_placeholder(self, file_name: str, empty_file: str) -> None:
+        bucket = CONFIG.BULK_DOWNLOAD_S3_BUCKET_NAME
+        region = CONFIG.AWS_REGION
 
         logger.info("Uploading {}".format(file_name))
         multipart_upload(bucket, region, empty_file, file_name)
 
-    def add_arguments(self, parser):
+    def add_arguments(self, parser: CommandParser) -> None:
         parser.add_argument(
             "--local",
             action="store_true",
@@ -160,13 +165,13 @@ class Command(BaseCommand):
             "--empty-contracts-file", dest="empty_contracts_file", default="", help="Empty contracts file for uploading"
         )
 
-    def handle(self, *args, **options):
+    def handle(self, *args, **options) -> None:  # noqa: C901, PLR0912, PLR0915
         """Run the application."""
 
         # Make sure
-        #   settings.BULK_DOWNLOAD_S3_BUCKET_NAME
+        #   CONFIG.BULK_DOWNLOAD_S3_BUCKET_NAME
         #   settings.BULK_DOWNLOAD_SQS_QUEUE_NAME
-        #   settings.USASPENDING_AWS_REGION
+        #   CONFIG.USASPENDING_AWS_REGION
         # are properly configured!
 
         local = options["local"]
@@ -207,8 +212,8 @@ class Command(BaseCommand):
             fiscal_years = range(2001, generate_fiscal_year(current_date) + 1)
 
         # moving it to self.bucket as it may be used in different cases
-        bucket_name = settings.MONTHLY_DOWNLOAD_S3_BUCKET_NAME
-        region_name = settings.USASPENDING_AWS_REGION
+        bucket_name = CONFIG.MONTHLY_DOWNLOAD_S3_BUCKET_NAME
+        region_name = CONFIG.AWS_REGION
         self.bucket = boto3.resource("s3", region_name=region_name).Bucket(bucket_name)
 
         if not clobber:

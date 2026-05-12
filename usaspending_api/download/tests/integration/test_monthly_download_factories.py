@@ -65,7 +65,7 @@ def transaction_download_table(spark, s3_unittest_data_bucket, hive_unittest_met
 def test_assistance_delta_monthly_download_factory(mock_date, spark, transaction_download_table, agency_models):
     mock_date.today.return_value.strftime.return_value = "20210130"
     download_filters = MonthlyDownloadFilters(
-        awarding_toptier_agency_abbreviation="DOD",
+        awarding_toptier_agency_code="097",
         as_of_date=None
     )
     factory = TransactionAssistanceMonthlyDownloadFactory(spark, download_filters)
@@ -90,7 +90,7 @@ def test_assistance_delta_monthly_download_factory(mock_date, spark, transaction
 def test_assistance_full_monthly_download_factory(mock_date, spark, transaction_download_table, agency_models):
     mock_date.today.return_value.strftime.return_value = "20210130"
     download_filters = MonthlyDownloadFilters(
-        awarding_toptier_agency_abbreviation="DOD",
+        awarding_toptier_agency_code="097",
         fiscal_year="2020",
         as_of_date=None
     )
@@ -116,7 +116,7 @@ def test_assistance_full_monthly_download_factory(mock_date, spark, transaction_
 def test_contract_delta_monthly_download_factory(mock_date, spark, transaction_download_table, agency_models):
     mock_date.today.return_value.strftime.return_value = "20210130"
     download_filters = MonthlyDownloadFilters(
-        awarding_toptier_agency_abbreviation="USDA",
+        awarding_toptier_agency_code="012",
         as_of_date=None
     )
     factory = TransactionContractMonthlyDownloadFactory(spark, download_filters)
@@ -141,7 +141,7 @@ def test_contract_delta_monthly_download_factory(mock_date, spark, transaction_d
 def test_contract_full_monthly_download_factory(mock_date, spark, transaction_download_table, agency_models):
     mock_date.today.return_value.strftime.return_value = "20210130"
     download_filters = MonthlyDownloadFilters(
-        awarding_toptier_agency_abbreviation="USDA",
+        awarding_toptier_agency_code="012",
         fiscal_year="2020",
         as_of_date=None
     )

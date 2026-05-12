@@ -5,8 +5,6 @@ from pyspark.sql import Column, DataFrame, SparkSession
 
 from usaspending_api.download.delta_downloads.abstract_downloads.monthly_download import (
     AbstractMonthlyDownload,
-    Category,
-    MonthlyType,
 )
 from usaspending_api.download.delta_downloads.abstract_factories.monthly_download_factory import (
     AbstractMonthlyDownloadFactory,
@@ -15,6 +13,7 @@ from usaspending_api.download.delta_downloads.abstract_factories.monthly_downloa
 from usaspending_api.download.delta_downloads.filters.monthly_download_filters import (
     MonthlyDownloadFilters,
 )
+from usaspending_api.download.delta_downloads.helpers.enums import AwardCategory, MonthlyType
 
 
 class ContractMixin:
@@ -37,8 +36,8 @@ class ContractMixin:
         self.sf = functions
 
     @property
-    def category(self) -> Category:
-        return Category.CONTRACT
+    def category(self) -> AwardCategory:
+        return AwardCategory.CONTRACT
 
     @property
     def select_cols(self) -> list[Column | DuckDBSparkColumn]:
