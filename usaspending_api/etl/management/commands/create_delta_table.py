@@ -79,7 +79,6 @@ class Command(BaseCommand):
             help="Optional list of table names to create. If no list is provided, "
                 "this will create a curated list of tables",
         )
-        # mutually_exclusive.add_argument(
         parser.add_argument(
             "--destination-table",
             type=str,
