@@ -109,7 +109,7 @@ class Command(BaseCommand):
                 "the TABLE_SPEC destination_table name",
         )
 
-    def handle(self, *args, **options) -> None:  # noqa: C901
+    def handle(self, *args, **options) -> None:
         spark = get_active_spark_session()
         spark_created_by_command = False
         if not spark:
