@@ -2,7 +2,7 @@ import pytest
 from django.db import IntegrityError
 from django.utils import timezone
 
-from usaspending_api.llm.models.db_models import AIModel, LLMSearchQuery, Message, Prompts, Session, ToolUse
+from usaspending_api.llm.models.db_models import AIModel, Message, Prompts, Session, ToolUse
 
 
 @pytest.mark.django_db
@@ -28,7 +28,7 @@ class TestAIModel:
             provider="anthropic"
         )
 
-        assert str(ai_model) == "claude 3.5 (anthropic)"
+        assert str(ai_model) == "claude 3.5 - anthropic.claude-3-5-sonnet (anthropic)"
 
     def test_ai_model_ordering(self):
         """Test AIModel ordering by -id"""
@@ -47,11 +47,13 @@ class TestPrompts:
     def test_create_prompt(self):
         """Test creating a Prompts instance"""
         prompt = Prompts.objects.create(
+            name="test_prompt",
             description="Test prompt",
             text="You are a helpful assistant"
         )
 
         assert prompt.id is not None
+        assert prompt.name == "test_prompt"
         assert prompt.description == "Test prompt"
         assert prompt.text == "You are a helpful assistant"
         assert prompt.created_at is not None
@@ -59,22 +61,39 @@ class TestPrompts:
     def test_prompt_str_representation(self):
         """Test __str__ method of Prompts"""
         prompt = Prompts.objects.create(
+            name="test_prompt",
             description="Test prompt",
             text="You are a helpful assistant"
         )
 
-        assert str(prompt) == "Test prompt"
+        assert str(prompt) == "test_prompt"
 
     def test_prompt_created_at_auto_set(self):
         """Test that created_at is automatically set"""
         before = timezone.now()
         prompt = Prompts.objects.create(
+            name="test_prompt",
             description="Test prompt",
             text="You are a helpful assistant"
         )
         after = timezone.now()
 
         assert before <= prompt.created_at <= after
+
+    def test_prompt_unique_name(self):
+        """Test that prompt names must be unique"""
+        Prompts.objects.create(
+            name="unique_prompt",
+            description="First prompt",
+            text="Text 1"
+        )
+
+        with pytest.raises(IntegrityError):
+            Prompts.objects.create(
+                name="unique_prompt",
+                description="Second prompt",
+                text="Text 2"
+            )
 
 
 @pytest.mark.django_db
@@ -87,6 +106,7 @@ class TestSession:
             provider="anthropic"
         )
         prompt = Prompts.objects.create(
+            name="system_prompt",
             description="System prompt",
             text="You are a search assistant"
         )
@@ -174,6 +194,7 @@ class TestSession:
     def test_session_cascade_on_prompt_delete(self):
         """Test that session.system_prompt is set to NULL when Prompts is deleted"""
         prompt = Prompts.objects.create(
+            name="test_prompt",
             description="Test",
             text="Test prompt"
         )
@@ -204,7 +225,6 @@ class TestMessage:
         assert message.created_at is not None
         assert message.input_tokens == 0
         assert message.output_tokens == 0
-        assert message.total_tokens == 0
         assert message.latency == 0
 
     def test_message_with_token_counts(self):
@@ -217,13 +237,11 @@ class TestMessage:
             order=1,
             input_tokens=100,
             output_tokens=50,
-            total_tokens=150,
             latency=250
         )
 
         assert message.input_tokens == 100
         assert message.output_tokens == 50
-        assert message.total_tokens == 150
         assert message.latency == 250
 
     def test_message_str_representation(self):
@@ -364,73 +382,6 @@ class TestToolUse:
 
 
 @pytest.mark.django_db
-class TestLLMSearchQuery:
-    def test_create_llm_search_query(self):
-        """Test creating an LLMSearchQuery instance"""
-        session = Session.objects.create()
-        query = LLMSearchQuery.objects.create(
-            user_query="Find contracts in Texas",
-            session=session
-        )
-
-        assert query.id is not None
-        assert query.user_query == "Find contracts in Texas"
-        assert query.session == session
-        assert query.created_at is not None
-
-    def test_llm_search_query_str_representation(self):
-        """Test __str__ method of LLMSearchQuery"""
-        session = Session.objects.create()
-        query = LLMSearchQuery.objects.create(
-            user_query="Find contracts in Texas",
-            session=session
-        )
-
-        assert str(query) == f"Query {query.id}: Find contracts in Texas..."
-
-    def test_llm_search_query_str_truncation(self):
-        """Test __str__ method truncates long queries"""
-        session = Session.objects.create()
-        long_query = "A" * 100
-        query = LLMSearchQuery.objects.create(
-            user_query=long_query,
-            session=session
-        )
-
-        str_repr = str(query)
-        # "Query X: " + 75 chars + "..."
-        assert "..." in str_repr
-
-    def test_llm_search_query_cascade_delete_with_session(self):
-        """Test that queries are deleted when session is deleted"""
-        session = Session.objects.create()
-        query = LLMSearchQuery.objects.create(
-            user_query="Test query",
-            session=session
-        )
-
-        session.delete()
-        assert not LLMSearchQuery.objects.filter(id=query.id).exists()
-
-    def test_multiple_queries_per_session(self):
-        """Test that a session can have multiple search queries"""
-        session = Session.objects.create()
-
-        query1 = LLMSearchQuery.objects.create(
-            user_query="First query",
-            session=session
-        )
-        query2 = LLMSearchQuery.objects.create(
-            user_query="Second query",
-            session=session
-        )
-
-        assert session.search_queries.count() == 2
-        assert query1 in session.search_queries.all()
-        assert query2 in session.search_queries.all()
-
-
-@pytest.mark.django_db
 class TestModelRelationships:
     def test_session_relationships(self):
         """Test Session reverse relationships"""
@@ -440,6 +391,7 @@ class TestModelRelationships:
             provider="test-provider"
         )
         prompt = Prompts.objects.create(
+            name="test_prompt",
             description="Test prompt",
             text="Test"
         )
@@ -469,6 +421,7 @@ class TestModelRelationships:
             provider="anthropic"
         )
         prompt = Prompts.objects.create(
+            name="search_assistant",
             description="Search assistant",
             text="You are a helpful search assistant"
         )
@@ -478,12 +431,6 @@ class TestModelRelationships:
             ai_model=ai_model,
             system_prompt=prompt,
             tools=["lookup_location", "advanced_search"]
-        )
-
-        # Create search query
-        LLMSearchQuery.objects.create(
-            user_query="Find contracts in Texas",
-            session=session
         )
 
         # Create user message
@@ -502,7 +449,6 @@ class TestModelRelationships:
             order=1,
             input_tokens=50,
             output_tokens=30,
-            total_tokens=80,
             latency=200
         )
 
@@ -512,15 +458,3 @@ class TestModelRelationships:
             tool_input={"query": "Texas"},
             result={"identifier": "USA_TX"}
         )
-
-        # End session
-        session.ended_at = timezone.now()
-        session.feedback = True
-        session.save()
-
-        # Verify everything is connected
-        assert session.messages.count() == 2
-        assert session.search_queries.count() == 1
-        assert assistant_msg.tool_uses.count() == 1
-        assert session.feedback is True
-        assert session.ended_at is not None

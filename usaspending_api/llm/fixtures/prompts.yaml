@@ -1,6 +1,7 @@
 - model: llm.prompts
   pk: 1
   fields:
+    name: initial
     description: initial system prompt for the search assistant
     text: >
       You are USAspending search assistant.  You help the user search for federal spending.
