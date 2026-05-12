@@ -1,3 +1,4 @@
+# ruff: noqa E501
 """
 This is a map of code enumerations, extracted from the GSDM
 
