@@ -236,6 +236,7 @@ TABLE_SPEC = {
                 },
             ],
         },
+        primary_key="transaction_id"
     ),
     "transaction_current_cd_lookup": TableSpec(
         source_query=transaction_current_cd_lookup_load_sql_string,

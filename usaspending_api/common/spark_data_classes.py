@@ -35,3 +35,4 @@ class TableSpec:
     tsvectors: list[str] | dict | None = None
     swap_table: str | None = None
     swap_schema: str | None = None
+    primary_key: str | None = None
