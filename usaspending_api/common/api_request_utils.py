@@ -1,14 +1,24 @@
-from datetime import date, time, datetime
+import json
+import os
+from datetime import date, datetime, time
+from functools import wraps
+from typing import Any, Dict, List, Optional, Union
+
+import boto3
+from botocore.exceptions import ClientError
 from django.contrib.postgres.search import SearchVector
 from django.db.models import Q
 from django.utils import timezone
+from rest_framework import status
+from rest_framework.response import Response
+
 from usaspending_api.common.exceptions import InvalidParameterException
 
 
 class FiscalYear:
     """Represents a federal fiscal year."""
 
-    def __init__(self, fy):
+    def __init__(self, fy: int) -> None:
         self.fy = fy
         tz = time(0, 0, 1, tzinfo=timezone.utc)
         # FY start previous year on Oct 1st. i.e. FY 2017 starts 10-1-2016
@@ -16,7 +26,7 @@ class FiscalYear:
         # FY ends current FY year on Sept 30th i.e. FY 2017 ends 9-30-2017
         self.fy_end_date = datetime.combine(date(int(fy), 9, 30), tz)
 
-    def get_filter_object(self, date_field, as_dict=False):
+    def get_filter_object(self, date_field: str, as_dict: bool = False) -> Union[Q, Dict[str, Any]]:
         """
         Create a filter object using date field, will return a Q object
         such that Q(date_field__gte=start_date) & Q(date_field__lte=end_date)
@@ -64,15 +74,21 @@ class FilterGenerator:
         "range_intersect": "range_intersect",
     }
 
-    def __init__(self, model, filter_map={}, ignored_parameters=[]):
-        self.filter_map = filter_map
+    def __init__(
+        self,
+        model: Any,
+        filter_map: Optional[Dict[str, str]] = None,
+        ignored_parameters: Optional[List[str]] = None,
+    ) -> None:
+        self.filter_map = filter_map if filter_map is not None else {}
         self.model = model
-        self.ignored_parameters = ["page", "limit", "last", "req", "verbose"] + ignored_parameters
+        base_ignored = ["page", "limit", "last", "req", "verbose"]
+        self.ignored_parameters = base_ignored + (ignored_parameters if ignored_parameters is not None else [])
         # When using full-text search the surrounding code must check for search vectors!
         self.search_vectors = []
 
     # Attaches this generator's search vectors to the query_set, if there are any
-    def attach_search_vectors(self, query_set):
+    def attach_search_vectors(self, query_set: Any) -> Any:
         qs = query_set
         if len(self.search_vectors) > 0:
             vector_sum = self.search_vectors[0]
@@ -86,7 +102,7 @@ class FilterGenerator:
     # method that can create filters based on passed-in
     # parameters without needing to know about the structure
     # of the request itself (e.g., GET vs POST)
-    def create_from_query_params(self, parameters):
+    def create_from_query_params(self, parameters: Dict[str, Any]) -> Dict[str, Any]:
         """
         Create filters using a request's query parameters.
 
@@ -106,7 +122,7 @@ class FilterGenerator:
                 return_arguments[key] = parameters[key]
         return return_arguments
 
-    def create_from_request_body(self, parameters):
+    def create_from_request_body(self, parameters: Dict[str, Any]) -> Q:
         """
         Creates a Q object from a POST query.
 
@@ -140,7 +156,7 @@ class FilterGenerator:
             raise
         return self.create_q_from_filter_list(parameters.get("filters", []))
 
-    def create_q_from_filter_list(self, filter_list, combine_method="AND"):
+    def create_q_from_filter_list(self, filter_list: List[Dict[str, Any]], combine_method: str = "AND") -> Q:
         q_object = Q()
         for filt in filter_list:
             if combine_method == "AND":
@@ -149,7 +165,7 @@ class FilterGenerator:
                 q_object |= self.create_q_from_filter(filt)
         return q_object
 
-    def create_q_from_filter(self, filt):
+    def create_q_from_filter(self, filt: Dict[str, Any]) -> Q:  # noqa: C901, PLR0911, PLR0912, PLR0915
         if "combine_method" in filt:
             return self.create_q_from_filter_list(filt["filters"], filt["combine_method"])
         else:
@@ -232,72 +248,110 @@ class FilterGenerator:
                 return ~Q(**q_kwargs)
             return Q(**q_kwargs)
 
-    def validate_post_request(self, request):
+    def validate_post_request(self, request: Dict[str, Any]) -> None:
         if "filters" in request:
             for filt in request["filters"]:
-                if "combine_method" in filt:
-                    try:
-                        self.validate_post_request(filt)
-                    except Exception:
-                        raise
-                else:
-                    if "field" in filt and "operation" in filt and "value" in filt:
-                        if (
-                            filt["operation"] not in FilterGenerator.operators
-                            and filt["operation"][:4] != "not_"
-                            and filt["operation"][4:] not in FilterGenerator.operators
-                        ):
-                            raise InvalidParameterException("Invalid operation: " + filt["operation"])
-                        if filt["operation"] == "in":
-                            if not isinstance(filt["value"], list):
-                                raise InvalidParameterException("Invalid value, operation 'in' requires an array value")
-                        if filt["operation"] == "range":
-                            if not isinstance(filt["value"], list) or len(filt["value"]) != 2:
-                                raise InvalidParameterException(
-                                    "Invalid value, operation 'range' requires an array value of length 2"
-                                )
-                        if filt["operation"] == "range_intersect":
-                            if not isinstance(filt["field"], list) or len(filt["field"]) != 2:
-                                raise InvalidParameterException(
-                                    "Invalid field, operation 'range_intersect' "
-                                    "requires an array of length 2 for field"
-                                )
-                            if (
-                                not isinstance(filt["value"], list) or len(filt["value"]) != 2
-                            ) and "value_format" not in filt:
-                                raise InvalidParameterException(
-                                    "Invalid value, operation 'range_intersect' requires "
-                                    "an array value of length 2, or a single value with "
-                                    "value_format set to a ranged format (such as fy)"
-                                )
-                        if filt["operation"] in ["overlap", "contained_by"] and not isinstance(filt["value"], list):
-                            raise InvalidParameterException(
-                                "Invalid value. When using operation {}, value must be an "
-                                "array of strings.".format(filt["operation"])
-                            )
-                        if filt["operation"] == "search":
-                            if not isinstance(filt["field"], list) and not self.is_string_field(filt["field"]):
-                                raise InvalidParameterException(
-                                    "Invalid field: '"
-                                    + filt["field"]
-                                    + "', operation 'search' requires a text-field for "
-                                    "searching"
-                                )
-                            elif isinstance(filt["field"], list):
-                                for search_field in filt["field"]:
-                                    if not self.is_string_field(search_field):
-                                        raise InvalidParameterException(
-                                            "Invalid field: '"
-                                            + search_field
-                                            + "', operation 'search' requires a text-field "
-                                            "for searching"
-                                        )
-                    else:
-                        raise InvalidParameterException("Malformed filter - missing field, operation, or value")
+                self._validate_single_filter(filt)
+
+    def _validate_single_filter(self, filt: Dict[str, Any]) -> None:
+        """Validate a single filter object"""
+        if "combine_method" in filt:
+            self.validate_post_request(filt)
+        elif "field" in filt and "operation" in filt and "value" in filt:
+            self._validate_filter_operation(filt)
+        else:
+            raise InvalidParameterException("Malformed filter - missing field, operation, or value")
+
+    def _validate_filter_operation(self, filt: Dict[str, Any]) -> None:
+        """Validate the operation and value for a filter"""
+        operation = filt["operation"]
+
+        # Validate operation exists
+        if not self._is_valid_operation(operation):
+            raise InvalidParameterException("Invalid operation: " + operation)
+
+        # Validate operation-specific requirements
+        if operation == "in":
+            self._validate_in_operation(filt)
+        elif operation == "range":
+            self._validate_range_operation(filt)
+        elif operation == "range_intersect":
+            self._validate_range_intersect_operation(filt)
+        elif operation in ["overlap", "contained_by"]:
+            self._validate_array_operation(filt)
+        elif operation == "search":
+            self._validate_search_operation(filt)
+
+    def _is_valid_operation(self, operation: str) -> bool:
+        """Check if operation is valid (including negated operations)"""
+        if operation in FilterGenerator.operators:
+            return True
+        if operation[:4] == "not_" and operation[4:] in FilterGenerator.operators:
+            return True
+        return False
+
+    def _validate_in_operation(self, filt: Dict[str, Any]) -> None:
+        """Validate 'in' operation requires array value"""
+        if not isinstance(filt["value"], list):
+            raise InvalidParameterException("Invalid value, operation 'in' requires an array value")
+
+    def _validate_range_operation(self, filt: Dict[str, Any]) -> None:
+        """Validate 'range' operation requires array of length 2"""
+        if not isinstance(filt["value"], list) or len(filt["value"]) != 2:
+            raise InvalidParameterException(
+                "Invalid value, operation 'range' requires an array value of length 2"
+            )
+
+    def _validate_range_intersect_operation(self, filt: Dict[str, Any]) -> None:
+        """Validate 'range_intersect' operation requirements"""
+        if not isinstance(filt["field"], list) or len(filt["field"]) != 2:
+            raise InvalidParameterException(
+                "Invalid field, operation 'range_intersect' "
+                "requires an array of length 2 for field"
+            )
+
+        has_valid_value = isinstance(filt["value"], list) and len(filt["value"]) == 2
+        has_value_format = "value_format" in filt
+
+        if not has_valid_value and not has_value_format:
+            raise InvalidParameterException(
+                "Invalid value, operation 'range_intersect' requires "
+                "an array value of length 2, or a single value with "
+                "value_format set to a ranged format (such as fy)"
+            )
+
+    def _validate_array_operation(self, filt: Dict[str, Any]) -> None:
+        """Validate 'overlap' and 'contained_by' operations require array values"""
+        if not isinstance(filt["value"], list):
+            raise InvalidParameterException(
+                "Invalid value. When using operation {}, value must be an "
+                "array of strings.".format(filt["operation"])
+            )
+
+    def _validate_search_operation(self, filt: Dict[str, Any]) -> None:
+        """Validate 'search' operation requires text fields"""
+        field = filt["field"]
+
+        if isinstance(field, list):
+            self._validate_search_field_list(field)
+        elif not self.is_string_field(field):
+            raise InvalidParameterException(
+                "Invalid field: '" + field +
+                "', operation 'search' requires a text-field for searching"
+            )
+
+    def _validate_search_field_list(self, field_list: List[str]) -> None:
+        """Validate all fields in a search operation are text fields"""
+        for search_field in field_list:
+            if not self.is_string_field(search_field):
+                raise InvalidParameterException(
+                    "Invalid field: '" + search_field +
+                    "', operation 'search' requires a text-field for searching"
+                )
 
     # Special operation functions follow
 
-    def range_intersect(self, fields, values):
+    def range_intersect(self, fields: List[str], values: List[Any]) -> Q:
         """
         Range intersect function - evaluates if a range defined by two fields overlaps
         a range of values
@@ -320,7 +374,7 @@ class FilterGenerator:
         q_case[fields[1] + "__gte"] = values[0]  # f2 >= r1
         return Q(**q_case)
 
-    def is_string_field(self, field):
+    def is_string_field(self, field: str) -> bool:
         fields = field.split("__")
         model_to_check = self.model
 
@@ -349,14 +403,15 @@ class FilterGenerator:
 class AutoCompleteHandler:
     @staticmethod
     # Data set to be searched for the value, and which ids to match
-    def get_values_and_counts(data_set, filter_matched_ids, pk_name):
+    def get_values_and_counts(data_set: Any, filter_matched_ids: Dict[str, Any], pk_name: str) -> tuple:
         value_dict = {}
         count_dict = {}
 
         for field in filter_matched_ids.keys():
             q_args = {pk_name + "__in": filter_matched_ids[field]}
             # Why this weirdness? To ensure we eliminate duplicates
-            value_dict[field] = list(set(data_set.all().filter(Q(**q_args)).values_list(field, flat=True)))
+            value_dict[field] = list(
+                set(data_set.all().filter(Q(**q_args)).values_list(field, flat=True)))
             count_dict[field] = len(value_dict[field])
 
         return value_dict, count_dict
@@ -366,7 +421,9 @@ class AutoCompleteHandler:
     """
 
     @staticmethod
-    def get_filter_matched_ids(data_set, fields, value, mode="contains", limit=10):
+    def get_filter_matched_ids(
+            data_set: Any, fields: List[str], value: str, mode: str = "contains", limit: int = 10
+    ) -> tuple:
         if mode == "contains":
             mode = "__icontains"
         elif mode == "startswith":
@@ -377,12 +434,14 @@ class AutoCompleteHandler:
         for field in fields:
             q_args = {}
             q_args[field + mode] = value
-            filter_matched_ids[field] = data_set.all().filter(Q(**q_args))[:limit].values_list(pk_name, flat=True)
+            filter_matched_ids[field] = data_set.all().filter(Q(**q_args))[:limit].values_list(pk_name,
+                                                                                               flat=True)
 
         return filter_matched_ids, pk_name
 
     @staticmethod
-    def get_objects(data_set, filter_matched_ids, pk_name, serializer):
+    def get_objects(data_set: Any, filter_matched_ids: Dict[str, Any], pk_name: str, serializer: Any) -> \
+    Dict[str, Any]:
         matched_objects = {}
 
         for field in filter_matched_ids.keys():
@@ -394,7 +453,7 @@ class AutoCompleteHandler:
         return matched_objects
 
     @staticmethod
-    def handle(data_set, body, serializer=None):
+    def handle(data_set: Any, body: Dict[str, Any], serializer: Any = None) -> Dict[str, Any]:
         try:
             AutoCompleteHandler.validate(body)
         except Exception:
@@ -408,11 +467,13 @@ class AutoCompleteHandler:
         return_object = {}
 
         filter_matched_ids, pk_name = AutoCompleteHandler.get_filter_matched_ids(
-            data_set.all(), body["fields"], body["value"], body.get("mode", "contains"), body.get("limit", 10)
+            data_set.all(), body["fields"], body["value"], body.get("mode", "contains"),
+            body.get("limit", 10)
         )
 
         # Get matching string values, and their counts
-        value_dict, count_dict = AutoCompleteHandler.get_values_and_counts(data_set.all(), filter_matched_ids, pk_name)
+        value_dict, count_dict = AutoCompleteHandler.get_values_and_counts(data_set.all(),
+                                                                           filter_matched_ids, pk_name)
 
         # Get the matching objects, if requested
         if body.get("matched_objects", False) and serializer:
@@ -423,10 +484,11 @@ class AutoCompleteHandler:
         return {**return_object, "counts": count_dict, "results": value_dict}
 
     @staticmethod
-    def validate(body):
+    def validate(body: Dict[str, Any]) -> None:
         if "fields" in body and "value" in body:
             if not isinstance(body["fields"], list):
-                raise InvalidParameterException("Invalid field, autocomplete fields value must be a list")
+                raise InvalidParameterException(
+                    "Invalid field, autocomplete fields value must be a list")
         else:
             raise InvalidParameterException(
                 "Invalid request, autocomplete requests need parameters 'fields' and 'value'"
@@ -434,5 +496,190 @@ class AutoCompleteHandler:
         if "mode" in body:
             if body["mode"] not in ["contains", "startswith"]:
                 raise InvalidParameterException(
-                    "Invalid mode, autocomplete modes are 'contains', 'startswith', but got " + body["mode"]
+                    "Invalid mode, autocomplete modes are 'contains', 'startswith', but got " + body[
+                        "mode"]
                 )
+
+
+class LLMAPIKeyHandler:
+    """Handles LLM API key validation via AWS Secrets Manager"""
+
+    @staticmethod
+    def require_api_key(function: Any) -> Any:
+        """
+        Decorator to validate LLM API access via UUID in request header.
+        Checks against UUID stored in AWS Secrets Manager.
+
+        Must be applied before cache decorators to prevent unauthorized cache access.
+
+        Environment Variables:
+            LLM_API_SECRET_NAME: Name of the AWS secret containing the LLM API UUID
+            AWS_REGION: AWS region for Secrets Manager (defaults to us-gov-west-1)
+
+        Request Headers:
+            X-LLM-API-Key: UUID for LLM API authentication
+
+        Returns 403 Forbidden with appropriate message if:
+            - X-LLM-API-Key header is not included in the API request
+            - AWS doesn't contain the requested secret
+            - UUID in the header doesn't match the AWS secret
+
+        Example:
+            @LLMAPIKeyHandler.require_api_key
+            @cache_response()
+            @api_view(['GET', 'POST'])
+            def llm_endpoint(request):
+                return Response({"message": "LLM endpoint"})
+        """
+
+        @wraps(function)
+        def wrapper(*args: Any, **kwargs: Any) -> Response:
+            # Extract request from args
+            request = args[0] if args else kwargs.get('request')
+
+            # Validate request and authentication
+            error_response = LLMAPIKeyHandler._validate_llm_request(request)
+            if error_response:
+                return error_response
+
+            # UUID is valid, proceed with the view
+            return function(*args, **kwargs)
+
+        return wrapper
+
+    @staticmethod
+    def _validate_llm_request(request: Any) -> Optional[Response]:
+        """
+        Validate LLM API request and authenticate via AWS Secrets Manager.
+        Returns error Response if validation fails, None if successful.
+        """
+        # Run all basic validations
+        validation_result = LLMAPIKeyHandler._validate_request_components(request)
+        if isinstance(validation_result, Response):
+            return validation_result
+
+        llm_api_key, secret_name = validation_result
+
+        # Retrieve and validate secret from AWS
+        stored_uuid = LLMAPIKeyHandler._get_secret_uuid(secret_name)
+        if isinstance(stored_uuid, Response):
+            return stored_uuid
+
+        # Validate UUID matches
+        return LLMAPIKeyHandler._validate_uuid_match(llm_api_key, stored_uuid)
+
+    @staticmethod
+    def _validate_request_components(request: Any) -> Union[tuple, Response]:
+        """
+        Validate request, API key header, and secret name configuration.
+        Returns tuple of (api_key, secret_name) on success or error Response on failure.
+        """
+        if not request:
+            return LLMAPIKeyHandler._error_response(
+                "Request object not found",
+                status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+        llm_api_key = request.headers.get('X-LLM-API-Key')
+        secret_name = os.environ.get('LLM_API_SECRET_NAME')
+
+        # Validate both required components - prioritize API key error
+        error_detail = None
+        if not llm_api_key:
+            error_detail = "X-LLM-API-Key header is required for LLM API access"
+        elif not secret_name:
+            error_detail = "LLM API secret configuration is not set"
+
+        if error_detail:
+            return LLMAPIKeyHandler._error_response(error_detail, status.HTTP_403_FORBIDDEN)
+
+        return llm_api_key, secret_name
+
+    @staticmethod
+    def _validate_uuid_match(llm_api_key: str, stored_uuid: str) -> Optional[Response]:
+        """Validate that provided UUID matches stored UUID."""
+        if llm_api_key.strip() != stored_uuid.strip():
+            return LLMAPIKeyHandler._error_response(
+                "Invalid LLM API key",
+                status.HTTP_403_FORBIDDEN
+            )
+        return None
+
+    @staticmethod
+    def _get_secret_uuid(secret_name: str) -> Union[str, Response]:
+        """
+        Retrieve UUID from AWS Secrets Manager.
+        Returns UUID string on success or error Response on failure.
+        """
+        try:
+            secret_string = LLMAPIKeyHandler._fetch_aws_secret(secret_name)
+            if isinstance(secret_string, Response):
+                return secret_string
+            return LLMAPIKeyHandler._parse_secret_uuid(secret_string)
+        except (ClientError, Exception) as e:
+            return LLMAPIKeyHandler._handle_error(e, secret_name)
+
+    @staticmethod
+    def _fetch_aws_secret(secret_name: str) -> Union[str, Response]:
+        """
+        Fetch secret from AWS Secrets Manager.
+        Returns secret string on success or error Response on failure.
+        """
+        session = boto3.session.Session()
+        client = session.client(
+            service_name='secretsmanager',
+            region_name=os.environ.get('AWS_REGION', 'us-gov-west-1')
+        )
+
+        get_secret_value_response = client.get_secret_value(SecretId=secret_name)
+
+        if 'SecretString' not in get_secret_value_response:
+            return LLMAPIKeyHandler._error_response(
+                "LLM API secret format is invalid",
+                status.HTTP_403_FORBIDDEN
+            )
+
+        return get_secret_value_response['SecretString']
+
+    @staticmethod
+    def _parse_secret_uuid(secret: str) -> Union[str, Response]:
+        """
+        Parse UUID from secret string (handles both JSON and plain text).
+        Returns UUID string or error Response.
+        """
+        try:
+            secret_dict = json.loads(secret)
+            stored_uuid = (
+                    secret_dict.get('uuid') or
+                    secret_dict.get('LLM_API_KEY') or
+                    secret_dict.get('api_key')
+            )
+            if not stored_uuid:
+                return LLMAPIKeyHandler._error_response(
+                    "LLM API secret does not contain a valid UUID key",
+                    status.HTTP_403_FORBIDDEN
+                )
+            return stored_uuid
+        except json.JSONDecodeError:
+            # Secret is a plain string UUID
+            return secret
+
+    @staticmethod
+    def _handle_error(error: Exception, secret_name: str) -> Response:
+        """Handle all errors from secret retrieval."""
+        if isinstance(error, ClientError):
+            error_code = error.response['Error']['Code']
+            detail = (
+                f"LLM API secret '{secret_name}' not found in AWS Secrets Manager"
+                if error_code == 'ResourceNotFoundException'
+                else f"Error retrieving LLM API secret: {error_code}"
+            )
+        else:
+            detail = f"Unexpected error accessing LLM API secret: {str(error)}"
+
+        return LLMAPIKeyHandler._error_response(detail, status.HTTP_403_FORBIDDEN)
+
+    @staticmethod
+    def _error_response(detail: str, status_code: int) -> Response:
+        """Create a standardized error response."""
+        return Response({"detail": detail}, status=status_code)
