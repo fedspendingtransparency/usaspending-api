@@ -172,6 +172,10 @@ docker-compose-build-development: ## See: docker-compose-build rule. This builds
 	echo "docker compose --profile spark --project-directory . --file ${docker_compose_file} build --build-arg PROJECT_LOG_DIR=${PROJECT_LOG_DIR} ${args}"
 	docker compose --profile spark --project-directory . --file ${docker_compose_file} build --build-arg PROJECT_LOG_DIR=${PROJECT_LOG_DIR} ${args}
 
+.PHONY: style-checks
+style-checks:
+	docker compose --profile=ci --project-directory . --file ${docker_compose_file} run --rm usaspending-style-checks
+
 .PHONY: docker-compose-spark-submit
 spark-submit: ## Run spark-submit from within local docker containerized infrastructure (which must be running first). Set params with django_command="..."
 	docker compose --profile=spark --project-directory . --file ${docker_compose_file} run --rm \

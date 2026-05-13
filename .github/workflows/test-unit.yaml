@@ -30,15 +30,6 @@ jobs:
           is-spark-test: false
           working-directory: ./usaspending-api
 
-      - name: Troubleshoot
-        shell: bash
-        run: |
-          pwd
-          ls
-          docker compose run --rm --entrypoint "pwd" usaspending-test
-          docker compose run --rm --entrypoint "ls" usaspending-test
-          docker compose run --rm --entrypoint "env" usaspending-test
-
       - name: Run Test Cases
         id: run-test-cases
         uses: ./usaspending-api/.github/actions/run-pytest

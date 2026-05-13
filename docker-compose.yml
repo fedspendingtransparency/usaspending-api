@@ -4,44 +4,54 @@ volumes:
     driver: local
   local_es_data:
     driver: local
-  venv:
+  local_venv:
     driver: local
 
 # There are populated by .env when using docker compose
 x-application-variables: &application-vars
-  BROKER_DB: ${BROKER_DB}
+  # Primary data stores for the API
   DATABASE_URL: ${DATABASE_URL}
-  DJANGO_DEBUG: ${DJANGO_DEBUG}
-  DJANGO_SETTINGS_MODULE : ${DJANGO_SETTINGS_MODULE}
   DOWNLOAD_DATABASE_URL: ${DOWNLOAD_DATABASE_URL}
   ES_HOSTNAME: ${ES_HOSTNAME}
-  IS_LOCAL: ${IS_LOCAL:-true}
+  # For connection to Broker
+  BROKER_DB: ${BROKER_DB}
+  # For local development
+  DJANGO_DEBUG: ${DJANGO_DEBUG}
+  DJANGO_SETTINGS_MODULE: ${DJANGO_SETTINGS_MODULE}
+  IS_LOCAL: ${IS_LOCAL}
+  # MinIO
+  MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
+  MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
   MINIO_HOST: ${MINIO_HOST}
   MINIO_PORT: ${MINIO_PORT}
+  # Add network proxy to the containers
+#  HTTP_PROXY: ${HTTP_PROXY}
+#  HTTPS_PROXY: ${HTTPS_PROXY}
+#  NO_PROXY: 127.0.0.1,localhost,minio,${NO_PROXY}
+  # Defined for tracing
   OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: ${OTEL_EXPORTER_OTLP_TRACES_ENDPOINT}
   TOGGLE_OTEL_CONSOLE_LOGGING: ${TOGGLE_OTEL_CONSOLE_LOGGING}
 
 x-spark-submit-variables: &spark-submit-vars
   <<: *application-vars
   AWS_ACCESS_KEY_ID: ${MINIO_ACCESS_KEY}
-  AWS_ENDPOINT_URL: http://${MINIO_HOST}:{MINIO_PORT}
+  AWS_ENDPOINT_URL: http://${MINIO_HOST}:${MINIO_PORT}
   AWS_SECRET_ACCESS_KEY: ${MINIO_SECRET_KEY}
-  PYTHONPATH: "/dockermount"
   #SPARK_HIVE_METASTORE_DB_TYPE: derby
   #SPARK_HIVE_METASTORE_DB_PATH: /spark-warehouse
   # Needed for the Spark containers to interact
-  SPARK_MASTER_HOST: ${SPARK_MASTER_HOST:-spark-master}
-  SPARK_MASTER_PORT: ${SPARK_MASTER_PORT:-7077}
-  SPARK_WORKER_WEBUI_PORT: ${SPARK_WORKER_WEBUI_PORT:-4041}
+  SPARK_MASTER_HOST: ${SPARK_MASTER_HOST}
+  SPARK_MASTER_PORT: ${SPARK_MASTER_PORT}
+  SPARK_WORKER_WEBUI_PORT: ${SPARK_WORKER_WEBUI_PORT}
   # This env var needs to be picked up as the config for the spark.sql.warehouse.dir spark conf setting when
   # SparkSessions are created inside a spark-submitted job
   # (i.e., target where host warehouse dir is bound in volume config)
-  SPARK_SQL_WAREHOUSE_DIR: /spark-warehouse
+  SPARK_SQL_WAREHOUSE_DIR: ${TARGET_SPARK_SQL_WAREHOUSE_DIR}
   # This env var needs to be picked up as the path part of the config for the
   # spark.hadoop.javax.jdo.option.ConnectionURL spark conf setting when SparkSessions are created inside a
   # spark-submitted job
   # (i.e., a metastore_db sub dir of the target where host warehouse dir is bound in volume config.)
-  HIVE_METASTORE_DERBY_DB_DIR: /spark-warehouse/metastore_db
+  HIVE_METASTORE_DERBY_DB_DIR: ${TARGET_HIVE_METASTORE_DERBY_DB_DIR}
 
 
 services:
@@ -55,7 +65,7 @@ services:
       - ci
     image: postgres:16-alpine
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U ${USASPENDING_DB_USER:-usaspending} -d ${USASPENDING_DB_NAME:-data_store_api}" ]
+      test: [ "CMD-SHELL", "pg_isready -U ${USASPENDING_DB_USER} -d ${USASPENDING_DB_NAME}" ]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -66,11 +76,11 @@ services:
         source: local_pg_data
         target: /var/lib/postgresql/data
     ports:
-      - ${USASPENDING_DB_PORT:-5432}:5432
+      - ${USASPENDING_DB_PORT}:5432
     environment:
-      POSTGRES_USER: ${USASPENDING_DB_USER:-usaspending}
-      POSTGRES_PASSWORD: ${USASPENDING_DB_PASSWORD:-usaspender}
-      POSTGRES_DB: ${USASPENDING_DB_NAME:-data_store_api}
+      POSTGRES_USER: ${USASPENDING_DB_USER}
+      POSTGRES_PASSWORD: ${USASPENDING_DB_PASSWORD}
+      POSTGRES_DB: ${USASPENDING_DB_NAME}
 
   usaspending-manage:
     profiles:
@@ -81,7 +91,9 @@ services:
     volumes:
       - .:/dockermount
       # Python is installed and managed in the image using uv; avoid conflicts with local python .venv
-      - venv:/dockermount/.venv
+      - type: volume
+        source: local_venv
+        target: /dockermount/.venv
     depends_on:
       - usaspending-db
     # For an interactive shell, override this command with: docker compose run --rm usaspending-manage python3 -u manage.py shell
@@ -96,14 +108,18 @@ services:
     build:
       context: .
       dockerfile: development.Dockerfile
+      args:
+        PROJECT_LOG_DIR: ${PROJECT_LOG_DIR}
     container_name: usaspending-test
     volumes:
-      - ${PROJECT_DIRECTORY:-.}:/dockermount
+      - .:/dockermount
+      # Python is installed and managed in the image using uv; avoid conflicts with local python .venv
+      - type: volume
+        source: local_venv
+        target: /dockermount/.venv
       # Required to interact with host's docker daemon from within this running container,
       # to spin up the data-act-broker-init-test-db container used for broker integration tests (see: conftest.broker_db_setup)
       - /var/run/docker.sock:/var/run/docker.sock
-      # Python is installed and managed in the image using uv; avoid conflicts with local python .venv
-      - venv:/dockermount/.venv
     depends_on:
       - minio
       - usaspending-db
@@ -128,13 +144,14 @@ services:
     volumes:
       - .:/dockermount
       # Python is installed and managed in the image using uv; avoid conflicts with local python .venv
-      - venv:/dockermount/.venv
+      - type: volume
+        source: local_venv
+        target: /dockermount/.venv
     entrypoint: []  # override entrypoint
     command:
       - sh
       - -c
       - |
-        git config --global --add safe.directory /dockermount
         printf -- "==============\nFormatting code:\n"
         git diff --name-only --diff-filter=ACMR | grep '\.py$' | xargs uv run ruff format
         printf -- "==============\nChecking code syntax and quality:\n"
@@ -160,7 +177,9 @@ services:
       # to spin up the data-act-broker-init-test-db container used for broker integration tests (see: conftest.broker_db_setup)
       - /var/run/docker.sock:/var/run/docker.sock
       # Python is installed and managed in the image using uv; avoid conflicts with local python .venv
-      - venv:/dockermount/.venv
+      - type: volume
+        source: local_venv
+        target: /dockermount/.venv
     depends_on:
       usaspending-db:
         condition: service_healthy
@@ -201,6 +220,10 @@ services:
     container_name: usaspending-api
     volumes:
       - .:/dockermount
+      # Python is installed and managed in the image; avoid conflicts with local python .venv
+      - type: volume
+        source: local_venv
+        target: /dockermount/.venv
     ports:
       - 8000:8000
     depends_on:
@@ -226,6 +249,10 @@ services:
       # Required to interact with host's docker daemon from within this running container,
       # to submit a spark job via the spark-submit container (see download_sqs_worker._run_spark_download)
       - /var/run/docker.sock:/var/run/docker.sock
+      # Python is installed and managed in the image; avoid conflicts with local python .venv
+      - type: volume
+        source: local_venv
+        target: /dockermount/.venv
     command: python3 manage.py download_sqs_worker
     environment:
       <<: *application-vars
@@ -268,12 +295,8 @@ services:
     - type: volume
       source: local_es_data
       target: /usr/share/opensearch/data
-      # Python is installed and managed in the image, the volume prevents needing to reinstall dependencies
-    - type: volume
-      source: venv
-      target: /dockermount/.venv
     ports:
-      - 9200:9200
+      - ${ES_PORT}:9200
 
   usaspending-kibana-es:
     profiles:
@@ -300,14 +323,14 @@ services:
     volumes:
       - .:/dockermount
       - type: bind
-        source: ${MINIO_DATA_DIR:-../data/s3}
+        source: ${MINIO_DATA_DIR}
         target: /data
     ports:
-      - ${MINIO_PORT:-10001}:10001
-      - ${MINIO_CONSOLE_PORT:-10002}:10002
+      - ${MINIO_PORT}:10001
+      - ${MINIO_CONSOLE_PORT}:10002
     environment:
-      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-usaspending}
-      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-usaspender}
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
     entrypoint: >
       /bin/sh -c "
         # Create the bucket within MinIO and file path for the data dict
@@ -324,7 +347,7 @@ services:
         minio server --address ":10001" --console-address ":10002" /data
       "
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://${MINIO_HOST:-localhost}:${MINIO_PORT:-10001}/minio/health/live"]
+      test: ["CMD", "curl", "-f", "http://${MINIO_HOST}:${MINIO_PORT}/minio/health/live"]
       interval: 30s
       timeout: 20s
       retries: 3
@@ -350,16 +373,16 @@ services:
         --port $${SPARK_MASTER_PORT} \
         --webui-port $${SPARK_MASTER_WEBUI_PORT}"
     ports:
-      - ${SPARK_MASTER_PORT:-7077}:7077
-      - ${SPARK_MASTER_WEBUI_PORT:-4040}:4040
+      - ${SPARK_MASTER_PORT}
+      - ${SPARK_MASTER_WEBUI_PORT}
     volumes:
       - type: bind
         source: .
         target: /dockermount
         read_only: false
-      # Python is installed and managed in the image, the volume prevents needing to reinstall dependencies
+      # Python is installed and managed in the image using uv; avoid conflicts with local python .venv
       - type: volume
-        source: venv
+        source: local_venv
         target: /dockermount/.venv
 
   spark-worker:
@@ -381,15 +404,15 @@ services:
     entrypoint: []  # override the entrypoint
     command: /bin/sh -c "$${SPARK_HOME}/bin/spark-class org.apache.spark.deploy.worker.Worker --webui-port $${SPARK_WORKER_WEBUI_PORT} spark://$${SPARK_MASTER_HOST}:$${SPARK_MASTER_PORT}"
     ports:
-      - ${SPARK_WORKER_WEBUI_PORT:-4041}:4041
+      - ${SPARK_WORKER_WEBUI_PORT}:4041
     volumes:
       - type: bind
         source: .
         target: /dockermount
         read_only: false
-      # Python is installed and managed in the image, the volume prevents needing to reinstall dependencies
+      # Python is installed and managed in the image using uv; avoid conflicts with local python .venv
       - type: volume
-        source: venv
+        source: local_venv
         target: /dockermount/.venv
 
   spark-history-server:
@@ -405,19 +428,19 @@ services:
         PROJECT_LOG_DIR: ${PROJECT_LOG_DIR}
     container_name: spark-history-server
     environment:
-      SPARK_HISTORY_SERVER_PORT: ${SPARK_HISTORY_SERVER_PORT:-18080}
+      SPARK_HISTORY_SERVER_PORT: ${SPARK_HISTORY_SERVER_PORT}
     entrypoint: []  # override the entrypoint
     command: /usr/bin/sh -c "$${SPARK_HOME}/bin/spark-class org.apache.spark.deploy.history.HistoryServer"
     ports:
-      - ${SPARK_HISTORY_SERVER_PORT:-18080}:18080
+      - ${SPARK_HISTORY_SERVER_PORT}:18080
     volumes:
       - type: bind
         source: .
         target: /dockermount
         read_only: false
-      # Python is installed and managed in the image, the volume prevents needing to reinstall dependencies
+      # Python is installed and managed in the image using uv; avoid conflicts with local python .venv
       - type: volume
-        source: venv
+        source: local_venv
         target: /dockermount/.venv
 
   # Example of running spark-submit container:
@@ -468,20 +491,20 @@ services:
     # While this service has values for these interpolated vars in the environment: element, those are not used here,
     # but merely passed into the container. KEEP the two references to these vars and their defaults consistent!
     # To see what it will be, you can run docker compose config (i.e. make docker-compose-config in this project's Makefile)
-    entrypoint: /usr/bin/spark-submit --master spark://${SPARK_MASTER_HOST:-spark-master}:${SPARK_MASTER_PORT:-7077}
+    entrypoint: /usr/bin/spark-submit --master spark://${SPARK_MASTER_HOST}:${SPARK_MASTER_PORT}
     command: --help
     volumes:
       - type: bind
-        source: ${PROJECT_DIRECTORY:-.}
+        source: .
         target: /dockermount
         read_only: false
       # NOTE: The hive metastore_db Derby database folder is expected to be configured to show up as a subfolder of the spark-warehouse dir
       - type: bind
-        source: ${SPARK_SQL_WAREHOUSE_DIR:-./spark-warehouse}
-        target: /spark-warehouse
-      # Python is installed and managed in the image, the volume prevents needing to reinstall dependencies
+        source: ${SOURCE_SPARK_SQL_WAREHOUSE_DIR}
+        target: ${TARGET_SPARK_SQL_WAREHOUSE_DIR}
+      # Python is installed and managed in the image using uv; avoid conflicts with local python .venv
       - type: volume
-        source: venv
+        source: local_venv
         target: /dockermount/.venv
 
   spark-shell:
@@ -512,26 +535,26 @@ services:
         --conf spark.sql.extensions=io.delta.sql.DeltaSparkSessionExtension
         --conf spark.sql.catalog.spark_catalog=org.apache.spark.sql.delta.catalog.DeltaCatalog
         --conf spark.hadoop.fs.s3a.endpoint=${MINIO_HOST}:${MINIO_PORT}
-        --conf spark.hadoop.fs.s3a.access.key=usaspending
-        --conf spark.hadoop.fs.s3a.secret.key=usaspender
+        --conf spark.hadoop.fs.s3a.access.key=${MINIO_ACCESS_KEY}
+        --conf spark.hadoop.fs.s3a.secret.key=${MINIO_SECRET_KEY}
         --conf spark.hadoop.fs.s3a.connection.ssl.enabled=false
         --conf spark.hadoop.fs.s3a.path.style.access=true
         --conf spark.sql.catalogImplementation=hive
-        --conf spark.sql.warehouse.dir='/spark-warehouse'
-        --conf spark.hadoop.javax.jdo.option.ConnectionURL='jdbc:derby:;databaseName=/spark-warehouse/metastore_db;create=true'
+        --conf spark.sql.warehouse.dir='${TARGET_SPARK_SQL_WAREHOUSE_DIR}'
+        --conf spark.hadoop.javax.jdo.option.ConnectionURL='jdbc:derby:;databaseName=${TARGET_HIVE_METASTORE_DERBY_DB_DIR};create=true'
     volumes:
       - type: bind
-        source: ${PROJECT_DIRECTORY:-.}
+        source: .
         target: /dockermount
         read_only: false
       # NOTE: The hive metastore_db Derby database folder is expected to be configured to show up as a subfolder of the spark-warehouse dir
       - type: bind
-        source: ${SPARK_SQL_WAREHOUSE_DIR:-./spark-warehouse}
-        target: /spark-warehouse
+        source: ${SOURCE_SPARK_SQL_WAREHOUSE_DIR}
+        target: ${TARGET_SPARK_SQL_WAREHOUSE_DIR}
         read_only: false
-      # Python is installed and managed in the image, the volume prevents needing to reinstall dependencies
+      # Python is installed and managed in the image using uv; avoid conflicts with local python .venv
       - type: volume
-        source: venv
+        source: local_venv
         target: /dockermount/.venv
 
   otel-collector:

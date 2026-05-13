@@ -27,6 +27,9 @@ RUN npm install --global dredd@13.1.2
 
 WORKDIR /dockermount
 
+# Allow git operations to be run inside of the container
+RUN git config --global --add safe.directory /dockermount
+
 ##### The following ENV vars are optimizations from https://github.com/astral-sh/uv-docker-example/blob/main/Dockerfile
 ##### and https://docs.astral.sh/uv/guides/integration/docker/#optimizations
 # Enable bytecode compilation
@@ -56,16 +59,11 @@ RUN ln -sf .venv/bin/python3 /usr/local/bin/python3 & \
 ENV PYSPARK_PYTHON=/dockermount/.venv/bin/python3
 ENV PYSPARK_DRIVER_PYTHON=/dockermount/.venv/bin/python3
 
-# Limit Spark logging to WARN level
-RUN cat <<'EOF' | sed 's/^[[:space:]]*//' >> $SPARK_HOME/conf/log4j2.properties
-	appender.console.type = Console
-    appender.console.name = CONSOLE
-    appender.console.layout.type = PatternLayout
-    appender.console.layout.pattern = [%d{yyyy-MM-dd HH:mm:ss.SSS}][%p] - %m%n
-    rootLogger.level = WARN
-    rootLogger.appenderRef.0.ref = CONSOLE
-    rootLogger.appenderRef.0.level = WARN
-EOF
+# Update logging
+ARG PROJECT_LOG_DIR
+RUN sed -i "s|^# spark.eventLog.dir.*$|spark.eventLog.dir                 file:///dockermount/$PROJECT_LOG_DIR/spark-events|g" $SPARK_HOME/conf/spark-defaults.conf \
+    && sed -i '/spark.eventLog.enabled/s/^# //g' $SPARK_HOME/conf/spark-defaults.conf \
+    && echo "spark.history.fs.logDirectory      file:///project/$PROJECT_LOG_DIR/spark-events" >> $SPARK_HOME/conf/spark-defaults.conf
 
 # Set default values for Spark with local development
 RUN echo "spark.authenticate false" >> $SPARK_HOME/conf/spark-defaults.conf
