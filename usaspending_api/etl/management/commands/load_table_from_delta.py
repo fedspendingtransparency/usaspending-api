@@ -1,15 +1,20 @@
+from sqlite3 import Cursor
 import itertools
 import logging
 from datetime import datetime
 from math import ceil
 from typing import Any, Dict, List, Optional
+from typing_extensions import Self
 
 import boto3
 import numpy as np
 import psycopg
 from django import db
 from django.core.management.base import BaseCommand, CommandParser
+from django.db import transaction
+from django.db.backends.utils import CursorWrapper
 from django.db.models import Model
+from pyarrow import Table as PyArrowTable
 from pyspark.sql import DataFrame, SparkSession
 
 from usaspending_api.common.csv_stream_s3_to_pg import copy_csvs_from_s3_to_pg
@@ -22,6 +27,15 @@ from usaspending_api.common.helpers.spark_helpers import (
 )
 from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
 from usaspending_api.config import CONFIG
+from usaspending_api.etl.cdf_helpers import (
+    arrow_to_pg_csv_buffer,
+    build_delta_table_s3_uri,
+    get_last_processed_version,
+    ids_to_csv_buffer,
+    read_cdf_changes,
+    split_cdf_by_change_type,
+    update_last_processed_version
+)
 from usaspending_api.etl.management.commands.create_delta_table import TABLE_SPEC
 from usaspending_api.settings import DEFAULT_TEXT_SEARCH_CONFIG
 
@@ -45,11 +59,18 @@ _PG_WORK_MEM_FOR_LARGE_CSV_COPY = 256 * 1024  # MiB of work_mem * KiBs in 1 MiB
 
 class Command(BaseCommand):
     help = """
-    This command reads data from a Delta table and copies it into a corresponding Postgres database table (under a
-    temp name). As of now, it only supports a full reload of a table. If the table with the chosen temp name already
-    exists, all existing data will be deleted before new data is written. Note this only loads in the data
-    without accounting for the metadata, so make sure to run the command `copy_table_metadata` after this is complete
-    if a new table has been made.
+    This command reads data from a Delta table and copies it into a corresponding Postgres database table.
+
+    Default (full reload) mode: Copies the Delta table into a temp Postgres table. If the table with the chosen temp
+        name already exists, all existing data will be deleted before new data is written. Note this only loads in the
+        data without accounting for the metadata, so make sure to run the `copy_table_metadata` command after this is
+        complete.
+
+    Incremental mode: Applies the Delta table's Change Data Feed (CDF) directly to the live Postgres table. Reads the
+        last-processed version from the cdf_version_tracking, loads only the CDF entries after that version, stages the
+        changed rows in a temp tables, and applies the changes together with the tracking-table update in a single
+        transaction. Does not seed the initial tracking record - a full reload must run first and the tracking record
+        must be seeded by the user.
     """
 
     def add_arguments(self, parser: CommandParser) -> None:
@@ -114,6 +135,18 @@ class Command(BaseCommand):
             help="A comma delimited list of column names that should be loaded in addition to the columns required "
             "by the Delta tables schema. Useful for loading temporary columns from Delta to Postgres to swap in place.",
         )
+        parser.add_argument(
+            "--incremental",
+            action="store_true",
+            help="Run in incremental mode: apply the Delta table's Change Data Feed to the live Postgres table instead "
+            "of doing a full reload to a temp table."
+        )
+        parser.add_argument(
+            "--cleanup-staging",
+            action="store_true",
+            help="Only valid with --incremental flag. Drop the CDF staging tables after a successful apply. Default is "
+            "to keep them for auditing."
+        )
 
     def _split_dfs(self, df: DataFrame, special_columns: list[str]) -> list[DataFrame]:
         """Split a DataFrame into DataFrame subsets based on presence of NULL values in certain special columns
@@ -150,6 +183,10 @@ class Command(BaseCommand):
         return split_dfs
 
     def handle(self, *args, **options) -> None:  # noqa: C901,PLR0912,PLR0915
+        if options["incremental"]:
+            self._handle_incremental(options)
+            return
+
         extra_conf = {
             # Config for Delta Lake tables and SQL. Need these to keep Dela table metadata in the metastore
             "spark.sql.extensions": "io.delta.sql.DeltaSparkSessionExtension",
@@ -636,3 +673,147 @@ class Command(BaseCommand):
         if column_names:
             column_names = [name.strip() for name in column_names.split(",")]
         return column_names or []
+
+    def _recreate_cdf_staging(
+        self: Self,
+        cursor: CursorWrapper,
+        deletes_staging: str,
+        upserts_staging: str,
+        live_table: str,
+        pk_column: str
+    ) -> None:
+        logger.info(f"Recreating staging tables {deletes_staging} and {upserts_staging}.")
+        cursor.execute(f"DROP TABLE IF EXISTS {deletes_staging}")
+        cursor.execute(f"DROP TABLE IF EXISTS {upserts_staging}")
+        cursor.execute(f"CREATE TABLE {deletes_staging} AS SELECT {pk_column} FROM {live_table} WITH NO DATA")
+        cursor.execute(f"CREATE TABLE {upserts_staging} (LIKE {live_table} INCLUDING DEFAULTS)")
+
+    def _populate_cdf_staging(
+        self: Self,
+        cursor: CursorWrapper,
+        deletes_staging: str,
+        upserts_staging: str,
+        pk_column: str,
+        column_names: list[str],
+        deleted_ids: list[int],
+        upsert_rows: PyArrowTable
+    ):
+        """Populate the staging tables in Postgres with deleted and upserted data from the Change Data Feed. This is
+            done by storing the delete and upsert data in an in-memory buffer in CSV format so that we can use Postgres'
+            COPY functionality for performance.
+
+        Args:
+            cursor: Django database cursor.
+            deletes_staging: Staging table in Postgres to use to store the IDs that need to be deleted.
+            upserts_staging: Staging table in Postgres to use to store the rows that need to be inserted/updated.
+            pk_column: Primary key column name.
+            column_names: List of columns in the staging tables.
+            deleted_ids: List of deleted IDs from the CDF.
+            upsert_rows: PyArrow table containing the new/updated rows from the CDF.
+        """
+
+        if deleted_ids:
+            logger.info(f'Staging {len(deleted_ids)} PK(s) to {deletes_staging} via COPY.')
+            buffer = ids_to_csv_buffer(deleted_ids)
+            cursor.copy_expert(
+                sql=f"COPY {deletes_staging} ({pk_column}) FROM STDIN (FORMAT CSV)",
+                file=buffer
+            )
+
+        if upsert_rows.num_rows > 0:
+            logger.info(f"Staging {upsert_rows.num_rows} row(s) to {upserts_staging} via COPY.")
+            buffer = arrow_to_pg_csv_buffer(upsert_rows, column_names)
+            cursor.copy_expert(
+                sql=f"COPY {upserts_staging} ({','.join(column_names)}) FROM STDIN (FORMAT CSV)",
+                file=buffer
+            )
+
+    def _apply_cdf_deletes(
+        self: Self,
+        cursor: CursorWrapper,
+        live_table: str,
+        deletes_staging: str,
+        pk_column: str
+    ) -> int:
+        cursor.execute(f"""
+            DELETE FROM {live_table} AS target
+            USING {deletes_staging} AS staging
+            WHERE target.{pk_column} = staging.{pk_column}            
+        """)
+        return cursor.rowcount
+
+    def _apply_cdf_upserts(
+        self: Self,
+        cursor: CursorWrapper,
+        live_table: str,
+        upserts_staging: str,
+        column_names: list[str]
+    ) -> int:
+        cols = ','.join(column_names)
+        cursor.execute(f"INSERT INTO {live_table} ({cols}) SELECT {cols} FROM {upserts_staging}")
+        return cursor.rowcount
+
+    def _handle_incremental(self: Self, options: dict[str, Any]) -> None:
+        delta_table = options.get('alt_delta_name', 'delta_table')
+        spec = TABLE_SPEC[options.get('delta_table', 'delta_table_name')]
+        delta_lake_schema = spec.destination_database
+        delta_lake_table = delta_table
+        column_names = spec.column_names
+        pk_column = spec.primary_key
+
+        if not pk_column:
+            raise RuntimeError(
+                f"TABLE_SPEC[{delta_table!r}] is missing 'primary_key_column'."
+                f"The incremental flow requires this field."
+            )
+
+        if not all([delta_lake_schema, delta_lake_table, column_names]):
+            raise RuntimeError(
+                f"TABLE_SPEC[{delta_table!r}] must define delta_lake_schema, delta_lake_table, column_names, and"
+                f"column_names for the incremental flow."
+            )
+
+        deletes_staging = f"temp.{delta_lake_table}_cdf_deletes"
+        upserts_staging = f"temp.{delta_lake_table}_cdf_upserts"
+
+        last_version = get_last_processed_version(delta_lake_schema, delta_lake_table)
+        if last_version is None:
+            logger.warning(
+            f"No CDF tracking record found for {delta_table!r}. The incremental flow requires an initial version "
+            "to be seeded after a full reload. Exiting."
+            )
+            return
+
+        delta_uri = build_delta_table_s3_uri(delta_lake_schema, delta_lake_table)
+        change_set = read_cdf_changes(delta_uri, starting_version=last_version)
+        if change_set is None:
+            logger.info(f"Nothing to apply for {delta_table!r}.")
+            return
+
+        deleted_ids, upsert_rows = split_cdf_by_change_type(change_set.cdf, pk_column)
+        logger.info(
+            f"Planned: {len(deleted_ids)} PK(s) to delete, {upsert_rows.num_rows} row(s) top upsert. Target "
+            f"version: {change_set.latest_version} ({change_set.latest_commit_timestamp})"
+        )
+
+        with transaction.atomic():
+            live_table = f"{delta_lake_schema}.{delta_lake_table}"
+            with db.connection.cursor() as cursor:
+                self._recreate_cdf_staging(cursor, deletes_staging, upserts_staging, live_table, pk_column)
+                self._populate_cdf_staging(
+                    cursor, deletes_staging, upserts_staging, pk_column, column_names, deleted_ids, upsert_rows
+                )
+                rows_deleted = self._apply_cdf_deletes(cursor, live_table, deletes_staging, pk_column)
+                rows_inserted = self._apply_cdf_upserts(cursor, live_table, upserts_staging, pk_column)
+            update_last_processed_version(delta_table, change_set.latest_version, change_set.latest_commit_timestamp)
+
+        logger.info(
+            f"Applied: {rows_deleted} row(s) deleted, {rows_inserted} row(s) inserted. "
+            f"Tracking updated to version {change_set.latest_version}."
+        )
+
+        if options["cleanup_staging"]:
+            with db.connection.cursor() as cursor:
+                cursor.execute(f"DROP TABLE IF EXISTS {deletes_staging}")
+                cursor.execute(f"DROP TABLE IF EXISTS {upserts_staging}")
+            logger.info("Staging tables dropped.")
