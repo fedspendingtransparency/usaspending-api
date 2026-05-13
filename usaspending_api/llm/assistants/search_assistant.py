@@ -64,7 +64,6 @@ class SearchAssistant:
                     yield {"type": "tool", "message": tool.logging(tool_use["input"]) + "\n"}
 
                     result = tool.function(**tool_use["input"])
-                    print(result)
                     t.result = result
                     t.save()
                     tool_result = {"toolUseId": tool_use["toolUseId"], "content": [{"json": result}]}

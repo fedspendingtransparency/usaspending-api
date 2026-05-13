@@ -354,13 +354,13 @@ class Filters(BaseModel):
         ),
     ]
     locationDomesticForeign: Literal["all", "foreign"] = Field(
-        default_factory="all", description='Use "foreign" to search all foreign locations. Otherwise use "all"'
+        default="all", description='Use "foreign" to search all foreign locations. Otherwise use "all"'
     )
     selectedFundingAgencies: dict[str, Any] = Field(default_factory=dict)
     selectedAwardingAgencies: dict[str, SelectedAgency] = Field(default_factory=dict)
     selectedRecipients: list[str] = Field(default_factory=list)
     recipientDomesticForeign: Literal["all", "foreign"] = Field(
-        default_factory="all", description='Use "foreign" to search all foreign locations. Otherwise use "all"'
+        default="all", description='Use "foreign" to search all foreign locations. Otherwise use "all"'
     )
     recipientType: list[RecipientType] = Field(
         default_factory=list,
