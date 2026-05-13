@@ -94,6 +94,8 @@ dependencies = [
     "opentelemetry-semantic-conventions==0.49b2",
     "opentelemetry-util-http==0.49b2",
     # The above packages are listed and pinned to avoid using the 'opentelemetry-bootstrap -a install' command
+    "pyarrow>=24.0.0",
+    "deltalake>=1.5.1",
 ]
 
 [project.optional-dependencies]
