@@ -18,7 +18,7 @@ RUN apt update && apt install -y \
     gcc \
     libpq-dev \
     openssl \
-    postgresql-13 \
+    postgresql-13
 
 RUN update-ca-certificates
 
