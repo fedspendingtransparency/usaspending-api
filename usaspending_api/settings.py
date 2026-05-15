@@ -172,7 +172,7 @@ DATA_DICTIONARY_S3_BUCKET_NAME = os.environ.get(
     f"dti-da-public-files-{'nonprod' if CONFIG.ENV_CODE not in ('prd', 'stg') else 'prod'}"
 )
 DATA_DICTIONARY_S3_KEY = os.environ.get(
-    "DATA_DICTIONARY_S3_BUCKET_NAME",
+    "DATA_DICTIONARY_S3_KEY",
     f"user_reference_docs/{DATA_DICTIONARY_FILE_NAME}"
 )
 
