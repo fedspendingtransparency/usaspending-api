@@ -1,19 +1,18 @@
-import pytest
-
 from decimal import Decimal
 
+import pytest
 from model_bakery import baker
 
 from usaspending_api.disaster.tests.fixtures.overview_data import (
-    EARLY_MONTH,
-    LATE_MONTH,
-    EARLY_YEAR,
-    LATE_YEAR,
-    LATE_GTAS_CALCULATIONS,
-    QUARTERLY_GTAS_CALCULATIONS,
     EARLY_GTAS_CALCULATIONS,
-    YEAR_2_GTAS_CALCULATIONS,
+    EARLY_MONTH,
+    EARLY_YEAR,
+    LATE_GTAS_CALCULATIONS,
+    LATE_MONTH,
+    LATE_YEAR,
     OTHER_BUDGET_AUTHORITY_GTAS_CALCULATIONS,
+    QUARTERLY_GTAS_CALCULATIONS,
+    YEAR_2_GTAS_CALCULATIONS,
 )
 
 OVERVIEW_URL = "/api/v2/disaster/overview/"
@@ -162,7 +161,7 @@ def test_ignore_funding_for_unselected_defc(
     assert resp.data["spending"]["total_outlays"] == YEAR_2_GTAS_CALCULATIONS["total_outlays"]
 
     resp = client.get(OVERVIEW_URL + "?def_codes=M,N")
-    assert resp.data["funding"] == [
+    assert sorted(resp.data["funding"], key=lambda x: x["def_code"]) == [
         {"amount": YEAR_2_GTAS_CALCULATIONS["total_budgetary_resources"], "def_code": "M"},
         {"amount": YEAR_2_GTAS_CALCULATIONS["total_budgetary_resources"], "def_code": "N"},
     ]
