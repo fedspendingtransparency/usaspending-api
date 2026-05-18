@@ -38,8 +38,8 @@ ENV UV_COMPILE_BYTECODE=1
 # Copy from the cache instead of linking since it's a mounted volume
 ENV UV_LINK_MODE=copy
 
-# Copy the project into the image
-COPY . /dockermount
+# Copy relevant parts of the project for package management
+COPY pyproject.toml uv.lock /dockermount/
 
 # Install Python and dev dependencies
 ARG PYTHON_VERSION=3.10.12
@@ -47,6 +47,8 @@ RUN --mount=type=cache,target=/root/.cache/uv \
     --mount=type=bind,source=uv.lock,target=uv.lock \
     --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
     uv sync --extra dev --extra spark --locked --no-install-project --python ${PYTHON_VERSION}
+
+ENV PYTHONPATH=/dockermount
 
 # Make sure uv environment is active
 ENV PATH="/dockermount/.venv/bin:$PATH"
