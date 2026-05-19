@@ -314,7 +314,7 @@ Non Loan Assistance Awards can be searched for specifically by using the Non Loa
     Award IDs surrounded by double quotes (e.g. `"SPE30018FLJFN"`) will perform exact matches as opposed to the default, fuzzier full text matches.  Useful for Award IDs that contain spaces or other word delimiters.
 + `award_amounts` (optional, array[AwardAmounts], fixed-type)
 + `program_numbers`: [`10.331`] (optional, array[string])
-+ `naics_codes` (optional, NAICSCodeObject)
++ `naics_codes` (optional, enum[NAICSCodeObject, array[string]])
 + `tas_codes` (optional, array[TASCodeObject, TASCodeComponentObject])
 + `psc_codes` (optional, enum[PSCCodeObject, array[string]])
     Supports new PSCCodeObject or legacy array of codes.
