@@ -3,10 +3,6 @@ name: Unit Tests
 on:
   workflow_call:
 
-defaults:
-  run:
-    working-directory: usaspending-api
-
 jobs:
   Run:
     name: Run
@@ -26,7 +22,6 @@ jobs:
         with:
           is-integration-test: false
           is-spark-test: false
-          working-directory: .
 
       - name: Run Test Cases
         id: run-test-cases
@@ -36,4 +31,3 @@ jobs:
           ignore-glob: '**/tests/integration/*'
           include-glob: 'test_*.py *_test.py'
           marker: '(not signal_handling)'
-          working-directory: .

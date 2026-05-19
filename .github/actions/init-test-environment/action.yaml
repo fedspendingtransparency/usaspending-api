@@ -7,15 +7,11 @@ inputs:
   is-spark-test:
     description: Triggers build steps needed to support tests that utilize Spark
     required: true
-  working-directory:
-    description: Directory where the requirements can be found; used when multiple repos are checked out
-    default: ""
 
 runs:
   using: composite
   steps:
     - name: Create .env for docker compose
-      working-directory: ${{ inputs.working-directory }}
       shell: bash
       run: cp .env.template .env
 
@@ -27,7 +23,6 @@ runs:
       run: mkdir -p "$HOME/Development/data/usaspending/docker/usaspending-s3"  # same value as .env.template
 
     - name: Build docker containers for DB, ES, and Minio
-      working-directory: ${{ inputs.working-directory }}
       if: ${{ inputs.is-integration-test == 'true' }}
       shell: bash
       run: docker compose up -d usaspending-db usaspending-es minio
@@ -61,13 +56,11 @@ runs:
         docker exec usaspending-db psql -U usaspending -d data_store_api -c "SELECT 'ALTER DEFAULT PRIVILEGES IN SCHEMA ' || nspname || ' GRANT SELECT ON TABLES TO readonly' FROM pg_namespace WHERE nspname IN ('public','raw','int','rpt','temp')"
 
     - name: Build the usaspending-development image
-      working-directory: ${{ inputs.working-directory }}
       shell: bash
       run: docker compose build usaspending-test
 
     - name: Run initial test to trigger DB creation
       if: ${{ inputs.is-integration-test == 'true' }}
-      working-directory: ${{ inputs.working-directory }}
       shell: bash
       run: >
         docker compose run --rm usaspending-test pytest --create-db --numprocesses auto --no-cov --disable-warnings -r=fEs --verbosity=3 --capture=no --log-cli-level=WARNING --show-capture=log
