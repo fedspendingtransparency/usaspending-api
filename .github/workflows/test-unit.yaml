@@ -14,8 +14,6 @@ jobs:
     steps:
       - name: Checkout Source Repository
         uses: actions/checkout@v4
-        with:
-          path: usaspending-api
 
       - name: Validate file structure
         shell: bash
@@ -28,14 +26,14 @@ jobs:
         with:
           is-integration-test: false
           is-spark-test: false
-          working-directory: ./usaspending-api
+          working-directory: .
 
       - name: Run Test Cases
         id: run-test-cases
-        uses: ./usaspending-api/.github/actions/run-pytest
+        uses: .github/actions/run-pytest
         with:
           cov-report-name: 'unit-tests'
           ignore-glob: '**/tests/integration/*'
           include-glob: 'test_*.py *_test.py'
           marker: '(not signal_handling)'
-          working-directory: ./usaspending-api
+          working-directory: .
