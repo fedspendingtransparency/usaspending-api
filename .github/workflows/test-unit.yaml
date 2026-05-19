@@ -14,7 +14,7 @@ jobs:
           path: usaspending-api
 
       - name: Init Test Environment
-        uses: ./.github/actions/init-test-environment
+        uses: ./usaspending-api/.github/actions/init-test-environment
         with:
           is-integration-test: false
           is-spark-test: false
@@ -22,7 +22,7 @@ jobs:
 
       - name: Run Test Cases
         id: run-test-cases
-        uses: ./.github/actions/run-pytest
+        uses: ./usaspending-api/.github/actions/run-pytest
         with:
           cov-report-name: 'unit-tests'
           ignore-glob: '**/tests/integration/*'
