@@ -32,7 +32,7 @@ RUN npm install --global dredd@13.1.2
 WORKDIR /usaspending-api
 
 # Allow git operations to be run inside of the container
-# RUN git config --global --add safe.directory /usaspending-api
+RUN git config --global --add safe.directory /usaspending-api
 
 ##### The following ENV vars are optimizations from https://github.com/astral-sh/uv-docker-example/blob/main/Dockerfile
 ##### and https://docs.astral.sh/uv/guides/integration/docker/#optimizations

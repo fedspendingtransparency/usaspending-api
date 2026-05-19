@@ -10,18 +10,15 @@ jobs:
     steps:
       - name: Checkout Source Repository
         uses: actions/checkout@v4
-
-      - name: Validate file structure
-        shell: bash
-        run: |
-          pwd
-          ls
+        with:
+          path: usaspending-api
 
       - name: Init Test Environment
         uses: ./.github/actions/init-test-environment
         with:
           is-integration-test: false
           is-spark-test: false
+          working-directory: ./usaspending-api
 
       - name: Run Test Cases
         id: run-test-cases
@@ -31,3 +28,4 @@ jobs:
           ignore-glob: '**/tests/integration/*'
           include-glob: 'test_*.py *_test.py'
           marker: '(not signal_handling)'
+          working-directory: ./usaspending-api

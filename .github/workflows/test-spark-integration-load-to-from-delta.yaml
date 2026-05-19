@@ -7,10 +7,6 @@ on:
         required: true
         type: string
 
-defaults:
-  run:
-    working-directory: ./usaspending-api
-
 jobs:
   Run:
     name: Run
