@@ -184,7 +184,7 @@ spark-submit: ## Run spark-submit from within local docker containerized infrast
 	--driver-memory "2g" \
 	${if ${python_script}, \
 		${python_script}, \
-		/dockermount/manage.py ${django_command} \
+		/usaspending-api/manage.py ${django_command} \
 	}
 
 .PHONY: pyspark-shell

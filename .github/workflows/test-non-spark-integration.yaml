@@ -7,10 +7,6 @@ on:
         required: true
         type: string
 
-defaults:
-  run:
-    working-directory: usaspending-api
-
 jobs:
   Run:
     name: Run
@@ -18,27 +14,23 @@ jobs:
     steps:
       - name: Checkout Source Repository
         uses: actions/checkout@v4
-        with:
-          path: usaspending-api
 
       - name: Checkout Broker Backend Repository
         uses: actions/checkout@v4
         with:
           repository: fedspendingtransparency/data-act-broker-backend
-          path: data-act-broker-backend
+          path: ../data-act-broker-backend
           ref: ${{ inputs.broker-branch }}
 
       - name: Init Test Environment
-        uses: ./usaspending-api/.github/actions/init-test-environment
+        uses: ./.github/actions/init-test-environment
         with:
           is-integration-test: true
           is-spark-test: false
-          working-directory: ./usaspending-api
 
       - name: Run Test Cases
-        uses: ./usaspending-api/.github/actions/run-pytest
+        uses: ./.github/actions/run-pytest
         with:
           cov-report-name: 'non-spark-integration-tests'
           include-glob: '**/tests/integration/*'
           marker: '(not signal_handling and not spark)'
-          working-directory: ./usaspending-api
