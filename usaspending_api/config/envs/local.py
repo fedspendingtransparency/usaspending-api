@@ -51,8 +51,10 @@ class LocalConfig(DefaultConfig):
     USASPENDING_DB_PORT: str = "5432"
 
     # ==== [Postgres Broker] ====
-    BROKER_DB_USER: str | None = "admin"
-    BROKER_DB_PASSWORD: SecretStr | None = "root"
+    # These values match the USAspending values above because the test suite will create a new Broker DB on the same
+    # container as the USAspending DB
+    BROKER_DB_USER: str | None = "usaspending"
+    BROKER_DB_PASSWORD: SecretStr | None = "usaspender"
 
     # Change to host.docker.internal if you are running a local Postgres. Otherwise leave as-is, so
     # Docker will use the Postgres created by Compose.
