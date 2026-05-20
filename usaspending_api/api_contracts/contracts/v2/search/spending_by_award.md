@@ -33,7 +33,8 @@ This endpoint takes award filters and fields, and returns the fields of the filt
         + `sort` (optional, string)
             Optional parameter indicating what value results should be sorted by. Valid options are any of the fields in the JSON objects in the response. Defaults to the first field provided.
         + `subawards` (optional, boolean)
-            True when you want to group by Subawards instead of Awards. Defaulted to False.
+            True when you want to group by Subawards instead of Awards. 
+            + Default: `false`
         + `last_record_unique_id` (optional, number)
             The unique id of the last record in the results set. Used in the experimental Elasticsearch API functionality.
         + `last_record_sort_value` (optional, string)
@@ -43,8 +44,7 @@ This endpoint takes award filters and fields, and returns the fields of the filt
             + Members
                 + `awards`
                 + `subawards`
-            + Default
-                + `awards`
+            + Default: `awards`
     + Body
 
             {
@@ -314,15 +314,14 @@ Non Loan Assistance Awards can be searched for specifically by using the Non Loa
     Award IDs surrounded by double quotes (e.g. `"SPE30018FLJFN"`) will perform exact matches as opposed to the default, fuzzier full text matches.  Useful for Award IDs that contain spaces or other word delimiters.
 + `award_amounts` (optional, array[AwardAmounts], fixed-type)
 + `program_numbers`: [`10.331`] (optional, array[string])
-+ `naics_codes` (optional, NAICSCodeObject)
-+ `tas_codes` (optional, array[TASCodeObject], fixed-type)
++ `naics_codes` (optional, enum[NAICSCodeObject, array[string]])
++ `tas_codes` (optional, array[TASCodeObject, TASCodeComponentObject])
 + `psc_codes` (optional, enum[PSCCodeObject, array[string]])
     Supports new PSCCodeObject or legacy array of codes.
 + `contract_pricing_type_codes`: [`J`] (optional, array[string])
 + `set_aside_type_codes`: [`NONE`] (optional, array[string])
 + `extent_competed_type_codes`: [`A`] (optional, array[string])
 + `treasury_account_components` (optional, array[TreasuryAccountComponentsObject], fixed-type)
-+ `program_activity` (optional, array[number])
 + `program_activities` (optional, array[ProgramActivityObject])
     A filter option that supports filtering by a program activity name or code. Please note that if this filter is used at least one of the members of the object, ProgramActivityObject, need to be provided.
 + `def_codes` (optional, array[DEFC], fixed-type)
@@ -379,6 +378,27 @@ At least one of the following fields are required when using the ProgramActivity
 ### TASCodeObject (object)
 + `require`: [[`091`]] (optional, array[array[string]], fixed-type)
 + `exclude`: [[`091`, `091-0800`]] (optional, array[array[string]], fixed-type)
+
+### TASCodeComponentObject (object)
++ `ata` (optional, string, nullable)
+    Allocation Transfer Agency Identifier - three characters
++ `aid` (optional, string)
+    Agency Identifier - three characters
++ `bpoa` (optional, string, nullable)
+    Beginning Period of Availability - four digits
++ `epoa` (optional, string, nullable)
+    Ending Period of Availability - four digits
++ `a` (optional, string, nullable)
+    Availability Type Code - X or null
++ `main` (optional, string)
+    Main Account Code - four digits
++ `sub` (optional, string, nullable)
+    Sub-Account Code - three digits
++ `agency` (optional, string, nullable)
++ `faaid` (optional, string, nullable)
+    Federal Account Agency Identifier
++ `famain` (optional, string, nullable)
+    Federal Account Main Account Code
 
 ### TreasuryAccountComponentsObject (object)
 + `ata` (optional, string, nullable)
