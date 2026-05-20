@@ -107,6 +107,7 @@ services:
       dockerfile: development.Dockerfile
       args:
         PROJECT_LOG_DIR: ${PROJECT_LOG_DIR}
+    init: true  # needed for the reaping of processes created for tests
     container_name: usaspending-test
     volumes:
       - type: bind
@@ -212,6 +213,7 @@ services:
     image: usaspending-backend  # when an image by this name is not found in the local repo, and it is forced to build, it will use this as the tag
     build: .
     container_name: usaspending-api
+    init: true  # needed for the reaping of processes; mostly related to downloads run in a process
     volumes:
       - type: bind
         source: .
@@ -235,6 +237,7 @@ services:
     build:
       context: .
       dockerfile: download.Dockerfile
+    init: true  # needed for the reaping of processes
     container_name: usaspending-bulk-download
     restart: on-failure:5 # 5 max attempt, and then it will stop restarting. NOTE: bulk download errors will cause one failure+restart iterations
     volumes:

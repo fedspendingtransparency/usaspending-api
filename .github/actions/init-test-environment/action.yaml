@@ -44,6 +44,11 @@ runs:
       if: ${{ inputs.is-integration-test == 'true' }}
       run: docker load --input /tmp/dataact-broker-backend.tar
 
+    - name: Build the usaspending-development image
+      working-directory: ${{ inputs.working-directory }}
+      shell: bash
+      run: docker compose build usaspending-test
+
     - name: Wait on DB and ES containers to be available
       if: ${{ inputs.is-integration-test == 'true' }}
       shell: bash
@@ -59,11 +64,6 @@ runs:
         docker exec usaspending-db psql -U usaspending -d data_store_api -c "SELECT 'GRANT USAGE ON SCHEMA ' || nspname || ' TO readonly' FROM pg_namespace WHERE nspname IN ('public','raw','int','rpt','temp')"
         docker exec usaspending-db psql -U usaspending -d data_store_api -c "SELECT 'GRANT SELECT ON ALL TABLES IN SCHEMA ' || nspname || ' TO readonly' FROM pg_namespace WHERE nspname IN ('public','raw','int','rpt','temp')"
         docker exec usaspending-db psql -U usaspending -d data_store_api -c "SELECT 'ALTER DEFAULT PRIVILEGES IN SCHEMA ' || nspname || ' GRANT SELECT ON TABLES TO readonly' FROM pg_namespace WHERE nspname IN ('public','raw','int','rpt','temp')"
-
-    - name: Build the usaspending-development image
-      working-directory: ${{ inputs.working-directory }}
-      shell: bash
-      run: docker compose build usaspending-test
 
     - name: Run initial test to trigger DB creation
       if: ${{ inputs.is-integration-test == 'true' }}
