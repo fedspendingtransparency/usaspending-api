@@ -164,7 +164,7 @@ class Filters(BaseModel):
     description: str | None = None
     extent_competed_type_codes: list[str] | None = None
     keywords: list[str] | None = None
-    naics_codes: NAICSCodeObject | None = None
+    naics_codes: list[str] | NAICSCodeObject | None = None
     place_of_performance_locations: list[StandardLocationObject] | None = None
     place_of_performance_scope: Literal["domestic", "foreign"] | None = None
     program_activities: list[ProgramActivityObject] | None = None

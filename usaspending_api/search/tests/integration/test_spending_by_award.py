@@ -931,6 +931,30 @@ def test_inclusive_naics_code(
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.json().get("results")) == 2
 
+    resp = client.post(
+        "/api/v2/search/spending_by_award",
+        content_type="application/json",
+        data=json.dumps(
+            {
+                "filters": {
+                    "award_type_codes": ["A", "B", "C", "D"],
+                    "naics_codes": ["1122"],
+                    "time_period": [
+                        {"start_date": "2007-10-01", "end_date": "2020-09-30"}
+                    ],
+                },
+                "fields": ["Award ID"],
+                "page": 1,
+                "limit": 60,
+                "sort": "Award ID",
+                "order": "desc",
+                "spending_level": "awards",
+            }
+        ),
+    )
+    assert resp.status_code == status.HTTP_200_OK
+    assert len(resp.json().get("results")) == 2
+
 
 @pytest.mark.django_db
 def test_exclusive_naics_code(

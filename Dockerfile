@@ -13,10 +13,14 @@ COPY --from=ghcr.io/astral-sh/uv:0.7.19 /uv /uvx /bin/
 WORKDIR /dockermount
 
 RUN apt update && apt install -y \
+    ca-certificates \
     curl \
     gcc \
     libpq-dev \
+    openssl \
     postgresql-13
+
+RUN update-ca-certificates
 
 ##### The following ENV vars are optimizations from https://github.com/astral-sh/uv-docker-example/blob/main/Dockerfile
 ##### and https://docs.astral.sh/uv/guides/integration/docker/#optimizations
