@@ -1,22 +1,24 @@
 import logging
 import multiprocessing
+import threading
 import time
 from abc import ABC, abstractmethod
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from pathlib import Path
 from typing import List, Optional
 
-from django.conf import settings
 from duckdb.experimental.spark.sql import DataFrame as DuckDBDataFrame
 from duckdb.experimental.spark.sql import SparkSession as DuckDBSparkSession
-from pyspark.sql import DataFrame
+from pyspark.sql import DataFrame, SparkSession
 
 from usaspending_api.common.csv_helpers import count_rows_in_delimited_file
-from usaspending_api.common.etl.spark import rename_part_files
+from usaspending_api.common.etl.spark import rename_part_files_threaded
 from usaspending_api.common.helpers.s3_helpers import (
     delete_s3_objects,
     download_s3_object,
 )
+from usaspending_api.config import CONFIG
 from usaspending_api.download.filestreaming.download_generation import (
     execute_psql,
     generate_export_query_temp_file,
@@ -32,6 +34,7 @@ class CSVDownloadMetadata:
     filepaths: list[str]
     number_of_rows: int
     number_of_columns: Optional[int] = None
+    object_keys: Optional[list[str]] = None
 
 
 class AbstractToCSVStrategy(ABC):
@@ -48,7 +51,7 @@ class AbstractToCSVStrategy(ABC):
         self.file_format = "csv"
 
     @abstractmethod
-    def download_to_csv(
+    def download_to_csv(  # noqa: PLR0913
         self,
         source_sql: str | None,
         destination_path: Path,
@@ -56,6 +59,8 @@ class AbstractToCSVStrategy(ABC):
         working_dir_path: Path,
         download_zip_path: Path,
         source_df: DataFrame | None = None,
+        skip_s3_delete: bool = False,
+        skip_zip_file: bool = False,
     ) -> CSVDownloadMetadata:
         """
         Args:
@@ -66,6 +71,8 @@ class AbstractToCSVStrategy(ABC):
             download_zip_path: The path (as a string) to the download zip file
             source_df: A pyspark DataFrame that contains the data to be downloaded
                 Defaults to None.
+            skip_s3_delete: If the generated download files should be removed from S3
+            skip_zip_file: If the generated download files should be zipped
 
         Returns:
             Returns a CSVDownloadMetadata object (a dataclass containing metadata about the download)
@@ -78,7 +85,7 @@ class PostgresToCSVStrategy(AbstractToCSVStrategy):
         super().__init__(*args, **kwargs)
         self._logger = logger
 
-    def download_to_csv(
+    def download_to_csv(  # noqa: PLR0913
         self,
         source_sql: str,
         destination_path: str,
@@ -86,19 +93,17 @@ class PostgresToCSVStrategy(AbstractToCSVStrategy):
         working_dir_path: str,
         download_zip_path: str,
         source_df: DataFrame | None = None,
+        skip_s3_delete: bool = False,
+        skip_zip_file: bool = False,
     ) -> CSVDownloadMetadata:
         start_time = time.perf_counter()
         self._logger.info(f"Downloading data to {destination_path}")
         row_count = 0
-        temp_data_file_name = destination_path.parent / (
-            destination_path.name + "_temp"
-        )
+        temp_data_file_name = destination_path.parent / (destination_path.name + "_temp")
         options = FILE_FORMATS[self.file_format]["options"]
         export_query = r"\COPY ({}) TO STDOUT {}".format(source_sql, options)
         try:
-            temp_file, temp_file_path = generate_export_query_temp_file(
-                export_query, None, working_dir_path
-            )
+            temp_file, temp_file_path = generate_export_query_temp_file(export_query, None, working_dir_path)
             # Create a separate process to run the PSQL command; wait
             psql_process = multiprocessing.Process(
                 target=execute_psql, args=(temp_file_path, temp_data_file_name, None)
@@ -109,20 +114,12 @@ class PostgresToCSVStrategy(AbstractToCSVStrategy):
             delim = FILE_FORMATS[self.file_format]["delimiter"]
 
             # Log how many rows we have
-            self._logger.info(
-                f"Counting rows in delimited text file {temp_data_file_name}"
-            )
+            self._logger.info(f"Counting rows in delimited text file {temp_data_file_name}")
             try:
-                row_count = count_rows_in_delimited_file(
-                    filename=temp_data_file_name, has_header=True, delimiter=delim
-                )
-                self._logger.info(
-                    f"{destination_path} contains {row_count:,} rows of data"
-                )
+                row_count = count_rows_in_delimited_file(filename=temp_data_file_name, has_header=True, delimiter=delim)
+                self._logger.info(f"{destination_path} contains {row_count:,} rows of data")
             except Exception:
-                self._logger.exception(
-                    "Unable to obtain delimited text file line count"
-                )
+                self._logger.exception("Unable to obtain delimited text file line count")
 
             start_time = time.perf_counter()
             zip_process = multiprocessing.Process(
@@ -151,7 +148,7 @@ class SparkToCSVStrategy(AbstractToCSVStrategy):
 
     def download_to_csv(  # noqa: PLR0913
         self,
-        source_sql: str,
+        source_sql: str | None,
         destination_path: str,
         destination_file_name: str,
         working_dir_path: str,
@@ -159,6 +156,9 @@ class SparkToCSVStrategy(AbstractToCSVStrategy):
         source_df: DataFrame | None = None,
         delimiter: str = ",",
         file_format: str = "csv",
+        spark: SparkSession | None = None,
+        skip_s3_delete: bool = False,
+        skip_zip_file: bool = False,
     ) -> CSVDownloadMetadata:
         # Some strategies do not require spark we do not want to force all containers where
         #   other strategies run to have pyspark installed when the strategy doesn't require it.
@@ -169,16 +169,13 @@ class SparkToCSVStrategy(AbstractToCSVStrategy):
         )
 
         self.spark = None
-        destination_path_dir = str(destination_path).replace(
-            f"/{destination_file_name}", ""
-        )
+        destination_path_dir = str(destination_path).replace(f"/{destination_file_name}", "")
+
         # The place to write intermediate data files to in s3
-        s3_bucket_name = settings.BULK_DOWNLOAD_S3_BUCKET_NAME
+        s3_bucket_name = CONFIG.BULK_DOWNLOAD_S3_BUCKET_NAME
         s3_bucket_path = f"s3a://{s3_bucket_name}"
         s3_bucket_sub_path = "temp_download"
-        s3_destination_path = (
-            f"{s3_bucket_path}/{s3_bucket_sub_path}/{destination_file_name}"
-        )
+        s3_destination_path = f"{s3_bucket_path}/{s3_bucket_sub_path}/{destination_file_name}"
         try:
             extra_conf = {
                 # Config for Delta Lake tables and SQL. Need these to keep Dela table metadata in the metastore
@@ -189,13 +186,12 @@ class SparkToCSVStrategy(AbstractToCSVStrategy):
                 "spark.sql.legacy.parquet.int96RebaseModeInWrite": "LEGACY",  # for timestamps at/before 1900
                 "spark.sql.jsonGenerator.ignoreNullFields": "false",  # keep nulls in our json
             }
-            self.spark = get_active_spark_session()
+            self.spark = spark or get_active_spark_session()
             self.spark_created_by_command = False
             if not self.spark:
+                self._logger.info("***** SPARK SESSION STARTED *****")
                 self.spark_created_by_command = True
-                self.spark = configure_spark_session(
-                    **extra_conf, spark_context=self.spark
-                )
+                self.spark = configure_spark_session(**extra_conf, spark_context=self.spark)
             if source_df is not None:
                 df = source_df
             else:
@@ -209,44 +205,77 @@ class SparkToCSVStrategy(AbstractToCSVStrategy):
             )
             column_count = len(df.columns)
             self._logger.info("Concatenating partitioned output files ...")
-            merged_file_paths = rename_part_files(
+            merged_file_paths = rename_part_files_threaded(
                 bucket_name=s3_bucket_name,
                 destination_file_name=destination_file_name,
                 logger=self._logger,
                 file_format=file_format,
             )
-            final_csv_data_file_locations = self._move_data_csv_s3_to_local(
+            final_csv_data_file_locations = self._move_data_csv_s3_to_local_threading(
                 s3_bucket_name,
                 merged_file_paths,
                 s3_bucket_path,
                 s3_bucket_sub_path,
                 destination_path_dir,
+                max_threads=len(merged_file_paths),
             )
         except Exception:
             self._logger.exception("Exception encountered. See logs")
             raise
         finally:
-            delete_s3_objects(
-                s3_bucket_name,
-                key_prefix=f"{s3_bucket_sub_path}/{destination_file_name}",
+            deleted_keys = delete_s3_objects(
+                s3_bucket_name, key_prefix=f"{s3_bucket_sub_path}/{destination_file_name}", dry_run=skip_s3_delete
             )
             if self.spark_created_by_command:
+                self._logger.info("***** SPARK SESSION STOPPED *****")
                 self.spark.stop()
-        append_files_to_zip_file(final_csv_data_file_locations, download_zip_path)
-        self._logger.info(
-            f"Generated the following data csv files {final_csv_data_file_locations}"
-        )
-        return CSVDownloadMetadata(
-            final_csv_data_file_locations, record_count, column_count
-        )
+
+        if not skip_zip_file:
+            append_files_to_zip_file(final_csv_data_file_locations, download_zip_path)
+        self._logger.info(f"Generated the following data csv files {final_csv_data_file_locations}")
+        return CSVDownloadMetadata(final_csv_data_file_locations, record_count, column_count, deleted_keys)
 
     def _move_data_csv_s3_to_local(
+        self,
+        bucket_name: str,
+        s3_file_path: str,
+        s3_bucket_path: str,
+        s3_bucket_sub_path: str,
+        destination_path_dir: str,
+    ) -> str:
+        """Moves files from s3 data csv location to a location on the local machine.
+
+        Args:
+            bucket_name: The name of the bucket in s3 where file_names and s3_path are
+            s3_file_path: A file path to move from s3, name should include s3a:// and bucket name
+            s3_bucket_path: The bucket path, e.g. s3a:// + bucket name
+            s3_bucket_sub_path: The path to the s3 files in the bucket, exluding s3a:// + bucket name
+            destination_path_dir: The location to move those files from s3 to, must not include the
+                file name in the path. This path should be a directory.
+
+        Returns:
+            The final location on the local machine that the files were moved to from s3.
+        """
+        self._logger.info(f"Starting thread {threading.get_ident()}")
+        s3_key = s3_file_path.replace(f"{s3_bucket_path}/", "")
+        file_name_only = s3_key.replace(f"{s3_bucket_sub_path}/", "")
+        final_path = f"{destination_path_dir}/{file_name_only}"
+        download_s3_object(
+            bucket_name,
+            s3_key,
+            final_path,
+        )
+        self._logger.info(f"Ending thread {threading.get_ident()}")
+        return final_path
+
+    def _move_data_csv_s3_to_local_threading(
         self,
         bucket_name: str,
         s3_file_paths: list[str],
         s3_bucket_path: str,
         s3_bucket_sub_path: str,
         destination_path_dir: str,
+        max_threads: int = 15,
     ) -> List[str]:
         """Moves files from s3 data csv location to a location on the local machine.
 
@@ -258,34 +287,47 @@ class SparkToCSVStrategy(AbstractToCSVStrategy):
             s3_bucket_sub_path: The path to the s3 files in the bucket, exluding s3a:// + bucket name
             destination_path_dir: The location to move those files from s3 to, must not include the
                 file name in the path. This path should be a directory.
+            max_threads: The maximum number of threads to use when moving files from s3 to the local machine
+                Default: 15
 
         Returns:
             A list of the final location on the local machine that the
             files were moved to from s3.
         """
         start_time = time.time()
-        self._logger.info("Moving data files from S3 to local machine...")
+        self._logger.info(
+            "Moving data files from S3 to local machine using threading..."
+        )
+        self._logger.info(f"Max threads: {max_threads}")
         local_csv_file_paths = []
-        for file_name in s3_file_paths:
-            s3_key = file_name.replace(f"{s3_bucket_path}/", "")
-            file_name_only = s3_key.replace(f"{s3_bucket_sub_path}/", "")
-            final_path = f"{destination_path_dir}/{file_name_only}"
-            download_s3_object(
-                bucket_name,
-                s3_key,
-                final_path,
-            )
-            local_csv_file_paths.append(final_path)
+
+        with ThreadPoolExecutor(
+            max_workers=max_threads, thread_name_prefix="spark-downloader-worker"
+        ) as executor:
+            futures = [
+                executor.submit(
+                    self._move_data_csv_s3_to_local,
+                    bucket_name,
+                    file_name,
+                    s3_bucket_path,
+                    s3_bucket_sub_path,
+                    destination_path_dir,
+                )
+                for file_name in s3_file_paths
+            ]
+
+            for future in as_completed(futures):
+                local_csv_file_paths.append(future.result())
+
         self._logger.info(
             f"Copied data files from S3 to local machine in {(time.time() - start_time):3f}s"
         )
+        self._logger.info(f"Local CSV file paths: {local_csv_file_paths}")
         return local_csv_file_paths
 
 
 class DuckDBToCSVStrategy(AbstractToCSVStrategy):
-    def __init__(
-        self, logger: logging.Logger, spark: DuckDBSparkSession, *args, **kwargs
-    ):
+    def __init__(self, logger: logging.Logger, spark: DuckDBSparkSession, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._logger = logger
         self.spark = spark
@@ -319,12 +361,8 @@ class DuckDBToCSVStrategy(AbstractToCSVStrategy):
             self._logger.exception("Exception encountered. See logs")
             raise
         append_files_to_zip_file(final_csv_data_file_locations, download_zip_path)
-        self._logger.info(
-            f"Generated the following data csv files {final_csv_data_file_locations}"
-        )
-        return CSVDownloadMetadata(
-            final_csv_data_file_locations, record_count, column_count
-        )
+        self._logger.info(f"Generated the following data csv files {final_csv_data_file_locations}")
+        return CSVDownloadMetadata(final_csv_data_file_locations, record_count, column_count)
 
     def _move_data_csv_s3_to_local(
         self,
@@ -362,7 +400,5 @@ class DuckDBToCSVStrategy(AbstractToCSVStrategy):
                 final_path,
             )
             local_csv_file_paths.append(final_path)
-        self._logger.info(
-            f"Copied data files from S3 to local machine in {(time.time() - start_time):3f}s"
-        )
+        self._logger.info(f"Copied data files from S3 to local machine in {(time.time() - start_time):3f}s")
         return local_csv_file_paths

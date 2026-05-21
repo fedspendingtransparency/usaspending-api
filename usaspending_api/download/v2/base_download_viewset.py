@@ -18,6 +18,7 @@ from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers.dict_helpers import order_nested_object
 from usaspending_api.common.spark.jobs import LocalStrategy, SparkJobs
 from usaspending_api.common.sqs.sqs_handler import DownloadLogic, get_sqs_queue
+from usaspending_api.config import CONFIG
 from usaspending_api.download.download_utils import (
     create_unique_filename,
     log_new_download_job,
@@ -89,6 +90,21 @@ class BaseDownloadViewSet(APIView):
         return json_request["request_type"] == "account" and "award_financial" in json_request["download_types"]
 
     @staticmethod
+    def is_duckdb_download(json_request: dict) -> bool:
+        # TODO: Update the `spark_jobs` line in `process_request()` below to use DuckDB locally when
+        #  DuckDB is fully integrated and tested
+        return (
+            json_request["request_type"] == "account"
+            and not (
+                set(json_request.get("download_types", set())).isdisjoint([
+                    "account_financial",
+                    "object_class_program_activity",
+                    "award_financial"
+                ])
+            )
+        )
+
+    @staticmethod
     def validate_columns(json_request: dict):
         all_cols = set()
         for download_type in json_request["download_types"]:
@@ -115,6 +131,7 @@ class BaseDownloadViewSet(APIView):
                     command_options=[
                         f"--download-job-id={download_job.download_job_id}",
                         "--skip-local-cleanup",
+                        # "--use-duckdb" if self.is_duckdb_download(json_request) else ""
                     ],
                     run_as_container=False,
                 )
@@ -189,11 +206,12 @@ class BaseDownloadViewSet(APIView):
         ordered_json_request: str, download_types: Optional[List[str]] = None
     ) -> Optional[DownloadJob]:
         # External data types that directly affect download results
+        external_data_type_name_list = []
+        if download_types and "elasticsearch_transactions" in download_types:
+            external_data_type_name_list.append("es_transactions")
         if download_types and "elasticsearch_awards" in download_types:
-            external_data_type_name_list = ["es_awards"]
-        elif download_types and "elasticsearch_transactions" in download_types:
-            external_data_type_name_list = ["es_transactions"]
-        else:
+            external_data_type_name_list.append("es_awards")
+        if external_data_type_name_list == []:
             external_data_type_name_list = [
                 "fpds",
                 "fabs",
@@ -233,7 +251,7 @@ def get_file_path(file_name: str) -> str:
         file_path = settings.CSV_LOCAL_PATH + file_name
     else:
         s3_handler = S3Handler(
-            bucket_name=settings.BULK_DOWNLOAD_S3_BUCKET_NAME,
+            bucket_name=CONFIG.BULK_DOWNLOAD_S3_BUCKET_NAME,
             redirect_dir=settings.BULK_DOWNLOAD_S3_REDIRECT_DIR,
         )
         file_path = s3_handler.get_simple_url(file_name=file_name)

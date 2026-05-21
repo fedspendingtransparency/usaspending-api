@@ -5,11 +5,13 @@ NOTE: This is distinguished from the usaspending_api.common.helpers.spark_helper
 functions for setup and configuration of the spark environment
 """
 
+import json
 import logging
 import math
 import os
 import shutil
 import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from itertools import chain
 
 import duckdb
@@ -45,6 +47,7 @@ from usaspending_api.common.helpers.spark_helpers import (
 )
 from usaspending_api.config import CONFIG
 from usaspending_api.download.filestreaming.download_generation import EXCEL_ROW_LIMIT
+from usaspending_api.download.models import DownloadJob
 from usaspending_api.financial_activities.models import (
     FinancialAccountsByProgramActivityObjectClass,
 )
@@ -148,25 +151,19 @@ def extract_db_data_frame(  # noqa: PLR0912, PLR0913, PLR0915
     min_max_df = spark.read.jdbc(url=jdbc_url, table=min_max_sql, properties=conn_props)
     if is_date_partitioning_col:
         # Ensure it is a date (e.g. if date in string format, convert to date)
-        min_max_df = min_max_df.withColumn(
-            min_max_df.columns[0], to_date(min_max_df[0])
-        ).withColumn(min_max_df.columns[1], to_date(min_max_df[1]))
+        min_max_df = min_max_df.withColumn(min_max_df.columns[0], to_date(min_max_df[0])).withColumn(
+            min_max_df.columns[1], to_date(min_max_df[1])
+        )
     min_max = min_max_df.first()
     min_val = min_max[0]
     max_val = min_max[1]
     count = min_max[2]
 
     if is_numeric_partitioning_col:
-        logger.info(
-            f"Deriving partitions from numeric ranges across column: {partitioning_col}"
-        )
+        logger.info(f"Deriving partitions from numeric ranges across column: {partitioning_col}")
         # Take count as partition if using a spotty range, and count of rows is less than range of IDs
-        partitions = int(
-            min((int(max_val) - int(min_val)), int(count)) / (partition_rows + 1)
-        )
-        logger.info(
-            f"Derived {partitions} partitions from numeric ranges across column: {partitioning_col}"
-        )
+        partitions = int(min((int(max_val) - int(min_val)), int(count)) / (partition_rows + 1))
+        logger.info(f"Derived {partitions} partitions from numeric ranges across column: {partitioning_col}")
         if partitions > MAX_PARTITIONS:
             fail_msg = (
                 f"Aborting job run because {partitions} partitions "
@@ -175,9 +172,7 @@ def extract_db_data_frame(  # noqa: PLR0912, PLR0913, PLR0915
             logger.fatal(fail_msg)
             raise RuntimeError(fail_msg)
 
-        logger.info(
-            f"{partitions} partitions to extract at approximately {partition_rows} rows each."
-        )
+        logger.info(f"{partitions} partitions to extract at approximately {partition_rows} rows each.")
 
         data_df = spark.read.options(customSchema=custom_schema).jdbc(
             url=jdbc_url,
@@ -196,9 +191,7 @@ def extract_db_data_frame(  # noqa: PLR0912, PLR0913, PLR0915
         # if that distinct count is less than MAX_PARTITIONS
         date_delta = max_val - min_val
         partitions = date_delta.days + 1
-        if (
-            count / partitions
-        ) < 0.6 or True:  # Forcing this path, see comment in else below
+        if (count / partitions) < 0.6 or True:  # Forcing this path, see comment in else below
             logger.info(
                 f"Partitioning by date in col {partitioning_col} would yield {partitions} but only {count} "
                 f"distinct dates in the dataset. This partition range is too sparse. Going to query the "
@@ -217,9 +210,7 @@ def extract_db_data_frame(  # noqa: PLR0912, PLR0913, PLR0915
                     table=f"(select distinct {partitioning_col} from {table}) distinct_dates",
                     properties=conn_props,
                 )
-                partition_sql_predicates = [
-                    f"{partitioning_col} = '{str(row[0])}'" for row in date_df.collect()
-                ]
+                partition_sql_predicates = [f"{partitioning_col} = '{str(row[0])}'" for row in date_df.collect()]
                 logger.info(
                     f"Built {len(partition_sql_predicates)} SQL partition predicates "
                     f"to yield data partitions, based on distinct values of {partitioning_col} "
@@ -248,9 +239,7 @@ def extract_db_data_frame(  # noqa: PLR0912, PLR0913, PLR0915
                 # NOTE: Have to use integer (really a Long) representation of the Date, since that is what the Scala
                 # ... implementation is expecting: https://github.com/apache/spark/blob/c561ee686551690bee689f37ae5bbd75119994d6/sql/core/src/main/scala/org/apache/spark/sql/execution/datasources/jdbc/JDBCRelation.scala#L192-L207
                 # TODO: THIS DOES NOT SEEM TO WORK WITH DATES for lowerBound and upperBound. Forcing use of predicates
-                raise NotImplementedError(
-                    "Cannot read JDBC partitions with date lower/upper bound"
-                )
+                raise NotImplementedError("Cannot read JDBC partitions with date lower/upper bound")
 
                 data_df = spark.read.jdbc(
                     url=jdbc_url,
@@ -277,20 +266,12 @@ def extract_db_data_frame(  # noqa: PLR0912, PLR0913, PLR0915
             raise RuntimeError(fail_msg)
 
         # SQL usable in Postgres to get a distinct 32-bit int from an md5 hash of text
-        pg_int_from_hash = (
-            f"('x'||substr(md5({partitioning_col}::text),1,8))::bit(32)::int"
-        )
+        pg_int_from_hash = f"('x'||substr(md5({partitioning_col}::text),1,8))::bit(32)::int"
         # int could be signed. This workaround SQL gets unsigned modulus from the hash int
-        non_neg_modulo = (
-            f"mod({partitions} + mod({pg_int_from_hash}, {partitions}), {partitions})"
-        )
-        partition_sql_predicates = [
-            f"{non_neg_modulo} = {p}" for p in range(0, partitions)
-        ]
+        non_neg_modulo = f"mod({partitions} + mod({pg_int_from_hash}, {partitions}), {partitions})"
+        partition_sql_predicates = [f"{non_neg_modulo} = {p}" for p in range(0, partitions)]
 
-        logger.info(
-            f"{partitions} partitions to extract by predicates at approximately {partition_rows} rows each."
-        )
+        logger.info(f"{partitions} partitions to extract by predicates at approximately {partition_rows} rows each.")
 
         data_df = spark.read.jdbc(
             url=jdbc_url,
@@ -359,9 +340,7 @@ def load_delta_table(
     # NOTE: Best to (only?) use .saveAsTable(name=<delta_table>) rather than .insertInto(tableName=<delta_table>)
     # ... The insertInto does not seem to align/merge columns from DataFrame to table columns (defaults to column order)
     save_mode = "overwrite" if overwrite else "append"
-    source_df.write.format(source="delta").mode(saveMode=save_mode).saveAsTable(
-        name=delta_table_name
-    )
+    source_df.write.format(source="delta").mode(saveMode=save_mode).saveAsTable(name=delta_table_name)
     logger.info(f"LOAD (FINISH): Loaded data into Delta table {delta_table_name}")
 
 
@@ -385,9 +364,7 @@ def load_es_index(
     jvm_data_df = source_df._jdf
 
     # Call the elasticsearch-hadoop method to write the DF to ES via the _jvm conduit on the SparkContext
-    spark.sparkContext._jvm.org.elasticsearch.spark.sql.EsSparkSQL.saveToEs(
-        jvm_data_df, jvm_es_config_map
-    )
+    spark.sparkContext._jvm.org.elasticsearch.spark.sql.EsSparkSQL.saveToEs(jvm_data_df, jvm_es_config_map)
 
 
 def merge_delta_table(spark: SparkSession, source_df: DataFrame, delta_table_name: str, merge_column: str) -> None:
@@ -476,9 +453,7 @@ def diff(
     if unique_key_col in compare_cols:
         compare_cols.remove(unique_key_col)
 
-    distinct_stmts = " ".join(
-        [f"WHEN l.{c} IS DISTINCT FROM r.{c} THEN 'C'" for c in compare_cols]
-    )
+    distinct_stmts = " ".join([f"WHEN l.{c} IS DISTINCT FROM r.{c} THEN 'C'" for c in compare_cols])
     compare_expr = f"""
      CASE
          WHEN l.exists IS NULL THEN 'I'
@@ -523,9 +498,7 @@ def convert_decimal_cols_to_string(df: DataFrame) -> DataFrame:
     for f in df.schema.fields:
         if not isinstance(f.dataType, DecimalType):
             continue
-        df_no_decimal = df_no_decimal.withColumn(
-            f.name, df_no_decimal[f.name].cast(StringType())
-        )
+        df_no_decimal = df_no_decimal.withColumn(f.name, df_no_decimal[f.name].cast(StringType()))
     return df_no_decimal
 
 
@@ -646,7 +619,7 @@ def _generate_global_view_sql_strings(tables: list[str], jdbc_url: str) -> list[
 
 
 def create_ref_temp_views(  # noqa: PLR0912
-    spark: SparkSession | DuckDBSparkSession, create_broker_views: bool = False
+    spark: SparkSession | DuckDBSparkSession, create_broker_views: bool = False, download_job: DownloadJob | None = None
 ) -> None:  # noqa: PLR0912
     """Create global temporary Spark reference views that sit atop remote PostgreSQL RDS tables
     Setting create_broker_views to True will create views for all tables list in _BROKER_REF_TABLES
@@ -660,9 +633,7 @@ def create_ref_temp_views(  # noqa: PLR0912
 
     # Create USAS temp views
     rds_ref_tables = build_ref_table_name_list()
-    logger.info(
-        f"Creating the following tables under the global_temp database: {rds_ref_tables}"
-    )
+    logger.info(f"Creating the following tables under the global_temp database: {rds_ref_tables}")
 
     match isinstance(spark, DuckDBSparkSession):
         case True:
@@ -683,9 +654,7 @@ def create_ref_temp_views(  # noqa: PLR0912
                 )
             else:
                 # DuckDB will prepend the HTTP or HTTPS so we need to strip it from the AWS endpoint URL
-                endpoint_url = CONFIG.AWS_S3_ENDPOINT.replace("http://", "").replace(
-                    "https://", ""
-                )
+                endpoint_url = CONFIG.AWS_S3_ENDPOINT.replace("http://", "").replace("https://", "")
                 spark.sql(
                     f"""
                     CREATE OR REPLACE SECRET (
@@ -701,47 +670,46 @@ def create_ref_temp_views(  # noqa: PLR0912
                 {"schema": "rpt", "table_name": "account_balances_download"},
                 {
                     "schema": "rpt",
-                    "table_name": "object_class_program_activity_download",
+                    "table_name": "object_class_program_activity_download"
                 },
                 {"schema": "rpt", "table_name": "award_financial_download"},
             ]
 
+            # Save resources by only creating the tables required for this particular download, in DuckDB
+            # Key: table name | Value: table schema
+            _tables_to_create = {
+                table["table_name"]: table['schema']
+                for table in _download_delta_tables
+                if table["table_name"].replace("_download", "")
+                in json.loads(download_job.json_request).get("download_types", [])
+            } if hasattr(download_job, "json_request") else {}
+
             # The DuckDB Delta extension is needed to interact with DeltaLake tables
             spark.sql("LOAD delta; CREATE SCHEMA IF NOT EXISTS rpt;")
-            for table in _download_delta_tables:
-                s3_path = f"s3://{CONFIG.SPARK_S3_BUCKET}/{CONFIG.DELTA_LAKE_S3_PATH}/{table['schema']}/{table['table_name']}"
+            for table_name, table_schema in _tables_to_create.items():
+                s3_path = f"s3://{CONFIG.SPARK_S3_BUCKET}/{CONFIG.DELTA_LAKE_S3_PATH}/{table_schema}/{table_name}"
                 try:
                     spark.sql(
                         f"""
-                        CREATE OR REPLACE TABLE {table["schema"]}.{table["table_name"]} AS
+                        CREATE OR REPLACE TABLE {table_schema}.{table_name} AS
                         SELECT * FROM delta_scan('{s3_path}');
                     """
                     )
-                    logger.info(
-                        f"Successfully created table {table['schema']}.{table['table_name']}"
-                    )
+                    logger.info(f"Successfully created table {table_schema}.{table_name}")
                 except duckdb.IOException as exc:
-                    logger.exception(f"Failed to create table {table['table_name']}")
-                    raise RuntimeError(
-                        f"Failed to create table {table['table_name']}"
-                    ) from exc
+                    logger.exception(f"Failed to create table {table_name}")
+                    raise RuntimeError(f"Failed to create table {table_name}") from exc
 
             # The DuckDB Postgres extension is needed to connect to the USAS Postgres DB
             spark.sql("LOAD postgres; CREATE SCHEMA IF NOT EXISTS global_temp;")
-            spark.sql(
-                f"ATTACH '{CONFIG.DATABASE_URL}' AS usas (TYPE postgres, READ_ONLY);"
-            )
+            spark.sql(f"ATTACH '{CONFIG.DATABASE_URL}' AS usas (TYPE postgres, READ_ONLY);")
 
             for table in rds_ref_tables:
                 try:
-                    spark.sql(
-                        f"CREATE OR REPLACE VIEW global_temp.{table} AS SELECT * FROM usas.public.{table};"
-                    )
+                    spark.sql(f"CREATE OR REPLACE VIEW global_temp.{table} AS SELECT * FROM usas.public.{table};")
                 except duckdb.CatalogException as exc:
                     logger.exception(f"Failed to create view {table} for {table}")
-                    raise RuntimeError(
-                        f"Failed to create view {table} for {table}"
-                    ) from exc
+                    raise RuntimeError(f"Failed to create view {table} for {table}") from exc
 
             if create_broker_views:
                 spark.sql(
@@ -754,14 +722,10 @@ def create_ref_temp_views(  # noqa: PLR0912
                 )
                 for table in _BROKER_REF_TABLES:
                     try:
-                        spark.sql(
-                            f"CREATE OR REPLACE VIEW global_temp.{table} AS SELECT * FROM broker.public.{table};"
-                        )
+                        spark.sql(f"CREATE OR REPLACE VIEW global_temp.{table} AS SELECT * FROM broker.public.{table};")
                     except duckdb.CatalogException as exc:
                         logger.exception(f"Failed to create view {table} for {table}")
-                        raise RuntimeError(
-                            f"Failed to create view {table} for {table}"
-                        ) from exc
+                        raise RuntimeError(f"Failed to create view {table} for {table}") from exc
         case False:
             logger.info("Creating ref temp views using Spark")
 
@@ -814,9 +778,7 @@ def write_csv_file(  # noqa: PLR0913
     if fs.exists(parts_dir_path):
         fs.delete(parts_dir_path, True)
     start = time.time()
-    logger.info(
-        f"Writing source data DataFrame to csv part files for file {parts_dir}..."
-    )
+    logger.info(f"Writing source data DataFrame to csv part files for file {parts_dir}...")
     df_record_count = df.count()
     num_partitions = math.ceil(df_record_count / EXCEL_ROW_LIMIT) or 1
     df.repartition(num_partitions).write.options(
@@ -834,9 +796,7 @@ def write_csv_file(  # noqa: PLR0913
         sep=delimiter,
     )
     logger.info(f"{parts_dir} contains {df_record_count:,} rows of data")
-    logger.info(
-        f"Wrote source data DataFrame to csv part files in {(time.time() - start):3f}s"
-    )
+    logger.info(f"Wrote source data DataFrame to csv part files in {(time.time() - start):3f}s")
     return df_record_count
 
 
@@ -869,9 +829,7 @@ def write_csv_file_duckdb(
 
     full_file_paths = []
 
-    logger.info(
-        f"Writing source data DataFrame to csv files for file {download_file_name}"
-    )
+    logger.info(f"Writing source data DataFrame to csv files for file {download_file_name}")
     rel.to_csv(
         file_name=f"{temp_csv_directory_path}{download_file_name}",
         sep=delimiter,
@@ -895,12 +853,8 @@ def write_csv_file_duckdb(
         full_file_paths.append(_new_csv_path)
         os.rmdir(_dir)
 
-    logger.info(
-        f"{temp_csv_directory_path}{download_file_name} contains {df_record_count:,} rows of data"
-    )
-    logger.info(
-        f"Wrote source data DataFrame to {len(full_file_paths)} CSV files in {(time.time() - start):3f}s"
-    )
+    logger.info(f"{temp_csv_directory_path}{download_file_name} contains {df_record_count:,} rows of data")
+    logger.info(f"Wrote source data DataFrame to {len(full_file_paths)} CSV files in {(time.time() - start):3f}s")
     return df_record_count, full_file_paths
 
 
@@ -940,10 +894,87 @@ def rename_part_files(
     full_file_paths = []
 
     for index, part_file in enumerate(list_of_part_files):
-        new_key = f"{temp_download_dir_name}/{destination_file_name}_{str(index + 1).zfill(2)}.{file_format}"
+        new_key = f"{temp_download_dir_name}/{destination_file_name}_{index + 1:02d}.{file_format}"
         logger.info(f"Renaming {bucket_name}/{part_file} to {bucket_name}/{new_key}")
 
         rename_s3_object(bucket_name=bucket_name, old_key=part_file, new_key=new_key)
         full_file_paths.append(f"s3a://{bucket_name}/{new_key}")
+
+    return full_file_paths
+
+
+def rename_part_files_threaded(
+    bucket_name: str,
+    destination_file_name: str,
+    logger: logging.Logger,
+    temp_download_dir_name: str = "temp_download",
+    file_format: str = "csv",
+    max_threads: int = 15,
+) -> list[str] | list:
+    start_time = time.perf_counter()
+
+    list_of_part_files = sorted(
+        file.key
+        for file in retrieve_s3_bucket_object_list(
+            bucket_name, key_prefix=f"{temp_download_dir_name}/{destination_file_name}/part-"
+        )
+        if file.key.endswith(file_format)
+    )
+
+    if not list_of_part_files:
+        return []
+
+    total_files = len(list_of_part_files)
+    max_threads = max(max_threads, total_files)
+    logger.info(f"Max threads: {max_threads}")
+    logger.info(f"Starting concurrent rename of {total_files} part files")
+
+    def rename_single_file(index: int, part_file: str) -> tuple[str | None, bool]:
+        """Rename a single S3 part file.
+
+        Returns:
+            The new path or None and if the process was successful.
+        """
+
+        new_key = f"{temp_download_dir_name}/{destination_file_name}_{index + 1:02d}.{file_format}"
+        try:
+            rename_s3_object(bucket_name=bucket_name, old_key=part_file, new_key=new_key)
+            logger.info(f"Successfully renamed {part_file} to {new_key}")
+            return f"s3a://{bucket_name}/{new_key}", True
+        except Exception as e:
+            logger.exception(f"Failed to rename {part_file} to {new_key}: {e}", exc_info=True)
+            return None, False
+
+    full_file_paths = []
+    failed_count = 0
+    completed_count = 0
+
+    with ThreadPoolExecutor(max_workers=max_threads) as executor:
+        futures = [
+            executor.submit(rename_single_file, idx, part_file) for idx, part_file in enumerate(list_of_part_files)
+        ]
+
+        for future in as_completed(futures):
+            try:
+                new_path, success = future.result()
+                completed_count += 1
+
+                if success:
+                    full_file_paths.append(new_path)
+                else:
+                    failed_count += 1
+            except Exception as e:
+                failed_count += 1
+                logger.error(str(e))
+
+    if failed_count > 0:
+        logger.info(f"""
+            Renamed completed with errors.\n
+            {len(full_file_paths)} succeeded\n
+            {failed_count} failed out of {total_files} total
+        """)
+        raise Exception(f"Failed to rename {failed_count} part files")
+    else:
+        logger.info(f"Renamed all part files in {(time.perf_counter() - start_time):3f}s")
 
     return full_file_paths

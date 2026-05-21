@@ -22,3 +22,9 @@
     name: nova micro
     model_id: amazon.nova-micro-v1:0
     provider: amazon
+- model: llm.aimodel
+  pk: 5
+  fields:
+    name: nova pro
+    model_id: amazon.nova-pro-v1:0
+    provider: amazon

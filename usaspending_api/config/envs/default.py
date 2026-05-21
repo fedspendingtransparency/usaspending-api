@@ -87,15 +87,15 @@ class DefaultConfig(BaseSettings):
     USASPENDING_DB_HOST: str = ENV_SPECIFIC_OVERRIDE
     USASPENDING_DB_PORT: str = ENV_SPECIFIC_OVERRIDE
 
-    BROKER_DB: str = (
+    BROKER_DB: str | None = (
         None  # FACTORY_PROVIDED_VALUE. See its root validator-factory below
     )
-    BROKER_DB_SCHEME: str = "postgres"
-    BROKER_DB_NAME: str = "data_broker"
-    BROKER_DB_USER: str = ENV_SPECIFIC_OVERRIDE
-    BROKER_DB_PASSWORD: SecretStr = ENV_SPECIFIC_OVERRIDE
-    BROKER_DB_HOST: str = ENV_SPECIFIC_OVERRIDE
-    BROKER_DB_PORT: str = ENV_SPECIFIC_OVERRIDE
+    BROKER_DB_SCHEME: str | None = "postgres"
+    BROKER_DB_NAME: str | None = "data_broker"
+    BROKER_DB_USER: str | None = ENV_SPECIFIC_OVERRIDE
+    BROKER_DB_PASSWORD: SecretStr | None = ENV_SPECIFIC_OVERRIDE
+    BROKER_DB_HOST: str | None = ENV_SPECIFIC_OVERRIDE
+    BROKER_DB_PORT: str | None = ENV_SPECIFIC_OVERRIDE
 
     # noinspection PyMethodParameters
     # Pydantic returns a classmethod for its validators, so the cls param is correct
@@ -361,6 +361,7 @@ class DefaultConfig(BaseSettings):
     AWS_PROFILE: str | None = None  # USER_SPECIFIC_OVERRIDE
     SPARK_S3_BUCKET: str | None = os.environ.get("SPARK_S3_BUCKET")
     BULK_DOWNLOAD_S3_BUCKET_NAME: str | None = os.environ.get("BULK_DOWNLOAD_S3_BUCKET_NAME")
+    MONTHLY_DOWNLOAD_S3_BUCKET_NAME: str = os.environ.get("MONTHLY_DOWNLOAD_S3_BUCKET_NAME", "")
     DATABASE_DOWNLOAD_S3_BUCKET_NAME: str | None = os.environ.get(
         "DATABASE_DOWNLOAD_S3_BUCKET_NAME"
     )

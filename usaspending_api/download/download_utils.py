@@ -39,6 +39,9 @@ def create_unique_filename(json_request: dict[str, Any], origination: str | None
             level=level,
             timestamp=timestamp,
         )
+    elif json_request["request_type"] == "search":
+        # Search Endpoint uses Award download_types, but has set filename
+        download_name = f"PrimeAwardsTransactionsAndSubawards_{timestamp}.zip"
     else:  # "award" downloads
         agency = ""
 
@@ -60,11 +63,17 @@ def obtain_zip_filename_format(download_types: list[str]) -> str:
 
 
 def obtain_filename_prefix_from_agency_id(request_agency: int | str) -> str:
-    result = "All"
-    if request_agency and request_agency != "all":
-        toptier_agency_filter = ToptierAgency.objects.filter(toptier_agency_id=request_agency).first()
-        if toptier_agency_filter:
-            result = toptier_agency_filter.toptier_code
+    match request_agency:
+        case None | "" | "All":
+            result = "All"
+        case int() | str() if isinstance(request_agency, int) or request_agency.isdigit():
+            toptier_agency = ToptierAgency.objects.filter(toptier_agency_id=request_agency).first()
+            result = toptier_agency.toptier_code if toptier_agency else "All"
+        case str():
+            toptier_agency = ToptierAgency.objects.filter(abbreviation=request_agency).first()
+            result = toptier_agency.abbreviation if toptier_agency else "All"
+        case _:
+            result = "All"
     return result
 
 

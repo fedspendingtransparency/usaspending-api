@@ -9,6 +9,7 @@ from datetime import date, datetime
 import boto3
 import pandas as pd
 from django.conf import settings
+from django.core.management import CommandParser
 from django.core.management.base import BaseCommand
 from django.db.models import Case, CharField, F, Q, Value, When
 
@@ -16,6 +17,7 @@ from usaspending_api.awards.v2.lookups.lookups import all_award_types_mappings a
 from usaspending_api.common.csv_helpers import count_rows_in_delimited_file
 from usaspending_api.common.helpers.orm_helpers import generate_raw_quoted_query
 from usaspending_api.common.helpers.s3_helpers import multipart_upload
+from usaspending_api.config import CONFIG
 from usaspending_api.download.filestreaming.download_generation import (
     apply_annotations_to_sql,
     split_and_zip_data_files,
@@ -67,7 +69,7 @@ AWARD_MAPPINGS = {
 
 
 class Command(BaseCommand):
-    def download(self, award_type, agency="all", generate_since=None):
+    def download(self, award_type: str, agency: str | dict = "all", generate_since: str | None = None) -> None:
         """Create a delta file based on award_type, and agency_code (or all agencies)"""
         logger.info(
             "Starting generation. {}, Agency: {}".format(award_type, agency if agency == "all" else agency["name"])
@@ -126,8 +128,8 @@ class Command(BaseCommand):
             # Upload file to S3 and delete local version
             logger.info("Uploading file to S3 bucket and deleting local copy")
             multipart_upload(
-                settings.MONTHLY_DOWNLOAD_S3_BUCKET_NAME,
-                settings.USASPENDING_AWS_REGION,
+                CONFIG.MONTHLY_DOWNLOAD_S3_BUCKET_NAME,
+                CONFIG.AWS_REGION,
                 file_path,
                 os.path.basename(file_path),
             )
@@ -137,7 +139,9 @@ class Command(BaseCommand):
             "Finished generation. {}, Agency: {}".format(award_type, agency if agency == "all" else agency["name"])
         )
 
-    def create_local_file(self, award_type, source, agency_code, generate_since):
+    def create_local_file(
+        self, award_type: str, source: pd.DataFrame, agency_code: str, generate_since: str | None
+    ) -> str | None:
         """Generate complete file from SQL query and S3 bucket deletion files, then zip it locally"""
         logger.info("Generating CSV file with creations and modifications")
 
@@ -191,7 +195,7 @@ class Command(BaseCommand):
         return zipfile_path
 
     @staticmethod
-    def split_transaction_id(tid):
+    def split_transaction_id(tid: str) -> pd.Series:
         """
         Split the transaction id on underscores and append the original transaction
         id to the result.  The returned components should conform to the column
@@ -204,7 +208,15 @@ class Command(BaseCommand):
         tid = tid.upper()
         return pd.Series(tid.split("_") + [tid])
 
-    def add_deletion_records(self, source_path, working_dir, award_type, agency_code, source, generate_since):
+    def add_deletion_records(
+        self,
+        source_path: str,
+        working_dir: str,
+        award_type: str,
+        agency_code: str,
+        source: pd.DataFrame,
+        generate_since: str,
+    ) -> None:
         """Retrieve deletion files from S3 and append necessary records to the end of the file"""
         logger.info("Retrieving deletion records from S3 files and appending to the CSV")
 
@@ -256,7 +268,9 @@ class Command(BaseCommand):
             logger.info(f"Appending {len(all_deletions.index):,} records to file")
             self.add_deletions_to_file(all_deletions, award_type, source_path)
 
-    def organize_deletion_columns(self, source, dataframe, award_type, match_date):
+    def organize_deletion_columns(
+        self, source: pd.DataFrame, dataframe: pd.DataFrame, award_type: str, match_date: str
+    ) -> pd.DataFrame:
         """Ensure that the dataframe has all necessary columns in the correct order"""
         ordered_columns = source.columns(None)
         if "correction_delete_ind" not in ordered_columns:
@@ -274,7 +288,7 @@ class Command(BaseCommand):
         # Ensure columns are in correct order
         return dataframe[ordered_columns]
 
-    def add_deletions_to_file(self, df, award_type, source_path):
+    def add_deletions_to_file(self, df: pd.DataFrame, award_type: str, source_path: str) -> None:
         """Append the deletion records to the end of the CSV file"""
         logger.info("Removing duplicates from deletion records")
         df = df.sort_values(["last_modified_date"] + list(AWARD_MAPPINGS[award_type]["column_headers"].values()))
@@ -284,7 +298,7 @@ class Command(BaseCommand):
         logger.info("Appending {} records to the end of the file".format(len(deduped_df.index)))
         deduped_df.to_csv(source_path, mode="a", header=False, index=False)
 
-    def check_regex_match(self, award_type, file_name, generate_since):
+    def check_regex_match(self, award_type: str, file_name: str, generate_since: str) -> bool | str:  # noqa: PLR0911
         """Create a date object from a regular expression match"""
         re_match = re.match(AWARD_MAPPINGS[award_type]["match"], file_name)
         if not re_match:
@@ -315,7 +329,7 @@ class Command(BaseCommand):
 
         return "{}-{}-{}".format(year, month, day)
 
-    def parse_filters(self, award_types, agency):
+    def parse_filters(self, award_types: list[str], agency: str | dict) -> tuple[dict, str]:
         """Convert readable filters to a filter object usable for the matview filter"""
         filters = {
             "award_type_codes": [award_type for sublist in award_types for award_type in all_ats_mappings[sublist]]
@@ -328,7 +342,7 @@ class Command(BaseCommand):
 
         return filters, agency_code
 
-    def add_arguments(self, parser):
+    def add_arguments(self, parser: CommandParser) -> None:
         """Add arguments to the parser"""
         parser.add_argument(
             "--agencies",
@@ -368,7 +382,7 @@ class Command(BaseCommand):
             "deleted records from S3.",
         )
 
-    def handle(self, *args, **options):
+    def handle(self, *args, **options) -> None:
         """Run the application."""
         agencies = options["agencies"]
         award_types = options["award_types"]

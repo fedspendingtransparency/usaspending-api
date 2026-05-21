@@ -1,6 +1,7 @@
 - model: llm.prompts
   pk: 1
   fields:
+    name: initial
     description: initial system prompt for the search assistant
     text: >
       You are USAspending search assistant.  You help the user search for federal spending.
@@ -12,6 +13,7 @@
 - model: llm.prompts
   pk: 2
   fields:
+    name: filter-preference
     description: prefer filters over keywords
     text: >
       You are USAspending search assistant. You help the user search for federal spending.
@@ -66,7 +68,7 @@
       ✅ Good: "infrastructure in Texas" → defCodes: {require: ['Z','1']}, selectedLocations: {lookup Texas}
       
       ❌ Bad: "software contracts over $5M" → keyword: ["software"]
-      ✅ Good: "software contracts over $5M" → naicsCodes: {lookup software}, awardAmounts: {specific: [5000000, null]}
+      ✅ Good: "software contracts over $5M" → naicsCodes: {lookup software}, awardAmounts: {specific: [5000000, None]}
       
       ✅ Acceptable: "bridge repair projects in California" → selectedLocations: {lookup CA}, keyword: ["bridge", "repair"]
       (keyword used because "bridge repair" doesn't map to a structured field)

@@ -1,9 +1,11 @@
 import logging
 import re
 from datetime import datetime, timedelta, timezone
+from unittest.mock import patch
 
 import pytest
-from django.core.management import call_command, CommandError
+from django.conf import settings
+from django.core.management import CommandError, call_command
 from django.test import override_settings
 from elasticsearch import Elasticsearch
 from model_bakery import baker
@@ -35,6 +37,8 @@ from usaspending_api.recipient.models import RecipientProfile
 from usaspending_api.search.models import AwardSearch, TransactionSearch
 from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
 from usaspending_api.tests.conftest_spark import create_and_load_all_delta_tables
+
+_TEST_INDEX_TIME = datetime(2026, 4, 20, 11, 31, 23, 999999)
 
 
 @pytest.fixture
@@ -215,12 +219,14 @@ def mock_execute_sql(sql, results, verbosity=None):
     return execute_sql_to_ordered_dictionary(sql)
 
 
-def test_create_and_load_new_award_index(award_data_fixture, elasticsearch_award_index, monkeypatch, caplog):
+@patch("usaspending_api.etl.management.commands.elasticsearch_indexer.datetime", wraps=datetime)
+def test_create_and_load_new_award_index(mock_date, award_data_fixture, elasticsearch_award_index, monkeypatch, caplog):
     """Test the ``elasticsearch_loader`` django management command to create a new awards index and load it
     with data from the DB
     """
     client = elasticsearch_award_index.client  # type: Elasticsearch
     monkeypatch.setattr("usaspending_api.etl.elasticsearch_loader_helpers.index_config.logger", logging.getLogger())
+    mock_date.now.return_value = _TEST_INDEX_TIME
 
     # Ensure index is not yet created
     assert not client.indices.exists(elasticsearch_award_index.index_name)
@@ -232,16 +238,19 @@ def test_create_and_load_new_award_index(award_data_fixture, elasticsearch_award
         _process_es_etl_test_config(client, elasticsearch_award_index)
     except SystemExit:
         assert (
-            f"The earliest Transaction / Award load date of 2021-01-30 12:00:00+00:00 is later than the value"
-            f" of 'es_deletes' (2021-01-17 16:00:00+00:00). To reduce the amount of data loaded in the next incremental"
+            "The earliest Transaction / Award load date of 2021-01-30 12:00:00+00:00 is later than the value"
+            " of 'es_deletes' (2021-01-17 16:00:00+00:00). To reduce the amount of data loaded in the next incremental"
             " load the values of 'es_deletes', 'es_awards', and 'es_transactions' should most likely be updated to"
-            f" 2021-01-30 12:00:00+00:00 before proceeding. This recommendation assumes that the 'rpt' tables are"
-            f" up to date. Optionally, this can be bypassed with the '--skip-date-check' option."
+            " 2021-01-30 12:00:00+00:00 before proceeding. This recommendation assumes that the 'rpt' tables are"
+            " up to date. Optionally, this can be bypassed with the '--skip-date-check' option."
         ) in caplog.records[-1].message
     else:
-        assert False, "No exception or the wrong exception was raised"
+        raise AssertionError("No exception or the wrong exception was raised")
 
     es_etl_config = _process_es_etl_test_config(client, elasticsearch_award_index, options={"skip_date_check": True})
+
+    es_etl_index_name = es_etl_config["index_name"]
+    assert es_etl_index_name == f"{_TEST_INDEX_TIME:%Y-%m-%d-%H-%M-%S}-{elasticsearch_award_index.index_name}"
 
     # Must use mock sql function to share test DB conn+transaction in ETL code
     # Patching on the module into which it is imported, not the module where it is defined
@@ -255,10 +264,10 @@ def test_create_and_load_new_award_index(award_data_fixture, elasticsearch_award
     loader.prepare_for_etl()
     loader.dispatch_tasks()
     # Along with other things, this will refresh the index, to surface loaded docs
-    set_final_index_config(client, elasticsearch_award_index.index_name)
+    set_final_index_config(client, es_etl_index_name)
 
-    assert client.indices.exists(elasticsearch_award_index.index_name)
-    es_award_docs = client.count(index=elasticsearch_award_index.index_name)["count"]
+    assert client.indices.exists(es_etl_index_name)
+    es_award_docs = client.count(index=es_etl_index_name)["count"]
     assert es_award_docs == original_db_awards_count
 
 
@@ -283,7 +292,7 @@ def test_location_index_raises_error():
     """Test the `elasticsearch_indexer` Django management command with location to ensure that an error is raised."""
     with pytest.raises(
         CommandError,
-        match=re.escape(f"Error: argument --load-type: invalid choice: 'location'"),
+        match=re.escape("Error: argument --load-type: invalid choice: 'location'"),
     ):
         call_command("elasticsearch_indexer", create_new_index=True, load_type="location", index_name="2025-locations")
 
@@ -661,6 +670,35 @@ def test_delete_one_assistance_transaction(award_data_fixture, elasticsearch_tra
     assert delete_count == 1
     es_award_docs = client.count(index=elasticsearch_transaction_index.index_name)["count"]
     assert es_award_docs == original_db_tx_count - 1
+
+
+@patch("usaspending_api.etl.management.commands.elasticsearch_indexer.datetime", wraps=datetime)
+def test_default_index_name(mock_date, award_data_fixture, monkeypatch,
+                            elasticsearch_award_index, elasticsearch_transaction_index,
+                            elasticsearch_subaward_index, elasticsearch_recipient_index):
+    test_indices = {elasticsearch_award_index, elasticsearch_transaction_index,
+                    elasticsearch_subaward_index, elasticsearch_recipient_index}
+    monkeypatch.setattr("usaspending_api.etl.elasticsearch_loader_helpers.index_config.logger", logging.getLogger())
+    mock_date.now.return_value = _TEST_INDEX_TIME
+
+    for test_es_index in test_indices:
+        client = test_es_index.client
+        test_es_index.etl_config["create_new_index"] = True
+        test_es_index.etl_config.pop("index_name", None)
+        test_es_index.etl_config.pop("query_alias_prefix", None)
+
+        required_suffix = ""
+        if test_es_index.index_type == "award":
+            required_suffix = settings.ES_AWARDS_NAME_SUFFIX
+        elif test_es_index.index_type == "transaction":
+            required_suffix = settings.ES_TRANSACTIONS_NAME_SUFFIX
+        elif test_es_index.index_type == "subaward":
+            required_suffix = settings.ES_SUBAWARD_NAME_SUFFIX
+        elif test_es_index.index_type == "recipient":
+            required_suffix = settings.ES_RECIPIENTS_NAME_SUFFIX
+
+        es_etl_config = _process_es_etl_test_config(client, test_es_index, options={"skip_date_check": True})
+        assert es_etl_config["index_name"] == f"{_TEST_INDEX_TIME:%Y-%m-%d-%H-%M-%S}-{required_suffix}"
 
 
 def _process_es_etl_test_config(
