@@ -234,7 +234,9 @@ class LocalStrategy(_AbstractStrategy):
             image_name,
             name=container_name,
             network=network,
-            command=(f'spark-submit --driver-memory "2g" /dockermount/manage.py {command_name} {options_as_string}'),
+            command=(
+                f'spark-submit --driver-memory "2g" /usaspending-api/manage.py {command_name} {options_as_string}'
+            ),
             environment=[
                 f"COMPONENT_NAME={command_name} {options_as_string}",
                 *environment_variables,
