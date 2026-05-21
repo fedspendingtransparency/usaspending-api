@@ -9,6 +9,7 @@ COPY --from=ghcr.io/astral-sh/uv:0.7.19 /uv /uvx /bin/
 # Build ARGs
 ARG PROJECT_LOG_DIR=/logs
 ARG PYTHON_VERSION=3.10.12
+ARG SPARK_LOGGING_LEVEL=INFO
 
 # Install dependencies
 RUN dnf update \
@@ -18,6 +19,7 @@ RUN dnf update \
         libpq-devel \
         nodejs \
         npm \
+        postgresql16 \
         sqlite-devel \
         wget \
         zlib-devel \
@@ -60,6 +62,17 @@ ENV PATH="/usr/local/.venv/bin:$PATH"
 # Set Python 3.10.12 as the default Python for PySpark
 ENV PYSPARK_PYTHON=/usr/local/.venv/bin/python3
 ENV PYSPARK_DRIVER_PYTHON=/usr/local/.venv/bin/python3
+
+# Configure console logging for Spark
+RUN cat <<EOF | sed 's/^[[:space:]]*//' >> $SPARK_HOME/conf/log4j2.properties
+	appender.console.type = Console
+    appender.console.name = CONSOLE
+    appender.console.layout.type = PatternLayout
+    appender.console.layout.pattern = [%d{yyyy-MM-dd HH:mm:ss.SSS}][%p] - %m%n
+    rootLogger.level = ${SPARK_LOGGING_LEVEL}
+    rootLogger.appenderRef.0.ref = CONSOLE
+    rootLogger.appenderRef.0.level = ${SPARK_LOGGING_LEVEL}
+EOF
 
 # Update logging for Spark
 RUN sed -i "s|^# spark.eventLog.dir.*$|spark.eventLog.dir                 file:///usaspending-api/$PROJECT_LOG_DIR/spark-events|g" $SPARK_HOME/conf/spark-defaults.conf \

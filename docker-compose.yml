@@ -35,8 +35,6 @@ x-spark-submit-variables: &spark-submit-vars
   AWS_ACCESS_KEY_ID: ${MINIO_ACCESS_KEY}
   AWS_ENDPOINT_URL: http://${MINIO_HOST}:${MINIO_PORT}
   AWS_SECRET_ACCESS_KEY: ${MINIO_SECRET_KEY}
-  #SPARK_HIVE_METASTORE_DB_TYPE: derby
-  #SPARK_HIVE_METASTORE_DB_PATH: /spark-warehouse
   # Needed for the Spark containers to interact
   SPARK_MASTER_HOST: ${SPARK_MASTER_HOST}
   SPARK_MASTER_PORT: ${SPARK_MASTER_PORT}
@@ -107,6 +105,7 @@ services:
       dockerfile: development.Dockerfile
       args:
         PROJECT_LOG_DIR: ${PROJECT_LOG_DIR}
+        SPARK_LOGGING_LEVEL: ${SPARK_LOGGING_LEVEL}
     init: true  # needed for the reaping of processes created for tests
     container_name: usaspending-test
     volumes:
@@ -361,6 +360,7 @@ services:
       dockerfile: development.Dockerfile
       args:
         PROJECT_LOG_DIR: ${PROJECT_LOG_DIR}
+        SPARK_LOGGING_LEVEL: ${SPARK_LOGGING_LEVEL}
     container_name: spark-master
     environment:
       <<: *spark-submit-vars
@@ -389,6 +389,7 @@ services:
       dockerfile: development.Dockerfile
       args:
         PROJECT_LOG_DIR: ${PROJECT_LOG_DIR}
+        SPARK_LOGGING_LEVEL: ${SPARK_LOGGING_LEVEL}
     container_name: spark-worker
     depends_on:
       - spark-master
@@ -414,6 +415,7 @@ services:
       dockerfile: development.Dockerfile
       args:
         PROJECT_LOG_DIR: ${PROJECT_LOG_DIR}
+        SPARK_LOGGING_LEVEL: ${SPARK_LOGGING_LEVEL}
     container_name: spark-history-server
     environment:
       SPARK_HISTORY_SERVER_PORT: ${SPARK_HISTORY_SERVER_PORT}
@@ -461,6 +463,7 @@ services:
       dockerfile: development.Dockerfile
       args:
         PROJECT_LOG_DIR: ${PROJECT_LOG_DIR}
+        SPARK_LOGGING_LEVEL: ${SPARK_LOGGING_LEVEL}
     container_name: spark-submit
     depends_on:
       - spark-master
@@ -498,6 +501,7 @@ services:
       dockerfile: development.Dockerfile
       args:
         PROJECT_LOG_DIR: ${PROJECT_LOG_DIR}
+        SPARK_LOGGING_LEVEL: ${SPARK_LOGGING_LEVEL}
     container_name: spark-shell
     depends_on:
       - minio
