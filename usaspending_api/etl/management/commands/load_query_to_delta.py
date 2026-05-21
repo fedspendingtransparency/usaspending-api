@@ -285,7 +285,10 @@ TABLE_SPEC = {
         partition_column="appropriation_account_balances_id",
         partition_column_type="numeric",
         delta_table_create_sql=account_balances_schema,
-        delta_table_create_options={"delta.enableChangeDataFeed": True},
+        delta_table_create_options={
+            "delta.enableChangeDataFeed": True,
+            "delta.enableDeletionVectors": True
+        },
         column_names=list(),
         delta_table_create_partitions=[
             "reporting_fiscal_year",
@@ -299,7 +302,10 @@ TABLE_SPEC = {
         partition_column="financial_accounts_by_awards_id",
         partition_column_type="numeric",
         delta_table_create_sql=award_financial_schema,
-        delta_table_create_options={"delta.enableChangeDataFeed": True},
+        delta_table_create_options={
+            "delta.enableChangeDataFeed": True,
+            "delta.enableDeletionVectors": True
+        },
         column_names=list(),
         delta_table_create_partitions=[
             "reporting_fiscal_year",
@@ -314,7 +320,10 @@ TABLE_SPEC = {
         partition_column_type="numeric",
         is_partition_column_unique=False,
         delta_table_create_sql=object_class_program_activity_schema,
-        delta_table_create_options={"delta.enableChangeDataFeed": True},
+        delta_table_create_options={
+            "delta.enableChangeDataFeed": True,
+            "delta.enableDeletionVectors": True
+        },
         column_names=list(),
         delta_table_create_partitions=[
             "reporting_fiscal_year",
@@ -329,7 +338,10 @@ TABLE_SPEC = {
         partition_column_type="numeric",
         is_partition_column_unique=True,
         delta_table_create_sql=transaction_download_schema,
-        delta_table_create_options={"delta.enableChangeDataFeed": True},
+        delta_table_create_options={
+            "delta.enableChangeDataFeed": True,
+            "delta.enableDeletionVectors": True
+        },
         column_names=list(),
         delta_table_create_partitions=[
             "awarding_agency_code",
