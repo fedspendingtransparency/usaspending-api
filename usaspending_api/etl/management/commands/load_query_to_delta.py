@@ -287,7 +287,7 @@ TABLE_SPEC = {
         delta_table_create_sql=account_balances_schema,
         delta_table_create_options={
             "delta.enableChangeDataFeed": True,
-            "delta.enableDeletionVectors": True      
+            "delta.enableDeletionVectors": True
         },
         column_names=list(),
         delta_table_create_partitions=[
@@ -304,7 +304,7 @@ TABLE_SPEC = {
         delta_table_create_sql=award_financial_schema,
         delta_table_create_options={
             "delta.enableChangeDataFeed": True,
-            "delta.enableDeletionVectors": True      
+            "delta.enableDeletionVectors": True
         },
         column_names=list(),
         delta_table_create_partitions=[
@@ -322,7 +322,7 @@ TABLE_SPEC = {
         delta_table_create_sql=object_class_program_activity_schema,
         delta_table_create_options={
             "delta.enableChangeDataFeed": True,
-            "delta.enableDeletionVectors": True      
+            "delta.enableDeletionVectors": True
         },
         column_names=list(),
         delta_table_create_partitions=[
@@ -340,7 +340,7 @@ TABLE_SPEC = {
         delta_table_create_sql=transaction_download_schema,
         delta_table_create_options={
             "delta.enableChangeDataFeed": True,
-            "delta.enableDeletionVectors": True      
+            "delta.enableDeletionVectors": True
         },
         column_names=list(),
         delta_table_create_partitions=[
