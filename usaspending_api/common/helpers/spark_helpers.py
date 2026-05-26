@@ -172,6 +172,9 @@ def configure_spark_session(  # noqa: C901,PLR0912,PLR0913,PLR0915
     # Assume that random errors are rare, and jobs have long runtimes, so fail fast, fix and retry manually.
     conf.set("spark.yarn.maxAppAttempts", "1")
     conf.set("spark.hadoop.fs.s3a.endpoint", CONFIG.AWS_S3_ENDPOINT)
+    # We work with a lot of larger tables and Delta wants to try and materialize the "source" data in a merge statement
+    # into memory which can spill onto disk and cause problems.
+    conf.set("spark.databricks.delta.merge.materializeSource", "none")
 
     if not CONFIG.USE_AWS:  # i.e. running in a "local" [development] environment
         # Set configs to allow the S3AFileSystem to work against a local MinIO object storage proxy

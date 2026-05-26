@@ -66,21 +66,22 @@ ENV PYSPARK_DRIVER_PYTHON=/usr/local/.venv/bin/python3
 # Configure console logging for Spark
 RUN cat <<EOF | sed 's/^[[:space:]]*//' >> $SPARK_HOME/conf/log4j2.properties
 	appender.console.type = Console
-    appender.console.name = CONSOLE
+    appender.console.name = console
     appender.console.layout.type = PatternLayout
     appender.console.layout.pattern = [%d{yyyy-MM-dd HH:mm:ss.SSS}][%p] - %m%n
+
     rootLogger.level = ${SPARK_LOGGING_LEVEL}
-    rootLogger.appenderRef.0.ref = CONSOLE
-    rootLogger.appenderRef.0.level = ${SPARK_LOGGING_LEVEL}
+    rootLogger.appenderRefs = stdout
+    rootLogger.appenderRef.stdout.ref = console
 EOF
 
 # Update logging for Spark
-RUN sed -i "s|^# spark.eventLog.dir.*$|spark.eventLog.dir                 file:///usaspending-api/$PROJECT_LOG_DIR/spark-events|g" $SPARK_HOME/conf/spark-defaults.conf \
-    && sed -i '/spark.eventLog.enabled/s/^# //g' $SPARK_HOME/conf/spark-defaults.conf \
-    && echo "spark.history.fs.logDirectory      file:///usaspending-api/$PROJECT_LOG_DIR/spark-events" >> $SPARK_HOME/conf/spark-defaults.conf
+RUN sed -i "s|^spark.eventLog.dir.*$|spark.eventLog.dir               file:///usaspending-api/$PROJECT_LOG_DIR/spark-events|g" $SPARK_HOME/conf/spark-defaults.conf \
+    && sed -i "/spark.eventLog.enabled/s/^# //g" $SPARK_HOME/conf/spark-defaults.conf \
+    && sed -i "s|spark.history.fs.logDirectory.*$|spark.history.fs.logDirectory    file:///usaspending-api/$PROJECT_LOG_DIR/spark-events|" $SPARK_HOME/conf/spark-defaults.conf
 
-# Set default values for Spark with local development
-RUN echo "spark.authenticate false" >> $SPARK_HOME/conf/spark-defaults.conf
+# Disable authentication for local development
+RUN sed -i "s|spark.authenticate \{1,\}true|spark.authenticate false|" $SPARK_HOME/conf/spark-defaults.conf
 
 # Ensure Python STDOUT gets sent to container logs
 ENV PYTHONUNBUFFERED=1
