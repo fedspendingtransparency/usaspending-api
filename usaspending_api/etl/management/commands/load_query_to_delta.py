@@ -5,7 +5,6 @@ from typing import Callable
 from django.core.management.base import BaseCommand, CommandParser
 from pyspark.sql import SparkSession
 
-from usaspending_api.common.data_classes import TableSpec
 from usaspending_api.common.etl.spark import create_ref_temp_views
 from usaspending_api.common.helpers.spark_helpers import (
     configure_spark_session,
@@ -13,6 +12,7 @@ from usaspending_api.common.helpers.spark_helpers import (
     get_broker_jdbc_url,
     get_jdbc_connection_properties,
 )
+from usaspending_api.common.spark_data_classes import TableSpec
 from usaspending_api.config import CONFIG
 from usaspending_api.disaster.delta_models import (
     COVID_FABA_SPENDING_DELTA_COLUMNS,

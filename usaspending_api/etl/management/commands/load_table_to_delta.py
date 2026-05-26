@@ -18,7 +18,6 @@ from usaspending_api.awards.models import (
     TransactionNormalized,
 )
 from usaspending_api.broker.delta_models.broker_zips import ZIPS_COLUMNS, zips_sql_string
-from usaspending_api.common.data_classes import TableSpec
 from usaspending_api.common.etl.spark import extract_db_data_frame, get_partition_bounds_sql, load_delta_table
 from usaspending_api.common.helpers.spark_helpers import (
     configure_spark_session,
@@ -27,6 +26,7 @@ from usaspending_api.common.helpers.spark_helpers import (
     get_jdbc_connection_properties,
     get_usas_jdbc_url,
 )
+from usaspending_api.common.spark_data_classes import TableSpec
 from usaspending_api.config import CONFIG
 from usaspending_api.recipient.delta_models import (
     RECIPIENT_LOOKUP_COLUMNS,
@@ -62,7 +62,7 @@ TABLE_SPEC = {
         model=Award,
         source_table="vw_awards",
         source_database="rpt",
-        destination_database="raw",
+        destination_database="int",
         partition_column="id",
         partition_column_type="numeric",
         is_partition_column_unique=True,
@@ -97,7 +97,7 @@ TABLE_SPEC = {
         model=TransactionFABS,
         source_table="vw_transaction_fabs",
         source_database="int",
-        destination_database="raw",
+        destination_database="int",
         partition_column="transaction_id",
         partition_column_type="numeric",
         is_partition_column_unique=True,
@@ -121,7 +121,7 @@ TABLE_SPEC = {
         model=TransactionFPDS,
         source_table="vw_transaction_fpds",
         source_database="int",
-        destination_database="raw",
+        destination_database="int",
         partition_column="transaction_id",
         partition_column_type="numeric",
         is_partition_column_unique=True,
@@ -133,7 +133,7 @@ TABLE_SPEC = {
         model=TransactionNormalized,
         source_table="vw_transaction_normalized",
         source_database="int",
-        destination_database="raw",
+        destination_database="int",
         partition_column="id",
         partition_column_type="numeric",
         is_partition_column_unique=True,
