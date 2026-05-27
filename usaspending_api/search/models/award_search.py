@@ -1,5 +1,5 @@
-from django.contrib.postgres.constraints import OpClass
 from django.contrib.postgres.fields import ArrayField
+from django.contrib.postgres.indexes import OpClass
 from django.db import models
 from django.db.models import F, Q
 from django.db.models.functions import Upper
