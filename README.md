@@ -1,6 +1,7 @@
 # <p align="center"><img src="https://www.usaspending.gov/img/logo@2x.png" alt="USAspending API"></p>
 
-[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/python/black) [![Pull Request Checks](https://github.com/fedspendingtransparency/usaspending-api/actions/workflows/pull-request-checks.yaml/badge.svg?branch=staging)](https://github.com/fedspendingtransparency/usaspending-api/actions/workflows/pull-request-checks.yaml) [![Test Coverage](https://codeclimate.com/github/fedspendingtransparency/usaspending-api/badges/coverage.svg)](https://codeclimate.com/github/fedspendingtransparency/usaspending-api/coverage) [![Code Climate](https://codeclimate.com/github/fedspendingtransparency/usaspending-api/badges/gpa.svg)](https://codeclimate.com/github/fedspendingtransparency/usaspending-api)
+[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
+[![Pull Request Checks](https://github.com/fedspendingtransparency/usaspending-api/actions/workflows/pull-request-checks.yaml/badge.svg?branch=staging)](https://github.com/fedspendingtransparency/usaspending-api/actions/workflows/pull-request-checks.yaml)
 
 _This API is utilized by USAspending.gov to obtain all federal spending data which is open source and provided to the public as part of the DATA Act._
 

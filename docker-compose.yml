@@ -22,10 +22,6 @@ x-application-variables: &application-vars
   MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
   MINIO_HOST: ${MINIO_HOST}
   MINIO_PORT: ${MINIO_PORT}
-  # Add network proxy to the containers
-#  HTTP_PROXY: ${HTTP_PROXY}
-#  HTTPS_PROXY: ${HTTPS_PROXY}
-#  NO_PROXY: 127.0.0.1,localhost,minio,${NO_PROXY}
   # Defined for tracing
   OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: ${OTEL_EXPORTER_OTLP_TRACES_ENDPOINT}
   TOGGLE_OTEL_CONSOLE_LOGGING: ${TOGGLE_OTEL_CONSOLE_LOGGING}
@@ -56,10 +52,10 @@ services:
     command: postgres -c 'max_connections=500'
     profiles:  # must pass --profile usaspending to docker compose for this to come up, or run a service with one of these other profiles
       - ci
-      - usaspending
       - manage
       - spark
       - test
+      - usaspending
     image: postgres:16-alpine
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U ${USASPENDING_DB_USER} -d ${USASPENDING_DB_NAME}" ]
@@ -121,7 +117,6 @@ services:
       - minio
       - usaspending-db
       - usaspending-es
-    # , "--reuse-db", "--no-cov", "--disable-warnings", "--reuse-db", "--numprocesses", "auto"
     entrypoint: []  # override entrypoint
     environment:
       <<: *spark-submit-vars
@@ -149,9 +144,9 @@ services:
       - -c
       - |
         printf -- "==============\nFormatting code:\n"
-        git diff --name-only --diff-filter=ACMR | grep '\.py$' | xargs uv run ruff format
+        git diff --name-only --diff-filter=ACMR | grep '\.py$' | xargs -r uv run ruff format
         printf -- "==============\nChecking code syntax and quality:\n"
-        git diff --name-only --diff-filter=ACMR | grep '\.py$' | xargs uv run ruff check --fix || exit 1
+        git diff --name-only --diff-filter=ACMR | grep '\.py$' | xargs -r uv run ruff check --fix || exit 1
         printf -- "==============\nChecking API documentation files:\n"
         python3 manage.py check_for_endpoint_documentation
         printf -- "==============\nChecking API contracts:\n"
@@ -166,6 +161,7 @@ services:
     build:
       context: .
       dockerfile: development.Dockerfile
+    init: true  # needed for the reaping of processes created for tests
     container_name: usaspending-ci
     volumes:
       - type: bind
@@ -182,6 +178,7 @@ services:
         condition: service_healthy
       usaspending-style-checks:
         condition: service_completed_successfully
+    entrypoint: []  # override entrypoint
     command:
       - sh
       - -c
@@ -203,9 +200,11 @@ services:
         printf -- "-------\nRunning unit tests with signal handling:\n"
         pytest --override-ini=python_files="test_*.py *_test.py" -m "(signal_handling)" --ignore-glob="**/tests/integration/*" --no-cov --disable-warnings --reuse-db --numprocesses 0
     environment:
-      <<: *application-vars
+      <<: *spark-submit-vars
       # Location in host machine where broker src code root can be found
       DATA_BROKER_SRC_PATH: "${PWD}/../data-act-broker-backend"
+      # Tests will retrieve the root directory from the path and use it to assume the docker network name
+      PROJECT_SRC_PATH: "${PWD}"
 
   usaspending-api:  # builds using the default Dockerfile to mirror deployed environments for local testing
     profiles:

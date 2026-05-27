@@ -176,7 +176,7 @@ docker-compose-build-development: ## See: docker-compose-build rule. This builds
 style-checks:
 	docker compose --profile=ci --project-directory . --file ${docker_compose_file} run --rm usaspending-style-checks
 
-.PHONY: docker-compose-spark-submit
+.PHONY: spark-submit
 spark-submit: ## Run spark-submit from within local docker containerized infrastructure (which must be running first). Set params with django_command="..."
 	docker compose --profile=spark --project-directory . --file ${docker_compose_file} run --rm \
 		-e COMPONENT_NAME='${django_command}${python_script}' \
@@ -190,3 +190,8 @@ spark-submit: ## Run spark-submit from within local docker containerized infrast
 .PHONY: pyspark-shell
 pyspark-shell: ## Launch a local pyspark REPL shell with all of the packages and spark config pre-set
 	docker compose --profile=spark --project-directory . --file ${docker_compose_file} run --rm spark-shell
+
+.PHONY: django-manage
+django-manage:  ## Run Django management command with the usaspending-manage container
+	docker compose --profile=usaspending --project-directory . --file ${docker_compose_file} run --rm \
+	usaspending-manage ${args}
