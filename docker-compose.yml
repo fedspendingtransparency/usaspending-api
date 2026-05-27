@@ -54,11 +54,12 @@ services:
 
   usaspending-db:
     command: postgres -c 'max_connections=500'
-    profiles:
-      - usaspending  # must pass --profile usaspending to docker compose for this to come up, or run a service with one of these other profiles
-      - manage
-      - test
+    profiles:  # must pass --profile usaspending to docker compose for this to come up, or run a service with one of these other profiles
       - ci
+      - usaspending
+      - manage
+      - spark
+      - test
     image: postgres:16-alpine
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U ${USASPENDING_DB_USER} -d ${USASPENDING_DB_NAME}" ]
@@ -466,10 +467,11 @@ services:
         SPARK_LOGGING_LEVEL: ${SPARK_LOGGING_LEVEL}
     container_name: spark-submit
     depends_on:
+      - minio
+      - spark-history-server
       - spark-master
       - spark-worker
-      - spark-history-server
-      - minio
+      - usaspending-db
     environment:
       <<: *spark-submit-vars
     # NOTE: entrypoint CANNOT interpolate env vars when processed. They are passed through literally.
