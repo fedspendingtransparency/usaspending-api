@@ -659,14 +659,10 @@ def generate_export_query(
         source_query = source_query[:limit]
     selected_columns = source.columns(column_subset)
 
-    query_path_to_human_name = {}
-    for human_name in selected_columns:
-        query_path = source.query_paths[human_name]
-        if query_path is not None:
-            query_path_to_human_name[query_path] = human_name
-        else:
-            query_path_to_human_name[human_name] = human_name
-
+    # Changes to how GROUP BY is handled by Django in the upgrade to 4.2 require that we capture the annotated columns
+    # that will appear in the GROUP BY of the generated SQL. On the QuerySet the "group_by" property can be any of the
+    # following: None, tuple of Refs / strings, or True (meaning all selected fields). In this case we expect either
+    # None or a tuple, but want to protect against the possibility of "True".
     annotated_group_by_columns = []
     if isinstance(source_query.query.group_by, tuple):
         annotation_select = source_query.query.annotation_select
@@ -678,10 +674,7 @@ def generate_export_query(
                 annotated_group_by_columns.append(annotation_select_reverse[val])
 
     query_annotated = apply_annotations_to_sql(
-        generate_raw_quoted_query(source_query),
-        selected_columns,
-        annotated_group_by_columns,
-        query_path_to_human_name,
+        generate_raw_quoted_query(source_query), selected_columns, annotated_group_by_columns
     )
     options = FILE_FORMATS[file_format]["options"]
     return rf"\COPY ({query_annotated}) TO STDOUT {options}"
@@ -703,20 +696,14 @@ def generate_export_query_temp_file(
     return temp_sql_file, temp_sql_file_path
 
 
-def apply_annotations_to_sql(  # noqa: PLR0912
-    raw_query: str,
-    aliases: list[str],
-    annotated_group_by_columns: Optional[list[str]] = None,
-    query_path_to_human_name: Optional[dict[str, str]] = None,
+def apply_annotations_to_sql(
+    raw_query: str, aliases: list[str], annotated_group_by_columns: Optional[list[str]] = None
 ) -> str:
     """
     Django's ORM understandably doesn't allow aliases to be the same names as other fields available. However, if we
     want to use the efficiency of psql's COPY method and keep the column names, we need to allow these scenarios. This
     function simply outputs a modified raw sql which does the aliasing, allowing these scenarios.
     """
-
-    if query_path_to_human_name is None:
-        query_path_to_human_name = {}
 
     cte_sql, select_statements = _select_columns(raw_query)
 
@@ -742,62 +729,31 @@ def apply_annotations_to_sql(  # noqa: PLR0912
 
     for idx, val in aliased_list:
         split_string = _top_level_split(val, " AS ")
-        sql_alias = split_string[1].replace('"', "").replace(",", "").strip()
-
-        # Map SQL alias (Django query path) to human-readable name
-        if sql_alias in query_path_to_human_name:
-            human_name = query_path_to_human_name[sql_alias]
-        elif sql_alias in aliases:
-            # Direct match (for annotated fields)
-            human_name = sql_alias
-        else:
-            human_name = sql_alias
-            write_to_log(
-                message=f'Warning: SQL alias "{sql_alias}" not found in mappings, using as-is',
-                is_debug=True,
-                download_job=None,
-            )
-
+        alias = split_string[1].replace('"', "").replace(",", "").strip()
+        if alias not in aliases:
+            raise Exception(f'alias "{alias}" not found!')
         col_select = split_string[0]
-        deriv_dict[human_name] = col_select
-
-        if annotated_group_by_columns and human_name in annotated_group_by_columns:
+        deriv_dict[alias] = col_select
+        if annotated_group_by_columns and alias in annotated_group_by_columns:
             group_by_to_replace.append((idx, col_select))
 
     if group_by_to_replace:
         first_half_query, second_half_query = _top_level_split(raw_query, " GROUP BY ")
-        # First we replace the position with a valid parameter we can use for formatting
+        # Fist we replace the position with a valid parameter we can use for formatting
         for idx, _ in group_by_to_replace:
-            pattern = rf'\b{idx}\b'
-            replacement = f'{{idx_{idx}}}'
-
             # It is assumed that all non-positional values in the GROUP BY are column names meaning the first number
             # matching the value of "idx" will be the position. However, this is not guaranteed in the rest of the
             # query, so we make sure to stop after the first match found.
-            second_half_query = re.sub(pattern, replacement, second_half_query, count=1)
-
+            second_half_query = second_half_query.replace(f" {idx}", f" {{idx_{idx}}}", 1)
         second_half_query = second_half_query.format(
             **{f"idx_{idx}": col_select for idx, col_select in group_by_to_replace}
         )
         raw_query = f"{first_half_query} GROUP BY {second_half_query}"
 
     # Match aliases with their values
-    values_list = []
-    for alias in aliases:
-        if alias in deriv_dict:
-            # This is an annotated/derived field
-            values_list.append(f'{deriv_dict[alias]} AS "{alias}"')
-        elif selects_list:
-            # This is a direct table column
-            select_item = selects_list.pop(0)
-            values_list.append(f'{select_item} AS "{alias}"')
-        else:
-            raise Exception(
-                f'Column "{alias}" not found in either derived columns or direct selects. '
-                f"Derived columns: {list(deriv_dict.keys())}, "
-                f"Remaining direct selects: {selects_list}, "
-                f"All requested aliases: {aliases}"
-            )
+    values_list = [
+        f'{deriv_dict[alias] if alias in deriv_dict else selects_list.pop(0)} AS "{alias}"' for alias in aliases
+    ]
 
     sql = raw_query.replace(_top_level_split(raw_query, "FROM")[0], f"SELECT {', '.join(values_list)} ", 1)
 
@@ -876,7 +832,7 @@ def _top_level_split(sql: str, splitter: str) -> str:
     raise Exception(f"SQL string ${sql} cannot be split on ${splitter}")
 
 
-def execute_psql(temp_sql_file_path: str, source_path: str, download_job: DownloadJob) -> None:  # noqa: PLR0912, PLR0915
+def execute_psql(temp_sql_file_path: str, source_path: str, download_job: DownloadJob) -> None:
     """Executes a single PSQL command within its own Subprocess"""
     download_sql = Path(temp_sql_file_path).read_text()
     if download_sql.startswith("\\COPY"):
@@ -923,37 +879,13 @@ def execute_psql(temp_sql_file_path: str, source_path: str, download_job: Downlo
                     f"--work-mem={settings.DOWNLOAD_DB_WORK_MEM_IN_MB}MB"
                 )
 
-            # Read and log the SQL being executed
-            sql_content = Path(temp_sql_file_path).read_text()
-            write_to_log(message=f"Executing SQL from {temp_sql_file_path}", download_job=download_job, is_debug=True)
-            write_to_log(message=f"SQL Content:\n{sql_content}", download_job=download_job, is_debug=True)
-
             cat_command = subprocess.Popen(["cat", temp_sql_file_path], stdout=subprocess.PIPE)
-
-            # Use subprocess.run to capture both stdout and stderr
-            result = subprocess.run(
+            subprocess.check_output(
                 ["psql", "-q", "-o", source_path, retrieve_db_string(), "-v", "ON_ERROR_STOP=1"],
                 stdin=cat_command.stdout,
-                capture_output=True,
-                text=True,
+                stderr=subprocess.STDOUT,
                 env=temp_env,
             )
-
-            # Check if command failed
-            if result.returncode != 0:
-                error_output = result.stderr or result.stdout or "No error output captured"
-                write_to_log(
-                    message=f"PSQL Command Failed with exit code {result.returncode}",
-                    is_error=True,
-                    download_job=download_job,
-                )
-                write_to_log(message=f"\nPSQL Error Output:\n{error_output}", is_error=True, download_job=download_job)
-                write_to_log(message=f"\nPSQL Stdout:\n{result.stdout}", is_error=True, download_job=download_job)
-                write_to_log(message=f"\nFaulty SQL:\n{sql_content}", is_error=True, download_job=download_job)
-
-                raise subprocess.CalledProcessError(
-                    result.returncode, result.args, output=result.stdout, stderr=result.stderr
-                )
 
             duration = time.perf_counter() - log_time
             write_to_log(
@@ -961,35 +893,15 @@ def execute_psql(temp_sql_file_path: str, source_path: str, download_job: Downlo
                 download_job=download_job,
             )
         except subprocess.CalledProcessError as e:
-            error_msg = ""
-            if hasattr(e, "stderr") and e.stderr:
-                error_msg = e.stderr
-            elif hasattr(e, "output") and e.output:
-                error_msg = e.output.decode() if isinstance(e.output, bytes) else e.output
-            else:
-                error_msg = str(e)
-
-            write_to_log(message=f"PSQL CalledProcessError: {error_msg}", is_error=True, download_job=download_job)
-            print(f"\nPSQL CalledProcessError: {error_msg}\n")
+            write_to_log(message=f"PSQL Error: {e.output.decode()}", is_error=True, download_job=download_job)
             raise e
         except Exception as e:
             if not settings.IS_LOCAL:
                 # Not logging the command as it can contain the database connection string
-                if hasattr(e, "cmd"):
-                    e.cmd = "[redacted psql command]"
-
-            error_message = str(e)
-            write_to_log(
-                message=f"Unexpected error in execute_psql: {error_message}", is_error=True, download_job=download_job
-            )
-
-            try:
-                sql = Path(temp_sql_file_path).read_text()
-                write_to_log(message=f"Faulty SQL:\n{sql}", is_error=True, download_job=download_job)
-                print(f"\nFaulty SQL:\n{sql}\n")
-            except Exception:
-                write_to_log(message="Could not read SQL file", is_error=True, download_job=download_job)
-
+                e.cmd = "[redacted psql command]"
+            write_to_log(message=e, is_error=True, download_job=download_job)
+            sql = subprocess.check_output(["cat", temp_sql_file_path]).decode()
+            write_to_log(message=f"Faulty SQL: {sql}", is_error=True, download_job=download_job)
             raise e
 
 
