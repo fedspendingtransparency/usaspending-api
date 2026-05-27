@@ -80,7 +80,7 @@ class SpendingByTransactionVisualizationViewSet(APIView):
     )
 
     @cache_response()
-    def post(self, request: Request) -> Response:  # noqa: PLR0912, PLR0915
+    def post(self, request: Request) -> Response:  # noqa: PLR0912, PLR0915, C901
         all_fields = [
             *[enum_val.value for enum_val in TransactionField],
             *[enum_val.value for enum_val in DerivedField],

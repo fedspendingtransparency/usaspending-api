@@ -115,7 +115,7 @@ def spending_by_award_test_data():
         spending_by_defc=[{"defc": "L", "outlay": 100, "obligation": 100}],
         tas_paths=["aid=097main=4930"],
         tas_components=["aid=097main=4930ata=sub=bpoa=epoa=a="],
-        type_description="type description 1",
+        type_description="BPA Call",
     )
     award_2 = baker.make(
         "search.AwardSearch",
@@ -141,7 +141,7 @@ def spending_by_award_test_data():
         naics_code="112244",
         description="the description for a test",
         naics_description="the description for a test",
-        type_description="type description 2",
+        type_description="BPA Call",
     )
     award_3 = baker.make(
         "search.AwardSearch",
@@ -159,6 +159,7 @@ def spending_by_award_test_data():
         action_date="2019-01-01",
         is_fpds=True,
         business_categories=["business_category_2_8"],
+        type_description="BPA Call",
     )
     award_4 = baker.make(
         "search.AwardSearch",
@@ -181,6 +182,7 @@ def spending_by_award_test_data():
         recipient_name="recipient_name_for_award_1001",
         recipient_hash="51c7c0ad-a793-de3f-72ba-be5c2895a9ca",
         recipient_levels=["R"],
+        type_description="Block Grant",
     )
     award_5 = baker.make(
         "search.AwardSearch",
@@ -203,6 +205,7 @@ def spending_by_award_test_data():
         total_covid_outlay=0,
         total_covid_obligation=0,
         spending_by_defc=[{"defc": "Q", "outlay": 0, "obligation": 0}],
+        type_description="BPA Call",
     )
 
     # Awards only used for testing their `recipient_name` values
@@ -283,6 +286,7 @@ def spending_by_award_test_data():
         cfdas=[
             '{"cfda_number": "64.114", "cfda_program_title": "VETERANS HOUSING GUARANTEED AND INSURED LOANS"}'
         ],
+        type_description="Other",
     )
 
     baker.make(
@@ -325,6 +329,7 @@ def spending_by_award_test_data():
         cfdas=[
             '{"cfda_number": "64.114", "cfda_program_title": "VETERANS HOUSING GUARANTEED AND INSURED LOANS"}'
         ],
+        type_description="Guaranteed/Insured Loan",
     )
 
     award_6 = baker.make(
@@ -367,6 +372,7 @@ def spending_by_award_test_data():
         cfdas=[
             '{"cfda_number": "64.114", "cfda_program_title": "VETERANS HOUSING GUARANTEED AND INSURED LOANS"}'
         ],
+        type_description="Guaranteed/Insured Loan",
     )
 
     baker.make(
@@ -396,6 +402,7 @@ def spending_by_award_test_data():
         recipient_location_address_line3="Desk 5",
         recipient_location_foreign_postal_code="55455",
         recipient_location_foreign_province="Manitoba",
+        type_description="Guaranteed/Insured Loan",
     )
 
     baker.make(
@@ -425,6 +432,7 @@ def spending_by_award_test_data():
         recipient_location_address_line3="Desk 5",
         recipient_location_foreign_postal_code="55455",
         recipient_location_foreign_province="Manitoba",
+        type_description="Guaranteed/Insured Loan",
     )
 
     baker.make(
@@ -443,6 +451,7 @@ def spending_by_award_test_data():
         pop_country_code="USA",
         pop_county_code="013",
         pop_city_name="ARLINGTON",
+        type_description="Guaranteed/Insured Loan",
     )
 
     baker.make(
@@ -461,6 +470,7 @@ def spending_by_award_test_data():
         pop_country_code="USA",
         pop_county_code="013",
         pop_city_name="Z CITY",
+        type_description="Insurance",
     )
 
     baker.make(
@@ -478,6 +488,7 @@ def spending_by_award_test_data():
         pop_state_code="VA",
         pop_country_code="USA",
         pop_county_code="013",
+        type_description="Insurance",
     )
 
     baker.make(
@@ -495,6 +506,7 @@ def spending_by_award_test_data():
         pop_state_code="IL",
         pop_country_code="USA",
         pop_county_code="013",
+        type_description="Insurance",
     )
 
     baker.make(
@@ -512,6 +524,7 @@ def spending_by_award_test_data():
         pop_country_code="USA",
         pop_country_name="UNITED STATES",
         pop_county_code="013",
+        type_description="Insurance",
     )
 
     baker.make(
@@ -529,6 +542,7 @@ def spending_by_award_test_data():
         pop_country_code="BAH",
         pop_country_name="BAHAMAS",
         pop_county_code="013",
+        type_description="Insurance",
     )
 
     baker.make(
@@ -545,6 +559,7 @@ def spending_by_award_test_data():
         cfda_number="12",
         cfda_program_title="program1",
         cfdas=['{"cfda_number": "12", "cfda_program_title": "program1"}'],
+        type_description="Formula Grant",
     )
 
     baker.make(
@@ -561,6 +576,7 @@ def spending_by_award_test_data():
         cfda_number="12",
         cfda_program_title="program2",
         cfdas=['{"cfda_number": "12", "cfda_program_title": "program2"}'],
+        type_description="Formula Grant",
     )
 
     baker.make(
@@ -577,6 +593,7 @@ def spending_by_award_test_data():
         cfda_number="13",
         cfda_program_title="program1",
         cfdas=['{"cfda_number": "13", "cfda_program_title": "program1"}'],
+        type_description="Formula Grant",
     )
 
     baker.make(
@@ -609,6 +626,7 @@ def spending_by_award_test_data():
         recipient_location_address_line3="Desk 5",
         recipient_location_foreign_postal_code="55455",
         recipient_location_foreign_province="Manitoba",
+        type_description="Guaranteed/Insured Loan",
     )
 
     baker.make(
@@ -638,6 +656,7 @@ def spending_by_award_test_data():
         recipient_location_address_line3="Desk 5",
         recipient_location_foreign_postal_code="55455",
         recipient_location_foreign_province="Manitoba",
+        type_description="Guaranteed/Insured Loan",
     )
 
     baker.make(
@@ -678,6 +697,7 @@ def spending_by_award_test_data():
         cfdas=[
             '{"cfda_number": "64.114", "cfda_program_title": "VETERANS HOUSING GUARANTEED AND INSURED LOANS"}'
         ],
+        type_description="Guaranteed/Insured Loan",
     )
 
     baker.make(
@@ -695,6 +715,7 @@ def spending_by_award_test_data():
         naics_description="naics description 1",
         product_or_service_code="PSC2",
         product_or_service_description="PSC description 1",
+        type_description="Cooperative Agreement",
     )
 
     baker.make(
@@ -712,6 +733,7 @@ def spending_by_award_test_data():
         naics_description="2",
         product_or_service_code="PSC1",
         product_or_service_description="PSC description 2",
+        type_description="Cooperative Agreement",
     )
 
     baker.make(
@@ -729,6 +751,7 @@ def spending_by_award_test_data():
         naics_description="1",
         product_or_service_code="PSC1",
         product_or_service_description="PSC description 1",
+        type_description="Cooperative Agreement",
     )
 
     baker.make(
@@ -741,6 +764,7 @@ def spending_by_award_test_data():
         fain="fain2026",
         display_award_id="award2026",
         generated_unique_award_id="ASST_NEW_TYPES_2026",
+        type_description="Other"
     )
 
     # Toptier Agency
