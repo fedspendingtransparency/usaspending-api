@@ -774,6 +774,8 @@ class SearchDownloadValidator(DownloadValidatorBase):
         self._json_request["filters"] = _validate_filters_exist(request_data)
         self.set_filter_defaults({"award_type_codes": list(award_type_mapping.keys())})
 
+        original_spending_level = self.request_data.get("spending_level")
+
         self.tinyshield_models.extend(
             [
                 {
@@ -814,8 +816,13 @@ class SearchDownloadValidator(DownloadValidatorBase):
         self._json_request["limit"] = self.request_data.get("limit", settings.MAX_DOWNLOAD_LIMIT)
         self._json_request = self.get_validated_request()
 
+        # Use original value for processing download_types
+        spending_level_to_process = original_spending_level if original_spending_level is not None else ["awards",
+                                                                                                         "transactions",
+                                                                                                         "subawards"]
+
         dltypes = []
-        for dltype in self.request_data.get("spending_level", ["awards", "transactions", "subawards"]):
+        for dltype in spending_level_to_process:
             if dltype.lower() == "subawards":
                 dltypes.append("elasticsearch_sub_awards")
             elif dltype.lower() in ["awards", "transactions"]:
@@ -826,6 +833,9 @@ class SearchDownloadValidator(DownloadValidatorBase):
                 )
 
         self._json_request["download_types"] = dltypes
+        # Restore original spending_level in response
+        if original_spending_level is not None:
+            self._json_request["spending_level"] = original_spending_level
 
 
 def _validate_award_id(award_id: Any) -> Any:
