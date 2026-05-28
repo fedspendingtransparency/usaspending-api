@@ -26,8 +26,8 @@ _**If not using Docker, you'll need to install app components on your machine:**
     - Windows' WSL bash uses `apt`
     - MacOS users can use [`Homebrew`](https://brew.sh/)
     - Linux users already know their package manager (`yum`, `apt`, `pacman`, etc.)
-- [`PostgreSQL`](https://www.postgresql.org/download/) version 13.x (with a dedicated `data_store_api` database)
-- [`Elasticsearch`](https://www.elastic.co/downloads/elasticsearch) version 7.1
+- [`PostgreSQL`](https://www.postgresql.org/download/) version 16.x (with a dedicated `data_store_api` database)
+- [`OpenSearch`](https://www.elastic.co/downloads/elasticsearch) version 2.9
 - `Python` version 3.10 environment
   - Highly recommended to use a virtual environment. There are various tools and associated instructions depending on preferences
   - See [Required Python Libraries](#required-python-libraries) for an example using `uv`
@@ -74,14 +74,25 @@ _Alternatively, you could skip using `direnv` and just export these variables in
 
 **Just make sure your env vars declared in the shell and in `.env` match for a consistent experience inside and outside of Docker**
 
-### Build `usaspending-backend` Docker Image
-_This image is used as the basis for running application components and running containerized setup services._
+### Build the Docker Images
+
+_:bangbang: Re-run these commands if any python package dependencies change (in `pyproject.toml`/`uv.lock`), since they are baked into the docker image at build-time._
+
+#### usaspending-backend | usaspending-download
+
+_These images are used as the basis for running the API and download containerized setup services._
 
 ```shell
 docker compose --profile usaspending build
 ```
 
-_:bangbang: Re-run this command if any python package dependencies change (in `pyproject.toml`/`uv.lock`), since they are baked into the docker image at build-time._
+#### usaspending-development
+
+_This image is used as the basis for local development including but not limited to: tests, spark jobs, linting, etc._
+
+```shell
+docker compose --profile test build
+```
 
 ### Database Setup
 A postgres database is required to run the app. You can run it in a `postgres` docker container (preferred), or run a PostgreSQL server on your local machine. In either case, it will be empty until data is loaded.
@@ -133,7 +144,7 @@ _To just get essential reference data, you can run:_
     docker compose run --rm usaspending-manage python3 -u manage.py load_reference_data
     ```
 
-_Alternatively, to download a fully populuated production snapshot of the database (full or a subset) and restore it into PostgreSQL, use the `pg_restore` tool as described here: [USAspending Database Download](https://onevoicecrm.my.site.com/usaspending/s/database-download)_
+_Alternatively, to download a fully populated production snapshot of the database (full or a subset) and restore it into PostgreSQL, use the `pg_restore` tool as described here: [USAspending Database Download](https://onevoicecrm.my.site.com/usaspending/s/database-download)_
 
 - Recreate matviews with the command documented in the previous section if this is done
 
@@ -142,22 +153,22 @@ _**Executing individual data-loaders** to load in data is also possible, but req
 - For details on loading reference data, Data Accountability Broker Submissions, and current USAspending data into the API, see [loading_data.md](loading_data.md).
 - For details on how our data loaders modify incoming data, see [data_reformatting.md](data_reformatting.md).
 
-### Elasticsearch Setup
-Some API endpoints reach into Elasticsearch for data.
+### OpenSearch Setup
+Some API endpoints reach into OpenSearch for data.
 
 ```shell
 docker compose --profile usaspending up -d usaspending-es
 ```
-... will create and start a single-node Elasticsearch cluster as a docker container with data persisted to a docker volume.
+... will create and start a single-node OpenSearch cluster as a docker container with data persisted to a docker volume.
 
 - The cluster should be reachable via at http://localhost:9200 ("You Know, for Search").
 
 - Optionally, to see log output, use `docker compose logs usaspending-es` (these logs are stored by docker even if you don't use this).
 
-While not required, it is highly recommended to also create the Kibana docker container for querying the Elasticsearch cluster.
+While not required, it is highly recommended to also create the OpenSearch Dashboards docker container for querying the OpenSearch cluster.
 
 ```shell
-docker compose --profile usaspending up usaspending-kibana-es
+docker compose --profile usaspending up -d usaspending-kibana-es
 ```
 
 #### Generate Elasticsearch Indexes
@@ -165,10 +176,10 @@ The following will generate the indexes:
 
 ```shell
 CURR_DATE=$(date '+%Y-%m-%d-%H-%M-%S')
-docker compose run --rm usaspending-manage python3 -u manage.py elasticsearch_indexer --create-new-index --index-name "$CURR_DATE-transactions" --load-type transaction
-docker compose run --rm usaspending-manage python3 -u manage.py elasticsearch_indexer --create-new-index --index-name "$CURR_DATE-awards" --load-type award
-docker compose run --rm usaspending-manage python3 -u manage.py elasticsearch_indexer --create-new-index --index-name "$CURR_DATE-recipients" --load-type recipient
-docker compose run --rm usaspending-manage python3 -u manage.py elasticsearch_indexer --create-new-index --index-name "$CURR_DATE-subaward" --load-type subaward
+docker compose run --rm usaspending-manage elasticsearch_indexer --create-new-index --index-name "$CURR_DATE-transactions" --load-type transaction
+docker compose run --rm usaspending-manage elasticsearch_indexer --create-new-index --index-name "$CURR_DATE-awards" --load-type award
+docker compose run --rm usaspending-manage elasticsearch_indexer --create-new-index --index-name "$CURR_DATE-recipients" --load-type recipient
+docker compose run --rm usaspending-manage elasticsearch_indexer --create-new-index --index-name "$CURR_DATE-subaward" --load-type subaward
 ```
 
 ### Observability/Tracing Setup
@@ -179,6 +190,23 @@ Alternatively you can run the `otel-collector`, `tempo`, and `grafana` container
 docker compose --profile tracing up -d
 ```
 When using these containers the `TOGGLE_OTEL_CONSOLE_LOGGING` must be set to `False` and `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT` must be set to `http://otel-collector:4318/v1/traces`
+
+### Install python version with uv
+Install the currently supported python version with uv.
+
+This is useful for access to a python shell outside a container. However, it is recommended to use the docker compose containerized services for interaction with the API, spark, and tests.
+
+
+```shell
+uv python install 3.10.12
+```
+
+#### Sync uv project with lockfile
+Setup uv project and check version info:
+
+```shell
+make local-dev-setup
+```
 
 ## Running the API
 
@@ -208,10 +236,10 @@ Deployed production API endpoints and docs are found by following links here: `h
 
 ### Test Setup
 
-1. Build the base `usaspending-backend` Docker image (the test container is based on this Docker image). In the parent **usaspending-api** directory run:
+1. Build the base `usaspending-development` Docker image (the test container is based on this Docker image). In the parent **usaspending-api** directory run:
 
     ```shell
-    docker build -t usaspending-backend .
+    docker build -t usaspending-development -f development.Dockerfile .
     ```
 
 2. Start the Spark containers for the Spark related tests
@@ -229,39 +257,12 @@ _**NOTE**: If an env var named `BROKER_DB` is set, Broker Integration tests will
 To run tests locally and not in the docker services, you need:
 
 1. **Postgres**: A running PostgreSQL database server _(See [Database Setup above](#database-setup))_
-1. **Elasticsearch**: A running Elasticsearch cluster _(See [Elasticsearch Setup above](#elasticsearch-setup))_
-1. **Environment Variables**: Tell python where to connect to the various data stores _(See [Environmnet Variables](#environment-variables))_
+1. **OpenSearch**: A running OpenSearch cluster _(See [OpenSearch Setup above](#opensearch-setup))_
+1. **Environment Variables**: Tell python where to connect to the various data stores _(See [Environment Variables](#environment-variables))_
 1. **Install python version with uv**: python is installed with uv  _(See below)_
 1. **Sync uv project**: uv project is synced with lockfile  _(See below)_
 
 _**NOTE**: Running test locally might require you to run `export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES`. As discussed [here](https://github.com/rails/rails/issues/38560), there is an issue than can cause some of the Spark tests to fail without this environment variable set._
-
-#### Install python version with uv
-Install the currently supported python version with uv
-
-```shell
-uv python install 3.10.12
-```
-
-#### Sync uv project with lockfile
-Setup uv project and check version info:
-
-```shell
-make local-dev-setup
-```
-
-
-Once these are satisfied, run:
-
-```shell
-make tests
-```
-
-or, alternatively to skip using `make`
-
-```shell
-uv run pytest
-```
 
 ### Including Broker Integration Tests
 Some automated integration tests run against a [Broker](https://github.com/fedspendingtransparency/data-act-broker-backend) database. If certain dependencies to run such integration tests are not satisfied, those tests will bail out and be marked as _Skipped_.
