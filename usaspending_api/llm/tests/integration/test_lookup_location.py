@@ -1,9 +1,10 @@
 import json
-import pytest
 from unittest.mock import MagicMock, patch  # Changed Mock to MagicMock
 
-from usaspending_api.llm.tools.lookup_location import LocationLookupTool, lookup_location_tool
+import pytest
+
 from usaspending_api.llm.models.py_models import Filters, SelectedLocation
+from usaspending_api.llm.tools.lookup_location import LocationLookupTool, lookup_location_tool
 
 
 @pytest.fixture
@@ -521,8 +522,12 @@ class TestEdgeCases:
         """Test that duplicate identifiers are filtered out."""
         # Same location returned multiple times
         mock_search.execute.return_value.hits = [
-            create_mock_hit("TEXAS", "state", json.dumps({"state_name": "TEXAS", "country_name": "UNITED STATES"}), 10.0),
-            create_mock_hit("TEXAS", "state", json.dumps({"state_name": "TEXAS", "country_name": "UNITED STATES"}), 9.5),
+            create_mock_hit(
+                "TEXAS", "state", json.dumps({"state_name": "TEXAS", "country_name": "UNITED STATES"}), 10.0
+            ),
+            create_mock_hit(
+                "TEXAS", "state", json.dumps({"state_name": "TEXAS", "country_name": "UNITED STATES"}), 9.5
+            ),
         ]
 
         result = location_tool.lookup_location("Texas")

@@ -1,4 +1,3 @@
-# usaspending_api/llm/tools/lookup_location.py
 import json
 import logging
 from typing import Any, Dict, List, Optional
@@ -6,9 +5,8 @@ from typing import Any, Dict, List, Optional
 from elasticsearch_dsl import Q
 
 from usaspending_api.common.elasticsearch.search_wrappers import LocationSearch
-from usaspending_api.llm.tools.reference import state_codes, country_codes
-from usaspending_api.llm.models.py_models import AIToolDescription, AITool, SelectedLocation, LocationFilter, \
-    LocationDisplay
+from usaspending_api.llm.models.py_models import AITool, AIToolDescription
+from usaspending_api.llm.tools.reference import country_codes, state_codes
 
 logger = logging.getLogger(__name__)
 
@@ -31,7 +29,7 @@ class LocationLookupTool:
         "original_cd": "Original congressional district",
     }
 
-    def lookup_location(
+    def lookup_location(  # noqa: PLR0911
             self,
             query: str,
             location_type: Optional[str] = None,
@@ -112,7 +110,7 @@ class LocationLookupTool:
 
         return search
 
-    def _transform_results(self, response) -> List[Dict[str, Any]]:
+    def _transform_results(self, response: Any) -> List[Dict[str, Any]]:
         """Transform OpenSearch hits to SelectedLocation format."""
         results = []
         seen_identifiers = set()
@@ -179,7 +177,7 @@ class LocationLookupTool:
             "score": score,
         }
 
-    def _build_identifier(self, data: Dict[str, Any], location_type: str) -> str:
+    def _build_identifier(self, data: Dict[str, Any], location_type: str) -> str:  # noqa: PLR0911
         """Build the identifier string based on location type."""
         if location_type == "country":
             return data.get("country_code", data.get("country_name", "UNKNOWN"))
@@ -275,7 +273,7 @@ class LocationLookupTool:
         }
 
     @staticmethod
-    def _get_state_code(state_name: str) -> str:
+    def _get_state_code(state_name: str) -> str:  # noqa: PLR0911
         """Convert state name to 2-letter code."""
         if not state_name:
             return "XX"
@@ -317,47 +315,54 @@ lookup_location_tool = AITool(
     description=AIToolDescription(
         name="lookup_location",
         description="""
-            Search for valid location objects by name, code, zip, or congressional district using fuzzy matching.
-            Returns properly formatted SelectedLocation objects ready to use in selectedLocations filter.
-            The returned 'identifier' field should be used as the dictionary key in selectedLocations.
-            
-            This tool supports:
-            - Country names and codes (e.g., 'USA', 'United States', 'Germany')
-            - State names and codes (e.g., 'Texas', 'TX', 'Texa' with fuzzy match)
-            - City names (e.g., 'Chicago', 'New York', 'Chicgo' with fuzzy match)
-            - County names and FIPS codes
-            - ZIP codes (e.g., '66208', '10001')
-            - Congressional districts (e.g., 'KS-03', 'NY-12')
-            
-            The tool uses fuzzy matching to handle typos and variations in input. 
-            For best results, be as specific as possible with your query.
-            
-            Examples:
-            - lookup_location('Texas') → Returns USA_TX state
-            - lookup_location('Texa', 'state') → Returns USA_TX state (fuzzy match)
-            - lookup_location('Chicago') → Returns USA_IL_CHICAGO city
-            - lookup_location('66208') → Returns USA_66208 zip code
-            - lookup_location('KS-03') → Returns USA_KS_03 congressional district
-            - lookup_location('Kansas City', 'city') → Returns Kansas City, MO and KS results
-            - lookup_location('Germany') → Returns DEU country
-            
-            USAGE NOTES:
-            1. Always use the returned objects directly in selectedLocations
-            2. The identifier is automatically included as the dictionary key
-            3. Use location_type to filter results when query is ambiguous
-            4. Results are ranked by relevance score
-        """.strip(),
+                Search for valid location objects by name, code, zip, or congressional district
+                using fuzzy matching. Returns properly formatted SelectedLocation objects ready
+                to use in selectedLocations filter. The returned 'identifier' field should be
+                used as the dictionary key in selectedLocations.
+
+                This tool supports:
+                - Country names and codes (e.g., 'USA', 'United States', 'Germany')
+                - State names and codes (e.g., 'Texas', 'TX', 'Texa' with fuzzy match)
+                - City names (e.g., 'Chicago', 'New York', 'Chicgo' with fuzzy match)
+                - County names and FIPS codes
+                - ZIP codes (e.g., '66208', '10001')
+                - Congressional districts (e.g., 'KS-03', 'NY-12')
+
+                The tool uses fuzzy matching to handle typos and variations in input.
+                For best results, be as specific as possible with your query.
+
+                Examples:
+                - lookup_location('Texas')  Returns USA_TX state
+                - lookup_location('Texa', 'state')  Returns USA_TX state (fuzzy match)
+                - lookup_location('Chicago')  Returns USA_IL_CHICAGO city
+                - lookup_location('66208')  Returns USA_66208 zip code
+                - lookup_location('KS-03')  Returns USA_KS_03 congressional district
+                - lookup_location('Kansas City', 'city')  Returns Kansas City, MO and KS results
+                - lookup_location('Germany')  Returns DEU country
+
+                USAGE NOTES:
+                1. Always use the returned objects directly in selectedLocations
+                2. The identifier is automatically included as the dictionary key
+                3. Use location_type to filter results when query is ambiguous
+                4. Results are ranked by relevance score
+                """.strip(),
         input_schema={
             "type": "object",
             "properties": {
                 "query": {
                     "type": "string",
-                    "description": "Location search term (name, code, zip, or district). Supports fuzzy matching for typos.",
+                    "description": (
+                        "Location search term (name, code, zip, or district). "
+                        "Supports fuzzy matching for typos."
+                    ),
                 },
                 "location_type": {
                     "type": "string",
                     "enum": ["country", "state", "city", "county", "zip_code", "current_cd", "original_cd"],
-                    "description": "Optional: Filter results by specific location type to narrow down ambiguous queries",
+                    "description": (
+                        "Optional: Filter results by specific location type "
+                        "to narrow down ambiguous queries"
+                    ),
                 },
                 "top_k": {
                     "type": "integer",
