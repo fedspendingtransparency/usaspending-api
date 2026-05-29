@@ -114,8 +114,8 @@ dev = [
     "ruff==0.14.14",
 ]
 spark = [
-    "delta-spark==3.2.*",
-    "pyspark==3.5.0",
+    "delta-spark==3.3.2",
+    "pyspark==3.5.6",
 ]
 server = [
     "django-redis==5.4.*",

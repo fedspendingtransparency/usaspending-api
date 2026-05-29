@@ -987,19 +987,21 @@ def test_incremental_load_table_to_delta_for_award_search(
         .table("award_search")
         .select(["award_id", "_change_type", "_commit_version"])
         .toPandas()
+        .sort_values(by=["award_id", "_change_type", "_commit_version"])
+        .reset_index(drop=True)
     )
     expected = pd.DataFrame(
         {
-            "award_id": [4, 4, 1, 3, 2, 4],
+            "award_id": [1, 2, 3, 4, 4, 4],
             "_change_type": [
+                "insert",
+                "insert",
+                "insert",
                 "delete",
                 "insert",
                 "insert",
-                "insert",
-                "insert",
-                "insert",
             ],
-            "_commit_version": [2, 3, 1, 1, 1, 1],
+            "_commit_version": [1, 1, 1, 2, 1, 3],
         }
     )
     pd.testing.assert_frame_equal(result, expected)
@@ -1085,21 +1087,23 @@ def test_incremental_load_table_to_delta_for_transaction_search(
         .table("transaction_search")
         .select(["transaction_id", "_change_type", "_commit_version"])
         .toPandas()
+        .sort_values(by=["transaction_id", "_change_type", "_commit_version"])
+        .reset_index(drop=True)
     )
     expected = pd.DataFrame(
         {
-            "transaction_id": [4, 4, 1, 2, 434, 3, 4, 5],
+            "transaction_id": [1, 2, 3, 4, 4, 4, 5, 434],
             "_change_type": [
+                "insert",
+                "insert",
+                "insert",
                 "delete",
                 "insert",
                 "insert",
                 "insert",
                 "insert",
-                "insert",
-                "insert",
-                "insert",
             ],
-            "_commit_version": [2, 3, 1, 1, 1, 1, 1, 1],
+            "_commit_version": [1, 1, 1, 2, 1, 3, 1, 1],
         }
     )
     pd.testing.assert_frame_equal(result, expected)

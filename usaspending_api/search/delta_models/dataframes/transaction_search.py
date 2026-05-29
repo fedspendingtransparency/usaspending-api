@@ -940,7 +940,7 @@ class TransactionSearch(AbstractSearch):
             )
         )
         df_with_location = self.join_location_data(df)
-        return (
+        final_df = (
             df_with_location.join(
                 self.current_cd,
                 self.transaction_normalized.id == self.current_cd.transaction_id,
@@ -985,6 +985,9 @@ class TransactionSearch(AbstractSearch):
             )
             .withColumn("merge_hash_key", sf.xxhash64("*"))
         )
+        # Repartitioning the dataframe to match shuffle partitions which should be the number of cores * 2
+        num_partitions = self.spark.sparkContext.defaultParallelism * 2
+        return final_df.repartition(num_partitions)
 
 
 def load_transaction_search(
@@ -1001,16 +1004,33 @@ def load_transaction_search(
 def load_transaction_search_incremental(
     spark: SparkSession, destination_database: str, destination_table_name: str
 ) -> None:
-    target = DeltaTable.forName(
+    target_df = spark.table(f"{destination_database}.{destination_table_name}")
+    source_df = TransactionSearch(spark).dataframe
+    to_insert = source_df.join(
+        target_df,
+        on=["transaction_id", "merge_hash_key"],
+        how="left_anti"
+    ).withColumn("merge_action", sf.lit("INSERT"))
+    to_delete = target_df.join(
+        source_df,
+        on=["transaction_id", "merge_hash_key"],
+        how="left_anti"
+    ).withColumn("merge_action", sf.lit("DELETE"))
+    changes_df = to_insert.unionByName(to_delete, allowMissingColumns=True)
+    target_table = DeltaTable.forName(
         spark, f"{destination_database}.{destination_table_name}"
-    ).alias("t")
-    source = TransactionSearch(spark).dataframe.alias("s")
+    )
     (
-        target.merge(
-            source,
-            "s.transaction_id = t.transaction_id and s.merge_hash_key = t.merge_hash_key",
+        target_table.alias("t")
+        .merge(
+            changes_df.alias("c"),
+            "c.transaction_id = t.transaction_id and c.merge_hash_key = t.merge_hash_key",
         )
-        .whenNotMatchedInsertAll()
-        .whenNotMatchedBySourceDelete()
+        .whenMatchedDelete(
+            condition="c.merge_action = 'DELETE'"
+        )
+        .whenNotMatchedInsertAll(
+            condition='c.merge_action = "INSERT"',
+        )
         .execute()
     )

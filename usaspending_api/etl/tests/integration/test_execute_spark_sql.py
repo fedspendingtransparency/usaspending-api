@@ -1,10 +1,8 @@
-from pytest import raises
-
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
 from django.core.management import call_command
 from django.core.management.base import CommandError
-
+from pytest import raises
 
 # Argument Validation
 
@@ -31,25 +29,44 @@ def test_no_sql_and_file_raises_error():
 def test_sql_functionality():
     """Tests a variety of cases in a single test for Spark performance"""
 
+    mock_spark = MagicMock()
+
     # Test --sql approach
-    with patch("usaspending_api.etl.management.commands.execute_spark_sql.logger") as mock_logger:
+    with (
+        patch(
+            "usaspending_api.etl.management.commands.execute_spark_sql.get_active_spark_session",
+            return_value=mock_spark,
+        ),
+        patch("usaspending_api.etl.management.commands.execute_spark_sql.logger") as mock_logger,
+    ):
         call_command("execute_spark_sql", "--sql", "SHOW DATABASES; SELECT 1;")
         mock_logger.info.assert_any_call("Found 2 SQL statement(s)")
 
     # Test --file approach with two SQL statements and a blank line
     test_file_path = "usaspending_api/etl/tests/data/test_execute_spark_files/two_queries_with_blank_line.sql"
-    with patch("usaspending_api.etl.management.commands.execute_spark_sql.logger") as mock_logger:
+    with (
+        patch(
+            "usaspending_api.etl.management.commands.execute_spark_sql.get_active_spark_session",
+            return_value=mock_spark,
+        ),
+        patch("usaspending_api.etl.management.commands.execute_spark_sql.logger") as mock_logger,
+    ):
         call_command("execute_spark_sql", "--file", test_file_path)
         mock_logger.info.assert_any_call("Found 2 SQL statement(s)")
 
     # Test --file approach with an empty file
     test_file_path = "usaspending_api/etl/tests/data/test_execute_spark_files/empty_file.sql"
-    with patch("usaspending_api.etl.management.commands.execute_spark_sql.logger") as mock_logger:
+    with (
+        patch(
+            "usaspending_api.etl.management.commands.execute_spark_sql.get_active_spark_session",
+            return_value=mock_spark,
+        ),
+        patch("usaspending_api.etl.management.commands.execute_spark_sql.logger") as mock_logger,
+    ):
         call_command("execute_spark_sql", "--file", test_file_path)
         mock_logger.info.assert_any_call("Found 0 SQL statement(s)")
 
     # Test SQL executes
-    mock_spark = MagicMock()
     with patch(
         "usaspending_api.etl.management.commands.execute_spark_sql.get_active_spark_session", return_value=mock_spark
     ):
