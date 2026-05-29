@@ -940,7 +940,7 @@ class TransactionSearch(AbstractSearch):
             )
         )
         df_with_location = self.join_location_data(df)
-        return (
+        final_df = (
             df_with_location.join(
                 self.current_cd,
                 self.transaction_normalized.id == self.current_cd.transaction_id,
@@ -985,6 +985,9 @@ class TransactionSearch(AbstractSearch):
             )
             .withColumn("merge_hash_key", sf.xxhash64("*"))
         )
+        # Repartitioning the dataframe to match shuffle partitions which should be the number of cores * 2
+        num_partitions = self.spark.sparkContext.defaultParallelism * 2
+        return final_df.repartition(num_partitions)
 
 
 def load_transaction_search(
