@@ -3,9 +3,9 @@ import logging
 from typing import Any, Dict, List, Optional
 
 from elasticsearch_dsl import Q
+from usaspending_api.llm.models.py_models import AITool, AIToolDescription
 
 from usaspending_api.common.elasticsearch.search_wrappers import LocationSearch
-from usaspending_api.llm.models.py_models import AITool, AIToolDescription
 from usaspending_api.llm.tools.reference import country_codes, state_codes
 
 logger = logging.getLogger(__name__)
