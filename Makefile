@@ -150,7 +150,7 @@ docker-compose-down: ## Run docker compose down to bring down services listed in
 .PHONY: docker-build-development
 docker-build-development: ## Run docker build to build a base container image for development
 	# NOTE: [See NOTE in above docker compose rule about .env file]
-	docker build --tag usaspending-development --build-arg PROJECT_LOG_DIR=${PROJECT_LOG_DIR} ${args} --file ${dockerfile_for_development} $$(dirname ${dockerfile_for_development})
+	docker build --tag usaspending-development ${args} --file ${dockerfile_for_development} $$(dirname ${dockerfile_for_development})
 
 .PHONY: docker-compose-build
 docker-compose-build: ## Ensure ALL services in the docker-compose.yaml file have an image built for them according to their build: key
@@ -163,14 +163,14 @@ docker-compose-build: ## Ensure ALL services in the docker-compose.yaml file hav
 	#       where project defaults to the directory name you're in. Therefore you MUST always run this command (or the manual version of it)
 	#       anytime you want services run with Docker Compose to accommodate recent changes in the image (e.g. python package dependency changes)
 	# NOTE: [See NOTE in above docker compose rule about .env file]
-	echo "docker compose --profile usaspending --project-directory . --file ${docker_compose_file} build --build-arg PROJECT_LOG_DIR=${PROJECT_LOG_DIR} ${args}"
-	docker compose --profile usaspending --project-directory . --file ${docker_compose_file} build --build-arg PROJECT_LOG_DIR=${PROJECT_LOG_DIR} ${args}
+	echo "docker compose --profile usaspending --project-directory . --file ${docker_compose_file} build ${args}"
+	docker compose --profile usaspending --project-directory . --file ${docker_compose_file} build ${args}
 
 .PHONY: docker-compose-build-development
 docker-compose-build-development: ## See: docker-compose-build rule. This builds just the subset of spark services.
 	# NOTE: [See NOTE in above docker compose rule about .env file]=
-	echo "docker compose --profile spark --project-directory . --file ${docker_compose_file} build --build-arg PROJECT_LOG_DIR=${PROJECT_LOG_DIR} ${args}"
-	docker compose --profile spark --project-directory . --file ${docker_compose_file} build --build-arg PROJECT_LOG_DIR=${PROJECT_LOG_DIR} ${args}
+	echo "docker compose --profile spark --project-directory . --file ${docker_compose_file} build ${args}"
+	docker compose --profile spark --project-directory . --file ${docker_compose_file} build ${args}
 
 .PHONY: style-checks
 style-checks:
