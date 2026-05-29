@@ -2,8 +2,8 @@ import json
 from unittest.mock import MagicMock, patch  # Changed Mock to MagicMock
 
 import pytest
-
 from usaspending_api.llm.models.py_models import Filters, SelectedLocation
+
 from usaspending_api.llm.tools.lookup_location import LocationLookupTool, lookup_location_tool
 
 
