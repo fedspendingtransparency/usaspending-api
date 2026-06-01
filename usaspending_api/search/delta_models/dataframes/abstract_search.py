@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 
-from pyspark.sql import DataFrame, SparkSession, functions as sf, Column, Window
+from pyspark.sql import Column, DataFrame, SparkSession, Window
+from pyspark.sql import functions as sf
 from pyspark.sql.types import (
     ShortType,
     StringType,
@@ -20,6 +21,7 @@ def extract_numbers_as_string(col: Column, length: int = 2, pad: str = "0") -> C
 class AbstractSearch(ABC):
 
     def __init__(self, spark: SparkSession):
+        self.spark = spark
         # Base Tables
         self.transaction_normalized = spark.table("int.transaction_normalized")
         self.transaction_fpds = spark.table("int.transaction_fpds")

@@ -1004,6 +1004,22 @@ def load_transaction_search(
 def load_transaction_search_incremental(
     spark: SparkSession, destination_database: str, destination_table_name: str
 ) -> None:
+    # CURRENT APPROACH
+    # target = DeltaTable.forName(
+    #     spark, f"{destination_database}.{destination_table_name}"
+    # ).alias("t")
+    # source = TransactionSearch(spark).dataframe.alias("s")
+    # (
+    #     target.merge(
+    #         source,
+    #         "s.transaction_id = t.transaction_id and s.merge_hash_key = t.merge_hash_key",
+    #     )
+    #     .whenNotMatchedInsertAll()
+    #     .whenNotMatchedBySourceDelete()
+    #     .execute()
+    # )
+
+    # TEST APPROACH
     target_df = spark.table(f"{destination_database}.{destination_table_name}")
     source_df = TransactionSearch(spark).dataframe
     to_insert = source_df.join(
