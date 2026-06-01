@@ -730,12 +730,16 @@ def apply_annotations_to_sql(
     for idx, val in aliased_list:
         split_string = _top_level_split(val, " AS ")
         alias = split_string[1].replace('"', "").replace(",", "").strip()
-        if alias not in aliases:
-            raise Exception(f'alias "{alias}" not found!')
         col_select = split_string[0]
-        deriv_dict[alias] = col_select
-        if annotated_group_by_columns and alias in annotated_group_by_columns:
-            group_by_to_replace.append((idx, col_select))
+        if alias in aliases:
+            deriv_dict[alias] = col_select
+            if annotated_group_by_columns and alias in annotated_group_by_columns:
+                group_by_to_replace.append((idx, col_select))
+        else:
+            # Django 5.2 emits an "AS <query_path>" alias on every values()-projected field
+            # (e.g. "treasury_account__funding_toptier_agency__name"). The query path is not a caller-known alias, so
+            # strip it and use the expression just like a direct SELECT in older Django
+            selects_list.append(col_select.strip())
 
     if group_by_to_replace:
         first_half_query, second_half_query = _top_level_split(raw_query, " GROUP BY ")
