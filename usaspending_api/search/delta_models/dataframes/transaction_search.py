@@ -987,6 +987,7 @@ class TransactionSearch(AbstractSearch):
         )
         # Repartitioning the dataframe to match shuffle partitions which should be the number of cores * 2
         num_partitions = self.spark.sparkContext.defaultParallelism * 2
+        final_df = final_df.hint("skew", "transaction_id")
         return final_df.repartition(num_partitions)
 
 
