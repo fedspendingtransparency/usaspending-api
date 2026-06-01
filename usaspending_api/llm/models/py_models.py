@@ -1,6 +1,6 @@
 from typing import Annotated, Any, Callable, Literal
 
-from pydantic import BaseModel, Field, model_validator, field_validator
+from pydantic import BaseModel, Field, model_validator
 
 
 class AIToolDescription(BaseModel):
@@ -280,8 +280,9 @@ class Filters(BaseModel):
         Field(
             description=(
                 "Time period type selector:\n"
-                "- 'fy' (fiscal year): Use timePeriodFY field with year strings like ['2023', '2024']\n"
-                "- 'dr' (date range): Use time_period field with TimePeriod objects containing start_date and end_date\n\n"
+                "- 'fy' (fiscal year): Use timePeriodFY field with year strings like '2023', '2024'\n"
+                "- 'dr' (date range): Use time_period field with TimePeriod objects containing "
+                "start_date and end_date\n\n"
                 "IMPORTANT: Only populate the field that matches this type."
             )
         ),
@@ -497,7 +498,8 @@ class Filters(BaseModel):
     defCodes: DEFCodeLists = Field(
         default_factory=DEFCodeLists,
         description=(
-            "Disaster/Emergency Fund Codes (DEFC) filter using CodeLists structure with 'require' and 'exclude' lists.\n\n"
+            "Disaster/Emergency Fund Codes (DEFC) filter using CodeLists structure with 'require' and "
+            "'exclude' lists.\n\n"
             "VALID CODES ONLY: A-Z, 1-9, AAA-AAJ, Q, QQQ\n\n"
             "Common groupings:\n"
             "COVID-19 Pandemic (use all 7 for comprehensive COVID spending):\n"
@@ -576,7 +578,7 @@ class Filters(BaseModel):
     filterNaoActiveFromFyOrDateRange: bool = False
 
     @model_validator(mode="after")
-    def validate_time_period_consistency(self):
+    def validate_time_period_consistency(self) -> "Filters":
         """Ensure only the correct time period field is populated"""
         if self.timePeriodType == "fy":
             if self.time_period:
