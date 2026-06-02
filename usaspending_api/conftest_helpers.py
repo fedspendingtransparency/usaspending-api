@@ -226,7 +226,7 @@ class TestElasticSearchIndex:
                 routing=routing_value,
             )
         # Force newly added documents to become searchable.
-        self.client.indices.refresh(self.index_name)
+        self.client.indices.refresh(index=self.index_name)
 
     def _generate_index_name(self):
         required_suffix = ""

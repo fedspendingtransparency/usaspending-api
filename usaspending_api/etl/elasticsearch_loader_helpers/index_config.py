@@ -25,11 +25,11 @@ def create_index(index, client):
     if not does_index_exist:
         logger.info(format_log(f"Creating index '{index}'", action="Index"))
         client.indices.create(index=index)
-        client.indices.refresh(index)
+        client.indices.refresh(index=index)
 
 
 def put_alias(client, index, alias_name, alias_body):
-    client.indices.put_alias(index, alias_name, body=alias_body)
+    client.indices.put_alias(index=index, name=alias_name, body=alias_body)
 
 
 def create_award_type_aliases(client, config):
@@ -63,8 +63,8 @@ def set_final_index_config(client, index):
 
     current_settings = client.indices.get(index)[index]["settings"]["index"]
 
-    client.indices.put_settings(final_index_settings, index)
-    client.indices.refresh(index)
+    client.indices.put_settings(body=final_index_settings, index=index)
+    client.indices.refresh(index=index)
     for setting, value in final_index_settings.items():
         message = f'Changing "{setting}" from {current_settings.get(setting)} to {value}'
         logger.info(format_log(message, action="ES Settings"))
@@ -124,7 +124,7 @@ def swap_aliases(client, config):
 
 
 def toggle_refresh_off(client, index):
-    client.indices.put_settings({"refresh_interval": "-1"}, index)
+    client.indices.put_settings(body={"refresh_interval": "-1"}, index=index)
     message = 'Set "refresh_interval": "-1" to turn auto refresh off'
     logger.info(format_log(message, action="ES Settings"))
 
@@ -137,7 +137,7 @@ def toggle_refresh_on(client, index):
     with open(es_settingsfile) as f:
         settings_dict = json.load(f)
     final_refresh_interval = settings_dict["final_index_settings"]["refresh_interval"]
-    client.indices.put_settings({"refresh_interval": final_refresh_interval}, index)
+    client.indices.put_settings(body={"refresh_interval": final_refresh_interval}, index=index)
     message = f'Changed "refresh_interval" from {current_refresh_interval} to {final_refresh_interval}'
     logger.info(format_log(message, action="ES Settings"))
 

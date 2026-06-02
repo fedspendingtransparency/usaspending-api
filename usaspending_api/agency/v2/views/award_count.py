@@ -137,7 +137,7 @@ class AwardCount(PaginationMixin, AgencyBase):
         record_num = (self.pagination.page - 1) * self.pagination.limit
         sorts = [{self.default_sort_column: self.pagination.sort_order}]
         s = AwardSearch().filter(filter_query).sort(*sorts)[record_num : record_num + self.pagination.limit]
-
+        
         s.aggs.bucket("agencies", "terms", field="awarding_toptier_agency_name.keyword", size=999999)
         s.aggs["agencies"].bucket("codes", "terms", field="awarding_toptier_agency_code.keyword", size=999999)
         s.aggs["agencies"].bucket(

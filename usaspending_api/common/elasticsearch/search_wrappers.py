@@ -68,7 +68,7 @@ class Search(SearchBase):
         logger.error(f"Unable to reach elasticsearch cluster. {retries} attempt(s) made.")
         return None
 
-    def _handle_errors(self, func: Callable, retries: int, timeout: str) -> Response:
+    def _handle_errors(self, func: Callable, retries: int, timeout: int) -> Response:
         error_template = "[ERROR] ({type}) with ElasticSearch cluster: {e}"
         try:
             result = self._handle_retry(func, retries, timeout)
@@ -89,7 +89,7 @@ class Search(SearchBase):
             raise
         return result
 
-    def handle_execute(self, retries: int = 5, timeout: str = "90s") -> Response:
+    def handle_execute(self, retries: int = 5, timeout: int = 90) -> Response:
         return self._handle_errors(self._execute, retries, timeout)
 
     def handle_count(self, retries: int = 5) -> int:
