@@ -4830,3 +4830,238 @@ def test_spending_by_award_sort_recipient_uei(
         data=json.dumps(test_payload),
     )
     assert resp.status_code == status.HTTP_200_OK
+
+
+def test_spending_by_award_sort_award_type(
+        client,
+        monkeypatch,
+        elasticsearch_award_index,
+        spending_by_award_test_data,
+):
+    """Test sorting by Award Type for assistance awards"""
+    setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
+
+    test_payload = {
+        "spending_level": "awards",
+        "fields": [
+            "Award ID",
+            "Award Type",
+        ],
+        "filters": {"award_type_codes": ["02", "03", "04", "05"]},
+        "sort": "Award Type",
+        "order": "asc",
+    }
+
+    resp = client.post(
+        "/api/v2/search/spending_by_award/",
+        content_type="application/json",
+        data=json.dumps(test_payload),
+    )
+
+    assert resp.status_code == status.HTTP_200_OK
+    assert resp.json().get("results") is not None
+    results = resp.json().get("results")
+
+    # Verify response structure
+    assert "page_metadata" in resp.json()
+    assert "limit" in resp.json()
+
+    # Verify we have results
+    assert len(results) > 0, "Expected results for assistance awards"
+
+    for result in results:
+        assert "Award ID" in result
+        assert "Award Type" in result
+        assert "internal_id" in result
+        assert "generated_internal_id" in result
+        assert result["Award Type"] is not None, "Award Type should have a value"
+
+    # Verify ascending sort order (alphabetically sorted)
+    # Based on fixtures:
+    # - award_id=4 (type 02): "Block Grant"
+    # - award_id=5451, 5452, 5453 (type 05): "Cooperative Agreement" (3 awards)
+    # - award_id=5159, 5160, 5161 (type 03): "Formula Grant" (3 awards)
+    expected_asc = [
+        "Block Grant",
+        "Cooperative Agreement",
+        "Cooperative Agreement",
+        "Cooperative Agreement",
+        "Formula Grant",
+        "Formula Grant",
+        "Formula Grant",
+    ]
+    actual_asc = [result["Award Type"] for result in results]
+    assert actual_asc == expected_asc, f"Expected {expected_asc} but got {actual_asc}"
+
+    # Test descending order
+    test_payload["order"] = "desc"
+
+    resp = client.post(
+        "/api/v2/search/spending_by_award/",
+        content_type="application/json",
+        data=json.dumps(test_payload),
+    )
+
+    assert resp.status_code == status.HTTP_200_OK
+    results_desc = resp.json().get("results")
+    assert results_desc is not None
+    assert len(results_desc) > 0
+
+    # Verify descending sort order (reverse alphabetical)
+    expected_desc = [
+        "Formula Grant",
+        "Formula Grant",
+        "Formula Grant",
+        "Cooperative Agreement",
+        "Cooperative Agreement",
+        "Cooperative Agreement",
+        "Block Grant",
+    ]
+    actual_desc = [result["Award Type"] for result in results_desc]
+    assert actual_desc == expected_desc, f"Expected {expected_desc} but got {actual_desc}"
+
+
+def test_spending_by_award_sort_award_type_loans(
+        client,
+        monkeypatch,
+        elasticsearch_award_index,
+        spending_by_award_test_data,
+):
+    """Test sorting by Award Type for loan awards"""
+    setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
+
+    test_payload = {
+        "spending_level": "awards",
+        "fields": [
+            "Award ID",
+            "Award Type",
+        ],
+        "filters": {"award_type_codes": ["07", "08"]},
+        "sort": "Award Type",
+        "order": "asc",
+    }
+
+    resp = client.post(
+        "/api/v2/search/spending_by_award/",
+        content_type="application/json",
+        data=json.dumps(test_payload),
+    )
+
+    assert resp.status_code == status.HTTP_200_OK
+    results = resp.json().get("results")
+    assert results is not None
+
+    # Verify response structure
+    assert "page_metadata" in resp.json()
+    assert "spending_level" in resp.json()
+    assert resp.json()["spending_level"] == "awards"
+
+    # Verify we have results
+    assert len(results) > 0, "Expected results for loan awards"
+
+    for result in results:
+        assert "Award ID" in result
+        assert "Award Type" in result
+        assert result["Award Type"] is not None, "Award Type should have a value"
+
+    # Verify ascending sort order
+    # Based on fixtures: All type 08 loans have "Guaranteed/Insured Loan"
+    # award_ids: 5146, 5147, 5148, 5149, 5150, 5151, 5152, 5153
+    # No type 07 loans exist in the fixtures, only type 08
+    expected_asc = ["Guaranteed/Insured Loan"] * len(results)
+    actual_asc = [result["Award Type"] for result in results]
+    assert actual_asc == expected_asc, f"Expected {expected_asc} but got {actual_asc}"
+
+    # Test descending order
+    test_payload["order"] = "desc"
+
+    resp = client.post(
+        "/api/v2/search/spending_by_award/",
+        content_type="application/json",
+        data=json.dumps(test_payload),
+    )
+
+    assert resp.status_code == status.HTTP_200_OK
+    results_desc = resp.json().get("results")
+    assert results_desc is not None
+    assert len(results_desc) > 0
+
+    # Verify descending sort order (same as ascending since all have same type)
+    expected_desc = ["Guaranteed/Insured Loan"] * len(results_desc)
+    actual_desc = [result["Award Type"] for result in results_desc]
+    assert actual_desc == expected_desc, f"Expected {expected_desc} but got {actual_desc}"
+
+
+def test_spending_by_award_sort_contract_award_type_enhanced(
+        client,
+        monkeypatch,
+        elasticsearch_award_index,
+        spending_by_award_test_data,
+):
+    """Test sorting by Contract Award Type"""
+    setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
+
+    test_payload = {
+        "spending_level": "awards",
+        "fields": [
+            "Award ID",
+            "Contract Award Type",
+        ],
+        "filters": {"award_type_codes": ["A", "B", "C", "D"]},
+        "sort": "Contract Award Type",
+        "order": "asc",
+    }
+
+    resp = client.post(
+        "/api/v2/search/spending_by_award/",
+        content_type="application/json",
+        data=json.dumps(test_payload),
+    )
+
+    assert resp.status_code == status.HTTP_200_OK
+    results = resp.json().get("results")
+    assert results is not None
+    assert len(results) > 0, "Expected at least one contract award in test data"
+
+    # Verify all results have the requested fields
+    for result in results:
+        assert "Award ID" in result, "Award ID missing from result"
+        assert "Contract Award Type" in result, "Contract Award Type missing from result"
+        assert "internal_id" in result
+        assert "generated_internal_id" in result
+
+    # Filter out None values (awards 997, 998, 999 don't have type_description)
+    results_with_type = [r for r in results if r["Contract Award Type"] is not None]
+    assert len(results_with_type) > 0, "Expected at least one result with Contract Award Type"
+
+    # Verify ascending sort order - all should be "BPA Call" from fixtures
+    expected_asc = ["BPA Call"] * len(results_with_type)
+    actual_asc = [result["Contract Award Type"] for result in results_with_type]
+    assert actual_asc == expected_asc, f"Expected {expected_asc} but got {actual_asc}"
+
+    # Test descending order
+    test_payload["order"] = "desc"
+
+    resp = client.post(
+        "/api/v2/search/spending_by_award/",
+        content_type="application/json",
+        data=json.dumps(test_payload),
+    )
+
+    assert resp.status_code == status.HTTP_200_OK
+    results_desc = resp.json().get("results")
+    assert results_desc is not None
+    assert len(results_desc) > 0
+
+    # Verify all results have the requested fields
+    for result in results_desc:
+        assert "Award ID" in result
+        assert "Contract Award Type" in result
+
+    # Filter out None values
+    results_desc_with_type = [r for r in results_desc if r["Contract Award Type"] is not None]
+
+    # Verify descending sort order (same as ascending since all have same type)
+    expected_desc = ["BPA Call"] * len(results_desc_with_type)
+    actual_desc = [result["Contract Award Type"] for result in results_desc_with_type]
+    assert actual_desc == expected_desc, f"Expected {expected_desc} but got {actual_desc}"
