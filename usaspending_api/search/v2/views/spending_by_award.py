@@ -266,6 +266,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
             "Sub-Award Primary Place of Performance",
             "Recipient UEI",
             "Contract Award Type",
+            "Award Type",
         ]:
             raise_if_sort_key_not_valid(
                 self.pagination["sort_key"],
@@ -536,6 +537,14 @@ class SpendingByAwardVisualizationViewSet(APIView):
                 ]
             case "Contract Award Type":
                 sort_by_fields = [contracts_mapping["Contract Award Type"]]
+            case "Award Type":
+                # For assistance and loan awards
+                if set(self.filters["award_type_codes"]) <= set(loan_type_mapping):
+                    sort_by_fields = [loan_mapping["Award Type"]]
+                elif set(self.filters["award_type_codes"]) <= set(
+                        non_loan_assistance_type_mapping
+                ):
+                    sort_by_fields = [non_loan_assist_mapping["Award Type"]]
             case "Recipient UEI":
                 sort_by_fields = [contracts_mapping["Recipient UEI"]]
             # TODO: Add additional field for Award Descriptions in case they exceed the keyword limit like subawards
@@ -558,9 +567,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
                     sort_by_fields = [
                         non_loan_assist_mapping[self.pagination["sort_key"]]
                     ]
-
         sort_by_fields.append("award_id")
-
         return sort_by_fields
 
     def get_database_fields(self) -> set[str]:
