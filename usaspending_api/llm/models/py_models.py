@@ -17,20 +17,14 @@ class AITool(BaseModel):
 
 class LocationFilter(BaseModel):
     country: str = "USA"
-    state: str | None = Field(default=None, description="Two-letter state code (e.g., 'TX', 'CA')")
-    county: str | None = Field(default=None, description="Three-digit county code (e.g., '091')")
+    state: str | None = Field(default=None, description="Two-letter state code (e.g., 'MO', 'TX', 'CA')")
+    county: str | None = Field(default=None, description="Three-digit county code (e.g., '095')")
     city: str | None = Field(default=None, description="City name in uppercase (e.g., 'KANSAS CITY')")
     district_original: str | None = Field(
-        default=None, description="The congressional district at the time of the contract date (e.g., '03')"
+        default=None, description="The congressional district at the time of the contract date (e.g., '05')"
     )
-    district_current: str | None = Field(default=None, description="The current congressional district (e.g., '03')")
-    zip: str | None = Field(default=None, description="Five-digit zip code (e.g., '66208')")
-
-
-class AwardAmountRange(BaseModel):
-    """Model for award amount ranges"""
-
-    pass
+    district_current: str | None = Field(default=None, description="The current congressional district (e.g., '04')")
+    zip: str | None = Field(default=None, description="Five-digit zip code (e.g., '64198')")
 
 
 class LocationDisplay(BaseModel):
@@ -45,7 +39,7 @@ class LocationDisplay(BaseModel):
         "Original congressional district",
         "Zip code",
     ] = Field(description="The type of geographic entity")
-    standalone: str = Field(description="Short location name for filter chips (e.g., 'Texas', 'Chicago', '66208')")
+    standalone: str = Field(description="Short location name for filter chips (e.g., 'Texas', 'Chicago', '64198')")
     title: str = Field(description="Full location name. Cities include state (e.g., 'KANSAS CITY, MISSOURI')")
 
 
@@ -55,7 +49,7 @@ class SelectedLocation(BaseModel):
     identifier: str = Field(
         description=(
             "Unique identifier using underscore-separated format: "
-            "COUNTRY_STATE_DETAIL (e.g., 'USA_TX', 'USA_IL_CHICAGO', 'USA_66208')"
+            "COUNTRY_STATE_DETAIL (e.g., 'USA_TX', 'USA_IL_CHICAGO', 'USA_64198')"
         )
     )
     filter: LocationFilter
@@ -329,11 +323,11 @@ class Filters(BaseModel):
                 "Do not construct these manually.\n\n"
                 "Structure patterns:\n"
                 "- Country only: 'DEU' → {country: 'DEU'}\n"
-                "- State: 'USA_KS' → {country: 'USA', state: 'KS'}\n"
-                "- County: 'USA_KS_091' → {country: 'USA', state: 'KS', county: '091'}\n"
+                "- State: 'USA_MO' → {country: 'USA', state: 'MO'}\n"
+                "- County: 'USA_MO_095' → {country: 'USA', state: 'MO', county: '095'}\n"
                 "- City: 'USA_MO_KANSAS CITY' → {country: 'USA', state: 'MO', city: 'KANSAS CITY'}\n"
-                "- District: 'USA_KS_03' → {country: 'USA', state: 'KS', district_current: '03'}\n"
-                "- Zip: 'USA_66208' → {country: 'USA', zip: '66208'}\n"
+                "- District: 'USA_MO_04' → {country: 'USA', state: 'MO', district_current: '04'}\n"
+                "- Zip: 'USA_64198' → {country: 'USA', zip: '64198'}\n"
                 "- Foreign city: 'TUR_undefined_ISTANBUL' → {country: 'TUR', city: 'ISTANBUL'}"
             ),
             json_schema_extra={

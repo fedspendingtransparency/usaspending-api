@@ -1,6 +1,6 @@
 import json
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from elasticsearch_dsl import Q
 
@@ -29,12 +29,12 @@ class LocationLookupTool:
         "original_cd": "Original congressional district",
     }
 
-    def lookup_location(  # noqa: PLR0911
+    def lookup_location(
             self,
             query: str,
-            location_type: Optional[str] = None,
+            location_type: str | None = None,
             top_k: int = 15
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Search for locations using fuzzy matching.
 
@@ -47,18 +47,12 @@ class LocationLookupTool:
             Dictionary with results or error information
         """
         # Validation
-        if not query or not query.strip():
-            return {"error": "Query cannot be empty", "results": []}
-
-        if location_type and location_type not in self.LOCATION_TYPES:
-            return {
-                "error": f"Invalid location_type. Must be one of: {', '.join(sorted(self.LOCATION_TYPES))}",
-                "results": []
-            }
+        error_response = self._validate_inputs(query, location_type)
+        if error_response:
+            return error_response
 
         # Clamp top_k
         top_k = max(1, min(top_k, 100))
-
         query_upper = query.strip().upper()
 
         try:
@@ -78,10 +72,23 @@ class LocationLookupTool:
             "location_type": location_type
         }
 
+    def _validate_inputs(self, query: str, location_type: str | None) -> dict[str, Any] | None:
+        """Validate input parameters and return error dict if invalid, None otherwise."""
+        if not query or not query.strip():
+            return {"error": "Query cannot be empty", "results": []}
+
+        if location_type and location_type not in self.LOCATION_TYPES:
+            return {
+                "error": f"Invalid location_type. Must be one of: {', '.join(sorted(self.LOCATION_TYPES))}",
+                "results": []
+            }
+
+        return None
+
     def _build_search(
             self,
             query_upper: str,
-            location_type: Optional[str],
+            location_type: str | None,
             top_k: int
     ) -> LocationSearch:
         """Build the OpenSearch query with fuzzy matching."""
@@ -110,7 +117,7 @@ class LocationLookupTool:
 
         return search
 
-    def _transform_results(self, response: Any) -> List[Dict[str, Any]]:
+    def _transform_results(self, response: Any) -> list[dict[str, Any]]:
         """Transform OpenSearch hits to SelectedLocation format."""
         results = []
         seen_identifiers = set()
@@ -154,7 +161,7 @@ class LocationLookupTool:
             location_json: str,
             location_type: str,
             score: float
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Transform OpenSearch result to SelectedLocation format.
 
@@ -177,45 +184,50 @@ class LocationLookupTool:
             "score": score,
         }
 
-    def _build_identifier(self, data: Dict[str, Any], location_type: str) -> str:  # noqa: PLR0911
+    def _build_identifier(self, data: dict[str, Any], location_type: str) -> str:
         """Build the identifier string based on location type."""
-        if location_type == "country":
-            return data.get("country_code", data.get("country_name", "UNKNOWN"))
+        match location_type:
+            case "country":
+                result = data.get("country_code", data.get("country_name", "UNKNOWN"))
 
-        elif location_type == "state":
-            state_name = data.get("state_name", "")
-            state_code = self._get_state_code(state_name)
-            return f"USA_{state_code}"
+            case "state":
+                state_name = data.get("state_name", "")
+                state_code = self._get_state_code(state_name)
+                result = f"USA_{state_code}"
 
-        elif location_type == "city":
-            country = data.get("country_name", "USA")
-            country_code = self._get_country_code(country)
-            state = data.get("state_name", "")
-            state_code = self._get_state_code(state) if state else "undefined"
-            city = data.get("city_name", "").replace(" ", " ")  # Normalize spaces
-            return f"{country_code}_{state_code}_{city}"
+            case "city":
+                country = data.get("country_name", "USA")
+                country_code = self._get_country_code(country)
+                state = data.get("state_name", "")
+                state_code = self._get_state_code(state) if state else "undefined"
+                city = data.get("city_name", "").replace(" ", "_")  # Normalize spaces
+                result = f"{country_code}_{state_code}_{city}"
 
-        elif location_type == "county":
-            state = data.get("state_name", "")
-            state_code = self._get_state_code(state)
-            county_fips = data.get("county_fips", "")
-            return f"USA_{state_code}_{county_fips}"
+            case "county":
+                state = data.get("state_name", "")
+                state_code = self._get_state_code(state)
+                county_fips = data.get("county_fips", "")
+                result = f"USA_{state_code}_{county_fips}"
 
-        elif location_type == "zip_code":
-            zip_code = data.get("zip_code", "")
-            return f"USA_{zip_code}"
+            case "zip_code":
+                zip_code = data.get("zip_code", "")
+                result = f"USA_{zip_code}"
 
-        elif location_type in ("current_cd", "original_cd"):
-            cd_key = "current_cd" if location_type == "current_cd" else "original_cd"
-            cd = data.get(cd_key, "")
-            if cd:
-                # Format: KS-03 -> USA_KS_03
-                return f"USA_{cd.replace('-', '_')}"
-            return "UNKNOWN"
+            case "current_cd" | "original_cd":
+                cd_key = "current_cd" if location_type == "current_cd" else "original_cd"
+                cd = data.get(cd_key, "")
+                if cd:
+                    # Format: KS-03 -> USA_KS_03
+                    result = f"USA_{cd.replace('-', '_')}"
+                else:
+                    result = "UNKNOWN"
 
-        return "UNKNOWN"
+            case _:
+                result = "UNKNOWN"
 
-    def _build_filter(self, data: Dict[str, Any], location_type: str) -> Dict[str, Any]:
+        return result
+
+    def _build_filter(self, data: dict[str, Any], location_type: str) -> dict[str, Any]:
         """Build the filter object for the location."""
         filter_obj = {}
 
@@ -247,10 +259,10 @@ class LocationLookupTool:
 
     def _build_display(
             self,
-            data: Dict[str, Any],
+            data: dict[str, Any],
             location_type: str,
             full_location: str
-    ) -> Dict[str, str]:
+    ) -> dict[str, str]:
         """Build the display object for UI."""
         # Determine standalone name
         standalone_map = {
@@ -273,11 +285,8 @@ class LocationLookupTool:
         }
 
     @staticmethod
-    def _get_state_code(state_name: str) -> str:  # noqa: PLR0911
+    def _get_state_code(state_name: str) -> str:
         """Convert state name to 2-letter code."""
-        if not state_name:
-            return "XX"
-
         # Try exact match first (title case)
         code = state_codes.get(state_name.title())
         if code:
@@ -325,8 +334,8 @@ lookup_location_tool = AITool(
                 - State names and codes (e.g., 'Texas', 'TX', 'Texa' with fuzzy match)
                 - City names (e.g., 'Chicago', 'New York', 'Chicgo' with fuzzy match)
                 - County names and FIPS codes
-                - ZIP codes (e.g., '66208', '10001')
-                - Congressional districts (e.g., 'KS-03', 'NY-12')
+                - ZIP codes (e.g., '64198', '10001')
+                - Congressional districts (e.g., 'MO-04', 'NY-12')
 
                 The tool uses fuzzy matching to handle typos and variations in input.
                 For best results, be as specific as possible with your query.
@@ -335,8 +344,8 @@ lookup_location_tool = AITool(
                 - lookup_location('Texas')  Returns USA_TX state
                 - lookup_location('Texa', 'state')  Returns USA_TX state (fuzzy match)
                 - lookup_location('Chicago')  Returns USA_IL_CHICAGO city
-                - lookup_location('66208')  Returns USA_66208 zip code
-                - lookup_location('KS-03')  Returns USA_KS_03 congressional district
+                - lookup_location('64198')  Returns USA_64198 zip code
+                - lookup_location('MO-04')  Returns USA_MO_04 congressional district
                 - lookup_location('Kansas City', 'city')  Returns Kansas City, MO and KS results
                 - lookup_location('Germany')  Returns DEU country
 

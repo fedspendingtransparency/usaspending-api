@@ -112,60 +112,59 @@ class TestLocationTypes:
         """AC: County name and code lookup."""
         mock_search.execute.return_value.hits = [
             create_mock_hit(
-                "JOHNSON COUNTY, KANSAS",
+                "JACKSON COUNTY, MISSOURI",
                 "county",
                 json.dumps({
-                    "county_name": "JOHNSON",
-                    "county_fips": "091",
-                    "state_name": "KANSAS",
+                    "county_name": "JACKSON",
+                    "county_fips": "095",
+                    "state_name": "MISSOURI",
                     "country_name": "UNITED STATES"
                 })
             )
         ]
 
-        result = location_tool.lookup_location("Johnson County")
+        result = location_tool.lookup_location("Jackson County")
 
-        location_obj = result["results"][0]["USA_KS_091"]
-        assert location_obj["identifier"] == "USA_KS_091"
-        assert location_obj["filter"]["county"] == "091"
+        location_obj = result["results"][0]["USA_MO_095"]
+        assert location_obj["identifier"] == "USA_MO_095"
+        assert location_obj["filter"]["county"] == "095"
         assert location_obj["display"]["entity"] == "County"
 
     def test_zip_code_lookup(self, location_tool, mock_search):
         """AC: ZIP code lookup."""
         mock_search.execute.return_value.hits = [
             create_mock_hit(
-                "66208",
+                "64198",
                 "zip_code",
-                json.dumps({"zip_code": "66208", "country_name": "UNITED STATES"})
+                json.dumps({"zip_code": "64198", "country_name": "UNITED STATES"})
             )
         ]
 
-        result = location_tool.lookup_location("66208")
+        result = location_tool.lookup_location("64198")
 
-        location_obj = result["results"][0]["USA_66208"]
-        assert location_obj["identifier"] == "USA_66208"
-        assert location_obj["filter"]["zip"] == "66208"
+        location_obj = result["results"][0]["USA_64198"]
+        assert location_obj["identifier"] == "USA_64198"
+        assert location_obj["filter"]["zip"] == "64198"
         assert location_obj["display"]["entity"] == "Zip code"
 
     def test_congressional_district_current(self, location_tool, mock_search):
         """AC: Congressional district lookup (current)."""
         mock_search.execute.return_value.hits = [
             create_mock_hit(
-                "KS-03",
+                "MO-04",
                 "current_cd",
                 json.dumps({
-                    "current_cd": "KS-03",
-                    "state_name": "KANSAS",
+                    "current_cd": "MO-04",
+                    "state_name": "MISSOURI",
                     "country_name": "UNITED STATES"
                 })
             )
         ]
 
-        result = location_tool.lookup_location("KS-03")
-
-        location_obj = result["results"][0]["USA_KS_03"]
-        assert location_obj["identifier"] == "USA_KS_03"
-        assert location_obj["filter"]["district_current"] == "03"
+        result = location_tool.lookup_location("MO-04")
+        location_obj = result["results"][0]["USA_MO_04"]
+        assert location_obj["identifier"] == "USA_MO_04"
+        assert location_obj["filter"]["district_current"] == "04"
         assert location_obj["display"]["entity"] == "Current congressional district"
 
     def test_congressional_district_original(self, location_tool, mock_search):
@@ -607,8 +606,8 @@ class TestHelperMethods:
         """Test identifier format for each location type."""
         # State
         assert location_tool._build_identifier(
-            {"state_name": "KANSAS", "country_name": "UNITED STATES"}, "state"
-        ) == "USA_KS"
+            {"state_name": "MISSOURI", "country_name": "UNITED STATES"}, "state"
+        ) == "USA_MO"
 
         # City
         assert location_tool._build_identifier(
@@ -617,18 +616,18 @@ class TestHelperMethods:
 
         # County
         assert location_tool._build_identifier(
-            {"county_fips": "091", "state_name": "KANSAS", "country_name": "UNITED STATES"}, "county"
-        ) == "USA_KS_091"
+            {"county_fips": "095", "state_name": "MISSOURI", "country_name": "UNITED STATES"}, "county"
+        ) == "USA_MO_095"
 
         # Zip
         assert location_tool._build_identifier(
-            {"zip_code": "66208", "country_name": "UNITED STATES"}, "zip_code"
-        ) == "USA_66208"
+            {"zip_code": "64198", "country_name": "UNITED STATES"}, "zip_code"
+        ) == "USA_64198"
 
         # Congressional district
         assert location_tool._build_identifier(
-            {"current_cd": "KS-03", "state_name": "KANSAS", "country_name": "UNITED STATES"}, "current_cd"
-        ) == "USA_KS_03"
+            {"current_cd": "MO-04", "state_name": "MISSOURI", "country_name": "UNITED STATES"}, "current_cd"
+        ) == "USA_MO_04"
 
         # Country
         assert location_tool._build_identifier(
