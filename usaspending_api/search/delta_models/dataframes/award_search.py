@@ -177,6 +177,7 @@ class AwardSearch(AbstractSearch):
                 self.program_activity_park.code == self.faba.program_activity_reporting_key,
                 "left",
             )
+            .join(self.object_class, self.object_class.id == self.faba.object_class_id, "left")
             .filter(self.faba.award_id.isNotNull())
             .groupby(sf.col("award_id"))
             .agg(*self.accts_agg)

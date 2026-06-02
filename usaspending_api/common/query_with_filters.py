@@ -661,6 +661,37 @@ class _ProgramActivities(_Filter):
         return ES_Q("bool", should=program_activity_match_queries, minimum_should_match=1)
 
 
+class _ObjectClasses(_Filter):
+    underscore_name = "object_classes"
+
+    @classmethod
+    def generate_elasticsearch_query(cls, filter_values: List[str], query_type: QueryType, **options) -> ES_Q:
+        # object_classes (CODES ONLY - not names) is only indexed on the Award index,
+        # so it is only available for award queries
+        if query_type != QueryType.AWARDS:
+            raise InvalidParameterException(
+                "object_classes query type in only for 'awards'"
+            )
+
+        object_classes_match_queries = []
+
+        for filter_value in filter_values:
+            temp_must = []
+
+            if "code" in filter_value:
+                temp_must.append(
+                    ES_Q("match", object_classes__code__keyword=str(filter_value["code"]).zfill(4)))
+
+            if temp_must:
+                object_classes_match_queries.append(
+                    ES_Q("nested", path="object_classes", query=ES_Q("bool", must=temp_must))
+                )
+
+        if len(object_classes_match_queries) == 0:
+            return ~ES_Q()
+        return ES_Q("bool", should=object_classes_match_queries, minimum_should_match=1)
+
+
 class _ContractPricingTypeCodes(_Filter):
     underscore_name = "contract_pricing_type_codes"
 
@@ -949,6 +980,7 @@ class QueryWithFilters:
             _QueryText.underscore_name: _QueryText,
             _NonzeroFields.underscore_name: _NonzeroFields,
             _ProgramActivities.underscore_name: _ProgramActivities,
+            _ObjectClasses.underscore_name: _ObjectClasses,
             _AwardUniqueId.underscore_name: _AwardUniqueId,
         }
         if self.query_type == QueryType.SUBAWARDS:

@@ -126,6 +126,7 @@ SELECT
 
   "generated_pragmatic_obligation",
   CAST("program_activities" AS VARCHAR(65535)) AS program_activities,
+  CAST("object_classes" AS VARCHAR(65535)) AS program_activities,
   "subaward_count",
   "total_subaward_amount",
   "transaction_count",
