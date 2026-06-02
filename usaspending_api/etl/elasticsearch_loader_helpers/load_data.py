@@ -1,6 +1,7 @@
 import logging
 
-from elasticsearch import Elasticsearch, helpers
+from opensearchpy import OpenSearch
+from opensearchpy.helpers.actions import streaming_bulk
 from time import perf_counter
 from typing import List, Tuple, Union
 
@@ -30,7 +31,7 @@ ES_MAX_BATCH_BYTES = 20 * 1024 * 1024
 ES_BATCH_ENTRIES = 4000
 
 
-def load_data(worker: TaskSpec, records: List[dict], client: Elasticsearch) -> Tuple[int, int]:
+def load_data(worker: TaskSpec, records: List[dict], client: OpenSearch) -> Tuple[int, int]:
     start = perf_counter()
     logger.info(format_log(f"Starting Index operation", name=worker.name, action="Index"))
     success, failed = streaming_post_to_es(
@@ -41,7 +42,7 @@ def load_data(worker: TaskSpec, records: List[dict], client: Elasticsearch) -> T
 
 
 def streaming_post_to_es(
-    client: Elasticsearch,
+    client: OpenSearch,
     chunk: list,
     index_name: str,
     job_name: str = None,
@@ -82,7 +83,7 @@ def streaming_post_to_es(
             delete_docs_by_unique_key(
                 client, delete_key, value_list, job_name, index_name, refresh_after=False, slices=slices
             )
-        for ok, item in helpers.streaming_bulk(
+        for ok, item in streaming_bulk(
             client,
             actions=chunk,
             chunk_size=ES_BATCH_ENTRIES,

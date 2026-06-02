@@ -6,7 +6,7 @@ from decimal import Decimal
 from django.db.models import F
 from django.conf import settings
 from django.utils.decorators import method_decorator
-from elasticsearch_dsl import A
+from opensearchpy.helpers.aggs import A
 from rest_framework.response import Response
 from rest_framework.views import APIView
 

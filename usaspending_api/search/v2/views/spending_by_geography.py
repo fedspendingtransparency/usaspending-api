@@ -7,8 +7,8 @@ from typing import Optional
 from django.conf import settings
 from django.db.models import F, TextField, Value
 from django.db.models.functions import Concat
-from elasticsearch_dsl import A
-from elasticsearch_dsl import Q as ES_Q
+from opensearchpy.helpers.query import Q as ES_Q
+from opensearchpy.helpers.aggs import A
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView

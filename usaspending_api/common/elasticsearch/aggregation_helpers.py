@@ -1,4 +1,4 @@
-from elasticsearch_dsl import A
+from opensearchpy.helpers.aggs import A
 
 
 def create_count_aggregation(field_name):

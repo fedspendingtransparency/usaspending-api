@@ -1,7 +1,7 @@
 import json
 import logging
 
-from elasticsearch_dsl import A
+from opensearchpy.helpers.aggs import A
 from model_bakery import baker
 from rest_framework import status
 

@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 
 import pytest
-from elasticsearch import Elasticsearch
+from opensearchpy import OpenSearch
 from model_bakery import baker
 
 from usaspending_api.etl.elasticsearch_loader_helpers.delete_data import (
@@ -106,7 +106,7 @@ def test_delete_modified_awards_before_fy2008(elasticsearch_award_index, test_da
     have been recently updated to have an `action_date` before FY2008 now and delete them from Elasticsearch.
     """
 
-    client: Elasticsearch = elasticsearch_award_index.client
+    client: OpenSearch = elasticsearch_award_index.client
 
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
     original_es_count = client.count(index=elasticsearch_award_index.index_name)["count"]
@@ -147,7 +147,7 @@ def test_delete_modified_transactions_before_fy2008(elasticsearch_transaction_in
     but have have been recently updated to have an `action_date` before FY2008 now and delete them from Elasticsearch.
     """
 
-    client: Elasticsearch = elasticsearch_transaction_index.client
+    client: OpenSearch = elasticsearch_transaction_index.client
 
     setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
     original_es_count = client.count(index=elasticsearch_transaction_index.index_name)["count"]

@@ -1,4 +1,4 @@
-from elasticsearch_dsl import A
+from opensearchpy.helpers.aggs import A
 from rest_framework.request import Request
 from rest_framework.response import Response
 from typing import Any

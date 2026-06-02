@@ -15,7 +15,9 @@ from usaspending_api.search.filters.time_period.decorators import NewAwardsOnlyT
 from usaspending_api.search.filters.time_period.query_types import AwardSearchTimePeriod
 from django.conf import settings
 from usaspending_api.awards.v2.lookups.lookups import all_award_types_mappings
-from elasticsearch_dsl import Q
+
+from opensearchpy.helpers.query import Q
+
 from usaspending_api.common.helpers.fiscal_year_helpers import (
     get_fiscal_year_end_datetime,
     get_fiscal_year_start_datetime,

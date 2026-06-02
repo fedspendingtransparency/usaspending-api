@@ -5,7 +5,7 @@ from time import perf_counter
 
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandParser
-from elasticsearch.client import Elasticsearch
+from opensearchpy import OpenSearch
 
 from usaspending_api.broker.helpers.last_load_date import get_last_load_date
 from usaspending_api.common.elasticsearch.client import instantiate_elasticsearch_client
@@ -187,7 +187,7 @@ class Command(AbstractElasticsearchIndexer):
         return PostgresElasticsearchIndexerController(config)
 
 
-def parse_cli_args(options: dict, es_client: Elasticsearch) -> dict:  # noqa: PLR0912
+def parse_cli_args(options: dict, es_client: OpenSearch) -> dict:  # noqa: PLR0912
     passthrough_values = [
         "create_new_index",
         "drop_db_view",

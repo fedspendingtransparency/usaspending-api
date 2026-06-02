@@ -1,6 +1,7 @@
 from datetime import datetime
 
-from elasticsearch_dsl import A
+from opensearchpy.helpers.aggs import A
+
 from rest_framework.response import Response
 from usaspending_api.agency.v2.views.agency_base import AgencyBase
 from usaspending_api.common.cache_decorator import cache_response

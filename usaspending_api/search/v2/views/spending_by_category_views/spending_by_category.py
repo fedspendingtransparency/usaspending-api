@@ -5,7 +5,8 @@ from dataclasses import dataclass
 from typing import List, Optional, Union
 
 from django.conf import settings
-from elasticsearch_dsl import A, Q as ES_Q
+from opensearchpy.helpers.query import Q as ES_Q
+from opensearchpy.helpers.aggs import A
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView

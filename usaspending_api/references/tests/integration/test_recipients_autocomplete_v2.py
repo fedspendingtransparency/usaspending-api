@@ -2,7 +2,7 @@ import json
 
 import pytest
 from django.conf import settings
-from elasticsearch_dsl import AttrDict
+from opensearchpy.helpers.utils import AttrDict
 from model_bakery import baker
 
 from usaspending_api.references.v2.views.recipients import RecipientAutocompleteViewSet

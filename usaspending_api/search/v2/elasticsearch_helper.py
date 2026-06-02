@@ -3,8 +3,8 @@ from decimal import Decimal
 from typing import Dict, Optional
 
 from django.conf import settings
-from elasticsearch_dsl import A
-from elasticsearch_dsl import Q as ES_Q
+from opensearchpy.helpers.query import Q as ES_Q
+from opensearchpy.helpers.aggs import A
 
 from usaspending_api.awards.v2.lookups.elasticsearch_lookups import INDEX_ALIASES_TO_AWARD_TYPES
 from usaspending_api.common.data_classes import Pagination

@@ -1,7 +1,8 @@
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from collections import OrderedDict
-from elasticsearch_dsl import Q as ES_Q, A
+from opensearchpy.helpers.query import Q as ES_Q
+from opensearchpy.helpers.aggs import A
 
 from usaspending_api.common.cache_decorator import cache_response
 

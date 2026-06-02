@@ -4,7 +4,9 @@ import datetime
 import logging
 
 from django.conf import settings
-from elasticsearch_dsl import Q, A
+from opensearchpy.helpers.query import Q as ES_Q
+from opensearchpy.helpers.aggs import A
+
 from rest_framework.response import Response
 from rest_framework.views import APIView
 

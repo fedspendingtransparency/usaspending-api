@@ -1,4 +1,4 @@
-from elasticsearch_dsl import Q as ES_Q
+from opensearchpy.helpers.query import Q as ES_Q
 from rest_framework.request import Request
 from rest_framework.response import Response
 

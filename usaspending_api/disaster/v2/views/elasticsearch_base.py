@@ -3,7 +3,8 @@ from typing import List, Optional, Dict
 
 from django.conf import settings
 from django.utils.functional import cached_property
-from elasticsearch_dsl import Q as ES_Q, A
+from opensearchpy.helpers.query import Q as ES_Q
+from opensearchpy.helpers.aggs import A
 from rest_framework.request import Request
 from rest_framework.response import Response
 

@@ -1,9 +1,9 @@
 import json
 from collections import OrderedDict
 
-from elasticsearch_dsl import Q as ES_Q
-from elasticsearch_dsl.response import Response as ES_Response
-from elasticsearch_dsl.utils import AttrList
+from opensearchpy.helpers.query import Q as ES_Q
+from opensearchpy.helpers.response import Response as ES_Response
+from opensearchpy.helpers.utils import AttrList
 from rest_framework.response import Response
 from rest_framework.views import APIView
 

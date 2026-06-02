@@ -7,8 +7,9 @@ from typing import Tuple, Optional
 from dataclasses import dataclass, asdict
 
 from django.conf import settings
-from elasticsearch_dsl import A, Search
-from elasticsearch_dsl.response import AggResponse
+from opensearchpy.helpers.aggs import A
+from opensearchpy.helpers.search import Search
+from opensearchpy.helpers.response import AggResponse
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView

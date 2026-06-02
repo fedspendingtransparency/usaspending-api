@@ -6,7 +6,7 @@ from sys import maxsize
 from django.conf import settings
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from elasticsearch_dsl import Q
+from opensearchpy.helpers.query import Q
 
 from usaspending_api.awards.v2.lookups.lookups import all_award_types_mappings
 from usaspending_api.common.api_versioning import api_transformations, API_TRANSFORM_FUNCTIONS

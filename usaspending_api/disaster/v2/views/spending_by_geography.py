@@ -4,7 +4,8 @@ from typing import Optional, List, Dict
 
 from rest_framework.request import Request
 from rest_framework.response import Response
-from elasticsearch_dsl import A, Q as ES_Q
+from opensearchpy.helpers.query import Q as ES_Q
+from opensearchpy.helpers.aggs import A
 
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.elasticsearch.search_wrappers import AwardSearch

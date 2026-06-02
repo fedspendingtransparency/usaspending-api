@@ -6,7 +6,7 @@ from string import Template
 from django.conf import settings
 from django.core.management import call_command
 from django.db import connection
-from elasticsearch import Elasticsearch
+from opensearchpy import OpenSearch
 from pytest import Session
 
 from usaspending_api.common.helpers.sql_helpers import ordered_dictionary_fetcher
@@ -92,7 +92,12 @@ class TestElasticSearchIndex:
         self.index_type = index_type
         self.index_name = self._generate_index_name()
         self.alias_prefix = self.index_name
-        self.client = Elasticsearch([settings.ES_HOSTNAME], timeout=settings.ES_TIMEOUT)
+       
+        self.client = OpenSearch(
+            hosts=[settings.ES_HOSTNAME],
+            timeout=settings.ES_TIMEOUT
+        )
+
         self.etl_config = {
             "load_type": self.index_type,
             "index_name": self.index_name,
@@ -132,7 +137,7 @@ class TestElasticSearchIndex:
         )
 
     def delete_index(self):
-        self.client.indices.delete(self.index_name, ignore_unavailable=True)
+        self.client.indices.delete(index=self.index_name, ignore_unavailable=True)
 
     def update_index(self, load_index: bool = True, **options):
         """

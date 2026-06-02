@@ -2,8 +2,7 @@ import logging
 
 from django.conf import settings
 from django.core.management.base import BaseCommand
-from elasticsearch import Elasticsearch
-
+from opensearchpy import OpenSearch
 
 logger = logging.getLogger("console")
 
@@ -13,7 +12,7 @@ TEST_INDEX_NAME_PATTERN = "test-*"
 
 class Command(BaseCommand):
     def handle(self, *args, **options):
-        client = Elasticsearch([settings.ES_HOSTNAME], timeout=settings.ES_TIMEOUT)
+        client = OpenSearch([settings.ES_HOSTNAME], timeout=settings.ES_TIMEOUT)
         response = client.indices.delete(TEST_INDEX_NAME_PATTERN)
         if response.get("acknowledged") is True:
             logger.info(

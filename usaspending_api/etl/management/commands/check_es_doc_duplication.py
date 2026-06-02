@@ -2,8 +2,8 @@ import logging
 import numpy as np
 
 from django.core.management.base import BaseCommand
-from elasticsearch import Elasticsearch
-from elasticsearch.helpers import scan
+from opensearchpy import OpenSearch
+from opensearchpy.helpers import scan
 from math import ceil, floor
 from multiprocessing.pool import ThreadPool
 from threading import Lock, get_ident
@@ -124,7 +124,7 @@ class Command(BaseCommand):
     def handle_with_scrolling(self, **options):
         self._es_client_config = {"hosts": options["es_hostname"], "timeout": options["es_timeout"]}
         self._partition_size = options["partition_size"]
-        es = Elasticsearch(**self._es_client_config)
+        es = OpenSearch(**self._es_client_config)
         self._index = options["index"]
         doc_count = es.count(index=options["index"])["count"]
         _log.info(f"Found {doc_count:,} docs in index {self._index}")
@@ -178,7 +178,7 @@ class Command(BaseCommand):
     def handle_with_partitioning(self, **options):
         self._es_client_config = {"hosts": options["es_hostname"], "timeout": options["es_timeout"]}
         self._partition_size = options["partition_size"]
-        es = Elasticsearch(**self._es_client_config)
+        es = OpenSearch(**self._es_client_config)
         self._index = options["index"]
         parallelism = options["parallelism"]
         doc_count = es.count(index=options["index"])["count"]
@@ -208,7 +208,7 @@ class Command(BaseCommand):
             _log.info("No duplicate documents with the same _id field found.")
 
     def count_duplication_by_partitions(self, partition):
-        es = Elasticsearch(**self._es_client_config)
+        es = OpenSearch(**self._es_client_config)
         q = self._duplicated_query_template.copy()
         agg_name = next(iter(q["aggs"]))
         q["aggs"][agg_name]["terms"]["size"] = self._partition_size

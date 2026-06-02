@@ -2,8 +2,10 @@ import itertools
 from collections import OrderedDict
 from typing import Any, Union
 
-from elasticsearch_dsl import A, Q as ES_Q
-from elasticsearch_dsl.response import AggResponse
+from opensearchpy.helpers.query import Q as ES_Q
+from opensearchpy.helpers.aggs import A
+from opensearchpy.helpers.response import Response as AggResponse
+
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView

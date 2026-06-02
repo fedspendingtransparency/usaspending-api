@@ -1,4 +1,4 @@
-from elasticsearch_dsl import Q as ES_Q
+from opensearchpy.helpers.query import Q as ES_Q
 from usaspending_api.search.filters.mixins.psc import PSCCodesMixin
 from usaspending_api.search.filters.elasticsearch.filter import _Filter, QueryType
 from usaspending_api.search.filters.elasticsearch.HierarchicalFilter import HierarchicalFilter, Node

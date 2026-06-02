@@ -2,7 +2,7 @@ from abc import abstractmethod, ABCMeta
 from usaspending_api.common.exceptions import InvalidParameterException
 from typing import Union, List
 from enum import Enum
-from elasticsearch_dsl import Q as ES_Q
+from opensearchpy.helpers.query import Q as ES_Q
 
 
 class QueryType(Enum):
