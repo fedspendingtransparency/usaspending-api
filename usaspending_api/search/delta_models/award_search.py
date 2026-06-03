@@ -376,6 +376,7 @@ AWARD_SEARCH_COLUMNS = {
     },
     "naics_code": {"delta": "STRING", "postgres": "TEXT", "gold": False},
     "naics_description": {"delta": "STRING", "postgres": "TEXT", "gold": False},
+    "naics_embedding": {"delta": "ARRAY<FLOAT>", "postgres": "vector(256)", "gold": False},
     "tas_paths": {"delta": "ARRAY<STRING>", "postgres": "TEXT[]", "gold": False},
     "tas_components": {"delta": "ARRAY<STRING>", "postgres": "TEXT[]", "gold": False},
     "federal_accounts": {"delta": "STRING", "postgres": "JSONB", "gold": False},
@@ -455,12 +456,8 @@ AWARD_SEARCH_DELTA_COLUMNS = {
     **{k: v["delta"] for k, v in AWARD_SEARCH_COLUMNS.items()},
     **DELTA_ONLY_COLUMNS,
 }
-AWARD_SEARCH_POSTGRES_COLUMNS = {
-    k: v["postgres"] for k, v in AWARD_SEARCH_COLUMNS.items() if not v["gold"]
-}
-AWARD_SEARCH_POSTGRES_GOLD_COLUMNS = {
-    k: v["gold"] for k, v in AWARD_SEARCH_COLUMNS.items()
-}
+AWARD_SEARCH_POSTGRES_COLUMNS = {k: v["postgres"] for k, v in AWARD_SEARCH_COLUMNS.items() if not v["gold"]}
+AWARD_SEARCH_POSTGRES_GOLD_COLUMNS = {k: v["gold"] for k, v in AWARD_SEARCH_COLUMNS.items()}
 
 ALL_AWARD_TYPES = list(award_type_mapping.keys())
 

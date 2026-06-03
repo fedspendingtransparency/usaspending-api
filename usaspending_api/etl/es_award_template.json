@@ -675,6 +675,19 @@
           }
         }
       },
+      "naics_embedding": {
+        "type": "knn_vector",
+        "dimension": 256,
+        "method": {
+          "name": "hnsw",
+          "space_type": "cosinesimil",
+          "engine": "nmslib",
+          "parameters": {
+            "ef_construction": 128,
+            "m": 16
+          }
+        }
+      },
       "tas_paths": {
         "type": "keyword"
       },

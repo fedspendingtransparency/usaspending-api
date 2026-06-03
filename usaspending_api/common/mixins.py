@@ -1,9 +1,16 @@
+import logging
+
+from django.db import models
 from django.db.models import Avg, Count, F, Q, Max, Min, Sum, Func, IntegerField, ExpressionWrapper
 from django.db.models.functions import ExtractDay, ExtractMonth, ExtractYear
+from django.utils import timezone
+from pgvector.django import VectorField
 
 from usaspending_api.common.api_request_utils import FilterGenerator, AutoCompleteHandler
 from usaspending_api.common.exceptions import InvalidParameterException
+from usaspending_api.llm.embeddings.embedding_generator import EmbeddingGenerator
 
+logger = logging.getLogger(__name__)
 
 class AggregateQuerysetMixin(object):
     """
@@ -240,3 +247,57 @@ class AutocompleteResponseMixin(object):
         params.update(request.data.copy())
 
         return AutoCompleteHandler.handle(queryset, params, serializer)
+
+class EmbeddingMixin(models.Model):
+
+
+    embedding: VectorField = VectorField(dimensions=256, null=True, blank=True)
+    embedding_generated_at: models.DateTimeField = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        abstract = True
+
+
+    def get_embedding_text(self) -> str | None:
+            raise NotImplementedError(
+                f"{self.__class__.__name__} must implement get_embedding_text()"
+            )
+
+    def get_embedding_generator(self) -> EmbeddingGenerator:
+        return EmbeddingGenerator(dimensions=self.embedding_dimensions)
+
+    def generate_embedding(self, force: bool = False) -> bool:
+        if self.embedding is not None and not force:
+            logger.debug(f"Embedding already exists for: {self.__class__.__name__} {self.pk}")
+            return False
+
+        text = self.get_embedding_text()
+
+        if not text or not text.strip():
+            logger.warning(f"Embedding text is empty for: {self.__class__.__name__} {self.pk}")
+            return False
+
+        try:
+            generator = self.get_embedding_generator()
+            self.embedding = generator.generate_embedding(text)
+            self.embedding_generated_at = timezone.now()
+            logger.info(f"Generated embedding for {self.__class__.__name__} {self.pk}")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to generate embedding for {self.__class__.__name__} {self.pk}: {e}")
+            return False
+
+    @property
+    def has_embedding(self) -> bool:
+        return self.embedding is not None
+
+    def save(self, *args, **kwargs) -> None:
+        auto_generate = kwargs.get("auto_generate_embedding", True)
+        if auto_generate and not self.has_embedding:
+            try:
+                self.generate_embedding()
+            except Exception as e:
+                logger.error(
+                    f"Failed to auto-generate embedding during save for {self.__class__.__name__} {self.pk}: {e}"
+                )
+        super().save(*args, **kwargs)

@@ -10,7 +10,7 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework import status
 
-from usaspending_api.llm.models.db_models import Session, Message, LLMSearchQuery, AIModel, Prompts
+from usaspending_api.llm.models.db_models import Session, Message, AIModel, Prompts
 from usaspending_api.llm.assistants.search_assistant import SearchAssistant
 from usaspending_api.llm.tools.advanced_search_filter import create_advanced_search_filter
 from usaspending_api.llm.tools.lookup_location import lookup_location_tool
@@ -37,11 +37,9 @@ class StreamingSearchView(APIView):
             tools=["create_advanced_search_filter", "search_for_location"],
         )
 
-        search_query = LLMSearchQuery.objects.create(user_query=query_text, session=session)
-
         # Create streaming response
         response = StreamingHttpResponse(
-            self.stream_search(session, search_query, query_text, ai_model), content_type="text/event-stream"
+            self.stream_search(session, query_text, ai_model), content_type="text/event-stream"
         )
         response["Cache-Control"] = "no-cache"
         response["X-Accel-Buffering"] = "no"
@@ -49,9 +47,7 @@ class StreamingSearchView(APIView):
 
         return response
 
-    def stream_search(
-        self, session: Session, search_query: LLMSearchQuery, query_text: str, ai_model: AIModel
-    ) -> Generator[str, None, None]:
+    def stream_search(self, session: Session, query_text: str, ai_model: AIModel) -> Generator[str, None, None]:
 
         try:
             # Send initial event
@@ -59,7 +55,6 @@ class StreamingSearchView(APIView):
                 {
                     "type": "start",
                     "session_id": session.id,
-                    "query_id": search_query.id,
                     "query_text": query_text,
                 }
             )

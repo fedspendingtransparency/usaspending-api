@@ -1,8 +1,12 @@
 from django.db import models
+from pgvector.django import VectorField
+
+from usaspending_api.common.mixins import EmbeddingMixin
 from usaspending_api.common.models import DataSourceTrackedModel
 
 
-class Cfda(DataSourceTrackedModel):
+class Cfda(EmbeddingMixin, DataSourceTrackedModel):
+
     program_number = models.TextField(null=False, unique=True, db_index=True)
     program_title = models.TextField(blank=True, null=True)
     popular_name = models.TextField(blank=True, null=True)
@@ -45,9 +49,49 @@ class Cfda(DataSourceTrackedModel):
     archived_date = models.TextField(blank=True, null=True)
     create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
     update_date = models.DateTimeField(auto_now=True, null=True)
+    embedding = VectorField(dimensions=512, null=True, blank=True)
 
     class Meta:
         managed = True
 
     def __str__(self):
         return "%s" % self.program_title
+
+    def get_embedding_text(self) -> str | None:
+        parts = []
+
+        # Core identity (always include)
+        if self.program_title:
+            parts.append(self.program_title.strip())
+
+        if self.popular_name:
+            parts.append(f"({self.popular_name.strip()})")
+
+        if self.objectives:
+            objectives = self._truncate_field(self.objectives, 2000)
+            parts.append(objectives)
+
+        if self.types_of_assistance:
+            parts.append(f"Assistance: {self.types_of_assistance.strip()}")
+
+        if self.applicant_eligibility:
+            eligibility = self._truncate_field(self.applicant_eligibility, 500)
+            parts.append(f"Eligible: {eligibility}")
+
+        if self.uses_and_use_restrictions:
+            uses = self._truncate_field(self.uses_and_use_restrictions, 500)
+            parts.append(f"Uses: {uses}")
+
+        if self.examples_of_funded_projects:
+            examples = self._truncate_field(self.examples_of_funded_projects, 500)
+            parts.append(f"Examples: {examples}")
+
+        return " | ".join(parts) if parts else None
+
+    def _truncate_field(self, text: str, max_length: int) -> str:
+        if not text:
+            return ""
+        text = text.strip()
+        if len(text) > max_length:
+            return text[:max_length] + "..."
+        return text

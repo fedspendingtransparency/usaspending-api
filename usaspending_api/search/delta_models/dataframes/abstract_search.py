@@ -111,6 +111,7 @@ class AbstractSearch(ABC):
         self.ref_program_activity = spark.table("global_temp.ref_program_activity")
         self.program_activity_park = spark.table("global_temp.program_activity_park")
         self.product_service_code = spark.table("global_temp.psc")
+        self.naics = spark.table("global_temp.naics")
 
     @property
     @abstractmethod

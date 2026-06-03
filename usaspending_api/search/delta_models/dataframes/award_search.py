@@ -230,6 +230,11 @@ class AwardSearch(AbstractSearch):
                 "leftouter",
             )
             .join(
+                self.naics,
+                self.transaction_fpds.naics_code == self.naics.code,
+                "leftouter",
+            )
+            .join(
                 self.product_service_code,
                 self.transaction_fpds.product_or_service_code == self.product_service_code.code,
                 "leftouter",
@@ -600,6 +605,7 @@ class AwardSearch(AbstractSearch):
                 self.product_service_code.description.alias("product_or_service_description"),
                 self.transaction_fpds.naics.alias("naics_code"),
                 self.transaction_fpds.naics_description,
+                self.naics.embedding.alias("naics_embedding"),
                 sf.col("tas_paths"),
                 sf.col("tas_components"),
                 sf.col("federal_accounts"),

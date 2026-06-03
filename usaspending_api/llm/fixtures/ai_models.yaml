@@ -28,3 +28,9 @@
     name: nova pro
     model_id: amazon.nova-pro-v1:0
     provider: amazon
+- model: llm.aimodel
+  pk: 6
+  fields:
+    name: titan
+    model_id: amazon.titan-embed-text-v2:0
+    provider: amazon
