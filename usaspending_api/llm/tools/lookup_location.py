@@ -2,7 +2,6 @@ import json
 import logging
 from typing import Any
 
-from django.core.cache import cache
 from elasticsearch_dsl import Q
 
 from usaspending_api.common.elasticsearch.search_wrappers import LocationSearch
