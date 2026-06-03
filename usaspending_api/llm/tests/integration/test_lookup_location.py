@@ -6,6 +6,7 @@ import pytest
 from usaspending_api.llm.models.py_models import Filters, SelectedLocation
 from usaspending_api.llm.tools.lookup_location import LocationLookupTool, lookup_location_tool
 
+pytestmark = pytest.mark.django_db
 
 @pytest.fixture
 def location_tool():
