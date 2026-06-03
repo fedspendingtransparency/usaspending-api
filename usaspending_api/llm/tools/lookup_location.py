@@ -2,6 +2,7 @@ import json
 import logging
 from typing import Any
 
+from django.core.cache import cache
 from elasticsearch_dsl import Q
 
 from usaspending_api.common.elasticsearch.search_wrappers import LocationSearch
@@ -42,9 +43,9 @@ class LocationLookupTool:
             for county in PopCounty.objects.values('state_name', 'state_code').distinct():
                 state_name = county['state_name']
                 state_code = county['state_code']
-                # Store both title case and upper case versions
-                self._state_code_cache[state_name] = state_code
-                self._state_code_cache[state_name.upper()] = state_code
+                if state_name and state_code:
+                    # Store lowercase for case-insensitive lookup
+                    self._state_code_cache[state_name.lower()] = state_code
         return self._state_code_cache
 
     @property
@@ -55,7 +56,7 @@ class LocationLookupTool:
             for country in RefCountryCode.objects.values('country_name', 'country_code'):
                 country_name = country['country_name']
                 country_code = country['country_code']
-                if country_name:
+                if country_name and country_code:
                     # Store lowercase for case-insensitive lookup
                     self._country_code_cache[country_name.lower()] = country_code
         return self._country_code_cache
@@ -320,10 +321,8 @@ class LocationLookupTool:
         if not state_name:
             return ""
 
-        # Try exact match first (title case), then uppercase
-        code = self.state_codes.get(state_name.title()) or self.state_codes.get(state_name.upper())
-
-        # Return code if found, otherwise fallback to first 2 letters uppercase
+        # Case-insensitive lookup
+        code = self.state_codes.get(state_name.lower())
         return code if code else state_name[:2].upper()
 
     def _get_country_code(self, country_name: str) -> str:
@@ -331,15 +330,9 @@ class LocationLookupTool:
         if not country_name:
             return "USA"
 
-        country_name_lower = country_name.lower()
-
-        # Search in country codes dictionary
-        code = self.country_codes.get(country_name_lower)
-        if code:
-            return code
-
-        # Fallback to first 3 letters uppercase
-        return country_name[:3].upper()
+        # Case-insensitive lookup
+        code = self.country_codes.get(country_name.lower())
+        return code if code else country_name[:3].upper()
 
 
 # Create the tool instance

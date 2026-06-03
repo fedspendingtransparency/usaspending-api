@@ -595,14 +595,20 @@ class TestHelperMethods:
 
     def test_get_country_code(self, location_tool):
         """Test country code lookup."""
-        with patch('usaspending_api.llm.tools.lookup_location.country_codes', [
-            {"name": "Germany", "code": "DEU"},
-            {"name": "United States", "code": "USA"},
-        ]):
-            assert location_tool._get_country_code("Germany") == "DEU"
-            assert location_tool._get_country_code("UNITED STATES") == "USA"
-            assert location_tool._get_country_code("") == "USA"
-            assert location_tool._get_country_code("Unknown") == "UNK"
+        # Temporarily replace country_codes for testing
+        original_cache = location_tool._country_code_cache
+        location_tool._country_code_cache = {
+            "germany": "DEU",
+            "united states": "USA",
+        }
+
+        assert location_tool._get_country_code("Germany") == "DEU"
+        assert location_tool._get_country_code("UNITED STATES") == "USA"
+        assert location_tool._get_country_code("") == "USA"
+        assert location_tool._get_country_code("Unknown") == "UNK"
+
+        # Restore original cache
+        location_tool._country_code_cache = original_cache
 
     def test_build_identifier_formats(self, location_tool):
         """Test identifier format for each location type."""
