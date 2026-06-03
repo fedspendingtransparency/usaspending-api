@@ -6,7 +6,7 @@ from elasticsearch_dsl import Q
 
 from usaspending_api.common.elasticsearch.search_wrappers import LocationSearch
 from usaspending_api.llm.models.py_models import AITool, AIToolDescription
-from usaspending_api.llm.tools.reference import country_codes, state_codes
+from usaspending_api.references.models import PopCounty, RefCountryCode
 
 logger = logging.getLogger(__name__)
 
@@ -28,6 +28,37 @@ class LocationLookupTool:
         "current_cd": "Current congressional district",
         "original_cd": "Original congressional district",
     }
+
+    def __init__(self):
+        """Initialize with cached lookups from database."""
+        self._state_code_cache = None
+        self._country_code_cache = None
+
+    @property
+    def state_codes(self) -> dict[str, str]:
+        """Lazy-load state codes from PopCounty model."""
+        if self._state_code_cache is None:
+            self._state_code_cache = {}
+            for county in PopCounty.objects.values('state_name', 'state_code').distinct():
+                state_name = county['state_name']
+                state_code = county['state_code']
+                # Store both title case and upper case versions
+                self._state_code_cache[state_name] = state_code
+                self._state_code_cache[state_name.upper()] = state_code
+        return self._state_code_cache
+
+    @property
+    def country_codes(self) -> dict[str, str]:
+        """Lazy-load country codes from RefCountryCode model."""
+        if self._country_code_cache is None:
+            self._country_code_cache = {}
+            for country in RefCountryCode.objects.values('country_name', 'country_code'):
+                country_name = country['country_name']
+                country_code = country['country_code']
+                if country_name:
+                    # Store lowercase for case-insensitive lookup
+                    self._country_code_cache[country_name.lower()] = country_code
+        return self._country_code_cache
 
     def lookup_location(
             self,
@@ -113,7 +144,7 @@ class LocationLookupTool:
             search = search.filter("term", location_type=location_type)
 
         search = search[:top_k]
-        search = search.source(["location", "location_json", "location_type"])
+        search = search.source("location", "location_json", "location_type")
 
         return search
 
@@ -127,7 +158,7 @@ class LocationLookupTool:
                 source = hit.to_dict()
                 location_obj = self._transform_to_selected_location(
                     location=source.get("location", ""),
-                    location_json=source.get("location_json", "{}"),
+                    location_json=source.get("location_json", ""),
                     location_type=source.get("location_type", ""),
                     score=hit.meta.score,
                 )
@@ -284,34 +315,28 @@ class LocationLookupTool:
             "title": full_location,
         }
 
-    @staticmethod
-    def _get_state_code(state_name: str) -> str:
+    def _get_state_code(self, state_name: str) -> str:
         """Convert state name to 2-letter code."""
-        # Try exact match first (title case)
-        code = state_codes.get(state_name.title())
-        if code:
-            return code
+        if not state_name:
+            return ""
 
-        # Try uppercase match
-        code = state_codes.get(state_name.upper())
-        if code:
-            return code
+        # Try exact match first (title case), then uppercase
+        code = self.state_codes.get(state_name.title()) or self.state_codes.get(state_name.upper())
 
-        # Fallback to first 2 letters uppercase
-        return state_name[:2].upper()
+        # Return code if found, otherwise fallback to first 2 letters uppercase
+        return code if code else state_name[:2].upper()
 
-    @staticmethod
-    def _get_country_code(country_name: str) -> str:
+    def _get_country_code(self, country_name: str) -> str:
         """Convert country name to 3-letter code."""
         if not country_name:
             return "USA"
 
         country_name_lower = country_name.lower()
 
-        # Search in country codes list
-        for country in country_codes:
-            if country.get("name", "").lower() == country_name_lower:
-                return country.get("code", country_name[:3].upper())
+        # Search in country codes dictionary
+        code = self.country_codes.get(country_name_lower)
+        if code:
+            return code
 
         # Fallback to first 3 letters uppercase
         return country_name[:3].upper()

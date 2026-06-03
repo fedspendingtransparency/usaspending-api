@@ -680,3 +680,146 @@ class TestRealWorldScenarios:
         result = location_tool.lookup_location("City", top_k=5)
 
         assert result["count"] == 5
+
+
+class TestDatabaseIntegration:
+    """Test integration with Django models for reference data."""
+
+    @patch('usaspending_api.llm.tools.lookup_location.PopCounty')
+    def test_state_codes_loaded_from_database(self, mock_pop_county, location_tool):
+        """AC: State codes should be loaded from PopCounty model."""
+        mock_pop_county.objects.values.return_value.distinct.return_value = [
+            {'state_name': 'Texas', 'state_code': 'TX'},
+            {'state_name': 'California', 'state_code': 'CA'},
+        ]
+
+        # Clear cache to force reload
+        location_tool._state_code_cache = None
+
+        state_codes = location_tool.state_codes
+
+        assert 'Texas' in state_codes
+        assert state_codes['Texas'] == 'TX'
+        assert 'TEXAS' in state_codes  # Upper case version
+        mock_pop_county.objects.values.assert_called_once_with('state_name', 'state_code')
+
+    @patch('usaspending_api.llm.tools.lookup_location.RefCountryCode')
+    def test_country_codes_loaded_from_database(self, mock_country_code, location_tool):
+        """AC: Country codes should be loaded from RefCountryCode model."""
+        mock_country_code.objects.values.return_value = [
+            {'country_name': 'United States', 'country_code': 'USA'},
+            {'country_name': 'Germany', 'country_code': 'DEU'},
+        ]
+
+        # Clear cache to force reload
+        location_tool._country_code_cache = None
+
+        country_codes = location_tool.country_codes
+
+        assert 'united states' in country_codes
+        assert country_codes['united states'] == 'USA'
+        mock_country_code.objects.values.assert_called_once_with('country_name', 'country_code')
+
+    @patch('usaspending_api.llm.tools.lookup_location.PopCounty')
+    def test_state_codes_cached_after_first_load(self, mock_pop_county, location_tool):
+        """Test that state codes are cached to avoid repeated DB queries."""
+        mock_pop_county.objects.values.return_value.distinct.return_value = [
+            {'state_name': 'Texas', 'state_code': 'TX'},
+        ]
+
+        location_tool._state_code_cache = None
+
+        # Access twice
+        _ = location_tool.state_codes
+        _ = location_tool.state_codes
+
+        # Database should only be queried once
+        assert mock_pop_county.objects.values.call_count == 1
+
+
+class TestSingleQueryRequirement:
+    """AC: Test that tool queries OpenSearch only once."""
+
+    def test_single_opensearch_query_with_multiple_strategies(self, location_tool, mock_search):
+        """AC: Single query should use multiple matching strategies (exact, fuzzy, wildcard)."""
+        mock_search.execute.return_value.hits = []
+
+        location_tool.lookup_location("Texas")
+
+        # execute should be called exactly once
+        assert mock_search.execute.call_count == 1
+
+        # Get the query call to verify multiple strategies
+        call_args = mock_search.query.call_args
+        assert call_args[0][0] == "bool"
+        should_queries = call_args[1]["should"]
+
+        # Should have multiple matching strategies in one query
+        assert len(should_queries) >= 5
+
+
+class TestGenericAIToolModel:
+    """AC: Test that AITool model is generic and reusable for other tools."""
+
+    def test_aitool_model_is_reusable(self):
+        """Test that AITool can be used to create other tools."""
+        from usaspending_api.llm.models.py_models import AITool, AIToolDescription
+
+        # Create a dummy tool to verify the model is generic
+        def dummy_function(param1: str, param2: int = 10):
+            return {"result": f"{param1}-{param2}"}
+
+        dummy_tool = AITool(
+            function=dummy_function,
+            logging=lambda tool_input: f"Dummy tool called with {tool_input}",
+            description=AIToolDescription(
+                name="dummy_tool",
+                description="A test tool",
+                input_schema={
+                    "type": "object",
+                    "properties": {
+                        "param1": {"type": "string"},
+                        "param2": {"type": "integer", "default": 10}
+                    },
+                    "required": ["param1"]
+                }
+            )
+        )
+
+        # Verify tool works
+        assert callable(dummy_tool.function)
+        assert dummy_tool.function("test") == {"result": "test-10"}
+        assert dummy_tool.description.name == "dummy_tool"
+
+
+class TestAllLocationFieldsCoverage:
+    """AC: Test that all relevant location fields are supported."""
+
+    def test_all_location_types_have_display_mapping(self):
+        """Verify all location types have display mappings."""
+        location_types = LocationLookupTool.LOCATION_TYPES
+        display_map = LocationLookupTool.ENTITY_DISPLAY_MAP
+
+        for loc_type in location_types:
+            assert loc_type in display_map, f"{loc_type} missing from ENTITY_DISPLAY_MAP"
+
+    def test_all_location_types_handled_in_builders(self, location_tool):
+        """Verify all location types work in identifier and filter builders."""
+        test_data = {
+            "country_name": "UNITED STATES",
+            "country_code": "USA",
+            "state_name": "TEXAS",
+            "city_name": "DALLAS",
+            "county_fips": "113",
+            "zip_code": "75001",
+            "current_cd": "TX-32",
+            "original_cd": "TX-30",
+        }
+
+        for loc_type in LocationLookupTool.LOCATION_TYPES:
+            identifier = location_tool._build_identifier(test_data, loc_type)
+            filter_obj = location_tool._build_filter(test_data, loc_type)
+
+            # Should not return UNKNOWN and should have country
+            assert identifier != "UNKNOWN", f"{loc_type} returned UNKNOWN"
+            assert "country" in filter_obj, f"{loc_type} filter missing country"
