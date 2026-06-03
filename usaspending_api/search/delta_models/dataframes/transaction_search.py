@@ -906,7 +906,8 @@ class TransactionSearch(AbstractSearch):
                 "leftouter",
             )
             .join(
-                self.funding_toptier_agency,
+                # self.funding_toptier_agency,
+                sf.broadcast(self.funding_toptier_agency),
                 self.funding_agency.funding_toptier_agency_id
                 == self.funding_toptier_agency.toptier_agency_id,
                 "leftouter",
@@ -996,7 +997,6 @@ def load_transaction_search(
     spark: SparkSession, destination_database: str, destination_table_name: str
 ) -> None:
     df = TransactionSearch(spark).dataframe
-    df.explain(mode="formatted")
     df.write.saveAsTable(
         f"{destination_database}.{destination_table_name}",
         mode="overwrite",
