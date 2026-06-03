@@ -862,7 +862,7 @@ class TransactionSearch(AbstractSearch):
                 "leftouter",
             )
             .join(
-                sf.broadcast(self.recipient_lookup),
+                self.recipient_lookup,
                 self.recipient_lookup.recipient_hash == self.generated_recipient_hash,
                 "leftouter",
             )
@@ -927,13 +927,13 @@ class TransactionSearch(AbstractSearch):
                 "leftouter",
             )
             .join(
-                sf.broadcast(self.parent_recipient),
+                self.parent_recipient,
                 self.parent_recipient.parent_recipient_hash
                 == self.generated_parent_recipient_hash,
                 "leftouter",
             )
             .join(
-                sf.broadcast(self.recipient_hash_and_levels),
+                self.recipient_hash_and_levels,
                 (sf.col("recipient_hash") == sf.col("recipient_level_hash"))
                 & ~(sf.col("legal_business_name").isin(SPECIAL_CASES)),
                 "leftouter",
