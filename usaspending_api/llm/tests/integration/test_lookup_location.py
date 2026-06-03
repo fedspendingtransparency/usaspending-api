@@ -8,6 +8,7 @@ from usaspending_api.llm.tools.lookup_location import LocationLookupTool, lookup
 
 pytestmark = pytest.mark.django_db
 
+
 @pytest.fixture
 def location_tool():
     """Fixture for LocationLookupTool instance."""
