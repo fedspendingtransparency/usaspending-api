@@ -339,6 +339,7 @@ class LocationLookupTool:
 
         return code if code else "UNK"
 
+
 # Create the tool instance
 lookup_location_tool = AITool(
     function=LocationLookupTool().lookup_location,
