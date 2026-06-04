@@ -692,8 +692,8 @@ class TestRealWorldScenarios:
 
         assert result["count"] == 2
         identifiers = [list(loc.keys())[0] for loc in result["results"]]
-        assert "USA_MO_KANSAS CITY" in identifiers
-        assert "USA_KS_KANSAS CITY" in identifiers
+        assert "USA_MO_KANSAS_CITY" in identifiers
+        assert "USA_KS_KANSAS_CITY" in identifiers
 
     def test_location_type_narrows_results(self, location_tool, mock_search):
         """Test that location_type filter helps with ambiguous queries."""
