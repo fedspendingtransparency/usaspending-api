@@ -318,11 +318,11 @@ class LocationLookupTool:
     def _get_state_code(self, state_name: str) -> str:
         """Convert state name to 2-letter code."""
         if not state_name:
-            return ""
+            return "XX"
 
         # Case-insensitive lookup
         code = self.state_codes.get(state_name.lower())
-        return code if code else state_name[:2].upper()
+        return code if code else "XX"
 
     def _get_country_code(self, country_name: str) -> str:
         """Convert country name to 3-letter code."""
@@ -331,7 +331,7 @@ class LocationLookupTool:
 
         # Case-insensitive lookup
         code = self.country_codes.get(country_name.lower())
-        return code if code else country_name[:3].upper()
+        return code if code else "UNK"
 
 
 # Create the tool instance
