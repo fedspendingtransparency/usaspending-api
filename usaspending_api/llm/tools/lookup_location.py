@@ -43,8 +43,10 @@ class LocationLookupTool:
                 state_name = county['state_name']
                 state_code = county['state_code']
                 if state_name and state_code:
-                    # Store lowercase for case-insensitive lookup
+                    # Store with multiple case variations for flexible lookup
+                    self._state_code_cache[state_name] = state_code
                     self._state_code_cache[state_name.lower()] = state_code
+                    self._state_code_cache[state_name.upper()] = state_code
         return self._state_code_cache
 
     @property
@@ -172,9 +174,9 @@ class LocationLookupTool:
                 seen_identifiers.add(identifier)
 
                 # Return in the format expected by selectedLocations
-                results.append({
-                    identifier: location_obj
-                })
+                results.append(
+                    {identifier: location_obj}
+                )
 
             except Exception as e:
                 logger.warning(
@@ -320,8 +322,11 @@ class LocationLookupTool:
         if not state_name:
             return "XX"
 
-        # Case-insensitive lookup
-        code = self.state_codes.get(state_name.lower())
+        # Try multiple case variations
+        code = (self.state_codes.get(state_name) or
+                self.state_codes.get(state_name.lower()) or
+                self.state_codes.get(state_name.upper()))
+
         return code if code else "XX"
 
     def _get_country_code(self, country_name: str) -> str:
@@ -331,8 +336,8 @@ class LocationLookupTool:
 
         # Case-insensitive lookup
         code = self.country_codes.get(country_name.lower())
-        return code if code else "UNK"
 
+        return code if code else "UNK"
 
 # Create the tool instance
 lookup_location_tool = AITool(
