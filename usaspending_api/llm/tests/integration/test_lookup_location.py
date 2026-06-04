@@ -10,7 +10,40 @@ pytestmark = pytest.mark.django_db
 
 
 @pytest.fixture
-def location_tool():
+def mock_database(monkeypatch):
+    """Mock the database models to return test data."""
+    from unittest.mock import MagicMock
+
+    # Mock PopCounty for state codes
+    mock_pop_county = MagicMock()
+    mock_pop_county.objects.values.return_value.distinct.return_value = [
+        {'state_name': 'Texas', 'state_code': 'TX'},
+        {'state_name': 'California', 'state_code': 'CA'},
+        {'state_name': 'Florida', 'state_code': 'FL'},
+        {'state_name': 'Illinois', 'state_code': 'IL'},
+        {'state_name': 'Missouri', 'state_code': 'MO'},
+        {'state_name': 'Kansas', 'state_code': 'KS'},
+        {'state_name': 'New York', 'state_code': 'NY'},
+        {'state_name': 'Washington', 'state_code': 'WA'},
+        {'state_name': 'Massachusetts', 'state_code': 'MA'},
+    ]
+
+    # Mock RefCountryCode for country codes
+    mock_country_code = MagicMock()
+    mock_country_code.objects.values.return_value = [
+        {'country_name': 'United States', 'country_code': 'USA'},
+        {'country_name': 'Germany', 'country_code': 'DEU'},
+        {'country_name': 'Turkey', 'country_code': 'TUR'},
+    ]
+
+    monkeypatch.setattr('usaspending_api.llm.tools.lookup_location.PopCounty', mock_pop_county)
+    monkeypatch.setattr('usaspending_api.llm.tools.lookup_location.RefCountryCode', mock_country_code)
+
+    return mock_pop_county, mock_country_code
+
+
+@pytest.fixture
+def location_tool(mock_database):
     """Fixture for LocationLookupTool instance."""
     return LocationLookupTool()
 
@@ -694,15 +727,15 @@ class TestDatabaseIntegration:
     """Test integration with Django models for reference data."""
 
     @patch('usaspending_api.llm.tools.lookup_location.PopCounty')
-    def test_state_codes_loaded_from_database(self, mock_pop_county, location_tool):
+    def test_state_codes_loaded_from_database(self, mock_pop_county):
         """AC: State codes should be loaded from PopCounty model."""
         mock_pop_county.objects.values.return_value.distinct.return_value = [
             {'state_name': 'Texas', 'state_code': 'TX'},
             {'state_name': 'California', 'state_code': 'CA'},
         ]
 
-        # Clear cache to force reload
-        location_tool._state_code_cache = None
+        # Create a fresh instance with the mock
+        location_tool = LocationLookupTool()
 
         state_codes = location_tool.state_codes
 
@@ -712,15 +745,15 @@ class TestDatabaseIntegration:
         mock_pop_county.objects.values.assert_called_once_with('state_name', 'state_code')
 
     @patch('usaspending_api.llm.tools.lookup_location.RefCountryCode')
-    def test_country_codes_loaded_from_database(self, mock_country_code, location_tool):
+    def test_country_codes_loaded_from_database(self, mock_country_code):
         """AC: Country codes should be loaded from RefCountryCode model."""
         mock_country_code.objects.values.return_value = [
             {'country_name': 'United States', 'country_code': 'USA'},
             {'country_name': 'Germany', 'country_code': 'DEU'},
         ]
 
-        # Clear cache to force reload
-        location_tool._country_code_cache = None
+        # Create a fresh instance with the mock
+        location_tool = LocationLookupTool()
 
         country_codes = location_tool.country_codes
 
@@ -729,13 +762,14 @@ class TestDatabaseIntegration:
         mock_country_code.objects.values.assert_called_once_with('country_name', 'country_code')
 
     @patch('usaspending_api.llm.tools.lookup_location.PopCounty')
-    def test_state_codes_cached_after_first_load(self, mock_pop_county, location_tool):
+    def test_state_codes_cached_after_first_load(self, mock_pop_county):
         """Test that state codes are cached to avoid repeated DB queries."""
         mock_pop_county.objects.values.return_value.distinct.return_value = [
             {'state_name': 'Texas', 'state_code': 'TX'},
         ]
 
-        location_tool._state_code_cache = None
+        # Create a fresh instance
+        location_tool = LocationLookupTool()
 
         # Access twice
         _ = location_tool.state_codes
