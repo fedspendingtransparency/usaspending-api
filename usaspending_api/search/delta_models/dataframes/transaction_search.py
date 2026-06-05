@@ -842,6 +842,7 @@ class TransactionSearch(AbstractSearch):
 
     @property
     def dataframe(self) -> DataFrame:
+        # Create and checkpoint the initial dataframe with Transactions and Awards
         df = (
             self.transaction_normalized.join(
                 self.transaction_fabs,
@@ -856,19 +857,41 @@ class TransactionSearch(AbstractSearch):
                 "leftouter",
             )
             .join(
-                self.references_cfda,
-                self.transaction_fabs.cfda_number
-                == self.references_cfda.program_number,
+                self.awards,
+                self.transaction_normalized.award_id == self.awards.id,
                 "leftouter",
             )
+            .checkpoint()
+        )
+        # Create a new checkpoint that adds in the recipient data
+        df = (
+            df
             .join(
                 self.recipient_lookup,
                 self.recipient_lookup.recipient_hash == self.generated_recipient_hash,
                 "leftouter",
             )
             .join(
-                self.awards,
-                self.transaction_normalized.award_id == self.awards.id,
+                self.parent_recipient,
+                self.parent_recipient.parent_recipient_hash
+                == self.generated_parent_recipient_hash,
+                "leftouter",
+            )
+            .join(
+                self.recipient_hash_and_levels,
+                (sf.col("recipient_hash") == sf.col("recipient_level_hash"))
+                & ~(sf.col("legal_business_name").isin(SPECIAL_CASES)),
+                "leftouter",
+            )
+            .checkpoint()
+        )
+        # Add in the agency reference data
+        df = (
+            df
+            .join(
+                self.references_cfda,
+                self.transaction_fabs.cfda_number
+                == self.references_cfda.program_number,
                 "leftouter",
             )
             .join(
@@ -926,20 +949,11 @@ class TransactionSearch(AbstractSearch):
                 & (self.funding_agency_id.row_num == 1),
                 "leftouter",
             )
-            .join(
-                self.parent_recipient,
-                self.parent_recipient.parent_recipient_hash
-                == self.generated_parent_recipient_hash,
-                "leftouter",
-            )
-            .join(
-                self.recipient_hash_and_levels,
-                (sf.col("recipient_hash") == sf.col("recipient_level_hash"))
-                & ~(sf.col("legal_business_name").isin(SPECIAL_CASES)),
-                "leftouter",
-            )
+            .checkpoint()
         )
-        df_with_location = self.join_location_data(df)
+        # Checkpoint that includes the location data
+        df_with_location = self.join_location_data(df).checkpoint()
+        # Add remaining data
         return (
             df_with_location.join(
                 self.current_cd,

@@ -253,6 +253,7 @@ def configure_spark_session(  # noqa: C901,PLR0912,PLR0913,PLR0915
     if enable_hive_support:
         builder = builder.enableHiveSupport()
     spark = builder.config(conf=conf).getOrCreate()
+    spark.sparkContext.setCheckpointDir(f"s3a://{CONFIG.SPARK_S3_BUCKET}/tmp/spark-checkpoints")
 
     # Now that the SparkSession was created, check whether certain provided config values were ignored if given a
     # pre-existing SparkContext, and error-out if so
