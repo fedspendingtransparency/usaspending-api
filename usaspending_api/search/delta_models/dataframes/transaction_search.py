@@ -940,7 +940,7 @@ class TransactionSearch(AbstractSearch):
             )
         )
         df_with_location = self.join_location_data(df)
-        final_df = (
+        return (
             df_with_location.join(
                 self.current_cd,
                 self.transaction_normalized.id == self.current_cd.transaction_id,
@@ -985,11 +985,6 @@ class TransactionSearch(AbstractSearch):
             )
             .withColumn("merge_hash_key", sf.xxhash64("*"))
         )
-        # Repartitioning the dataframe to match shuffle partitions which should be the number of cores * 2
-        num_partitions = self.spark.sparkContext.defaultParallelism * 2
-        # final_df = final_df.hint("skew", "transaction_id")
-        return final_df.repartition(num_partitions)
-        # return final_df
 
 
 def load_transaction_search(
@@ -1006,49 +1001,16 @@ def load_transaction_search(
 def load_transaction_search_incremental(
     spark: SparkSession, destination_database: str, destination_table_name: str
 ) -> None:
-    # CURRENT APPROACH
-    # target = DeltaTable.forName(
-    #     spark, f"{destination_database}.{destination_table_name}"
-    # ).alias("t")
-    # source = TransactionSearch(spark).dataframe.alias("s")
-    # (
-    #     target.merge(
-    #         source,
-    #         "s.transaction_id = t.transaction_id and s.merge_hash_key = t.merge_hash_key",
-    #     )
-    #     .whenNotMatchedInsertAll()
-    #     .whenNotMatchedBySourceDelete()
-    #     .execute()
-    # )
-
-    # TEST APPROACH
-    target_df = spark.table(f"{destination_database}.{destination_table_name}")
-    source_df = TransactionSearch(spark).dataframe
-    to_insert = source_df.join(
-        target_df,
-        on=["transaction_id", "merge_hash_key"],
-        how="left_anti"
-    ).withColumn("merge_action", sf.lit("INSERT"))
-    to_delete = target_df.join(
-        source_df,
-        on=["transaction_id", "merge_hash_key"],
-        how="left_anti"
-    ).withColumn("merge_action", sf.lit("DELETE"))
-    changes_df = to_insert.unionByName(to_delete, allowMissingColumns=True)
-    target_table = DeltaTable.forName(
+    target = DeltaTable.forName(
         spark, f"{destination_database}.{destination_table_name}"
-    )
+    ).alias("t")
+    source = TransactionSearch(spark).dataframe.alias("s")
     (
-        target_table.alias("t")
-        .merge(
-            changes_df.alias("c"),
-            "c.transaction_id = t.transaction_id and c.merge_hash_key = t.merge_hash_key",
+        target.merge(
+            source,
+            "s.transaction_id = t.transaction_id and s.merge_hash_key = t.merge_hash_key",
         )
-        .whenMatchedDelete(
-            condition="c.merge_action = 'DELETE'"
-        )
-        .whenNotMatchedInsertAll(
-            condition='c.merge_action = "INSERT"',
-        )
+        .whenNotMatchedInsertAll()
+        .whenNotMatchedBySourceDelete()
         .execute()
     )
