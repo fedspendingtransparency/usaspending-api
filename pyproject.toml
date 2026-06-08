@@ -95,12 +95,13 @@ dependencies = [
     "opentelemetry-util-http==0.49b2",
     # The above packages are listed and pinned to avoid using the 'opentelemetry-bootstrap -a install' command
     "opensearch-py>=3.2.0",
+    "docker>=7.1.0",
 ]
 
 [project.optional-dependencies]
 dev = [
     "click==8.1.7",
-    "docker==7.0.0",
+    "docker==7.1.0",
     "dredd-hooks==0.2.0",
     "importlib-metadata==8.5.0",
     "mock==5.1.*",

@@ -705,17 +705,16 @@ wheels = [
 
 [[package]]
 name = "docker"
-version = "7.0.0"
+version = "7.1.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "packaging" },
     { name = "pywin32", marker = "sys_platform == 'win32'" },
     { name = "requests" },
     { name = "urllib3" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/25/14/7d40f8f64ceca63c741ee5b5611ead4fb8d3bcaf3e6ab57d2ab0f01712bc/docker-7.0.0.tar.gz", hash = "sha256:323736fb92cd9418fc5e7133bc953e11a9da04f4483f828b527db553f1e7e5a3", size = 258536, upload-time = "2023-12-08T20:42:25.225Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/91/9b/4a2ea29aeba62471211598dac5d96825bb49348fa07e906ea930394a83ce/docker-7.1.0.tar.gz", hash = "sha256:ad8c70e6e3f8926cb8a92619b832b4ea5299e2831c14284663184e200546fa6c", size = 117834, upload-time = "2024-05-23T11:13:57.216Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/18/bd/9706c10bb12e05043ef138dc8d412cfd17f29c8df0fb28ad71c96a98785d/docker-7.0.0-py3-none-any.whl", hash = "sha256:12ba681f2777a0ad28ffbcc846a69c31b4dfd9752b47eb425a274ee269c5e14b", size = 147565, upload-time = "2023-12-08T20:42:23.58Z" },
+    { url = "https://files.pythonhosted.org/packages/e3/26/57c6fb270950d476074c087527a558ccb6f4436657314bfb6cdf484114c4/docker-7.1.0-py3-none-any.whl", hash = "sha256:c96b93b7f0a746f9e77d325bcfb87422a3d8bd4f03136ae8a85b37f1898d5fc0", size = 147774, upload-time = "2024-05-23T11:13:55.01Z" },
 ]
 
 [[package]]
@@ -2538,6 +2537,7 @@ dependencies = [
     { name = "django-extensions" },
     { name = "django-spaghetti-and-meatballs" },
     { name = "djangorestframework" },
+    { name = "docker" },
     { name = "docutils" },
     { name = "drf-api-tracking" },
     { name = "drf-extensions" },
@@ -2655,7 +2655,8 @@ requires-dist = [
     { name = "django-redis", marker = "extra == 'server'", specifier = "==5.4.*" },
     { name = "django-spaghetti-and-meatballs", specifier = "==0.4.*" },
     { name = "djangorestframework", specifier = "==3.15.*" },
-    { name = "docker", marker = "extra == 'dev'", specifier = "==7.0.0" },
+    { name = "docker", specifier = ">=7.1.0" },
+    { name = "docker", marker = "extra == 'dev'", specifier = "==7.1.0" },
     { name = "docutils", specifier = ">=0.10,<0.17" },
     { name = "dredd-hooks", marker = "extra == 'dev'", specifier = "==0.2.0" },
     { name = "drf-api-tracking", specifier = "==1.8.4" },
