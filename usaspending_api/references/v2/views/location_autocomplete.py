@@ -4,7 +4,7 @@ from collections import OrderedDict
 from opensearchpy.helpers.query import Q as ES_Q
 from opensearchpy.helpers.response import Response as ES_Response
 from opensearchpy.helpers.utils import AttrList
-from rest_framework.Request import Request
+from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
