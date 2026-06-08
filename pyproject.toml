@@ -93,8 +93,8 @@ dependencies = [
     "opentelemetry-proto==1.28.2",
     "opentelemetry-sdk==1.28.2",
     "opentelemetry-semantic-conventions==0.49b2",
-    "opentelemetry-util-http==0.49b2",    # The above packages are listed and pinned to avoid using the 'opentelemetry-bootstrap -a install' command
-
+    "opentelemetry-util-http==0.49b2",
+    # The above packages are listed and pinned to avoid using the 'opentelemetry-bootstrap -a install' command
 ]
 
 [project.optional-dependencies]

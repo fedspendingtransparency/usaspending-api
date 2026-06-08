@@ -162,21 +162,23 @@ class Command(BaseCommand):
             self.stdout.write(self.style.SUCCESS(f"✓ No {model_name} records need embeddings"))
             return 0, 0
 
-        self.stdout.write(f"Found {total:,} records to process")
+        pks_to_process = list(queryset.values_list("pk", flat=True))
+        self.stdout.write(f"Found {len(pks_to_process):,} records to process")
 
         if dry_run:
-            self.stdout.write(self.style.WARNING(f"Would process {total:,} {model_name} records"))
-            return total, 0
+            self.stdout.write(self.style.WARNING(f"Would process {len(pks_to_process):,} {model_name} records"))
+            return len(pks_to_process), 0
 
         # Process in batches
         processed = 0
         failed = 0
         skipped = 0
 
-        for i in range(0, total, batch_size):
-            batch = list(queryset[i : i + batch_size])
+        for i in range(0, len(pks_to_process), batch_size):
+            batch_pks = pks_to_process[i : i + batch_size]
+            batch = list(model_class.objects.filter(pk__in=batch_pks))
             batch_num = (i // batch_size) + 1
-            total_batches = (total + batch_size - 1) // batch_size
+            total_batches = (len(pks_to_process) + batch_size - 1) // batch_size
 
             self.stdout.write(f"\nBatch {batch_num}/{total_batches} ({len(batch)} records)")
 

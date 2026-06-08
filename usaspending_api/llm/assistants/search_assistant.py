@@ -53,7 +53,7 @@ class SearchAssistant:
         stop_reason = response["stopReason"]
         while stop_reason == "tool_use":
             tool_use = output_message["content"][1]["toolUse"]
-            t = ToolUse.objects.create(name=tool_use["name"], input=tool_use["input"], message=m, result="")
+            t = ToolUse.objects.create(name=tool_use["name"], tool_input=tool_use["input"], message=m, result="")
             tool_result_message = {"role": "user", "content": []}
             tool_requests = response["output"]["message"]["content"]
             for tool_request in tool_requests[::-1]:

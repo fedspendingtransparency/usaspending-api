@@ -111,6 +111,7 @@ SELECT
   "product_or_service_description",
   "naics_code",
   "naics_description",
+  "naics_embedding",
 
   "tas_paths",
   "tas_components",

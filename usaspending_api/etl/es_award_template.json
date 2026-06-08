@@ -1,5 +1,6 @@
 {
   "settings": {
+    "index.knn": true,
     "index.mapping.ignore_malformed": true,
     "index.max_result_window": null,
     "index.refresh_interval": -1,

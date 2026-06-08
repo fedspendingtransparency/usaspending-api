@@ -1746,6 +1746,18 @@ wheels = [
 ]
 
 [[package]]
+name = "pgvector"
+version = "0.4.2"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "numpy" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/25/6c/6d8b4b03b958c02fa8687ec6063c49d952a189f8c91ebbe51e877dfab8f7/pgvector-0.4.2.tar.gz", hash = "sha256:322cac0c1dc5d41c9ecf782bd9991b7966685dee3a00bc873631391ed949513a", size = 31354, upload-time = "2025-12-05T01:07:17.87Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/5a/26/6cee8a1ce8c43625ec561aff19df07f9776b7525d9002c86bceb3e0ac970/pgvector-0.4.2-py3-none-any.whl", hash = "sha256:549d45f7a18593783d5eec609ea1684a724ba8405c4cb182a0b2b08aeff04e08", size = 27441, upload-time = "2025-12-05T01:07:16.536Z" },
+]
+
+[[package]]
 name = "pip"
 version = "23.2.1"
 source = { registry = "https://pypi.org/simple" }
@@ -2547,6 +2559,7 @@ dependencies = [
     { name = "opentelemetry-semantic-conventions" },
     { name = "opentelemetry-util-http" },
     { name = "pandas" },
+    { name = "pgvector" },
     { name = "psutil" },
     { name = "psycopg" },
     { name = "py-gfm" },
@@ -2669,6 +2682,7 @@ requires-dist = [
     { name = "opentelemetry-util-http", specifier = "==0.49b2" },
     { name = "packaging", marker = "extra == 'server'", specifier = "==22.0" },
     { name = "pandas", specifier = "==2.2.*" },
+    { name = "pgvector", specifier = ">=0.4.2" },
     { name = "pip", marker = "extra == 'dev'", specifier = "==23.2.*" },
     { name = "pre-commit", marker = "extra == 'dev'", specifier = "==3.6.2" },
     { name = "psutil", specifier = "==5.9.*" },
