@@ -4,6 +4,7 @@ from collections import OrderedDict
 from opensearchpy.helpers.query import Q as ES_Q
 from opensearchpy.helpers.response import Response as ES_Response
 from opensearchpy.helpers.utils import AttrList
+from rest_framework.Request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -39,7 +40,7 @@ class LocationAutocompleteViewSet(APIView):
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/autocomplete/location.md"
 
     @cache_response()
-    def post(self, request):
+    def post(self, request: Request) -> Response:
         es_results: ES_Response = self._query_elasticsearch(request.data["search_text"], request.data["limit"])
 
         if len(es_results.aggregations.location_types.buckets) == 0:

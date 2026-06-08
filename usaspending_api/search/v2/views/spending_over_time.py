@@ -2,14 +2,14 @@ import copy
 import logging
 from calendar import monthrange
 from collections import OrderedDict
+from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
-from typing import Tuple, Optional
-from dataclasses import dataclass, asdict
+from typing import Any, Optional, Tuple
 
 from django.conf import settings
 from opensearchpy.helpers.aggs import A
-from opensearchpy.helpers.search import Search
 from opensearchpy.helpers.response import AggResponse
+from opensearchpy.helpers.search import Search
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -32,7 +32,6 @@ from usaspending_api.common.validator.award_filter import AWARD_FILTER_W_FILTERS
 from usaspending_api.common.validator.pagination import PAGINATION
 from usaspending_api.common.validator.tinyshield import TinyShield
 from usaspending_api.search.filters.elasticsearch.filter import QueryType
-
 from usaspending_api.search.v2.views.enums import SpendingLevel
 
 logger = logging.getLogger(__name__)
@@ -139,7 +138,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
 
         return validated_data, models
 
-    def get_time_period_aggregation(self):
+    def get_time_period_aggregation(self) -> Any:
         field_prefix = "sub_" if self.spending_level == SpendingLevel.SUBAWARD else ""
         field = "action_date" if self.group == "calendar_year" else "fiscal_action_date"
         interval = "year" if self.group in ["calendar_year", "fiscal_year"] else self.group
@@ -298,7 +297,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
 
         return response_object
 
-    def build_elasticsearch_result(self, agg_response: AggResponse, time_periods: list[TimePeriod]) -> list:
+    def build_elasticsearch_result(self, agg_response: AggResponse, time_periods: list[TimePeriod]) -> list:  # noqa: PLR0912
         """
         In this function we are just taking the elasticsearch aggregate response and looping through the
         buckets to create a results object for each time interval.

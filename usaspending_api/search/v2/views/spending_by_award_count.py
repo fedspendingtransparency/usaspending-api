@@ -1,15 +1,16 @@
 import copy
 import logging
 from collections import defaultdict
-
 from sys import maxsize
+
 from django.conf import settings
+from opensearchpy.helpers.query import Q
+from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from opensearchpy.helpers.query import Q
 
 from usaspending_api.awards.v2.lookups.lookups import all_award_types_mappings
-from usaspending_api.common.api_versioning import api_transformations, API_TRANSFORM_FUNCTIONS
+from usaspending_api.common.api_versioning import API_TRANSFORM_FUNCTIONS, api_transformations
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.elasticsearch.search_wrappers import AwardSearch, SubawardSearch
 from usaspending_api.common.exceptions import InvalidParameterException
@@ -36,7 +37,7 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/search/spending_by_award_count.md"
 
     @cache_response()
-    def post(self, request):
+    def post(self, request: Request) -> Response:
         program_activities_rule = {
             "name": "program_activities",
             "type": "array",
@@ -112,7 +113,7 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
 
         return Response(raw_response)
 
-    def query_elasticsearch_for_prime_awards(self, filters) -> list:
+    def query_elasticsearch_for_prime_awards(self, filters: dict) -> list:
         query_with_filters = QueryWithFilters(QueryType.AWARDS)
         filter_query = query_with_filters.generate_elasticsearch_query(filters)
         s = AwardSearch().filter(filter_query)
@@ -141,7 +142,7 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
         }
         return response
 
-    def query_elasticsearch_for_subawards(self, filters) -> list:
+    def query_elasticsearch_for_subawards(self, filters: dict) -> list:
         query_with_filters = QueryWithFilters(QueryType.SUBAWARDS)
         filter_query = query_with_filters.generate_elasticsearch_query(filters)
         s = SubawardSearch().filter(filter_query).filter("exists", field="award_id").extra(size=0)

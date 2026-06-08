@@ -1,10 +1,10 @@
 from abc import abstractmethod
-from typing import List, Optional, Dict
+from typing import Dict, List, Optional
 
 from django.conf import settings
 from django.utils.functional import cached_property
-from opensearchpy.helpers.query import Q as ES_Q
 from opensearchpy.helpers.aggs import A
+from opensearchpy.helpers.query import Q as ES_Q
 from rest_framework.request import Request
 from rest_framework.response import Response
 
@@ -14,8 +14,8 @@ from usaspending_api.common.elasticsearch.search_wrappers import AwardSearch
 from usaspending_api.common.exceptions import ForbiddenException
 from usaspending_api.common.helpers.generic_helper import get_pagination_metadata
 from usaspending_api.common.query_with_filters import QueryWithFilters
-from usaspending_api.search.filters.elasticsearch.filter import QueryType
 from usaspending_api.disaster.v2.views.disaster_base import DisasterBase, _BasePaginationMixin
+from usaspending_api.search.filters.elasticsearch.filter import QueryType
 from usaspending_api.search.v2.elasticsearch_helper import (
     get_number_of_unique_terms_for_awards,
     get_summed_value_as_float,
@@ -34,7 +34,7 @@ class ElasticsearchSpendingPaginationMixin(_BasePaginationMixin):
     }
 
     @cached_property
-    def pagination(self):
+    def pagination(self) -> Pagination:
         return self.run_models(list(self.sort_column_mapping), default_sort_column="id")
 
 
@@ -55,7 +55,7 @@ class ElasticsearchLoansPaginationMixin(_BasePaginationMixin):
     }
 
     @cached_property
-    def pagination(self):
+    def pagination(self) -> Pagination:
         return self.run_models(list(self.sort_column_mapping), default_sort_column="id")
 
 
@@ -218,7 +218,7 @@ class ElasticsearchDisasterBase(DisasterBase):
 
         return search
 
-    def extend_elasticsearch_search_with_sub_aggregation(self, search: AwardSearch):
+    def extend_elasticsearch_search_with_sub_aggregation(self, search: AwardSearch) -> None:
         """
         This template method is called if the `self.sub_agg_key` is supplied, in order to post-process the query and
         inject a sub-aggregation on a secondary dimension (that is subordinate to the first agg_key's dimension).

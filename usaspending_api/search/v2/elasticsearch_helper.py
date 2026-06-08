@@ -1,24 +1,26 @@
 import logging
 from decimal import Decimal
-from typing import Dict, Optional
+from typing import Any, Dict, Generator, Optional
 
 from django.conf import settings
-from opensearchpy.helpers.query import Q as ES_Q
+from django.db.models import QuerySet
 from opensearchpy.helpers.aggs import A
+from opensearchpy.helpers.query import Q as ES_Q
+from opensearchpy.helpers.response import Response
 
 from usaspending_api.awards.v2.lookups.elasticsearch_lookups import INDEX_ALIASES_TO_AWARD_TYPES
 from usaspending_api.common.data_classes import Pagination
 from usaspending_api.common.elasticsearch.search_wrappers import AwardSearch, Search, TransactionSearch
 from usaspending_api.common.query_with_filters import QueryWithFilters
-from usaspending_api.search.v2.es_sanitization import es_minimal_sanitize
 from usaspending_api.search.filters.elasticsearch.filter import QueryType
+from usaspending_api.search.v2.es_sanitization import es_minimal_sanitize
 
 logger = logging.getLogger("console")
 
 DOWNLOAD_QUERY_SIZE = settings.MAX_DOWNLOAD_LIMIT
 
 
-def get_total_results(keyword):
+def get_total_results(keyword: Any) -> Response | None:
     group_by_agg_key_values = {
         "filters": {category: {"terms": {"type": types}} for category, types in INDEX_ALIASES_TO_AWARD_TYPES.items()}
     }
@@ -39,7 +41,7 @@ def get_total_results(keyword):
         return None
 
 
-def spending_by_transaction_count(search_query):
+def spending_by_transaction_count(search_query: QuerySet) -> dict | None:
     group_by_agg_key_values = {
         "filters": {category: {"terms": {"type": types}} for category, types in INDEX_ALIASES_TO_AWARD_TYPES.items()}
     }
@@ -63,7 +65,7 @@ def spending_by_transaction_count(search_query):
     return response
 
 
-def get_sum_aggregation_results(keyword, field="federal_action_obligation"):
+def get_sum_aggregation_results(keyword: Any, field: str = "federal_action_obligation") -> Any | None:
     group_by_agg_key_values = {"field": field}
     aggs = A("sum", **group_by_agg_key_values)
     query_with_filters = QueryWithFilters(QueryType.TRANSACTIONS)
@@ -78,12 +80,12 @@ def get_sum_aggregation_results(keyword, field="federal_action_obligation"):
         return None
 
 
-def spending_by_transaction_sum(filters):
+def spending_by_transaction_sum(filters: dict) -> Any | None:
     keyword = filters["keywords"]
     return get_sum_aggregation_results(keyword)
 
 
-def get_download_ids(keyword, field, size=10000):
+def get_download_ids(keyword: Any, field: str, size: int = 10000) -> Generator[list, Any, None]:
     """
     returns a generator that
     yields list of transaction ids in chunksize SIZE
@@ -122,7 +124,7 @@ def get_download_ids(keyword, field, size=10000):
         yield results
 
 
-def get_sum_and_count_aggregation_results(keyword):
+def get_sum_and_count_aggregation_results(keyword: Any) -> dict | None:
     query_with_filters = QueryWithFilters(QueryType.TRANSACTIONS)
     filter_query = query_with_filters.generate_elasticsearch_query({"keyword_search": [es_minimal_sanitize(keyword)]})
     search = TransactionSearch().filter(filter_query)
@@ -144,7 +146,7 @@ def get_sum_and_count_aggregation_results(keyword):
         return None
 
 
-def spending_by_transaction_sum_and_count(request_data):
+def spending_by_transaction_sum_and_count(request_data: dict) -> dict | None:
     return get_sum_and_count_aggregation_results(request_data["filters"]["keywords"])
 
 

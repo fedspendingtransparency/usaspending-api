@@ -1,13 +1,11 @@
-from typing import Union, Optional
+import logging
+from ssl import CERT_NONE
+from typing import Optional, Union
 
 import certifi
-import logging
-
 from django.conf import settings
 from opensearchpy import OpenSearch
 from opensearchpy.connection import create_ssl_context
-from ssl import CERT_NONE
-
 from opensearchpy.helpers.response import Response
 
 logger = logging.getLogger("console")

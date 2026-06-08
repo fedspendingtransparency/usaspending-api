@@ -1,16 +1,15 @@
+from collections import OrderedDict
+
+from opensearchpy.helpers.aggs import A
+from opensearchpy.helpers.query import Q as ES_Q
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from collections import OrderedDict
-from opensearchpy.helpers.query import Q as ES_Q
-from opensearchpy.helpers.aggs import A
 
-from usaspending_api.common.cache_decorator import cache_response
-
-from usaspending_api.common.elasticsearch.search_wrappers import TransactionSearch
-from usaspending_api.search.v2.es_sanitization import es_sanitize
-from usaspending_api.common.validator.tinyshield import validate_post_request
 from usaspending_api.awards.v2.filters.location_filter_geocode import ALL_FOREIGN_COUNTRIES
-
+from usaspending_api.common.cache_decorator import cache_response
+from usaspending_api.common.elasticsearch.search_wrappers import TransactionSearch
+from usaspending_api.common.validator.tinyshield import validate_post_request
+from usaspending_api.search.v2.es_sanitization import es_sanitize
 
 models = [
     {
@@ -50,7 +49,7 @@ class CityAutocompleteViewSet(APIView):
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/autocomplete/city.md"
 
     @cache_response()
-    def post(self, request, format=None):
+    def post(self, request, format=None):  # noqa: ANN001 ANN201
         search_text, country, state = prepare_search_terms(request.data)
         scope = "recipient_location" if request.data["filter"]["scope"] == "recipient_location" else "pop"
         limit = request.data["limit"]
@@ -63,13 +62,13 @@ class CityAutocompleteViewSet(APIView):
         return Response(response)
 
 
-def prepare_search_terms(request_data):
+def prepare_search_terms(request_data: dict) -> list:
     fields = [request_data["search_text"], request_data["filter"]["country_code"], request_data["filter"]["state_code"]]
 
     return [es_sanitize(field).upper() if isinstance(field, str) else field for field in fields]
 
 
-def create_elasticsearch_query(return_fields, scope, search_text, country, state, limit):
+def create_elasticsearch_query(return_fields, scope, search_text, country, state, limit):   # noqa: ANN001 ANN201
     query = create_es_search(scope, search_text, country, state)
     # Buffering the "group by city" to create a handful more buckets, more than the number of shards we expect to have,
     # so that we don't get inconsistent results when the limit gets down to a very low number (e.g. lower than the
@@ -85,7 +84,7 @@ def create_elasticsearch_query(return_fields, scope, search_text, country, state
     return query
 
 
-def create_es_search(scope, search_text, country=None, state=None):
+def create_es_search(scope, search_text, country=None, state=None):  # noqa: ANN001 ANN201
     """
     Providing the parameters, create a dictionary representing the bool-query conditional clauses for elasticsearch
 
@@ -129,12 +128,12 @@ def create_es_search(scope, search_text, country=None, state=None):
     return search
 
 
-def build_country_match(country_match_scope, country_match_country):
+def build_country_match(country_match_scope, country_match_country) -> dict:  # noqa: ANN001
     country_match = {"match": {"{}_country_code".format(country_match_scope): country_match_country}}
     return country_match
 
 
-def query_elasticsearch(query):
+def query_elasticsearch(query) -> list:   # noqa: ANN001
     hits = query.handle_execute()
     results = []
     if hits and hits["hits"]["total"]["value"] > 0:
@@ -143,7 +142,7 @@ def query_elasticsearch(query):
     return results
 
 
-def parse_elasticsearch_response(hits):
+def parse_elasticsearch_response(hits: dict) -> list:
     results = []
     for city in hits["aggregations"]["cities"]["buckets"]:
         if len(city["states"]["buckets"]) > 0:

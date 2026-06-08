@@ -1,13 +1,12 @@
 import logging
-
-from opensearchpy import OpenSearch
-from opensearchpy.helpers.actions import streaming_bulk
 from time import perf_counter
 from typing import List, Tuple, Union
 
+from opensearchpy import OpenSearch
+from opensearchpy.helpers.actions import streaming_bulk
+
 from usaspending_api.etl.elasticsearch_loader_helpers.delete_data import delete_docs_by_unique_key
 from usaspending_api.etl.elasticsearch_loader_helpers.utilities import TaskSpec, format_log
-
 
 logger = logging.getLogger("script")
 
@@ -33,7 +32,7 @@ ES_BATCH_ENTRIES = 4000
 
 def load_data(worker: TaskSpec, records: List[dict], client: OpenSearch) -> Tuple[int, int]:
     start = perf_counter()
-    logger.info(format_log(f"Starting Index operation", name=worker.name, action="Index"))
+    logger.info(format_log("Starting Index operation", name=worker.name, action="Index"))
     success, failed = streaming_post_to_es(
         client, records, worker.index, worker.name, delete_before_index=worker.is_incremental, slices=worker.slices
     )
@@ -41,7 +40,7 @@ def load_data(worker: TaskSpec, records: List[dict], client: OpenSearch) -> Tupl
     return success, failed
 
 
-def streaming_post_to_es(
+def streaming_post_to_es(    # noqa: PLR0913
     client: OpenSearch,
     chunk: list,
     index_name: str,
@@ -83,7 +82,7 @@ def streaming_post_to_es(
             delete_docs_by_unique_key(
                 client, delete_key, value_list, job_name, index_name, refresh_after=False, slices=slices
             )
-        for ok, item in streaming_bulk(
+        for ok, _item in streaming_bulk(
             client,
             actions=chunk,
             chunk_size=ES_BATCH_ENTRIES,
@@ -98,7 +97,7 @@ def streaming_post_to_es(
 
     except Exception as e:
         logger.error(f"Error on partition {job_name}:\n\n{str(e)[:2000]}\n...\n{str(e)[-2000:]}\n")
-        raise RuntimeError(f"{job_name}")
+        raise RuntimeError(f"{job_name}") from Exception
 
     logger.info(format_log(f"Success: {success:,} | Fail: {failed:,}", name=job_name, action="Index"))
     return success, failed

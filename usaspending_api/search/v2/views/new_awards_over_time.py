@@ -1,12 +1,11 @@
 import copy
 import datetime
-
 import logging
 
 from django.conf import settings
-from opensearchpy.helpers.query import Q as ES_Q
 from opensearchpy.helpers.aggs import A
-
+from opensearchpy.helpers.query import Q
+from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -17,10 +16,10 @@ from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers.fiscal_year_helpers import generate_fiscal_year
 from usaspending_api.common.helpers.generic_helper import get_generic_filters_message
 from usaspending_api.common.query_with_filters import QueryWithFilters
-from usaspending_api.search.filters.elasticsearch.filter import QueryType
 from usaspending_api.common.validator.award_filter import AWARD_FILTER
 from usaspending_api.common.validator.tinyshield import TinyShield
 from usaspending_api.recipient.models import RecipientProfile
+from usaspending_api.search.filters.elasticsearch.filter import QueryType
 
 logger = logging.getLogger(__name__)
 
@@ -35,7 +34,7 @@ class NewAwardsOverTimeVisualizationViewSet(APIView):
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/search/new_awards_over_time.md"
 
-    def validate_api_request(self, json_payload):
+    def validate_api_request(self, json_payload: dict) -> dict:
         self.groupings = {
             "quarter": "quarter",
             "q": "quarter",
@@ -63,7 +62,7 @@ class NewAwardsOverTimeVisualizationViewSet(APIView):
         models.extend(advanced_search_filters)
         return TinyShield(models).block(json_payload)
 
-    def query_elasticsearch(self):
+    def query_elasticsearch(self) -> Response:
         filters = self.filters
         recipient_hash = self.filters["recipient_id"][:-2]
         if self.filters["recipient_id"][-1] == "P":
@@ -102,7 +101,7 @@ class NewAwardsOverTimeVisualizationViewSet(APIView):
         response = search.handle_execute()
         return response
 
-    def complete_missing_periods(self, results):
+    def complete_missing_periods(self, results: list) -> list:
         required_years = range(
             generate_fiscal_year(datetime.datetime.strptime(self.start_date, "%Y-%m-%d")),
             generate_fiscal_year(datetime.datetime.strptime(self.end_date, "%Y-%m-%d")) + 1,
@@ -141,7 +140,7 @@ class NewAwardsOverTimeVisualizationViewSet(APIView):
         )
         return results
 
-    def format_results(self, es_results):
+    def format_results(self, es_results: Response) -> list:
         results = []
         time_change = datetime.timedelta(days=92)
         for x in es_results.aggs.to_dict().get("time_period", {}).get("buckets", []):
@@ -150,7 +149,9 @@ class NewAwardsOverTimeVisualizationViewSet(APIView):
             if self.group == "month":
                 time_period = {"fiscal_year": f"{date.year}", self.group: f"{date.month}"}
             elif self.group == "quarter":
-                time_period = {"fiscal_year": f"{date.year}", self.group: f"{int(date.month/3) + (date.month % 3>0)}"}
+                time_period = {
+                    "fiscal_year": f"{date.year}", self.group: f"{int(date.month / 3) + (date.month % 3 > 0)}"
+                }
             else:
                 time_period = {"fiscal_year": f"{date.year}"}
             results.append(
@@ -163,7 +164,7 @@ class NewAwardsOverTimeVisualizationViewSet(APIView):
         return results
 
     @cache_response()
-    def post(self, request):
+    def post(self, request: Request) -> Response:
         self.original_filters = request.data.get("filters")
         self.json_request = self.validate_api_request(request.data)
         self.filters = self.json_request.get("filters", None)

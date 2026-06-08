@@ -7,8 +7,8 @@ import pytest
 from django.conf import settings
 from django.core.management import CommandError, call_command
 from django.test import override_settings
-from opensearchpy import OpenSearch
 from model_bakery import baker
+from opensearchpy import OpenSearch
 
 from usaspending_api.awards.models import Award, TransactionNormalized
 from usaspending_api.broker.lookups import EXTERNAL_DATA_TYPE_DICT

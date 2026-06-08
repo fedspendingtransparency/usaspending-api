@@ -1,22 +1,22 @@
 from decimal import Decimal
 from enum import Enum
-from typing import Optional, List, Dict
+from typing import Dict, List, Optional
 
+from opensearchpy.helpers.aggs import A
+from opensearchpy.helpers.query import Q as ES_Q
 from rest_framework.request import Request
 from rest_framework.response import Response
-from opensearchpy.helpers.query import Q as ES_Q
-from opensearchpy.helpers.aggs import A
 
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.elasticsearch.search_wrappers import AwardSearch
 from usaspending_api.common.exceptions import UnprocessableEntityException
 from usaspending_api.common.query_with_filters import QueryWithFilters
-from usaspending_api.search.filters.elasticsearch.filter import QueryType
 from usaspending_api.common.validator import TinyShield
 from usaspending_api.disaster.v2.views.disaster_base import DisasterBase
 from usaspending_api.recipient.models import StateData
 from usaspending_api.references.abbreviations import code_to_state
-from usaspending_api.references.models import PopCounty, CityCountyStateCode, PopCongressionalDistrict
+from usaspending_api.references.models import CityCountyStateCode, PopCongressionalDistrict, PopCounty
+from usaspending_api.search.filters.elasticsearch.filter import QueryType
 from usaspending_api.search.v2.elasticsearch_helper import (
     get_number_of_unique_terms_for_awards,
 )
@@ -160,7 +160,7 @@ class SpendingByGeographyViewSet(DisasterBase):
             bucket_count += 1
 
         # Add 100 to make sure that we consider enough records in each shard for accurate results
-        # We have to group by state no matter what since congressional districts and counties aren't unique between states
+        # We have to group by state no matter what as congressional districts & counties aren't unique between states
         group_by_agg_key = A("terms", field=self.agg_key, size=bucket_count, shard_size=bucket_count + 100)
         filter_agg_query = ES_Q("terms", **{"spending_by_defc.defc": self.covid_def_codes})
         if self.sub_agg_key:
@@ -181,7 +181,7 @@ class SpendingByGeographyViewSet(DisasterBase):
 
         return search
 
-    def build_elasticsearch_result(self, response: dict) -> Dict[str, dict]:
+    def build_elasticsearch_result(self, response: dict) -> Dict[str, dict]:  # noqa: PLR0912 PLR0915
         results = {}
         geo_info_buckets = response.get("group_by_agg_key", {}).get("buckets", [])
 

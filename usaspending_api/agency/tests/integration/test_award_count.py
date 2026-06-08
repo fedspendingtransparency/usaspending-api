@@ -1,7 +1,7 @@
 import pytest
 from model_bakery import baker
-
 from rest_framework import status
+
 from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
 
 url = "/api/v2/agency/awards/count/{filters}"

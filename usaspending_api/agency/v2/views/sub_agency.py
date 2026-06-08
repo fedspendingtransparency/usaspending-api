@@ -1,22 +1,26 @@
+from typing import Any
+
+from fiscalyear import FiscalYear
 from opensearchpy.helpers.aggs import A
+from opensearchpy.helpers.query import Q as ES_Q
 from rest_framework.request import Request
 from rest_framework.response import Response
-from typing import Any
+
 from usaspending_api.agency.v2.views.agency_base import AgencyBase
-from fiscalyear import FiscalYear
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.elasticsearch.aggregation_helpers import create_count_aggregation
 from usaspending_api.common.elasticsearch.search_wrappers import TransactionSearch
 from usaspending_api.common.helpers.generic_helper import get_pagination_metadata
 from usaspending_api.common.helpers.pagination_mixin import PaginationMixin
 from usaspending_api.common.query_with_filters import QueryWithFilters
-from usaspending_api.references.models import Agency, SubtierAgency, Office
+from usaspending_api.references.models import Agency, Office, SubtierAgency
 from usaspending_api.search.filters.elasticsearch.filter import QueryType
 
 
 class SubAgencyList(PaginationMixin, AgencyBase):
     """
-    Obtain the list of subagencies and offices based on the provided toptier_code and fiscal year, as well as award type.
+    Obtain the list of subagencies and offices
+    based on the provided toptier_code and fiscal year, as well as award type.
     Can be either by funding agency or awarding agency.
     Based on transaction data.
     """
@@ -49,7 +53,7 @@ class SubAgencyList(PaginationMixin, AgencyBase):
             }
         )
 
-    def format_elasticsearch_results(self, results):
+    def format_elasticsearch_results(self, results: Response) -> list:
         response = []
         buckets = results.aggs.to_dict().get("subtier_agencies", {}).get("buckets", [])
 
@@ -94,7 +98,7 @@ class SubAgencyList(PaginationMixin, AgencyBase):
             )
         return response
 
-    def format_child_response(self, children, current_office_info):
+    def format_child_response(self, children: list, current_office_info: dict) -> list:
         response = []
         for child in children:
             response.append(
@@ -108,11 +112,11 @@ class SubAgencyList(PaginationMixin, AgencyBase):
             )
         return response
 
-    def get_sub_agency_list(self):
+    def get_sub_agency_list(self) -> list:
         response = self.query_elasticsearch()
         return self.format_elasticsearch_results(response)
 
-    def build_elasticsearch_filter_query(self):
+    def build_elasticsearch_filter_query(self) -> ES_Q:
         fiscal_year = FiscalYear(self.fiscal_year)
         query_with_filters = QueryWithFilters(QueryType.TRANSACTIONS)
         filter_query = query_with_filters.generate_elasticsearch_query(
@@ -124,7 +128,7 @@ class SubAgencyList(PaginationMixin, AgencyBase):
         )
         return filter_query
 
-    def query_elasticsearch(self):
+    def query_elasticsearch(self) -> Response:
         fiscal_year = FiscalYear(self.fiscal_year)
         search = TransactionSearch().filter(self.filter_query)
         term_agg_sizes = self.get_term_agg_size_values()
@@ -172,7 +176,7 @@ class SubAgencyList(PaginationMixin, AgencyBase):
         response = search.handle_execute()
         return response
 
-    def get_term_agg_size_values(self):
+    def get_term_agg_size_values(self) -> dict:
         search = TransactionSearch().filter(self.filter_query)
         max_subtier_agencies = Agency.objects.filter(
             toptier_agency__toptier_code=self.toptier_code, subtier_agency__isnull=False

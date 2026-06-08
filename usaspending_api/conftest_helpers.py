@@ -92,7 +92,7 @@ class TestElasticSearchIndex:
         self.index_type = index_type
         self.index_name = self._generate_index_name()
         self.alias_prefix = self.index_name
-       
+
         self.client = OpenSearch(
             hosts=[settings.ES_HOSTNAME],
             timeout=settings.ES_TIMEOUT

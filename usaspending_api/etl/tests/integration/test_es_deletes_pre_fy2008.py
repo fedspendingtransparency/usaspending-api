@@ -1,8 +1,8 @@
 from datetime import datetime, timedelta
 
 import pytest
-from opensearchpy import OpenSearch
 from model_bakery import baker
+from opensearchpy import OpenSearch
 
 from usaspending_api.etl.elasticsearch_loader_helpers.delete_data import (
     _check_awards_for_pre_fy2008,
@@ -52,8 +52,8 @@ def test_data_fixture(db):
 
 @pytest.mark.django_db(transaction=True)
 def test_find_modified_awards_before_fy2008(test_data_fixture):
-    """Test that we can find any awards that PREVIOUSLY had an `action_date` on or after FY2008 (2007-10-01), but have
-    have been recently updated to have an `action_date` before FY2008 now.
+    """Test that we can find any awards that PREVIOUSLY had an `action_date` on or after FY2008 (2007-10-01),
+    but have been recently updated to have an `action_date` before FY2008 now.
     """
 
     # Modify the existing DB award to now have an `action_date` before 2007-10-01
@@ -75,8 +75,8 @@ def test_find_modified_awards_before_fy2008(test_data_fixture):
 
 @pytest.mark.django_db(transaction=True)
 def test_find_modified_transactions_before_fy2008(test_data_fixture):
-    """Test that we can find any transactions that PREVIOUSLY had an `action_date` on or after FY2008 (2007-10-01), but have
-    have been recently updated to have an `action_date` before FY2008 now.
+    """Test that we can find any transactions that PREVIOUSLY had an `action_date` on or after FY2008 (2007-10-01)
+    but have been recently updated to have an `action_date` before FY2008 now.
     """
     delete_window_start = datetime.now() - timedelta(days=1)
 

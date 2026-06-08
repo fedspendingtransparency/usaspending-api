@@ -2,8 +2,8 @@ import json
 
 import pytest
 from django.conf import settings
-from opensearchpy.helpers.utils import AttrDict
 from model_bakery import baker
+from opensearchpy.helpers.utils import AttrDict
 
 from usaspending_api.references.v2.views.recipients import RecipientAutocompleteViewSet
 
@@ -357,8 +357,8 @@ def test_recipient_search_no_matches(client, monkeypatch, recipient_data_fixture
     body = {"search_text": "nonexistent", "recipient_levels": ["R", "C", "D"], "limit": 20}
     response = client.post("/api/v2/autocomplete/recipient", content_type="application/json", data=json.dumps(body))
     assert response.data["count"] == 0
-    for entry in response.data["results"]:
-        assert False  # this should never be reached
+    for _entry in response.data["results"]:
+        raise AssertionError()
 
 
 def test_recipient_search_special_characters(

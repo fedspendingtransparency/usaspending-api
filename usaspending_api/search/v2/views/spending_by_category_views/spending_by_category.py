@@ -5,8 +5,8 @@ from dataclasses import dataclass
 from typing import List, Optional, Union
 
 from django.conf import settings
-from opensearchpy.helpers.query import Q as ES_Q
 from opensearchpy.helpers.aggs import A
+from opensearchpy.helpers.query import Q as ES_Q
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -160,21 +160,21 @@ class AbstractSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
 
         return response
 
-    def _raise_not_implemented(self):
+    def _raise_not_implemented(self) -> None:
         msg = f"Category '{self.category.name}' is not implemented"
         if self.spending_level == SpendingLevel.SUBAWARD or self.spending_level == SpendingLevel.FILE_C:
             msg += f" when 'spending_level' is '{self.spending_level.value}'"
         raise NotImplementedException(msg)
 
     @staticmethod
-    def _get_messages(original_filters) -> List:
+    def _get_messages(original_filters: dict) -> List:
         if original_filters:
             return get_generic_filters_message(original_filters.keys(), [elem["name"] for elem in AWARD_FILTER])
         else:
             return get_generic_filters_message(set(), [elem["name"] for elem in AWARD_FILTER])
 
     @staticmethod
-    def _get_pagination(payload):
+    def _get_pagination(payload: dict) -> Pagination:
         return Pagination(
             page=payload["page"],
             limit=payload["limit"],

@@ -7,8 +7,8 @@ from typing import Dict, List, Optional, Union
 import pandas as pd
 from django.conf import settings
 from opensearchpy import OpenSearch
-from opensearchpy.helpers.search import Search
 from opensearchpy.helpers.mapping import Mapping
+from opensearchpy.helpers.search import Search
 from psycopg import sql as psycopg_sql
 
 from usaspending_api.broker.helpers.last_load_date import (

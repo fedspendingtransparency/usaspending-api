@@ -1,8 +1,10 @@
 import json
 import logging
 import time
+from typing import Any
 
 from django.conf import settings
+from opensearchpy import OpenSearch
 
 from usaspending_api.awards.v2.lookups.elasticsearch_lookups import INDEX_ALIASES_TO_AWARD_TYPES
 from usaspending_api.broker.helpers.last_load_date import get_earliest_load_date, get_last_load_date
@@ -16,23 +18,23 @@ ES_RECIPIENT_UNIQUE_KEY_FIELD = "recipient_hash"
 ES_SUBAWARD_UNIQUE_KEY_FIELD = "broker_subaward_id"
 
 
-def create_index(index, client):
+def create_index(index: str, client: OpenSearch) -> None:
     try:
         does_index_exist = client.indices.exists(index)
     except Exception:
         logger.exception("Unable to query cluster for indices")
-        raise SystemExit(1)
+        raise SystemExit(1) from Exception
     if not does_index_exist:
         logger.info(format_log(f"Creating index '{index}'", action="Index"))
         client.indices.create(index=index)
         client.indices.refresh(index=index)
 
 
-def put_alias(client, index, alias_name, alias_body):
+def put_alias(client: OpenSearch, index: str, alias_name: str, alias_body: Any) -> None:
     client.indices.put_alias(index=index, name=alias_name, body=alias_body)
 
 
-def create_award_type_aliases(client, config):
+def create_award_type_aliases(client: OpenSearch, config: dict) -> None:
     for award_type, award_type_codes in INDEX_ALIASES_TO_AWARD_TYPES.items():
         alias_name = f"{config['query_alias_prefix']}-{award_type}"
         if config["verbose"]:
@@ -42,20 +44,20 @@ def create_award_type_aliases(client, config):
         put_alias(client, config["index_name"], alias_name, alias_body)
 
 
-def create_read_alias(client, config):
+def create_read_alias(client: OpenSearch, config: dict) -> None:
     alias_name = config["query_alias_prefix"]
     logger.info(format_log(f"Putting alias '{alias_name}' on {config['index_name']}", action="ES Alias"))
     put_alias(client, config["index_name"], alias_name, {})
 
 
-def create_load_alias(client, config):
+def create_load_alias(client: OpenSearch, config: dict) -> None:
     # ensure the new index is added to the alias used for incremental loads.
     # If the alias is on multiple indexes, the loads will fail!
     logger.info(format_log(f"Putting alias '{config['write_alias']}' on {config['index_name']}", action="ES Alias"))
     put_alias(client, config["index_name"], config["write_alias"], {})
 
 
-def set_final_index_config(client, index):
+def set_final_index_config(client: OpenSearch, index: str) -> None:
     es_settingsfile = str(settings.APP_DIR / "etl" / "es_config_objects.json")
     with open(es_settingsfile) as f:
         settings_dict = json.load(f)
@@ -70,7 +72,7 @@ def set_final_index_config(client, index):
         logger.info(format_log(message, action="ES Settings"))
 
 
-def swap_aliases(client, config):
+def swap_aliases(client: OpenSearch, config: dict) -> None:  # noqa: PLR0912
     if client.indices.get_alias(config["index_name"], "*"):
         logger.info(format_log(f"Removing old aliases for index '{config['index_name']}'", action="ES Alias"))
         client.indices.delete_alias(config["index_name"], "_all")
@@ -123,13 +125,13 @@ def swap_aliases(client, config):
         logger.exception(format_log(f"Unable to delete indexes: {old_indexes}", action="ES Alias"))
 
 
-def toggle_refresh_off(client, index):
+def toggle_refresh_off(client: OpenSearch, index: str) -> None:
     client.indices.put_settings(body={"refresh_interval": "-1"}, index=index)
     message = 'Set "refresh_interval": "-1" to turn auto refresh off'
     logger.info(format_log(message, action="ES Settings"))
 
 
-def toggle_refresh_on(client, index):
+def toggle_refresh_on(client: OpenSearch, index: str) -> None:
     response = client.indices.get(index)
     aliased_index_name = list(response.keys())[0]
     current_refresh_interval = response[aliased_index_name]["settings"]["index"]["refresh_interval"]

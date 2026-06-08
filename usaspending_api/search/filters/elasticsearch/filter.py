@@ -1,8 +1,10 @@
-from abc import abstractmethod, ABCMeta
-from usaspending_api.common.exceptions import InvalidParameterException
-from typing import Union, List
+from abc import ABCMeta, abstractmethod
 from enum import Enum
+from typing import List, Union
+
 from opensearchpy.helpers.query import Q as ES_Q
+
+from usaspending_api.common.exceptions import InvalidParameterException
 
 
 class QueryType(Enum):

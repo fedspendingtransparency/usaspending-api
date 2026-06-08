@@ -3,16 +3,10 @@ from ssl import CERT_NONE
 from typing import Callable, Optional, Union
 
 from django.conf import settings
-from opensearchpy import (
-    ConnectionError,
-    ConnectionTimeout,
-    OpenSearch,
-    NotFoundError,
-    TransportError
-)
+from opensearchpy import ConnectionError, ConnectionTimeout, NotFoundError, OpenSearch, TransportError
 from opensearchpy.connection import create_ssl_context
-from opensearchpy.helpers.search import Search as SearchBase
 from opensearchpy.helpers.response import Response
+from opensearchpy.helpers.search import Search as SearchBase
 
 logger = logging.getLogger("console")
 
