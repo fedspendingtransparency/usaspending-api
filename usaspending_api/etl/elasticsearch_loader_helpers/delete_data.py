@@ -183,9 +183,9 @@ def _is_allowed_key_field_type(client: OpenSearch, key_field: str, index: str) -
         return True
 
     # Get true index name from alias, if provided an alias
-    response = client.indices.get(index)
+    response = client.indices.get(index=index)
     aliased_index_name = list(response.keys())[0]
-    es_field_type = Mapping().from_es(using=client, index=aliased_index_name).resolve_field(key_field)
+    es_field_type = Mapping().from_opensearch(using=client, index=aliased_index_name).resolve_field(key_field)
     # This is the allowed types whitelist. More can be added as-needed if compatible with terms(s) queries.
     if es_field_type and es_field_type.name in ["keyword", "integer"]:
         return True

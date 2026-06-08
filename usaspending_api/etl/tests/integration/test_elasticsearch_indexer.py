@@ -229,7 +229,7 @@ def test_create_and_load_new_award_index(mock_date, award_data_fixture, elastics
     mock_date.now.return_value = _TEST_INDEX_TIME
 
     # Ensure index is not yet created
-    assert not client.indices.exists(elasticsearch_award_index.index_name)
+    assert not client.indices.exists(index=elasticsearch_award_index.index_name)
     original_db_awards_count = Award.objects.count()
 
     # Inject ETL arg into config for this run, which loads a newly created index
@@ -266,7 +266,7 @@ def test_create_and_load_new_award_index(mock_date, award_data_fixture, elastics
     # Along with other things, this will refresh the index, to surface loaded docs
     set_final_index_config(client, es_etl_index_name)
 
-    assert client.indices.exists(es_etl_index_name)
+    assert client.indices.exists(index=es_etl_index_name)
     es_award_docs = client.count(index=es_etl_index_name)["count"]
     assert es_award_docs == original_db_awards_count
 
@@ -277,12 +277,12 @@ def test_create_and_load_new_recipient_index(recipient_data_fixture, elasticsear
     client = elasticsearch_recipient_index.client
 
     # Ensure index is not yet created
-    assert not client.indices.exists(elasticsearch_recipient_index.index_name)
+    assert not client.indices.exists(index=elasticsearch_recipient_index.index_name)
 
     original_db_recipients_count = RecipientProfile.objects.count()
 
     setup_elasticsearch_test(monkeypatch, elasticsearch_recipient_index)
-    assert client.indices.exists(elasticsearch_recipient_index.index_name)
+    assert client.indices.exists(index=elasticsearch_recipient_index.index_name)
 
     es_recipient_docs = client.count(index=elasticsearch_recipient_index.index_name)["count"]
     assert es_recipient_docs == original_db_recipients_count
@@ -304,12 +304,12 @@ def test_create_and_load_new_transaction_index(award_data_fixture, elasticsearch
     client = elasticsearch_transaction_index.client  # type: OpenSearch
 
     # Ensure index is not yet created
-    assert not client.indices.exists(elasticsearch_transaction_index.index_name)
+    assert not client.indices.exists(index=elasticsearch_transaction_index.index_name)
     original_db_tx_count = TransactionNormalized.objects.count()
 
     setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
 
-    assert client.indices.exists(elasticsearch_transaction_index.index_name)
+    assert client.indices.exists(index=elasticsearch_transaction_index.index_name)
     es_award_docs = client.count(index=elasticsearch_transaction_index.index_name)["count"]
     assert es_award_docs == original_db_tx_count
 
@@ -321,7 +321,7 @@ def test_incremental_load_into_award_index(award_data_fixture, elasticsearch_awa
     original_db_awards_count = Award.objects.count()
     elasticsearch_award_index.update_index()
     client = elasticsearch_award_index.client  # type: OpenSearch
-    assert client.indices.exists(elasticsearch_award_index.index_name)
+    assert client.indices.exists(index=elasticsearch_award_index.index_name)
     es_award_docs = client.count(index=elasticsearch_award_index.index_name)["count"]
     assert es_award_docs == original_db_awards_count
 
@@ -349,7 +349,7 @@ def test_incremental_load_into_award_index(award_data_fixture, elasticsearch_awa
     loader.dispatch_tasks()
     client.indices.refresh(elasticsearch_award_index.index_name)
 
-    assert client.indices.exists(elasticsearch_award_index.index_name)
+    assert client.indices.exists(index=elasticsearch_award_index.index_name)
     es_award_docs = client.count(index=elasticsearch_award_index.index_name)["count"]
     assert es_award_docs == original_db_awards_count
     es_awards = client.search(index=elasticsearch_award_index.index_name)
@@ -364,7 +364,7 @@ def test_incremental_load_into_transaction_index(award_data_fixture, elasticsear
     original_db_txs_count = TransactionNormalized.objects.count()
     elasticsearch_transaction_index.update_index()
     client = elasticsearch_transaction_index.client  # type: OpenSearch
-    assert client.indices.exists(elasticsearch_transaction_index.index_name)
+    assert client.indices.exists(index=elasticsearch_transaction_index.index_name)
     es_tx_docs = client.count(index=elasticsearch_transaction_index.index_name)["count"]
     assert es_tx_docs == original_db_txs_count
 
@@ -393,7 +393,7 @@ def test_incremental_load_into_transaction_index(award_data_fixture, elasticsear
     loader.dispatch_tasks()
     client.indices.refresh(elasticsearch_transaction_index.index_name)
 
-    assert client.indices.exists(elasticsearch_transaction_index.index_name)
+    assert client.indices.exists(index=elasticsearch_transaction_index.index_name)
     es_tx_docs = client.count(index=elasticsearch_transaction_index.index_name)["count"]
     assert es_tx_docs == original_db_txs_count
     es_txs = client.search(index=elasticsearch_transaction_index.index_name)

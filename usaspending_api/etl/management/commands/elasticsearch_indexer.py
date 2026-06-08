@@ -235,7 +235,7 @@ def parse_cli_args(options: dict, es_client: OpenSearch) -> dict:  # noqa: PLR09
             logger.error(f"Write alias '{config['write_alias']}' is missing")
             raise SystemExit(1)
     else:
-        if config["index_name"] and es_client.indices.exists(config["index_name"]):
+        if config["index_name"] and es_client.indices.exists(index=config["index_name"]):
             logger.error("Data load into existing index. Change index name or run an incremental load")
             raise SystemExit(1)
 

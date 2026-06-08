@@ -20,7 +20,7 @@ ES_SUBAWARD_UNIQUE_KEY_FIELD = "broker_subaward_id"
 
 def create_index(index: str, client: OpenSearch) -> None:
     try:
-        does_index_exist = client.indices.exists(index)
+        does_index_exist = client.indices.exists(index=index)
     except Exception:
         logger.exception("Unable to query cluster for indices")
         raise SystemExit(1) from Exception
@@ -63,7 +63,7 @@ def set_final_index_config(client: OpenSearch, index: str) -> None:
         settings_dict = json.load(f)
     final_index_settings = settings_dict["final_index_settings"]
 
-    current_settings = client.indices.get(index)[index]["settings"]["index"]
+    current_settings = client.indices.get(index=index)[index]["settings"]["index"]
 
     client.indices.put_settings(body=final_index_settings, index=index)
     client.indices.refresh(index=index)
@@ -132,7 +132,7 @@ def toggle_refresh_off(client: OpenSearch, index: str) -> None:
 
 
 def toggle_refresh_on(client: OpenSearch, index: str) -> None:
-    response = client.indices.get(index)
+    response = client.indices.get(index=index)
     aliased_index_name = list(response.keys())[0]
     current_refresh_interval = response[aliased_index_name]["settings"]["index"]["refresh_interval"]
     es_settingsfile = str(settings.APP_DIR / "etl" / "es_config_objects.json")
