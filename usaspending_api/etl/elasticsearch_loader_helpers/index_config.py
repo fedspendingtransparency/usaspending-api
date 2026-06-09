@@ -73,17 +73,17 @@ def set_final_index_config(client: OpenSearch, index: str) -> None:
 
 
 def swap_aliases(client: OpenSearch, config: dict) -> None:  # noqa: PLR0912
-    if client.indices.get_alias(config["index_name"], "*"):
+    if client.indices.get_alias(index=config["index_name"], name="*"):
         logger.info(format_log(f"Removing old aliases for index '{config['index_name']}'", action="ES Alias"))
-        client.indices.delete_alias(config["index_name"], "_all")
+        client.indices.delete_alias(index=config["index_name"], name="_all")
 
     alias_patterns = config["query_alias_prefix"] + "*"
     old_indexes = []
 
     try:
-        old_indexes = list(client.indices.get_alias("*", alias_patterns).keys())
+        old_indexes = list(client.indices.get_alias(index="*", name=alias_patterns).keys())
         for old_index in old_indexes:
-            client.indices.delete_alias(old_index, "_all")
+            client.indices.delete_alias(index=old_index, name="_all")
             logger.info(format_log(f"Removing aliases from '{old_index}'", action="ES Alias"))
     except Exception:
         logger.exception(format_log(f"No aliases found for {alias_patterns}", action="ES Alias"))
