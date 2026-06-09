@@ -347,7 +347,7 @@ def test_incremental_load_into_award_index(award_data_fixture, elasticsearch_awa
     assert loader.__class__.__name__ == "PostgresElasticsearchIndexerController"
     loader.prepare_for_etl()
     loader.dispatch_tasks()
-    client.indices.refresh(elasticsearch_award_index.index_name)
+    client.indices.refresh(index=elasticsearch_award_index.index_name)
 
     assert client.indices.exists(index=elasticsearch_award_index.index_name)
     es_award_docs = client.count(index=elasticsearch_award_index.index_name)["count"]
@@ -391,7 +391,7 @@ def test_incremental_load_into_transaction_index(award_data_fixture, elasticsear
     assert loader.__class__.__name__ == "PostgresElasticsearchIndexerController"
     loader.prepare_for_etl()
     loader.dispatch_tasks()
-    client.indices.refresh(elasticsearch_transaction_index.index_name)
+    client.indices.refresh(index=elasticsearch_transaction_index.index_name)
 
     assert client.indices.exists(index=elasticsearch_transaction_index.index_name)
     es_tx_docs = client.count(index=elasticsearch_transaction_index.index_name)["count"]

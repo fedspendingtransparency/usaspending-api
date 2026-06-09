@@ -674,7 +674,7 @@ def elasticsearch_location_index(
     except Exception as e:
         raise e
     finally:
-        client.indices.delete(index_name, ignore_unavailable=True)
+        client.indices.delete(index=index_name, ignore_unavailable=True)
 
 
 @pytest.fixture(scope="session")
