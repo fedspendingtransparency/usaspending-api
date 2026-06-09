@@ -1,8 +1,8 @@
 import logging
 import os
-import uuid
 import sys
 import tempfile
+import uuid
 from decimal import Decimal
 from pathlib import Path
 from typing import List
@@ -11,7 +11,7 @@ import docker
 import pytest
 from django.conf import settings
 from django.core.management import call_command
-from django.db import connections, IntegrityError
+from django.db import IntegrityError, connections
 from django.test import override_settings
 from model_bakery import baker
 from pytest_django.fixtures import _set_suffix_to_test_databases
@@ -27,7 +27,7 @@ from usaspending_api.common.elasticsearch.elasticsearch_sql_helpers import (
     ensure_business_categories_functions_exist,
     ensure_view_exists,
 )
-from usaspending_api.common.etl.spark import create_ref_temp_views, _USAS_RDS_REF_TABLES
+from usaspending_api.common.etl.spark import _USAS_RDS_REF_TABLES, create_ref_temp_views
 from usaspending_api.common.helpers.generic_helper import generate_matviews
 from usaspending_api.common.helpers.sql_helpers import (
     build_dsn_string,
@@ -48,7 +48,6 @@ from usaspending_api.conftest_helpers import (
     remove_unittest_queue_data_files,
     transform_xdist_worker_id_to_django_test_db_id,
 )
-
 
 # Compose ALL fixtures from conftest_spark
 from usaspending_api.tests.conftest_spark import *  # noqa
@@ -179,7 +178,7 @@ def is_test_db_setup_trigger(request: pytest.FixtureRequest) -> bool:
 
 
 @pytest.fixture(scope="session")
-def django_db_setup(
+def django_db_setup(  # noqa: C901
     request,
     django_test_environment: None,
     django_db_blocker,
