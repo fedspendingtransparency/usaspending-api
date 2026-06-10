@@ -324,7 +324,7 @@ Non Loan Assistance Awards can be searched for specifically by using the Non Loa
 + `treasury_account_components` (optional, array[TreasuryAccountComponentsObject], fixed-type)
 + `program_activities` (optional, array[ProgramActivityObject])
     A filter option that supports filtering by a program activity name or code. Please note that if this filter is used at least one of the members of the object, ProgramActivityObject, need to be provided.
-+ `object_classes` (optional, array[String])
++ `object_classes` (optional, array[string])
     A filter option that supports filtering by object class codes (not names). Only for 'awards'.
 + `def_codes` (optional, array[DEFC], fixed-type)
   If the `def_codes` provided are in the COVID-19 or IIJA group and the subaward flag is set to `False`, the query will only return prime awards that have at least one File C record with the supplied DEFC and also have non-zero COVID-19 or IIJA related obligations or outlays.
