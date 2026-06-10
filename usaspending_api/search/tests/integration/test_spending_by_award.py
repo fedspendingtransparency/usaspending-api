@@ -2950,7 +2950,7 @@ def test_spending_by_award_object_classes(
         data=json.dumps(test_payload),
     )
     assert resp.status_code == status.HTTP_200_OK
-    assert expected_response == resp.json().get("results") == [], "Unexpected or missing content!"
+    assert resp.json().get("results") == [], "Unexpected or missing content!"
 
     # object class NAME does not match (codes only)
     test_payload = {
@@ -2967,7 +2967,7 @@ def test_spending_by_award_object_classes(
         data=json.dumps(test_payload),
     )
     assert resp.status_code == status.HTTP_200_OK
-    assert expected_response == resp.json().get("results") == [], "Unexpected or missing content!"
+    assert resp.json().get("results") == [], "Unexpected or missing content!"
 
     # object_classes is not supported for subawards spending level
     test_payload = {

@@ -22,7 +22,7 @@ def transform_award_data(worker: TaskSpec, records: List[dict]) -> List[dict]:
         "federal_accounts": convert_json_array_to_list_of_str,
         "last_modified_date": format_timestamp_as_string,
         "program_activities": convert_json_data_to_dict,
-        "data_classes": convert_json_data_to_dict,
+        "object_classes": convert_json_data_to_dict,
         "update_date": format_timestamp_as_string,
     }
     # TODO: Move some of the 1:1 agg_keys that match a field already on Elasticsearch

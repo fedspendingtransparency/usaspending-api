@@ -676,16 +676,13 @@ class _ObjectClasses(_Filter):
         object_classes_match_queries = []
 
         for filter_value in filter_values:
-            temp_must = []
-
-            if "code" in filter_value:
-                temp_must.append(
-                    ES_Q("match", object_classes__code__keyword=str(filter_value["code"]).zfill(4)))
-
-            if temp_must:
-                object_classes_match_queries.append(
-                    ES_Q("nested", path="object_classes", query=ES_Q("bool", must=temp_must))
+            object_classes_match_queries.append(
+                ES_Q(
+                    "nested",
+                    path="object_classes",
+                    query=ES_Q("bool", must=[ES_Q("match", object_classes__code__keyword=str(filter_value))]),
                 )
+            )
 
         if len(object_classes_match_queries) == 0:
             return ~ES_Q()
