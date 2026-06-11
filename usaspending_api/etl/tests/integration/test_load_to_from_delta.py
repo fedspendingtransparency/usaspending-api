@@ -988,18 +988,21 @@ def test_incremental_load_table_to_delta_for_award_search(
         .select(["award_id", "_change_type", "_commit_version"])
         .toPandas()
     )
+
+    # With deletion vectors, the "true" delete process happens on table update
+    # So it will happen after the inserts instead of before
     expected = pd.DataFrame(
         {
-            "award_id": [4, 4, 1, 3, 2, 4],
+            "award_id": [4, 1, 3, 2, 4, 4],
             "_change_type": [
+                "insert",
+                "insert",
+                "insert",
+                "insert",
+                "insert",
                 "delete",
-                "insert",
-                "insert",
-                "insert",
-                "insert",
-                "insert",
             ],
-            "_commit_version": [2, 3, 1, 1, 1, 1],
+            "_commit_version": [3, 1, 1, 1, 1, 2],
         }
     )
     pd.testing.assert_frame_equal(result, expected)
@@ -1086,20 +1089,23 @@ def test_incremental_load_table_to_delta_for_transaction_search(
         .select(["transaction_id", "_change_type", "_commit_version"])
         .toPandas()
     )
+
+    # With deletion vectors, the "true" delete process happens on table update
+    # So it will happen after the inserts instead of before
     expected = pd.DataFrame(
         {
-            "transaction_id": [4, 4, 1, 2, 434, 3, 4, 5],
+            "transaction_id": [4, 1, 2, 434, 3, 4, 5, 4],
             "_change_type": [
+                "insert",
+                "insert",
+                "insert",
+                "insert",
+                "insert",
+                "insert",
+                "insert",
                 "delete",
-                "insert",
-                "insert",
-                "insert",
-                "insert",
-                "insert",
-                "insert",
-                "insert",
             ],
-            "_commit_version": [2, 3, 1, 1, 1, 1, 1, 1],
+            "_commit_version": [3, 1, 1, 1, 1, 1, 1, 2],
         }
     )
     pd.testing.assert_frame_equal(result, expected)
