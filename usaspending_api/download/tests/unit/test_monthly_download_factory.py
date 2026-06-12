@@ -1,5 +1,7 @@
 from unittest.mock import MagicMock, patch
 
+import pytest
+
 from usaspending_api.download.delta_downloads.abstract_downloads.monthly_download import MonthlyType
 from usaspending_api.download.delta_downloads.filters.monthly_download_filters import MonthlyDownloadFilters
 from usaspending_api.download.delta_downloads.transaction_assistance_monthly import (
@@ -10,13 +12,14 @@ from usaspending_api.download.delta_downloads.transaction_contract_monthly impor
 )
 
 
+@pytest.mark.django_db
 @patch(
     "usaspending_api.download.delta_downloads.abstract_factories.monthly_download_factory"
     ".AbstractMonthlyDownloadFactory.dynamic_filters"
 )
 def test_monthly_delta_fails_with_fiscal_year(mock_dynamic_filters):
     mock_spark = MagicMock()
-    filters = MonthlyDownloadFilters(awarding_toptier_agency_code="097", fiscal_year=2020, delta_start_date="20200101")
+    filters = MonthlyDownloadFilters(awarding_toptier_agency_code="097", fiscal_year=2020, delta_start_date="2020-01-01")
     factory = TransactionAssistanceMonthlyDownloadFactory(mock_spark, filters, None)
     try:
         factory.get_download(MonthlyType.DELTA)
@@ -25,7 +28,7 @@ def test_monthly_delta_fails_with_fiscal_year(mock_dynamic_filters):
     else:
         raise AssertionError("No exception was raised")
 
-    filters = MonthlyDownloadFilters(awarding_toptier_agency_code="097", fiscal_year=2020, delta_start_date="20200101")
+    filters = MonthlyDownloadFilters(awarding_toptier_agency_code="097", fiscal_year=2020, delta_start_date="2020-01-01")
     factory = TransactionContractMonthlyDownloadFactory(mock_spark, filters, None)
     try:
         factory.get_download(MonthlyType.DELTA)
@@ -35,6 +38,7 @@ def test_monthly_delta_fails_with_fiscal_year(mock_dynamic_filters):
         raise AssertionError("No exception was raised")
 
 
+@pytest.mark.django_db
 @patch(
     "usaspending_api.download.delta_downloads.abstract_factories.monthly_download_factory"
     ".AbstractMonthlyDownloadFactory.dynamic_filters"

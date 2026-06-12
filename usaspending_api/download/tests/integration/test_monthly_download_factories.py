@@ -66,7 +66,7 @@ def test_assistance_delta_monthly_download_factory(mock_date, spark, transaction
     mock_date.today.return_value.strftime.return_value = "20210130"
     download_filters = MonthlyDownloadFilters(
         awarding_toptier_agency_code="097",
-        delta_start_date="20210101",
+        delta_start_date="2021-01-01",
         as_of_date=None
     )
     factory = TransactionAssistanceMonthlyDownloadFactory(spark, download_filters)
@@ -118,6 +118,7 @@ def test_contract_delta_monthly_download_factory(mock_date, spark, transaction_d
     mock_date.today.return_value.strftime.return_value = "20210130"
     download_filters = MonthlyDownloadFilters(
         awarding_toptier_agency_code="012",
+        delta_start_date="2021-01-01",
         as_of_date=None
     )
     factory = TransactionContractMonthlyDownloadFactory(spark, download_filters)
