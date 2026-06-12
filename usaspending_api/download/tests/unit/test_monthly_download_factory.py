@@ -19,7 +19,8 @@ from usaspending_api.download.delta_downloads.transaction_contract_monthly impor
 )
 def test_monthly_delta_fails_with_fiscal_year(mock_dynamic_filters):
     mock_spark = MagicMock()
-    filters = MonthlyDownloadFilters(awarding_toptier_agency_code="097", fiscal_year=2020, delta_start_date="2020-01-01")
+    filters = MonthlyDownloadFilters(awarding_toptier_agency_code="097", fiscal_year=2020,
+                                        delta_start_date="2020-01-01")
     factory = TransactionAssistanceMonthlyDownloadFactory(mock_spark, filters, None)
     try:
         factory.get_download(MonthlyType.DELTA)
@@ -28,7 +29,8 @@ def test_monthly_delta_fails_with_fiscal_year(mock_dynamic_filters):
     else:
         raise AssertionError("No exception was raised")
 
-    filters = MonthlyDownloadFilters(awarding_toptier_agency_code="097", fiscal_year=2020, delta_start_date="2020-01-01")
+    filters = MonthlyDownloadFilters(awarding_toptier_agency_code="097", fiscal_year=2020,
+                                     delta_start_date="2020-01-01")
     factory = TransactionContractMonthlyDownloadFactory(mock_spark, filters, None)
     try:
         factory.get_download(MonthlyType.DELTA)
