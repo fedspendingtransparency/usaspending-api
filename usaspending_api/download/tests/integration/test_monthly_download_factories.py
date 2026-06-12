@@ -49,6 +49,8 @@ def transaction_download_table(spark, s3_unittest_data_bucket, hive_unittest_met
             "transaction_broker_id": [100, 200, 300, 400, 500, 600],
             "action_date_fiscal_year": [2020, 2021, 2021, 2020, 2021, 2021],
             "awarding_agency_code": ["097", "097", "012", "012", "012", "097"],
+            "action_date": ["2020-01-15", "2021-02-15", "2021-02-20", "2020-12-15", "2021-03-15", "2021-01-20"],
+            "transaction_delta_id": [1, 2, 3, 4, 5, 6],
         }
     )
 
