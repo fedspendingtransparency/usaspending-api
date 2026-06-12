@@ -16,8 +16,8 @@ from usaspending_api.download.delta_downloads.transaction_contract_monthly impor
 )
 def test_monthly_delta_fails_with_fiscal_year(mock_dynamic_filters):
     mock_spark = MagicMock()
-    filters = MonthlyDownloadFilters(award_category="assistance", fiscal_year=2020)
-    factory = TransactionAssistanceMonthlyDownloadFactory(mock_spark, filters)
+    filters = MonthlyDownloadFilters(awarding_toptier_agency_code="097", fiscal_year=2020, delta_start_date="20200101")
+    factory = TransactionAssistanceMonthlyDownloadFactory(mock_spark, filters, None)
     try:
         factory.get_download(MonthlyType.DELTA)
     except ValueError as err:
@@ -25,8 +25,8 @@ def test_monthly_delta_fails_with_fiscal_year(mock_dynamic_filters):
     else:
         raise AssertionError("No exception was raised")
 
-    filters = MonthlyDownloadFilters(award_category="contract", fiscal_year=2020)
-    factory = TransactionContractMonthlyDownloadFactory(mock_spark, filters)
+    filters = MonthlyDownloadFilters(awarding_toptier_agency_code="097", fiscal_year=2020, delta_start_date="20200101")
+    factory = TransactionContractMonthlyDownloadFactory(mock_spark, filters, None)
     try:
         factory.get_download(MonthlyType.DELTA)
     except ValueError as err:
@@ -39,23 +39,23 @@ def test_monthly_delta_fails_with_fiscal_year(mock_dynamic_filters):
     "usaspending_api.download.delta_downloads.abstract_factories.monthly_download_factory"
     ".AbstractMonthlyDownloadFactory.dynamic_filters"
 )
-def test_monthly_full_fails_without_fiscal_year(mock_dynamic_filters):
+def test_monthly_full_fails_with_fiscal_year(mock_dynamic_filters):
     mock_spark = MagicMock()
 
-    filters = MonthlyDownloadFilters(award_category="assistance")
-    factory = TransactionAssistanceMonthlyDownloadFactory(mock_spark, filters)
+    filters = MonthlyDownloadFilters(awarding_toptier_agency_code="097", fiscal_year=2020)
+    factory = TransactionAssistanceMonthlyDownloadFactory(mock_spark, filters, None)
     try:
         factory.get_download(MonthlyType.FULL)
     except ValueError as err:
-        assert "'fiscal_year' is required for monthly_type of 'FULL'" in str(err)
+        assert "'fiscal_year' is not supported for monthly_type of 'FULL'" in str(err)
     else:
         raise AssertionError("No exception was raised")
 
-    filters = MonthlyDownloadFilters(award_category="contract")
-    factory = TransactionContractMonthlyDownloadFactory(mock_spark, filters)
+    filters = MonthlyDownloadFilters(awarding_toptier_agency_code="097", fiscal_year=2020)
+    factory = TransactionContractMonthlyDownloadFactory(mock_spark, filters, None)
     try:
         factory.get_download(MonthlyType.FULL)
     except ValueError as err:
-        assert "'fiscal_year' is required for monthly_type of 'FULL'" in str(err)
+        assert "'fiscal_year' is not supported for monthly_type of 'FULL'" in str(err)
     else:
         raise AssertionError("No exception was raised")
