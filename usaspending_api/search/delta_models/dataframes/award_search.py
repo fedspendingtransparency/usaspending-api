@@ -180,8 +180,28 @@ class AwardSearch(AbstractSearch):
             .join(self.object_class, self.object_class.id == self.faba.object_class_id, "left")
             .filter(self.faba.award_id.isNotNull())
             .groupby(sf.col("award_id"))
-            .agg(*self.accts_agg)
+            .agg(*self.accts_agg, *self.object_classes_agg)
         )
+
+    @property
+    def object_classes_agg(self) -> list[Column]:
+        return [
+            sf.sort_array(
+                sf.collect_set(
+                    sf.when(
+                        self.object_class.object_class.isNotNull(),
+                        sf.to_json(
+                            sf.struct(
+                                self.object_class.object_class.alias("code"),
+                                self.object_class.object_class_name.alias("name"),
+                            )
+                        ),
+                    )
+                )
+            )
+            .cast(StringType())
+            .alias("object_classes"),
+        ]
 
     @property
     def total_obligation_bin(self) -> Column:
@@ -630,6 +650,7 @@ class AwardSearch(AbstractSearch):
                 .cast(DecimalType(23, 2))
                 .alias("generated_pragmatic_obligation"),
                 sf.col("program_activities"),
+                sf.col("object_classes"),
                 self.awards.transaction_count,
             )
             .withColumn("merge_hash_key", sf.xxhash64("*"))
