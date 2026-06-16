@@ -1,3 +1,4 @@
+from datetime import date
 from unittest.mock import patch
 
 import pandas as pd
@@ -58,7 +59,14 @@ def transaction_download_table(spark, s3_unittest_data_bucket, hive_unittest_met
             "action_date_fiscal_year": [2020, 2021, 2021, 2020, 2021, 2021],
             "awarding_agency_code": ["097", "097", "012", "012", "012", "097"],
             "transaction_delta_id": [1, 2, 3, 4, 5, 6],
-            "etl_update_date": ["2021-01-01", "2021-01-02", "2021-01-03", "2021-01-01", "2021-01-02", "2021-01-03"],
+            "etl_update_date": [
+                date(2021, 1, 1),
+                date(2021, 1, 2),
+                date(2021, 1, 3),
+                date(2021, 1, 1),
+                date(2021, 1, 2),
+                date(2021, 1, 3)
+            ],
         }
     )
 
