@@ -446,6 +446,7 @@ AWARD_SEARCH_COLUMNS = {
         "gold": False,
     },
     "program_activities": {"delta": "STRING", "postgres": "JSONB", "gold": False},
+    "object_classes": {"delta": "STRING", "postgres": "JSONB", "gold": False},
     "transaction_count": {"delta": "INTEGER", "postgres": "INTEGER", "gold": False},
 }
 DELTA_ONLY_COLUMNS = {

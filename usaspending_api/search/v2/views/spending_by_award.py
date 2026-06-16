@@ -165,6 +165,7 @@ class Filters(BaseModel):
     extent_competed_type_codes: list[str] | None = None
     keywords: list[str] | None = None
     naics_codes: list[str] | NAICSCodeObject | None = None
+    object_classes: list[str] | None = None
     place_of_performance_locations: list[StandardLocationObject] | None = None
     place_of_performance_scope: Literal["domestic", "foreign"] | None = None
     program_activities: list[ProgramActivityObject] | None = None
@@ -350,6 +351,22 @@ class SpendingByAwardVisualizationViewSet(APIView):
             # In the case of the user not supplying the spending_level we grab the default defined by TinyShield
             request_data["spending_level"] = tiny_shield_response["spending_level"]
 
+        if (
+            request_data["spending_level"] == SpendingLevel.SUBAWARD.value
+            and request_data.get("filters", {}).get("object_classes")
+        ):
+            raise UnprocessableEntityException(
+                "The 'object_classes' filter is for 'awards' only"
+            )
+
+        object_classes_rule = {
+            "name": "object_classes",
+            "type": "array",
+            "key": "filters|object_classes",
+            "array_type": "text",
+            "text_type": "search",
+        }
+
         program_activities_rule = {
             "name": "program_activities",
             "type": "array",
@@ -388,6 +405,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
                 "allow_nulls": True,
             },
             program_activities_rule,
+            object_classes_rule,
         ]
         models.extend(copy.deepcopy(AWARD_FILTER_NO_RECIPIENT_ID))
         models.extend(copy.deepcopy(PAGINATION))
