@@ -50,6 +50,7 @@ def transaction_download_table(spark, s3_unittest_data_bucket, hive_unittest_met
             "action_date_fiscal_year": [2020, 2021, 2021, 2020, 2021, 2021],
             "awarding_agency_code": ["097", "097", "012", "012", "012", "097"],
             "transaction_delta_id": [1, 2, 3, 4, 5, 6],
+            "etl_update_date": ["2021-01-01", "2021-01-02", "2021-01-03", "2021-01-01", "2021-01-02", "2021-01-03"],
         }
     )
 
@@ -93,7 +94,7 @@ def test_assistance_full_monthly_download_factory(mock_date, spark, transaction_
     mock_date.today.return_value.strftime.return_value = "20210130"
     download_filters = MonthlyDownloadFilters(
         awarding_toptier_agency_code="097",
-        # fiscal_year="2020",
+        fiscal_year="2020",
         as_of_date=None
     )
     factory = TransactionAssistanceMonthlyDownloadFactory(spark, download_filters)
