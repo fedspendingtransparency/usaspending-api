@@ -60,7 +60,8 @@ def get_recipients(filters={}, count=None):
 
     # Nulls Last isn't enabled for the amount sort because it prevents queries sorted by amount columns DESC
     # from using an index on those columns, even though they cannot contain nulls
-    nulls_last = filters["sort"] in ["name", "duns"]
+    # As of Django 5.0, nulls_last = false was depreciated. Swapped to None.
+    nulls_last = filters["sort"] in ["name", "duns"] or None
 
     if filters["order"] == "desc":
         queryset = queryset.order_by(F(api_to_db_mapper[filters["sort"]]).desc(nulls_last=nulls_last))
