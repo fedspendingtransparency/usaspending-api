@@ -96,7 +96,10 @@ def test_assistance_delta_monthly_download_factory(mock_date, spark, transaction
     assert result.file_names == ["FY(All)_097_Assistance_Delta_20210130"]
     assert sorted(result_df.assistance_transaction_unique_key.to_list()) == ["ASST_TX_1", "ASST_TX_2"]
 
-    download_filters = MonthlyDownloadFilters(as_of_date="20250130")
+    download_filters = MonthlyDownloadFilters(
+        as_of_date="20250130",
+        delta_start_date="2021-01-01"
+    )
     factory = TransactionAssistanceMonthlyDownloadFactory(spark, download_filters)
     result = factory.get_download(MonthlyType.DELTA)
     result_df = result.dataframes[0].toPandas()
@@ -148,7 +151,10 @@ def test_contract_delta_monthly_download_factory(mock_date, spark, transaction_d
     assert result.file_names == ["FY(All)_012_Contracts_Delta_20210130"]
     assert sorted(result_df.contract_transaction_unique_key.to_list()) == ["CONT_TX_1", "CONT_TX_2"]
 
-    download_filters = MonthlyDownloadFilters(as_of_date="20250130")
+    download_filters = MonthlyDownloadFilters(
+        as_of_date="20250130",
+        delta_start_date="2021-01-01"
+    )
     factory = TransactionContractMonthlyDownloadFactory(spark, download_filters)
     result = factory.get_download(MonthlyType.DELTA)
     result_df = result.dataframes[0].toPandas()
