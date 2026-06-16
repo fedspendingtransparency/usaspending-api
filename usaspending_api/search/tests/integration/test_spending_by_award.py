@@ -85,6 +85,7 @@ def award_data_fixture(db):
         uri=None,
         display_award_id="award200",
         program_activities=[{"code": "0123", "name": "PROGRAM_ACTIVITY_123"}],
+        object_classes=[{"code": "254", "name": "OBJECT_CLASS_564"}],
         spending_by_defc=None,
     )
     award2 = baker.make(
@@ -2900,6 +2901,89 @@ def test_spending_by_award_program_activity(
     assert expected_response == resp.json().get("results"), (
         "Unexpected or missing content!"
     )
+
+
+@pytest.mark.django_db
+def test_spending_by_award_object_classes(
+        client, monkeypatch, elasticsearch_award_index, award_data_fixture
+):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
+
+    # matching object class returns the award
+    test_payload = {
+        "spending_level": "awards",
+        "fields": ["Award ID"],
+        "filters": {
+            "object_classes": ["254"],
+            "award_type_codes": ["07"],
+        },
+    }
+    expected_response = [
+        {
+            "internal_id": 200,
+            "Award ID": "award200",
+            "generated_internal_id": "ASST_NON_DECF0000058_8900",
+        }
+    ]
+    resp = client.post(
+        "/api/v2/search/spending_by_award/",
+        content_type="application/json",
+        data=json.dumps(test_payload),
+    )
+    assert resp.status_code == status.HTTP_200_OK
+    assert expected_response == resp.json().get("results"), (
+        "Unexpected or missing content!"
+    )
+
+    # non-matching object class returns nothing
+    test_payload = {
+        "spending_level": "awards",
+        "fields": ["Award ID"],
+        "filters": {
+            "object_classes": ["999"],
+            "award_type_codes": ["07"],
+        },
+    }
+    resp = client.post(
+        "/api/v2/search/spending_by_award/",
+        content_type="application/json",
+        data=json.dumps(test_payload),
+    )
+    assert resp.status_code == status.HTTP_200_OK
+    assert resp.json().get("results") == [], "Unexpected or missing content!"
+
+    # object class NAME does not match (codes only)
+    test_payload = {
+        "spending_level": "awards",
+        "fields": ["Award ID"],
+        "filters": {
+            "object_classes": ["OBJECT_CLASS_254"],
+            "award_type_codes": ["07"],
+        },
+    }
+    resp = client.post(
+        "/api/v2/search/spending_by_award/",
+        content_type="application/json",
+        data=json.dumps(test_payload),
+    )
+    assert resp.status_code == status.HTTP_200_OK
+    assert resp.json().get("results") == [], "Unexpected or missing content!"
+
+    # object_classes is not supported for subawards spending level
+    test_payload = {
+        "spending_level": "subawards",
+        "fields": ["Sub-Award ID"],
+        "filters": {
+            "object_classes": ["254"],
+            "award_type_codes": ["07"],
+        },
+    }
+    resp = client.post(
+        "/api/v2/search/spending_by_award/",
+        content_type="application/json",
+        data=json.dumps(test_payload),
+    )
+    assert resp.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
 
 @pytest.mark.django_db
