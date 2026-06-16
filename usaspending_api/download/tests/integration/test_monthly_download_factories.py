@@ -30,7 +30,7 @@ def transaction_download_table(spark, s3_unittest_data_bucket, hive_unittest_met
     #    "--destination-table=transaction_download",
     #    f"--spark-s3-bucket={s3_unittest_data_bucket}",
     # )
-
+    spark.sql("CREATE DATABASE IF NOT EXISTS rpt")
     extended_schema = StructType(
         list(transaction_download_schema.fields) + [
             StructField("transaction_delta_id", LongType(), True),
