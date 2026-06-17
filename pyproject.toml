@@ -12,7 +12,7 @@ description = """
 readme = 'README.md'
 license = "CC0-1.0"
 license-files = ["LICENSE"]
-requires-python = '>=3.10'
+requires-python = '== 3.10.12'
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Programming Language :: Python",

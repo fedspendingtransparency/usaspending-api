@@ -75,6 +75,13 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
                 "array_type": "integer",
                 "array_max": maxsize,
             },
+            {
+                "name": "object_classes",
+                "key": "filter|object_classes",
+                "type": "array",
+                "array_type": "text",
+                "text_type": "search",
+            },
             program_activities_rule,
         ]
         models.extend(copy.deepcopy(AWARD_FILTER_NO_RECIPIENT_ID))
@@ -90,6 +97,11 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
             if "subawards" in json_request
             else True if json_request["spending_level"] == SpendingLevel.SUBAWARD.value else False
         )
+        if subawards and json_request.get("filters", {}).get("object_classes"):
+            raise InvalidParameterException(
+                "The 'object_classes' parameter applies only to 'awards'"
+            )
+
         filters = json_request.get("filters", None)
         if filters is None:
             raise InvalidParameterException("Missing required request parameters: 'filters'")
