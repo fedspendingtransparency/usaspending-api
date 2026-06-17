@@ -1,8 +1,10 @@
 import copy
 import logging
+from typing import Any
 
 from django.db.models import F, Q
 from django.utils.decorators import method_decorator
+from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -24,7 +26,7 @@ RECIPIENT_MODELS = [
 ]
 
 
-def build_recipient_identifier_base_query(filters):
+def build_recipient_identifier_base_query(filters: dict) -> Q:
     qs_filter = Q()
     if "keyword" in filters:
         qs_filter |= Q(recipient_name__contains=filters["keyword"].upper())
@@ -36,7 +38,10 @@ def build_recipient_identifier_base_query(filters):
     return qs_filter
 
 
-def get_recipients(filters={}, count=None):
+def get_recipients(filters: dict = None, count: int = None) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    if filters is None:
+        filters = {}
+
     lower_limit = (filters["page"] - 1) * filters["limit"]
     upper_limit = filters["page"] * filters["limit"]
 
@@ -88,7 +93,10 @@ def get_recipients(filters={}, count=None):
     return results, page_metadata
 
 
-def get_recipient_count(filters={}):
+def get_recipient_count(filters: dict = None) -> int:
+    if filters is None:
+        filters = {}
+
     qs_filter = build_recipient_identifier_base_query(filters)
     return RecipientProfile.objects.filter(qs_filter).exclude(recipient_name__in=SPECIAL_CASES).count()
 
@@ -103,7 +111,7 @@ class RecipientCount(APIView):
     cache_key_whitelist = ["keyword", "award_type"]
 
     @cache_response()
-    def post(self, request):
+    def post(self, request: Request) -> Response:
         validated_payload = TinyShield(RECIPIENT_MODELS).block(request.data)
         return Response({"count": get_recipient_count(validated_payload)})
 
@@ -115,12 +123,14 @@ class ListRecipients(APIView):
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/recipient.md"
 
-    def request_count(self, filters={}):
+    def request_count(self, filters: dict = None) -> int:
+        if filters is None:
+            filters = {}
         response = RecipientCount.as_view()(request=self.request._request).data
         return response["count"]
 
     @cache_response()
-    def post(self, request):
+    def post(self, request: Request) -> Response:
         models = copy.deepcopy(RECIPIENT_MODELS)
         models.extend(copy.deepcopy(PAGINATION))  # page, limit, sort, order
 
