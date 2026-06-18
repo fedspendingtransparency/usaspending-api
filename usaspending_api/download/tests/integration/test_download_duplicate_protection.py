@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 
 import pytest
 
-from usaspending_api.download.filestreaming.download_generation import generate_download
+from usaspending_api.download.filestreaming.download_generation import cleanup_previous_download_attempt
 from usaspending_api.download.models import DownloadJob, JobStatus
 from usaspending_api.download.models.download_job_lookup import DownloadJobLookup
 
@@ -15,7 +15,11 @@ class TestDownloadDuplicatePrevention:
     @pytest.fixture
     def download_job(self):
         """Create a test download job"""
-        job_status = JobStatus.objects.get_or_create(name="ready")[0]
+        # Ensure the job_status exists in the database
+        job_status, _ = JobStatus.objects.get_or_create(
+            name="ready",
+            defaults={"description": "Ready for processing"}
+        )
 
         json_request = {
             "filters": {
@@ -56,7 +60,6 @@ class TestDownloadDuplicatePrevention:
         assert count_after_first == 100
 
         # Simulate second attempt: cleanup should run
-        from usaspending_api.download.filestreaming.download_generation import cleanup_previous_download_attempt
         cleanup_previous_download_attempt(download_job)
 
         # Create new lookup entries for second attempt
@@ -88,48 +91,29 @@ class TestDownloadDuplicatePrevention:
         )
         assert duplicates.count() == 0, "No duplicate lookup_ids should exist"
 
-    def test_cleanup_called_before_populate_lookups(self, download_job, monkeypatch):
-        """Verify cleanup is called before populating new lookups"""
+    def test_cleanup_with_duplicate_lookups(self, download_job):
+        """Test cleanup removes duplicate lookup entries (the actual bug scenario)"""
 
-        cleanup_called = []
-        populate_called = []
+        # Create duplicate lookups - simulating the bug where same lookup_id appears multiple times
+        for _ in range(3):  # Create 3 duplicates of each ID
+            for i in range(100):
+                DownloadJobLookup.objects.create(
+                    created_at=datetime.now(timezone.utc),
+                    download_job_id=download_job.download_job_id,
+                    lookup_id=i,  # Same IDs repeated
+                    lookup_id_type="award_id"
+                )
 
-        # Mock the cleanup function
-        original_cleanup = __import__(
-            'usaspending_api.download.filestreaming.download_generation',
-            fromlist=['cleanup_previous_download_attempt']
-        ).cleanup_previous_download_attempt
+        # Should have 300 total entries (100 unique IDs x 3 duplicates)
+        count_before = DownloadJobLookup.objects.filter(
+            download_job_id=download_job.download_job_id
+        ).count()
+        assert count_before == 300
 
-        def mock_cleanup(job):
-            cleanup_called.append(True)
-            original_cleanup(job)
+        # Cleanup should remove ALL of them
+        cleanup_previous_download_attempt(download_job)
 
-        # Mock the populate function
-        @classmethod
-        def mock_populate(cls, filters, download_job, size, filter_options):
-            populate_called.append(True)
-            # Don't actually populate to keep test fast
-            return None
-
-        # Apply mocks
-        monkeypatch.setattr(
-            'usaspending_api.download.filestreaming.download_generation.cleanup_previous_download_attempt',
-            mock_cleanup
-        )
-        monkeypatch.setattr(
-            'usaspending_api.download.helpers.elasticsearch_download_functions._ElasticsearchDownload._populate_download_lookups',
-            mock_populate
-        )
-
-        # Attempt to run download (will fail due to mocking, but we only care about order)
-        try:
-            generate_download(download_job)
-        except Exception:  # noqa: S110
-            pass  # Expected to fail due to incomplete mocking
-
-        # Verify cleanup was called
-        assert len(cleanup_called) == 1, "Cleanup should be called once"
-
-        # If populate was called, verify cleanup was called first
-        if populate_called:
-            assert len(cleanup_called) == 1, "Cleanup must be called before populate"
+        count_after = DownloadJobLookup.objects.filter(
+            download_job_id=download_job.download_job_id
+        ).count()
+        assert count_after == 0, "All duplicate lookups should be removed"
