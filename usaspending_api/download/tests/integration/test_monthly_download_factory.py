@@ -56,8 +56,8 @@ def test_monthly_delta_fails_with_fiscal_year(mock_dynamic_filters, setup_toptie
 
 @pytest.mark.django_db
 @patch(
-    "usaspending_api.download.delta_downloads.abstract_factories.monthly_download_factory"
-    ".AbstractMonthlyDownloadFactory._create_full_download"
+    "usaspending_api.download.delta_downloads.transaction_assistance_monthly"
+    ".TransactionAssistanceMonthlyDownloadFactory._create_full_download"
 )
 @patch(
     "usaspending_api.download.delta_downloads.abstract_factories.monthly_download_factory"
@@ -75,11 +75,16 @@ def test_monthly_full_fails_with_fiscal_year(mock_dynamic_filters, mock_create_f
     else:
         raise AssertionError("No exception was raised")
 
-    filters = MonthlyDownloadFilters(awarding_toptier_agency_code="097", fiscal_year=2020)
-    factory = TransactionContractMonthlyDownloadFactory(mock_spark, filters)
-    try:
-        factory.get_download(MonthlyType.FULL)
-    except ValueError as err:
-        assert "'fiscal_year' is not supported for monthly_type of 'FULL'" in str(err)
-    else:
-        raise AssertionError("No exception was raised")
+    # Also need to patch the contract one
+    with patch(
+        "usaspending_api.download.delta_downloads.transaction_contract_monthly"
+        ".TransactionContractMonthlyDownloadFactory._create_full_download"
+    ):
+        filters = MonthlyDownloadFilters(awarding_toptier_agency_code="097", fiscal_year=2020)
+        factory = TransactionContractMonthlyDownloadFactory(mock_spark, filters)
+        try:
+            factory.get_download(MonthlyType.FULL)
+        except ValueError as err:
+            assert "'fiscal_year' is not supported for monthly_type of 'FULL'" in str(err)
+        else:
+            raise AssertionError("No exception was raised")
