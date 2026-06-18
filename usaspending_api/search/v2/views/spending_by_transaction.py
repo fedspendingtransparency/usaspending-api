@@ -5,7 +5,7 @@ from enum import Enum
 
 from django.conf import settings
 from django.utils.text import slugify
-from elasticsearch_dsl.response import Response as ESResponse
+from opensearchpy.helpers.response import Response as ESResponse
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
