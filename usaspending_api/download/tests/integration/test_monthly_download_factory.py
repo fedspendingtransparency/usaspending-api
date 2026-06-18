@@ -57,13 +57,14 @@ def test_monthly_delta_fails_with_fiscal_year(mock_dynamic_filters, setup_toptie
 @pytest.mark.django_db
 @patch(
     "usaspending_api.download.delta_downloads.transaction_assistance_monthly"
-    ".TransactionAssistanceMonthlyDownloadFactory._create_full_download"
+    ".AssistanceFullMonthlyDownload.__init__",
+    return_value=None
 )
 @patch(
     "usaspending_api.download.delta_downloads.abstract_factories.monthly_download_factory"
     ".AbstractMonthlyDownloadFactory.dynamic_filters"
 )
-def test_monthly_full_fails_with_fiscal_year(mock_dynamic_filters, mock_create_full, setup_toptier_agency):
+def test_monthly_full_fails_with_fiscal_year(mock_dynamic_filters, mock_download_init, setup_toptier_agency):
     mock_spark = MagicMock()
 
     filters = MonthlyDownloadFilters(awarding_toptier_agency_code="097", fiscal_year=2020)
