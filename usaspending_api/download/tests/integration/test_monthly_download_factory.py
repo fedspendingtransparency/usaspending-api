@@ -12,15 +12,29 @@ from usaspending_api.download.delta_downloads.transaction_contract_monthly impor
 )
 
 
+@pytest.fixture
+def setup_toptier_agency(db):
+    """Create a test toptier agency with code 097"""
+    from usaspending_api.references.models import ToptierAgency
+
+    ToptierAgency.objects.get_or_create(
+        toptier_agency_id=1,
+        defaults={
+            'toptier_code': '097',
+            'name': 'Test Agency',
+        }
+    )
+
+
 @pytest.mark.django_db
 @patch(
     "usaspending_api.download.delta_downloads.abstract_factories.monthly_download_factory"
     ".AbstractMonthlyDownloadFactory.dynamic_filters"
 )
-def test_monthly_delta_fails_with_fiscal_year(mock_dynamic_filters):
+def test_monthly_delta_fails_with_fiscal_year(mock_dynamic_filters, setup_toptier_agency):
     mock_spark = MagicMock()
     filters = MonthlyDownloadFilters(awarding_toptier_agency_code="097", fiscal_year=2020,
-                                        delta_start_date="2020-01-01")
+                                     delta_start_date="2020-01-01")
     factory = TransactionAssistanceMonthlyDownloadFactory(mock_spark, filters, None)
     try:
         factory.get_download(MonthlyType.DELTA)
@@ -45,7 +59,7 @@ def test_monthly_delta_fails_with_fiscal_year(mock_dynamic_filters):
     "usaspending_api.download.delta_downloads.abstract_factories.monthly_download_factory"
     ".AbstractMonthlyDownloadFactory.dynamic_filters"
 )
-def test_monthly_full_fails_with_fiscal_year(mock_dynamic_filters):
+def test_monthly_full_fails_with_fiscal_year(mock_dynamic_filters, setup_toptier_agency):
     mock_spark = MagicMock()
 
     filters = MonthlyDownloadFilters(awarding_toptier_agency_code="097", fiscal_year=2020)
