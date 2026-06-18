@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+import shutil
 import time
 import traceback
 from dataclasses import dataclass
@@ -99,6 +100,8 @@ class Command(BaseCommand):
 
         self.use_duckdb = options["use_duckdb"]
         self.spark, spark_created_by_command = self.setup_spark_session(options["use_duckdb"])
+
+        self.cleanup_previous_attempt()
 
         if not self.working_dir_path.exists():
             self.working_dir_path.mkdir()
@@ -273,6 +276,45 @@ class Command(BaseCommand):
             file_extension=file_format["extension"],
             type=download_type,
         )
+
+    def cleanup_previous_attempt(self) -> None:
+        """
+        Remove artifacts from any previous failed download attempt for this job.
+        This prevents duplicate rows caused by orphaned DownloadJobLookup entries.
+        """
+        from usaspending_api.download.models.download_job_lookup import DownloadJobLookup
+
+        download_job_id = self.download_job.download_job_id
+
+        # Clean up lookup table entries
+        deleted_count, _ = DownloadJobLookup.objects.filter(download_job_id=download_job_id).delete()
+        if deleted_count > 0:
+            logger.info(
+                f"Cleaned up {deleted_count} orphaned DownloadJobLookup entries "
+                f"from previous failed attempt for download_job_id {download_job_id}"
+            )
+
+        # Clean up any partial files in working directory
+        zip_file_path = self.working_dir_path / self.download_zip_file_name
+        working_dir = self.working_dir_path / f"{self.download_job.download_job_id}_working"
+
+        # Remove incomplete zip file
+        if zip_file_path.exists():
+            try:
+                zip_file_path.unlink()
+                logger.info(f"Removed incomplete zip file from previous attempt: {zip_file_path.name}")
+            except OSError as e:
+                logger.warning(f"Failed to remove incomplete zip file: {e}")
+
+        # Remove incomplete working directory
+        if working_dir.exists():
+            try:
+                shutil.rmtree(working_dir)
+                logger.info(f"Removed incomplete working directory from previous attempt: {working_dir.name}")
+            except OSError as e:
+                logger.warning(f"Failed to remove incomplete working directory: {e}")
+
+        logger.info(f"Pre-download cleanup complete for download_job_id {download_job_id}")
 
     def start_download(self) -> None:
         self.download_job.job_status_id = JOB_STATUS_DICT["running"]

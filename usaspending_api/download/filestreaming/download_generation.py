@@ -68,6 +68,8 @@ def generate_download(download_job: DownloadJob, origination: Optional[str] = No
 
     file_name = start_download(download_job)
 
+    cleanup_previous_download_attempt(download_job)
+
     with SubprocessTrace(
         name=f"job.{JOB_TYPE}.generate_download_{request_type}",
         kind=SpanKind.INTERNAL,
@@ -589,6 +591,69 @@ def split_and_zip_data_files(
             fail_download(download_job, e, message)
         write_to_log(message=message, download_job=download_job, is_error=True)
         raise e
+
+
+def cleanup_previous_download_attempt(download_job: DownloadJob) -> None:
+    """
+    Clean up any artifacts left behind from a previous failed download attempt.
+    This ensures idempotent retry behavior and prevents duplicate data.
+
+    Artifacts cleaned:
+    - DownloadJobLookup entries for this download_job_id (prevents duplicate rows in queries)
+    - Temporary working directory and files
+    - Incomplete zip files
+
+    Args:
+        download_job: The DownloadJob being processed
+    """
+    download_job_id = download_job.download_job_id
+
+    # Clean up lookup table entries
+    deleted_count, _ = DownloadJobLookup.objects.filter(download_job_id=download_job_id).delete()
+    if deleted_count > 0:
+        write_to_log(
+            message=f"Cleaned up {deleted_count} orphaned DownloadJobLookup entries from previous failed attempt",
+            download_job=download_job,
+        )
+
+    # Clean up temporary files if they exist
+    zip_file_path = settings.CSV_LOCAL_PATH + download_job.file_name
+    working_dir = os.path.splitext(zip_file_path)[0]
+
+    # Remove incomplete zip file
+    if os.path.exists(zip_file_path):
+        try:
+            os.remove(zip_file_path)
+            write_to_log(
+                message=f"Removed incomplete zip file from previous attempt: {os.path.basename(zip_file_path)}",
+                download_job=download_job,
+            )
+        except OSError as e:
+            write_to_log(
+                message=f"Warning: Failed to remove incomplete zip file: {e}",
+                download_job=download_job,
+                is_error=False,  # Non-critical, just log as warning
+            )
+
+    # Remove incomplete working directory
+    if os.path.exists(working_dir):
+        try:
+            shutil.rmtree(working_dir)
+            write_to_log(
+                message=f"Removed incomplete working directory from previous attempt: {os.path.basename(working_dir)}",
+                download_job=download_job,
+            )
+        except OSError as e:
+            write_to_log(
+                message=f"Warning: Failed to remove incomplete working directory: {e}",
+                download_job=download_job,
+                is_error=False,  # Non-critical, just log as warning
+            )
+
+    write_to_log(
+        message=f"Pre-download cleanup complete for download_job_id {download_job_id}",
+        download_job=download_job,
+    )
 
 
 def start_download(download_job: DownloadJob) -> str:
