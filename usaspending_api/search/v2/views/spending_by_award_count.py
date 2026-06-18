@@ -4,7 +4,7 @@ from collections import defaultdict
 from sys import maxsize
 
 from django.conf import settings
-from elasticsearch_dsl import Q
+from opensearchpy.helpers.query import Q
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
