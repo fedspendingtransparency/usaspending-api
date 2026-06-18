@@ -1,13 +1,12 @@
 import logging
-import numpy as np
-
-from django.core.management.base import BaseCommand
-from elasticsearch import Elasticsearch
-from elasticsearch.helpers import scan
 from math import ceil, floor
 from multiprocessing.pool import ThreadPool
 from threading import Lock, get_ident
 
+import numpy as np
+from django.core.management.base import BaseCommand, CommandParser
+from opensearchpy import OpenSearch
+from opensearchpy.helpers import scan
 
 _log = logging.getLogger(__name__)
 
@@ -52,7 +51,7 @@ class Command(BaseCommand):
         },
     }
 
-    def add_arguments(self, parser):
+    def add_arguments(self, parser: CommandParser) -> None:
         parser.add_argument(
             "--query-type",
             type=str,
@@ -111,7 +110,7 @@ class Command(BaseCommand):
             metavar="<int>",
         )
 
-    def handle(self, *args, **options):
+    def handle(self, *args, **options) -> None:
         if options["query_type"] == "scroll":
             _log.info("Starting to gather doc _ids using 'scroll' query strategy")
             self.handle_with_scrolling(**options)
@@ -121,10 +120,10 @@ class Command(BaseCommand):
         else:
             raise RuntimeError("Invalid argument provided for required option --query-type.")
 
-    def handle_with_scrolling(self, **options):
+    def handle_with_scrolling(self, **options) -> None:
         self._es_client_config = {"hosts": options["es_hostname"], "timeout": options["es_timeout"]}
         self._partition_size = options["partition_size"]
-        es = Elasticsearch(**self._es_client_config)
+        es = OpenSearch(**self._es_client_config)
         self._index = options["index"]
         doc_count = es.count(index=options["index"])["count"]
         _log.info(f"Found {doc_count:,} docs in index {self._index}")
@@ -156,7 +155,7 @@ class Command(BaseCommand):
         unique, counts = np.unique(all_ids, return_counts=True)
         duped_ids = unique[counts > 1]  # type: np.ndarray
         duped_id_counts = counts[counts > 1]  # type: np.ndarray
-        duplicated_doc_ids = dict(zip(duped_ids, duped_id_counts))
+        duplicated_doc_ids = dict(zip(duped_ids, duped_id_counts, strict=False))
         if 0 in duplicated_doc_ids:
             duplicated_doc_ids.pop(0)
 
@@ -175,10 +174,10 @@ class Command(BaseCommand):
         else:
             _log.info("No duplicate documents with the same _id field found.")
 
-    def handle_with_partitioning(self, **options):
+    def handle_with_partitioning(self, **options) -> None:
         self._es_client_config = {"hosts": options["es_hostname"], "timeout": options["es_timeout"]}
         self._partition_size = options["partition_size"]
-        es = Elasticsearch(**self._es_client_config)
+        es = OpenSearch(**self._es_client_config)
         self._index = options["index"]
         parallelism = options["parallelism"]
         doc_count = es.count(index=options["index"])["count"]
@@ -207,8 +206,8 @@ class Command(BaseCommand):
         else:
             _log.info("No duplicate documents with the same _id field found.")
 
-    def count_duplication_by_partitions(self, partition):
-        es = Elasticsearch(**self._es_client_config)
+    def count_duplication_by_partitions(self, partition: int) -> None:
+        es = OpenSearch(**self._es_client_config)
         q = self._duplicated_query_template.copy()
         agg_name = next(iter(q["aggs"]))
         q["aggs"][agg_name]["terms"]["size"] = self._partition_size
@@ -220,7 +219,7 @@ class Command(BaseCommand):
             raise TimeoutError(f"Unable to complete ES search query in {self._es_client_config['timeout']} seconds")
         duplicated_docs = len(response["aggregations"][agg_name]["buckets"])
         msg = (
-            f"Thread#{get_ident()}: Partition {partition} query took {int(response['took'])/1000:.2f}s "
+            f"Thread#{get_ident()}: Partition {partition} query took {int(response['took']) / 1000:.2f}s "
             f"and found {duplicated_docs} _ids with more than 1 doc within partition"
         )
         if duplicated_docs == 0:
@@ -236,7 +235,7 @@ class Command(BaseCommand):
         if c % 10 == 0:
             _log.debug(f"Completed {c} of {self._num_partitions} queries")
 
-    def _tally(self):
+    def _tally(self) -> int:
         self._completed_count += 1
         percent_complete = floor((self._completed_count / self._num_partitions) * 100)
         if percent_complete in self._percents:
