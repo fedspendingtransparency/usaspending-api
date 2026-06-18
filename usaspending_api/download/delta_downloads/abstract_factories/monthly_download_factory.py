@@ -89,8 +89,12 @@ class AbstractMonthlyDownloadFactory(ABC):
     def get_download(self, monthly_type: MonthlyType) -> MonthlyDownload:
         match monthly_type:
             case MonthlyType.DELTA:
+                if self.filters.fiscal_year is not None:
+                    raise ValueError("'fiscal_year' is not supported for monthly_type of 'DELTA'")
                 download = self._create_delta_download()
             case MonthlyType.FULL:
+                if self.filters.fiscal_year is not None:
+                    raise ValueError("'fiscal_year' is not supported for monthly_type of 'FULL'")
                 download = self._create_full_download()
             case _:
                 raise InvalidParameterException(f"Unsupported monthly type: {monthly_type}")
