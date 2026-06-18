@@ -35,7 +35,7 @@ def test_monthly_delta_fails_with_fiscal_year(mock_dynamic_filters, setup_toptie
     mock_spark = MagicMock()
     filters = MonthlyDownloadFilters(awarding_toptier_agency_code="097", fiscal_year=2020,
                                      delta_start_date="2020-01-01")
-    factory = TransactionAssistanceMonthlyDownloadFactory(mock_spark, filters, None)
+    factory = TransactionAssistanceMonthlyDownloadFactory(mock_spark, filters)
     try:
         factory.get_download(MonthlyType.DELTA)
     except ValueError as err:
@@ -45,7 +45,7 @@ def test_monthly_delta_fails_with_fiscal_year(mock_dynamic_filters, setup_toptie
 
     filters = MonthlyDownloadFilters(awarding_toptier_agency_code="097", fiscal_year=2020,
                                      delta_start_date="2020-01-01")
-    factory = TransactionContractMonthlyDownloadFactory(mock_spark, filters, None)
+    factory = TransactionContractMonthlyDownloadFactory(mock_spark, filters)
     try:
         factory.get_download(MonthlyType.DELTA)
     except ValueError as err:
@@ -63,7 +63,7 @@ def test_monthly_full_fails_with_fiscal_year(mock_dynamic_filters, setup_toptier
     mock_spark = MagicMock()
 
     filters = MonthlyDownloadFilters(awarding_toptier_agency_code="097", fiscal_year=2020)
-    factory = TransactionAssistanceMonthlyDownloadFactory(mock_spark, filters, None)
+    factory = TransactionAssistanceMonthlyDownloadFactory(mock_spark, filters)
     try:
         factory.get_download(MonthlyType.FULL)
     except ValueError as err:
@@ -72,7 +72,7 @@ def test_monthly_full_fails_with_fiscal_year(mock_dynamic_filters, setup_toptier
         raise AssertionError("No exception was raised")
 
     filters = MonthlyDownloadFilters(awarding_toptier_agency_code="097", fiscal_year=2020)
-    factory = TransactionContractMonthlyDownloadFactory(mock_spark, filters, None)
+    factory = TransactionContractMonthlyDownloadFactory(mock_spark, filters)
     try:
         factory.get_download(MonthlyType.FULL)
     except ValueError as err:
