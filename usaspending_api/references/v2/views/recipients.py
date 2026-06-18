@@ -2,8 +2,9 @@ import itertools
 from collections import OrderedDict
 from typing import Any, Union
 
-from elasticsearch_dsl import A, Q as ES_Q
-from elasticsearch_dsl.response import AggResponse
+from opensearchpy.helpers.aggs import A
+from opensearchpy.helpers.query import Q as ES_Q
+from opensearchpy.helpers.response import Response as AggResponse
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -172,7 +173,7 @@ class RecipientAutocompleteViewSet(APIView):
         return results
 
     def _build_filter_aggregation(self, field_name: str, query: ES_Q, include_recipient_name: bool) -> A:
-        sub_query_filter = A(f"filter", ES_Q("bool", should=query, minimum_should_match=1))
+        sub_query_filter = A("filter", ES_Q("bool", should=query, minimum_should_match=1))
         unique_field_agg = A("terms", field=f"{field_name}.keyword", size=self.limit)
 
         if include_recipient_name:

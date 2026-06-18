@@ -6,9 +6,9 @@ from typing import Dict, List, Optional, Union
 
 import pandas as pd
 from django.conf import settings
-from elasticsearch import Elasticsearch
-from elasticsearch_dsl import Search
-from elasticsearch_dsl.mapping import Mapping
+from opensearchpy import OpenSearch
+from opensearchpy.helpers.mapping import Mapping
+from opensearchpy.helpers.search import Search
 from psycopg import sql as psycopg_sql
 
 from usaspending_api.broker.helpers.last_load_date import (
@@ -33,7 +33,7 @@ logger = logging.getLogger("script")
 
 
 def delete_docs_by_unique_key(  # noqa: PLR0913, PLR0912, PLR0915
-    client: Elasticsearch,
+    client: OpenSearch,
     key: str,
     value_list: list,
     task_id: str,
@@ -171,7 +171,7 @@ def delete_docs_by_unique_key(  # noqa: PLR0913, PLR0912, PLR0915
     return deleted
 
 
-def _is_allowed_key_field_type(client: Elasticsearch, key_field: str, index: str) -> bool:
+def _is_allowed_key_field_type(client: OpenSearch, key_field: str, index: str) -> bool:
     """Return ``True`` if the given field's mapping in the given index is in our allowed list of ES types
     compatible with term(s) queries
 
@@ -183,9 +183,9 @@ def _is_allowed_key_field_type(client: Elasticsearch, key_field: str, index: str
         return True
 
     # Get true index name from alias, if provided an alias
-    response = client.indices.get(index)
+    response = client.indices.get(index=index)
     aliased_index_name = list(response.keys())[0]
-    es_field_type = Mapping().from_es(using=client, index=aliased_index_name).resolve_field(key_field)
+    es_field_type = Mapping().from_opensearch(using=client, index=aliased_index_name).resolve_field(key_field)
     # This is the allowed types whitelist. More can be added as-needed if compatible with terms(s) queries.
     if es_field_type and es_field_type.name in ["keyword", "integer"]:
         return True
@@ -193,7 +193,7 @@ def _is_allowed_key_field_type(client: Elasticsearch, key_field: str, index: str
 
 
 def _lookup_deleted_award_keys(
-    client: Elasticsearch,
+    client: OpenSearch,
     lookup_key: str,
     value_list: list,
     config: dict,
@@ -280,7 +280,7 @@ def _lookup_deleted_award_keys(
 
 
 def delete_awards(
-    client: Elasticsearch,
+    client: OpenSearch,
     config: dict,
     task_id: str = "Sync DB Deletes",
     fabs_external_data_load_date_key: str = "transaction_fabs",
@@ -356,7 +356,7 @@ def delete_awards(
 
 
 def delete_transactions(
-    client: Elasticsearch,
+    client: OpenSearch,
     config: dict,
     task_id: str = "Sync DB Deletes",
     fabs_external_data_load_date_key: str = "transaction_fabs",

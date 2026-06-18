@@ -9,7 +9,7 @@ from typing import Any, Generator, List, Optional, Union
 
 import psycopg
 from django.conf import settings
-from elasticsearch import Elasticsearch
+from opensearchpy import OpenSearch
 from psycopg.sql import Composed
 
 from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
@@ -216,7 +216,7 @@ def gen_random_name() -> Generator[str, None, None]:
             loop = f" {to_roman_numerals(full_cycles)}"
 
 
-def is_snapshot_running(client: Elasticsearch, index_names: List[str]) -> bool:
+def is_snapshot_running(client: OpenSearch, index_names: List[str]) -> bool:
     snapshot_list = client.snapshot.status().get("snapshots", [])
     index_names_pattern = f".*({'|'.join(index_names)}).*"
     for snapshot in snapshot_list:
