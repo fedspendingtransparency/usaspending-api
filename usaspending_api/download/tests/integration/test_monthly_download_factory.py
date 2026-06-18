@@ -57,6 +57,10 @@ def test_monthly_delta_fails_with_fiscal_year(mock_dynamic_filters, setup_toptie
 @pytest.mark.django_db
 @patch(
     "usaspending_api.download.delta_downloads.abstract_factories.monthly_download_factory"
+    ".AbstractMonthlyDownloadFactory._create_full_download"
+)
+@patch(
+    "usaspending_api.download.delta_downloads.abstract_factories.monthly_download_factory"
     ".AbstractMonthlyDownloadFactory.dynamic_filters"
 )
 def test_monthly_full_fails_with_fiscal_year(mock_dynamic_filters, setup_toptier_agency):
