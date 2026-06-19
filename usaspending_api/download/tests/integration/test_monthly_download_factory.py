@@ -55,37 +55,13 @@ def test_monthly_delta_fails_with_fiscal_year(mock_dynamic_filters, setup_toptie
 
 
 @pytest.mark.django_db
-@patch(
-    "usaspending_api.download.delta_downloads.transaction_assistance_monthly"
-    ".AssistanceFullMonthlyDownload.__init__",
-    return_value=None
-)
-@patch(
-    "usaspending_api.download.delta_downloads.abstract_factories.monthly_download_factory"
-    ".AbstractMonthlyDownloadFactory.dynamic_filters"
-)
-def test_monthly_full_fails_with_fiscal_year(mock_dynamic_filters, mock_download_init, setup_toptier_agency):
+def test_monthly_full_requires_fiscal_year(setup_toptier_agency):
+    """Test that fiscal_year is REQUIRED for FULL downloads"""
     mock_spark = MagicMock()
 
-    filters = MonthlyDownloadFilters(awarding_toptier_agency_code="097", fiscal_year=2020)
+    # Test that FULL download fails WITHOUT fiscal_year
+    filters = MonthlyDownloadFilters(awarding_toptier_agency_code="097")  # No fiscal_year
     factory = TransactionAssistanceMonthlyDownloadFactory(mock_spark, filters)
-    try:
-        factory.get_download(MonthlyType.FULL)
-    except ValueError as err:
-        assert "'fiscal_year' is not supported for monthly_type of 'FULL'" in str(err)
-    else:
-        raise AssertionError("No exception was raised")
 
-    # Also need to patch the contract one
-    with patch(
-        "usaspending_api.download.delta_downloads.transaction_contract_monthly"
-        ".TransactionContractMonthlyDownloadFactory._create_full_download"
-    ):
-        filters = MonthlyDownloadFilters(awarding_toptier_agency_code="097", fiscal_year=2020)
-        factory = TransactionContractMonthlyDownloadFactory(mock_spark, filters)
-        try:
-            factory.get_download(MonthlyType.FULL)
-        except ValueError as err:
-            assert "'fiscal_year' is not supported for monthly_type of 'FULL'" in str(err)
-        else:
-            raise AssertionError("No exception was raised")
+    with pytest.raises(ValueError, match="'fiscal_year' is required for monthly_type of 'FULL'"):
+        factory.get_download(MonthlyType.FULL)
