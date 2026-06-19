@@ -114,7 +114,6 @@ def test_assistance_full_monthly_download_factory(mock_date, spark, transaction_
     mock_date.today.return_value.strftime.return_value = "20210130"
     download_filters = MonthlyDownloadFilters(
         awarding_toptier_agency_code="097",
-        fiscal_year="2020",
         as_of_date=None
     )
     factory = TransactionAssistanceMonthlyDownloadFactory(spark, download_filters)
