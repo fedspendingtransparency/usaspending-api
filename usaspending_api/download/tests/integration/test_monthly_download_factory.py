@@ -1,4 +1,4 @@
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, PropertyMock, patch
 
 import pytest
 
@@ -55,12 +55,19 @@ def test_monthly_delta_fails_with_fiscal_year(mock_dynamic_filters, setup_toptie
 
 
 @pytest.mark.django_db
-def test_monthly_full_requires_fiscal_year(setup_toptier_agency):
+@patch(
+    "usaspending_api.download.delta_downloads.abstract_factories.monthly_download_factory"
+    ".AbstractMonthlyDownloadFactory.dynamic_filters",
+    new_callable=PropertyMock
+)
+def test_monthly_full_requires_fiscal_year(mock_dynamic_filters, setup_toptier_agency):
     """Test that fiscal_year is REQUIRED for FULL downloads"""
+
     mock_spark = MagicMock()
+    mock_dynamic_filters.return_value = MagicMock()
 
     # Test that FULL download fails WITHOUT fiscal_year
-    filters = MonthlyDownloadFilters(awarding_toptier_agency_code="097")  # No fiscal_year
+    filters = MonthlyDownloadFilters(awarding_toptier_agency_code="097")
     factory = TransactionAssistanceMonthlyDownloadFactory(mock_spark, filters)
 
     with pytest.raises(ValueError, match="'fiscal_year' is required for monthly_type of 'FULL'"):
