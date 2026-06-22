@@ -233,3 +233,6 @@ pycodestyle.max-line-length = 120
     "PLR0913", # too-many-arguments; avoid conflict with too many fixtures
     "PLR0915", # too-many-statements; avoid conflict with long fixtures
 ]
+"**/disaster/management/sql/spark/**.py" = [
+    "E501", # Line too long
+]
