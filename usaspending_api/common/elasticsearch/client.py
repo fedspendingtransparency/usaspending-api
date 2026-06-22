@@ -1,30 +1,28 @@
-from typing import Union, Optional
+import logging
+from ssl import CERT_NONE
+from typing import Optional, Union
 
 import certifi
-import logging
-
 from django.conf import settings
-from elasticsearch import Elasticsearch
-from elasticsearch.connection import create_ssl_context
-from ssl import CERT_NONE
-
-from elasticsearch_dsl.response import Response
+from opensearchpy import OpenSearch
+from opensearchpy.connection import create_ssl_context
+from opensearchpy.helpers.response import Response
 
 logger = logging.getLogger("console")
 CLIENT = None
 ElasticsearchResponse = Optional[Union[dict, Response]]
 
 
-def instantiate_elasticsearch_client() -> Elasticsearch:
+def instantiate_elasticsearch_client() -> OpenSearch:
     es_kwargs = {"timeout": 300}
 
     if "https" in settings.ES_HOSTNAME:
         es_kwargs.update({"use_ssl": True, "verify_certs": True, "ca_certs": certifi.where()})
 
-    return Elasticsearch(settings.ES_HOSTNAME, **es_kwargs)
+    return OpenSearch(settings.ES_HOSTNAME, **es_kwargs)
 
 
-def create_es_client() -> Elasticsearch:
+def create_es_client() -> OpenSearch:
     if settings.ES_HOSTNAME is None or settings.ES_HOSTNAME == "":
         logger.error("env var 'ES_HOSTNAME' needs to be set for Elasticsearch connection")
     global CLIENT
@@ -43,6 +41,6 @@ def create_es_client() -> Elasticsearch:
             ssl_context.verify_mode = CERT_NONE
             es_config["ssl_context"] = ssl_context
 
-        CLIENT = Elasticsearch(**es_config)
+        CLIENT = OpenSearch(**es_config)
     except Exception as e:
         logger.error("Error creating the elasticsearch client: {}".format(e))

@@ -11,8 +11,8 @@ from typing import (
 from django.conf import settings
 from django.db.models import F, QuerySet
 from django.utils.text import slugify
-from elasticsearch_dsl import Q as ES_Q
-from elasticsearch_dsl.response import Response as ES_Response
+from opensearchpy.helpers.query import Q as ES_Q
+from opensearchpy.helpers.response import Response as ES_Response
 from pydantic import BaseModel, Field, ValidationError, model_validator
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -165,6 +165,7 @@ class Filters(BaseModel):
     extent_competed_type_codes: list[str] | None = None
     keywords: list[str] | None = None
     naics_codes: list[str] | NAICSCodeObject | None = None
+    object_classes: list[str] | None = None
     place_of_performance_locations: list[StandardLocationObject] | None = None
     place_of_performance_scope: Literal["domestic", "foreign"] | None = None
     program_activities: list[ProgramActivityObject] | None = None
@@ -265,6 +266,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
             "Sub-Award Primary Place of Performance",
             "Recipient UEI",
             "Contract Award Type",
+            "Award Type",
         ]:
             raise_if_sort_key_not_valid(
                 self.pagination["sort_key"],
@@ -349,6 +351,22 @@ class SpendingByAwardVisualizationViewSet(APIView):
             # In the case of the user not supplying the spending_level we grab the default defined by TinyShield
             request_data["spending_level"] = tiny_shield_response["spending_level"]
 
+        if (
+            request_data["spending_level"] == SpendingLevel.SUBAWARD.value
+            and request_data.get("filters", {}).get("object_classes")
+        ):
+            raise UnprocessableEntityException(
+                "The 'object_classes' filter is for 'awards' only"
+            )
+
+        object_classes_rule = {
+            "name": "object_classes",
+            "type": "array",
+            "key": "filters|object_classes",
+            "array_type": "text",
+            "text_type": "search",
+        }
+
         program_activities_rule = {
             "name": "program_activities",
             "type": "array",
@@ -387,6 +405,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
                 "allow_nulls": True,
             },
             program_activities_rule,
+            object_classes_rule,
         ]
         models.extend(copy.deepcopy(AWARD_FILTER_NO_RECIPIENT_ID))
         models.extend(copy.deepcopy(PAGINATION))
@@ -518,6 +537,14 @@ class SpendingByAwardVisualizationViewSet(APIView):
                 ]
             case "Contract Award Type":
                 sort_by_fields = [contracts_mapping["Contract Award Type"]]
+            case "Award Type":
+                # For assistance and loan awards
+                if set(self.filters["award_type_codes"]) <= set(loan_type_mapping):
+                    sort_by_fields = [loan_mapping["Award Type"]]
+                elif set(self.filters["award_type_codes"]) <= set(
+                        non_loan_assistance_type_mapping
+                ):
+                    sort_by_fields = [non_loan_assist_mapping["Award Type"]]
             case "Recipient UEI":
                 sort_by_fields = [contracts_mapping["Recipient UEI"]]
             # TODO: Add additional field for Award Descriptions in case they exceed the keyword limit like subawards
@@ -540,9 +567,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
                     sort_by_fields = [
                         non_loan_assist_mapping[self.pagination["sort_key"]]
                     ]
-
         sort_by_fields.append("award_id")
-
         return sort_by_fields
 
     def get_database_fields(self) -> set[str]:

@@ -259,6 +259,7 @@ class AwardSearch(models.Model):
         max_digits=23, decimal_places=2, blank=True, null=True
     )
     program_activities = models.JSONField(null=True)
+    object_classes = models.JSONField(null=True)
     transaction_count = models.IntegerField(null=True)
 
     objects = CTEManager()
