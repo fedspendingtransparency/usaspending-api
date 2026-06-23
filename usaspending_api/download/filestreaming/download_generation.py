@@ -751,7 +751,7 @@ def apply_annotations_to_sql(
             # 1. check if number in second half followed by comma
             # 2. if not found, check to see if last item is number
             # 3. replace the number at the given index
-            idx_location = second_half_query.index(f" {idx},")
+            idx_location = second_half_query.find(f" {idx},")
             if idx_location != -1:
                 second_half_query = second_half_query.replace(f" {idx},", f" {{idx_{idx}}},", 1)
             elif second_half_query.startswith(f"{idx},"):
