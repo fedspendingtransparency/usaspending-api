@@ -1,7 +1,9 @@
 from datetime import datetime
 
-from elasticsearch_dsl import A
+from opensearchpy.helpers.aggs import A
+from rest_framework.request import Request
 from rest_framework.response import Response
+
 from usaspending_api.agency.v2.views.agency_base import AgencyBase
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.elasticsearch.search_wrappers import TransactionSearch
@@ -22,7 +24,7 @@ class Awards(AgencyBase):
         self.params_to_validate = ["fiscal_year", "award_type_codes", "agency_type"]
 
     @cache_response()
-    def get(self, request, *args, **kwargs):
+    def get(self, request: Request, *args, **kwargs) -> Response:
         agg_results = self.get_aggregation_results()
         return Response(
             {
@@ -35,7 +37,7 @@ class Awards(AgencyBase):
             }
         )
 
-    def generate_query(self):
+    def generate_query(self) -> dict:
         return {
             "agencies": [
                 {"type": self._query_params.get("agency_type"), "tier": "toptier", "name": self.toptier_agency.name}
@@ -44,14 +46,14 @@ class Awards(AgencyBase):
             "award_type_codes": self._query_params.get("award_type_codes", []),
         }
 
-    def get_transaction_count(self):
+    def get_transaction_count(self) -> int:
         query_with_filters = QueryWithFilters(QueryType.TRANSACTIONS)
         filter_query = query_with_filters.generate_elasticsearch_query(self.generate_query())
         search = TransactionSearch().filter(filter_query)
         results = search.handle_count()
         return results
 
-    def get_aggregation_results(self):
+    def get_aggregation_results(self) -> dict:
         query_with_filters = QueryWithFilters(QueryType.TRANSACTIONS)
         filter_query = query_with_filters.generate_elasticsearch_query(self.generate_query())
         search = TransactionSearch().filter(filter_query)
