@@ -2576,7 +2576,7 @@ query_paths = {
                     "ussgl488100_upward_adjust_pri_undeliv_order_oblig_unpaid_cpe",
                 ),
                 ("obligations_delivered_orders_unpaid_total", "obligations_delivered_orders_unpaid_total_cpe"),
-                ("obligations_delivered_orders_unpaid_total_FYB", "obligations_delivered_orders_unpaid_total_cpe"),
+                ("obligations_delivered_orders_unpaid_total_FYB", "obligations_delivered_orders_unpaid_total_fyb"),
                 (
                     "USSGL490100_delivered_orders_obligations_unpaid",
                     "ussgl490100_delivered_orders_obligations_unpaid_cpe",
@@ -2600,7 +2600,7 @@ query_paths = {
                 ),
                 (
                     "gross_outlays_undelivered_orders_prepaid_total_FYB",
-                    "gross_outlays_undelivered_orders_prepaid_total_cpe",
+                    "gross_outlays_undelivered_orders_prepaid_total_fyb",
                 ),
                 (
                     "USSGL480200_undelivered_orders_obligations_prepaid_advanced",

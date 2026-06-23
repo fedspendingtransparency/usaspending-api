@@ -526,7 +526,7 @@ def parse_source(  # noqa: PLR0913
         wait_for_process(zip_process, start_time, download_job)
         download_job.save()
     except Exception as e:
-        raise e
+        raise e from Exception
     finally:
         # Remove temporary files
         os.close(temp_file)
@@ -722,7 +722,7 @@ def apply_annotations_to_sql(
     # In the upgrade to Django 4.2 it was found that the change from psycopg2 to 3 by Django resulted in some
     # breaking changes for they way we manage our downloads. In this particular change the GROUP BY was changed to
     # now reference annotated fields by their column position. The download logic handles repositioning columns
-    # into the order that is expected and thus breaks the use of positional reference by the GROUP BY. In order to
+    # into the order that is expected and thus breaks the use of positional reference used for GROUP BY. In order to
     # continue processing downloads in a similar way, the logic below was updated to replace the positional value with
     # the annotated value found in the column, allowing the SQL query to work as expected regardless of column order.
     group_by_to_replace = []
@@ -748,7 +748,16 @@ def apply_annotations_to_sql(
             # It is assumed that all non-positional values in the GROUP BY are column names meaning the first number
             # matching the value of "idx" will be the position. However, this is not guaranteed in the rest of the
             # query, so we make sure to stop after the first match found.
-            second_half_query = second_half_query.replace(f" {idx}", f" {{idx_{idx}}}", 1)
+            # 1. check if number in second half followed by comma
+            # 2. if not found, check to see if last item is number
+            # 3. replace the number at the given index
+            idx_location = second_half_query.index(f" {idx},")
+            if idx_location != -1:
+                second_half_query = second_half_query.replace(f" {idx},", f" {{idx_{idx}}},", 1)
+            elif second_half_query.startswith(f"{idx},"):
+                second_half_query = second_half_query.replace(f"{idx},", f" {{idx_{idx}}},", 1)
+            elif second_half_query.endswith(f" {idx}"):
+                second_half_query = second_half_query[:-1*len(f" {idx}")]+f" {{idx_{idx}}}"
         second_half_query = second_half_query.format(
             **{f"idx_{idx}": col_select for idx, col_select in group_by_to_replace}
         )

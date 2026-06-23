@@ -849,9 +849,9 @@ def object_class_program_activity_annotations(filters: dict, file_type: str = No
         "gross_outlays_delivered_orders_paid_total": Sum("gross_outlays_delivered_orders_paid_total_cpe"),
         "gross_outlays_delivered_orders_paid_total_FYB": Sum("gross_outlays_delivered_orders_paid_total_fyb"),
         "gross_outlays_undelivered_orders_prepaid_total": Sum("gross_outlays_undelivered_orders_prepaid_total_cpe"),
-        "gross_outlays_undelivered_orders_prepaid_total_FYB": Sum("gross_outlays_undelivered_orders_prepaid_total_cpe"),
+        "gross_outlays_undelivered_orders_prepaid_total_FYB": Sum("gross_outlays_undelivered_orders_prepaid_total_fyb"),
         "obligations_delivered_orders_unpaid_total": Sum("obligations_delivered_orders_unpaid_total_cpe"),
-        "obligations_delivered_orders_unpaid_total_FYB": Sum("obligations_delivered_orders_unpaid_total_cpe"),
+        "obligations_delivered_orders_unpaid_total_FYB": Sum("obligations_delivered_orders_unpaid_total_fyb"),
         "obligations_undelivered_orders_unpaid_total": Sum("obligations_undelivered_orders_unpaid_total_cpe"),
         "obligations_undelivered_orders_unpaid_total_FYB": Sum("obligations_undelivered_orders_unpaid_total_fyb"),
         "USSGL480100_undelivered_orders_obligations_unpaid": Sum(
