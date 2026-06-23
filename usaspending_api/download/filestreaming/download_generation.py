@@ -757,7 +757,7 @@ def apply_annotations_to_sql(
             elif second_half_query.startswith(f"{idx},"):
                 second_half_query = second_half_query.replace(f"{idx},", f" {{idx_{idx}}},", 1)
             elif second_half_query.endswith(f" {idx}"):
-                second_half_query = second_half_query[:-1*len(f" {idx}")]+f" {{idx_{idx}}}"
+                second_half_query = second_half_query[:-1 * len(f" {idx}")] + f" {{idx_{idx}}}"
         second_half_query = second_half_query.format(
             **{f"idx_{idx}": col_select for idx, col_select in group_by_to_replace}
         )
