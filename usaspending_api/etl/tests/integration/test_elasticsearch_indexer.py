@@ -7,8 +7,8 @@ import pytest
 from django.conf import settings
 from django.core.management import CommandError, call_command
 from django.test import override_settings
-from elasticsearch import Elasticsearch
 from model_bakery import baker
+from opensearchpy import OpenSearch
 
 from usaspending_api.awards.models import Award, TransactionNormalized
 from usaspending_api.broker.lookups import EXTERNAL_DATA_TYPE_DICT
@@ -224,12 +224,12 @@ def test_create_and_load_new_award_index(mock_date, award_data_fixture, elastics
     """Test the ``elasticsearch_loader`` django management command to create a new awards index and load it
     with data from the DB
     """
-    client = elasticsearch_award_index.client  # type: Elasticsearch
+    client = elasticsearch_award_index.client  # type: OpenSearch
     monkeypatch.setattr("usaspending_api.etl.elasticsearch_loader_helpers.index_config.logger", logging.getLogger())
     mock_date.now.return_value = _TEST_INDEX_TIME
 
     # Ensure index is not yet created
-    assert not client.indices.exists(elasticsearch_award_index.index_name)
+    assert not client.indices.exists(index=elasticsearch_award_index.index_name)
     original_db_awards_count = Award.objects.count()
 
     # Inject ETL arg into config for this run, which loads a newly created index
@@ -266,7 +266,7 @@ def test_create_and_load_new_award_index(mock_date, award_data_fixture, elastics
     # Along with other things, this will refresh the index, to surface loaded docs
     set_final_index_config(client, es_etl_index_name)
 
-    assert client.indices.exists(es_etl_index_name)
+    assert client.indices.exists(index=es_etl_index_name)
     es_award_docs = client.count(index=es_etl_index_name)["count"]
     assert es_award_docs == original_db_awards_count
 
@@ -277,12 +277,12 @@ def test_create_and_load_new_recipient_index(recipient_data_fixture, elasticsear
     client = elasticsearch_recipient_index.client
 
     # Ensure index is not yet created
-    assert not client.indices.exists(elasticsearch_recipient_index.index_name)
+    assert not client.indices.exists(index=elasticsearch_recipient_index.index_name)
 
     original_db_recipients_count = RecipientProfile.objects.count()
 
     setup_elasticsearch_test(monkeypatch, elasticsearch_recipient_index)
-    assert client.indices.exists(elasticsearch_recipient_index.index_name)
+    assert client.indices.exists(index=elasticsearch_recipient_index.index_name)
 
     es_recipient_docs = client.count(index=elasticsearch_recipient_index.index_name)["count"]
     assert es_recipient_docs == original_db_recipients_count
@@ -301,15 +301,15 @@ def test_create_and_load_new_transaction_index(award_data_fixture, elasticsearch
     """Test the ``elasticsearch_loader`` django management command to create a new transactions index and load it
     with data from the DB
     """
-    client = elasticsearch_transaction_index.client  # type: Elasticsearch
+    client = elasticsearch_transaction_index.client  # type: OpenSearch
 
     # Ensure index is not yet created
-    assert not client.indices.exists(elasticsearch_transaction_index.index_name)
+    assert not client.indices.exists(index=elasticsearch_transaction_index.index_name)
     original_db_tx_count = TransactionNormalized.objects.count()
 
     setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
 
-    assert client.indices.exists(elasticsearch_transaction_index.index_name)
+    assert client.indices.exists(index=elasticsearch_transaction_index.index_name)
     es_award_docs = client.count(index=elasticsearch_transaction_index.index_name)["count"]
     assert es_award_docs == original_db_tx_count
 
@@ -320,8 +320,8 @@ def test_incremental_load_into_award_index(award_data_fixture, elasticsearch_awa
     """
     original_db_awards_count = Award.objects.count()
     elasticsearch_award_index.update_index()
-    client = elasticsearch_award_index.client  # type: Elasticsearch
-    assert client.indices.exists(elasticsearch_award_index.index_name)
+    client = elasticsearch_award_index.client  # type: OpenSearch
+    assert client.indices.exists(index=elasticsearch_award_index.index_name)
     es_award_docs = client.count(index=elasticsearch_award_index.index_name)["count"]
     assert es_award_docs == original_db_awards_count
 
@@ -347,9 +347,9 @@ def test_incremental_load_into_award_index(award_data_fixture, elasticsearch_awa
     assert loader.__class__.__name__ == "PostgresElasticsearchIndexerController"
     loader.prepare_for_etl()
     loader.dispatch_tasks()
-    client.indices.refresh(elasticsearch_award_index.index_name)
+    client.indices.refresh(index=elasticsearch_award_index.index_name)
 
-    assert client.indices.exists(elasticsearch_award_index.index_name)
+    assert client.indices.exists(index=elasticsearch_award_index.index_name)
     es_award_docs = client.count(index=elasticsearch_award_index.index_name)["count"]
     assert es_award_docs == original_db_awards_count
     es_awards = client.search(index=elasticsearch_award_index.index_name)
@@ -363,8 +363,8 @@ def test_incremental_load_into_transaction_index(award_data_fixture, elasticsear
     """
     original_db_txs_count = TransactionNormalized.objects.count()
     elasticsearch_transaction_index.update_index()
-    client = elasticsearch_transaction_index.client  # type: Elasticsearch
-    assert client.indices.exists(elasticsearch_transaction_index.index_name)
+    client = elasticsearch_transaction_index.client  # type: OpenSearch
+    assert client.indices.exists(index=elasticsearch_transaction_index.index_name)
     es_tx_docs = client.count(index=elasticsearch_transaction_index.index_name)["count"]
     assert es_tx_docs == original_db_txs_count
 
@@ -391,9 +391,9 @@ def test_incremental_load_into_transaction_index(award_data_fixture, elasticsear
     assert loader.__class__.__name__ == "PostgresElasticsearchIndexerController"
     loader.prepare_for_etl()
     loader.dispatch_tasks()
-    client.indices.refresh(elasticsearch_transaction_index.index_name)
+    client.indices.refresh(index=elasticsearch_transaction_index.index_name)
 
-    assert client.indices.exists(elasticsearch_transaction_index.index_name)
+    assert client.indices.exists(index=elasticsearch_transaction_index.index_name)
     es_tx_docs = client.count(index=elasticsearch_transaction_index.index_name)["count"]
     assert es_tx_docs == original_db_txs_count
     es_txs = client.search(index=elasticsearch_transaction_index.index_name)
@@ -543,7 +543,7 @@ def test_delete_awards(award_data_fixture, elasticsearch_transaction_index, elas
     TransactionSearch.objects.all().delete()
     AwardSearch.objects.all().delete()
 
-    client = elasticsearch_award_index.client  # type: Elasticsearch
+    client = elasticsearch_award_index.client  # type: OpenSearch
     es_award_docs = client.count(index=elasticsearch_award_index.index_name)["count"]
     assert es_award_docs == original_db_awards_count
     elasticsearch_award_index.etl_config["start_datetime"] = last_load_time
@@ -581,7 +581,7 @@ def test_delete_awards_zero_for_unmatched_transactions(
         ],
     )
 
-    client = elasticsearch_award_index.client  # type: Elasticsearch
+    client = elasticsearch_award_index.client  # type: OpenSearch
     es_award_docs = client.count(index=elasticsearch_award_index.index_name)["count"]
     assert es_award_docs == Award.objects.count()
     elasticsearch_award_index.etl_config["start_datetime"] = last_load_time
@@ -620,7 +620,7 @@ def test_delete_one_assistance_award(
     tx.award.delete()
     tx.delete()
 
-    client = elasticsearch_award_index.client  # type: Elasticsearch
+    client = elasticsearch_award_index.client  # type: OpenSearch
     es_award_docs = client.count(index=elasticsearch_award_index.index_name)["count"]
     assert es_award_docs == original_db_awards_count
     elasticsearch_award_index.etl_config["start_datetime"] = last_load_time
@@ -657,7 +657,7 @@ def test_delete_one_assistance_transaction(award_data_fixture, elasticsearch_tra
     tx.award.delete()
     tx.delete()
 
-    client = elasticsearch_transaction_index.client  # type: Elasticsearch
+    client = elasticsearch_transaction_index.client  # type: OpenSearch
     es_award_docs = client.count(index=elasticsearch_transaction_index.index_name)["count"]
     assert es_award_docs == original_db_tx_count
     elasticsearch_transaction_index.etl_config["start_datetime"] = last_load_time
@@ -702,7 +702,7 @@ def test_default_index_name(mock_date, award_data_fixture, monkeypatch,
 
 
 def _process_es_etl_test_config(
-    client: Elasticsearch, test_es_index: TestElasticSearchIndex, options: dict | None = None
+    client: OpenSearch, test_es_index: TestElasticSearchIndex, options: dict | None = None
 ):
     """Use the Django mgmt cmd to extract args with default values, then update those with test ETL config values"""
     cmd = ElasticsearchIndexerCommand()
