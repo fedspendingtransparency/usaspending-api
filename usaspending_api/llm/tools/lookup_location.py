@@ -2,7 +2,7 @@ import json
 import logging
 from typing import Any
 
-from elasticsearch_dsl import Q
+from opensearchpy.helpers.query import Q
 
 from usaspending_api.common.elasticsearch.search_wrappers import LocationSearch
 from usaspending_api.llm.models.py_models import AITool, AIToolDescription
