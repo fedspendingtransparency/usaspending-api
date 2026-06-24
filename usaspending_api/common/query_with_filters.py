@@ -6,7 +6,7 @@ from datetime import datetime
 from typing import List, Tuple
 
 from django.conf import settings
-from elasticsearch_dsl import Q as ES_Q
+from opensearchpy.helpers.query import Q as ES_Q
 
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers.api_helper import (

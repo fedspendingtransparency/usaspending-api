@@ -1,9 +1,10 @@
+from datetime import date
 from unittest.mock import patch
 
 import pandas as pd
 import pytest
-from django.core.management import call_command
 from model_bakery import baker
+from pyspark.sql.types import DateType, LongType, StructField, StructType
 
 from usaspending_api.download.delta_downloads.abstract_downloads.monthly_download import MonthlyType
 from usaspending_api.download.delta_downloads.filters.monthly_download_filters import MonthlyDownloadFilters
@@ -24,12 +25,20 @@ def agency_models(db):
 
 @pytest.fixture
 def transaction_download_table(spark, s3_unittest_data_bucket, hive_unittest_metastore_db):
-    call_command(
-        "create_delta_table",
-        "--destination-table=transaction_download",
-        f"--spark-s3-bucket={s3_unittest_data_bucket}",
+    # call_command(
+    #    "create_delta_table",
+    #    "--destination-table=transaction_download",
+    #    f"--spark-s3-bucket={s3_unittest_data_bucket}",
+    # )
+    spark.sql("CREATE DATABASE IF NOT EXISTS rpt")
+    extended_schema = StructType(
+        list(transaction_download_schema.fields) + [
+            StructField("transaction_delta_id", LongType(), True),
+            StructField("etl_update_date", DateType(), True),
+        ]
     )
-    column_placeholders = {field.name: [None] * 6 for field in transaction_download_schema}
+
+    column_placeholders = {field.name: None for field in extended_schema}
     test_data_df = pd.DataFrame(
         data={
             **column_placeholders,
@@ -49,13 +58,23 @@ def transaction_download_table(spark, s3_unittest_data_bucket, hive_unittest_met
             "transaction_broker_id": [100, 200, 300, 400, 500, 600],
             "action_date_fiscal_year": [2020, 2021, 2021, 2020, 2021, 2021],
             "awarding_agency_code": ["097", "097", "012", "012", "012", "097"],
+            "transaction_delta_id": [1, 2, 3, 4, 5, 6],
+            "etl_update_date": [
+                date(2021, 1, 1),
+                date(2021, 1, 2),
+                date(2021, 1, 3),
+                date(2021, 1, 1),
+                date(2021, 1, 2),
+                date(2021, 1, 3)
+            ],
         }
     )
 
     (
-        spark.createDataFrame(test_data_df, schema=transaction_download_schema)
+        spark.createDataFrame(test_data_df, schema=extended_schema)
         .write.format("delta")
         .mode("overwrite")
+        .option("overwriteSchema", "true")  # Allow schema changes
         .saveAsTable("rpt.transaction_download")
     )
     yield
@@ -66,6 +85,7 @@ def test_assistance_delta_monthly_download_factory(mock_date, spark, transaction
     mock_date.today.return_value.strftime.return_value = "20210130"
     download_filters = MonthlyDownloadFilters(
         awarding_toptier_agency_code="097",
+        delta_start_date="2021-01-01",
         as_of_date=None
     )
     factory = TransactionAssistanceMonthlyDownloadFactory(spark, download_filters)
@@ -76,7 +96,10 @@ def test_assistance_delta_monthly_download_factory(mock_date, spark, transaction
     assert result.file_names == ["FY(All)_097_Assistance_Delta_20210130"]
     assert sorted(result_df.assistance_transaction_unique_key.to_list()) == ["ASST_TX_1", "ASST_TX_2"]
 
-    download_filters = MonthlyDownloadFilters(as_of_date="20250130")
+    download_filters = MonthlyDownloadFilters(
+        as_of_date="20250130",
+        delta_start_date="2021-01-01"
+    )
     factory = TransactionAssistanceMonthlyDownloadFactory(spark, download_filters)
     result = factory.get_download(MonthlyType.DELTA)
     result_df = result.dataframes[0].toPandas()
@@ -117,6 +140,7 @@ def test_contract_delta_monthly_download_factory(mock_date, spark, transaction_d
     mock_date.today.return_value.strftime.return_value = "20210130"
     download_filters = MonthlyDownloadFilters(
         awarding_toptier_agency_code="012",
+        delta_start_date="2021-01-01",
         as_of_date=None
     )
     factory = TransactionContractMonthlyDownloadFactory(spark, download_filters)
@@ -127,7 +151,10 @@ def test_contract_delta_monthly_download_factory(mock_date, spark, transaction_d
     assert result.file_names == ["FY(All)_012_Contracts_Delta_20210130"]
     assert sorted(result_df.contract_transaction_unique_key.to_list()) == ["CONT_TX_1", "CONT_TX_2"]
 
-    download_filters = MonthlyDownloadFilters(as_of_date="20250130")
+    download_filters = MonthlyDownloadFilters(
+        as_of_date="20250130",
+        delta_start_date="2021-01-01"
+    )
     factory = TransactionContractMonthlyDownloadFactory(spark, download_filters)
     result = factory.get_download(MonthlyType.DELTA)
     result_df = result.dataframes[0].toPandas()

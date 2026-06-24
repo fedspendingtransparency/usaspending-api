@@ -11,8 +11,8 @@ from typing import (
 from django.conf import settings
 from django.db.models import F, QuerySet
 from django.utils.text import slugify
-from elasticsearch_dsl import Q as ES_Q
-from elasticsearch_dsl.response import Response as ES_Response
+from opensearchpy.helpers.query import Q as ES_Q
+from opensearchpy.helpers.response import Response as ES_Response
 from pydantic import BaseModel, Field, ValidationError, model_validator
 from rest_framework.request import Request
 from rest_framework.response import Response
