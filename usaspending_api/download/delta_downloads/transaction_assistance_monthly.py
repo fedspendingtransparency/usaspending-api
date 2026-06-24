@@ -41,7 +41,7 @@ class AssistanceMixin:
 
     @property
     def select_cols(self) -> list[Column | DuckDBSparkColumn]:
-        return [
+        cols = [
             self.sf.col("transaction_unique_key").alias("assistance_transaction_unique_key"),
             self.sf.col("generated_unique_award_id").alias("assistance_award_unique_key"),
             self.sf.col("fain").alias("award_id_fain"),
@@ -159,6 +159,20 @@ class AssistanceMixin:
             self.sf.col("initial_report_date"),
             self.sf.col("last_modified_date"),
         ]
+        # For DELTA downloads, prepend the correction_delete_indicator column
+        # For assistance, we use the existing field or mark as correction if in transaction_delta
+        if self.monthly_type == MonthlyType.DELTA:
+            correction_indicator = self.sf.when(
+                self.sf.col("transaction_delta_id").isNotNull(),
+                self.sf.lit("C")
+            ).when(
+                self.sf.col("correction_delete_indicatr").isNotNull(),
+                self.sf.col("correction_delete_indicatr")
+            ).otherwise(self.sf.lit(""))
+
+            return [correction_indicator.alias("correction_delete_indicator")] + cols
+
+        return cols
 
     def _build_dataframes(self) -> list[DataFrame | DuckDBSparkDataFrame]:
         return [self.download_table.filter(self.dynamic_filters).select(*self.select_cols)]
