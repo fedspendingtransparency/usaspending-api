@@ -1,5 +1,4 @@
 import logging
-import os
 import shutil
 from pathlib import Path
 from typing import Optional, Union
@@ -35,7 +34,7 @@ def cleanup_previous_download_attempt(
 
     download_job_id = download_job.download_job_id
 
-    def log_message(message: str, is_error: bool = False):
+    def log_message(message: str, is_error: bool = False) -> None:
         """Helper to log with appropriate method"""
         if use_logger:
             if is_error:
@@ -105,7 +104,7 @@ def cleanup_download_files(
         download_job: Optional DownloadJob for logging context
     """
 
-    def log_message(message: str):
+    def log_message(message: str) -> None:
         """Helper to log with appropriate method"""
         if use_logger:
             logger.info(message)
