@@ -167,13 +167,22 @@ class Command(BaseCommand):
             type=str,
             help="Location where downloads will be stored",
         )
+        parser.add_argument(
+            "-d",
+            "--delta-start-date",
+            dest="delta_start_date",
+            default=None,
+            type=str,
+            help="Start date for delta downloads (YYYY-MM-DD). Required for --monthly-type=delta",
+        )
 
     def handle(self, *args, **options) -> None:
-        if options["monthly_type"] == MonthlyType.DELTA:
-            raise RuntimeError("This command doesn't yet support monthly delta downloads")
-
         validated_options = self.validate_agency_options(options)
         self.verbosity = validated_options["verbosity"]
+
+        if validated_options["monthly_type"] == MonthlyType.DELTA.value:
+            if not validated_options.get("delta_start_date"):
+                raise ValueError("--delta-start-date is required when using --monthly-type=delta")
 
         # This is the setting used by current download process(es). We override with monthly download bucket name
         # to provide more shared functionality between downloads.
@@ -201,6 +210,7 @@ class Command(BaseCommand):
             validated_options["agencies"],
             validated_options["fiscal_years"],
             validated_options["award_categories"],
+            validated_options.get("delta_start_date"),
         )
 
         download_status = {"success": [], "failed": []}
@@ -281,29 +291,52 @@ class Command(BaseCommand):
         agencies: list[str],
         fiscal_years: list[int],
         award_categories: list[AwardCategory],
+        delta_start_date: str | None = None,
     ) -> list[MonthlyDownload]:
         result = []
 
         award_categories = set(award_categories) | set(self.empty_file_dfs)
-        download_combinations = itertools.product(agencies, fiscal_years, award_categories)
 
-        for agency_code, fiscal_year, award_category in download_combinations:
-            filter_kwargs = {"as_of_date": as_of_date, "fiscal_year": fiscal_year}
-            if agency_code != "all":
-                filter_kwargs["awarding_toptier_agency_code"] = agency_code
-            download_filters = MonthlyDownloadFilters(**filter_kwargs)
-            factory_class = (
-                TransactionAssistanceMonthlyDownloadFactory
-                if award_category == AwardCategory.ASSISTANCE
-                else TransactionContractMonthlyDownloadFactory
-            )
-            download_factory = factory_class(self.spark, download_filters)
-            download = download_factory.get_download(self.monthly_type)
+        # For DELTA downloads, we don't iterate over fiscal years
+        if self.monthly_type == MonthlyType.DELTA:
+            download_combinations = itertools.product(agencies, award_categories)
+            for agency_code, award_category in download_combinations:
+                filter_kwargs = {"as_of_date": as_of_date, "delta_start_date": delta_start_date}
+                if agency_code != "all":
+                    filter_kwargs["awarding_toptier_agency_code"] = agency_code
+                download_filters = MonthlyDownloadFilters(**filter_kwargs)
+                factory_class = (
+                    TransactionAssistanceMonthlyDownloadFactory
+                    if award_category == AwardCategory.ASSISTANCE
+                    else TransactionContractMonthlyDownloadFactory
+                )
+                download_factory = factory_class(self.spark, download_filters)
+                download = download_factory.get_download(self.monthly_type)
 
-            if download.file_name_prefix in downloads_prefixes_to_skip:
-                logger.info(f"Skipping {download.file_names[0]}")
-            else:
-                result.append(download)
+                if download.file_name_prefix in downloads_prefixes_to_skip:
+                    logger.info(f"Skipping {download.file_names[0]}")
+                else:
+                    result.append(download)
+        else:
+            # FULL downloads
+            download_combinations = itertools.product(agencies, fiscal_years, award_categories)
+            for agency_code, fiscal_year, award_category in download_combinations:
+                filter_kwargs = {"as_of_date": as_of_date, "fiscal_year": fiscal_year}
+                if agency_code != "all":
+                    filter_kwargs["awarding_toptier_agency_code"] = agency_code
+                download_filters = MonthlyDownloadFilters(**filter_kwargs)
+                factory_class = (
+                    TransactionAssistanceMonthlyDownloadFactory
+                    if award_category == AwardCategory.ASSISTANCE
+                    else TransactionContractMonthlyDownloadFactory
+                )
+                download_factory = factory_class(self.spark, download_filters)
+                download = download_factory.get_download(self.monthly_type)
+
+                if download.file_name_prefix in downloads_prefixes_to_skip:
+                    logger.info(f"Skipping {download.file_names[0]}")
+                else:
+                    result.append(download)
 
         return result
 
@@ -403,7 +436,10 @@ class Command(BaseCommand):
             factory_class = TransactionContractMonthlyDownloadFactory
 
         # Generic filters for the purpose of bypassing the Pydantic checks
-        monthly_filters = MonthlyDownloadFilters(fiscal_year=generate_fiscal_year(datetime.today()))
+        if self.monthly_type == MonthlyType.DELTA:
+            monthly_filters = MonthlyDownloadFilters(delta_start_date="2024-01-01")
+        else:
+            monthly_filters = MonthlyDownloadFilters(fiscal_year=generate_fiscal_year(datetime.today()))
 
         download = factory_class(self.spark, monthly_filters).get_download(self.monthly_type)
 
