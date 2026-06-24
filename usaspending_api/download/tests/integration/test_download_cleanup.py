@@ -7,7 +7,7 @@ from unittest.mock import patch
 import pytest
 from django.test import TestCase
 
-from usaspending_api.download.filestreaming.download_generation import cleanup_previous_download_attempt
+from usaspending_api.download.helpers.cleanup_helpers import cleanup_previous_download_attempt  # Updated import
 from usaspending_api.download.models import DownloadJob, JobStatus
 from usaspending_api.download.models.download_job_lookup import DownloadJobLookup
 
@@ -109,7 +109,7 @@ class TestDownloadCleanup(TestCase):
         except Exception as e:
             pytest.fail(f"Cleanup should handle missing files gracefully, but raised: {e}")
 
-    @patch('usaspending_api.download.filestreaming.download_generation.settings')
+    @patch('usaspending_api.download.helpers.cleanup_helpers.settings')  # Updated patch path
     def test_cleanup_removes_incomplete_zip_file(self, mock_settings):
         """Test that cleanup removes incomplete zip files"""
 
@@ -128,7 +128,7 @@ class TestDownloadCleanup(TestCase):
             # Verify zip file was removed
             assert not os.path.exists(zip_file_path), "Incomplete zip file should be removed"
 
-    @patch('usaspending_api.download.filestreaming.download_generation.settings')
+    @patch('usaspending_api.download.helpers.cleanup_helpers.settings')  # Updated patch path
     def test_cleanup_removes_incomplete_working_directory(self, mock_settings):
         """Test that cleanup removes incomplete working directories"""
 
