@@ -4,11 +4,12 @@ from django.db import models
 from django_cte import CTEManager
 
 from usaspending_api.common.helpers.date_helper import fy
+from usaspending_api.common.mixins import EmbeddingMixin
 from usaspending_api.common.models import DataSourceTrackedModel
 from usaspending_api.common.exceptions import UnprocessableEntityException
 
 
-class TreasuryAppropriationAccount(DataSourceTrackedModel):
+class TreasuryAppropriationAccount(EmbeddingMixin, DataSourceTrackedModel):
     """Represents a single Treasury Account Symbol (TAS)."""
 
     treasury_account_identifier = models.AutoField(primary_key=True)

@@ -39,21 +39,24 @@
          - "software development" → use naicsCodes lookup tool, NOT keyword
          - "construction companies" → use naicsCodes lookup tool, NOT keyword
       
-      3. Location (selectedLocations): For geographic queries
+      3. CFDA Codes (selectedCFDA): For queries related to the Catalog of Federal Domestic Assistance (CFDA) listings
+
+      
+      4. Location (selectedLocations): For geographic queries
          - "Texas contracts" → use lookup_location tool, NOT keyword
          - "Chicago spending" → use lookup_location tool, NOT keyword
       
-      4. Time Period (timePeriodFY or time_period): For date-based queries
+      5. Time Period (timePeriodFY or time_period): For date-based queries
          - "FY 2023" → use timePeriodFY=['2023'], NOT keyword
          - "last year" → calculate fiscal year, use timePeriodFY, NOT keyword
       
-      5. Award Amounts (awardAmounts): For dollar value queries
+      6. Award Amounts (awardAmounts): For dollar value queries
          - "over $1 million" → use awardAmounts, NOT keyword
       
-      6. Agencies (selectedAwardingAgencies/selectedFundingAgencies): For agency queries
+      7. Agencies (selectedAwardingAgencies/selectedFundingAgencies): For agency queries
          - Use agency lookup tools when available
       
-      7. Award Types (awardType): For contract/grant/loan type queries
+      8. Award Types (awardType): For contract/grant/loan type queries
          - "contracts" → use awardType, NOT keyword
       
       KEYWORD FILTER USAGE:

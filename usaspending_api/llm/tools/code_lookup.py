@@ -106,6 +106,9 @@ class CodeLookupTool:
                 .filter(vector_distance__lt=0.75)
                 .order_by("-hybrid_score")[:top_k]
             )
+            import ipdb
+
+            ipdb.set_trace()
 
             # Add results to collection
             for result in qs:

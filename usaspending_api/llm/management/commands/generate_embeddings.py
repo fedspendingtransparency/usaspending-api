@@ -9,25 +9,6 @@ logger = logging.getLogger(__name__)
 
 
 class Command(BaseCommand):
-    help = """
-    Generate embeddings for models that use EmbeddingMixin.
-
-    Examples:
-        # Generate embeddings for NAICS codes
-        python manage.py generate_embeddings naics
-
-        # Generate for all models with EmbeddingMixin
-        python manage.py generate_embeddings all
-
-        # Force regenerate existing embeddings
-        python manage.py generate_embeddings naics --force
-
-        # Dry run to see what would be processed
-        python manage.py generate_embeddings naics --dry-run
-
-        # Process specific records by filter
-        python manage.py generate_embeddings naics --filter "year=2022"
-    """
 
     def add_arguments(self, parser):
         parser.add_argument(
