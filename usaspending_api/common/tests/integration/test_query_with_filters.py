@@ -6,6 +6,7 @@ from usaspending_api.common.elasticsearch.search_wrappers import (
     SubawardSearch,
     TransactionSearch,
 )
+from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.query_with_filters import QueryWithFilters
 from usaspending_api.search.filters.elasticsearch.filter import QueryType
 from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
@@ -292,3 +293,63 @@ def test_recipient_search_text_not_escaped(monkeypatch, elasticsearch_award_inde
     results = search.handle_execute()
 
     assert len(results["hits"]["hits"]) == 1
+
+
+@pytest.fixture
+def object_class_award_fixture(db):
+    baker.make(
+        "search.AwardSearch",
+        award_id=10,
+        generated_unique_award_id="UNIQUE_AWARD_ID_10",
+        action_date="2020-01-01",
+        object_classes=[{"code": 254, "name": "OBJECT_CLASS_254"}],
+    )
+    baker.make(
+        "search.AwardSearch",
+        award_id=11,
+        generated_unique_award_id="UNIQUE_AWARD_ID_11",
+        action_date="2020-01-01",
+        object_classes=[{"code": 111, "name": "OBJECT_CLASS_111"}],
+    )
+
+
+@pytest.mark.django_db
+def test_object_classes_filter_award(
+    monkeypatch, elasticsearch_award_index, object_class_award_fixture
+):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
+
+    filters = {"object_classes": ["254"]}
+    query_with_filters = QueryWithFilters(QueryType.AWARDS)
+    filter_query = query_with_filters.generate_elasticsearch_query(filters)
+    results = AwardSearch().filter(filter_query).handle_execute()
+
+    nested_query = filter_query.to_dict()["bool"]["must"][0]["bool"]["should"][0]["nested"]
+    assert nested_query["path"] == "object_classes"
+    assert len(results["hits"]["hits"]) == 1
+    assert results["hits"]["hits"][0]["_source"]["award_id"] == 10
+
+
+@pytest.mark.django_db
+def test_object_classes_filter_no_match(
+        monkeypatch, elasticsearch_award_index, object_class_award_fixture
+):
+    """Filter values are matched against object class codes only - not names"""
+    setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
+
+    filters = {"object_classes": ["OBJECT_CLASS_254"]}
+    query_with_filters = QueryWithFilters(QueryType.AWARDS)
+    filter_query = query_with_filters.generate_elasticsearch_query(filters)
+    results = AwardSearch().filter(filter_query).handle_execute()
+
+    assert len(results["hits"]["hits"]) == 0
+
+
+@pytest.mark.django_db
+def test_object_classes_filter_not_for_subawards():
+    """object_classes is only indexed for Award index so non-award queries must be rejected"""
+
+    query_with_filters = QueryWithFilters(QueryType.SUBAWARDS)
+
+    with pytest.raises(InvalidParameterException):
+        query_with_filters.generate_elasticsearch_query({"object_classes": ["254"]})

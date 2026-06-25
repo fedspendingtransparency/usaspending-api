@@ -6,7 +6,7 @@ class DefCodes:
     underscore_name = "def_codes"
 
     @classmethod
-    def build_def_codes_filter(cls, filter_values):
+    def build_def_codes_filter(cls, filter_values: list[str]):
         """Build a SQL filter to only include Subawards that are associated with any
         DEF codes included in the API request.
 
@@ -23,8 +23,7 @@ class DefCodes:
                 disaster code's `earliest_public_law_enactment_date`
 
         Args:
-            filter_values (List[str]): List of DEF codes to use in filtering. These come
-                from the API request.
+            filter_values: List of DEF codes to use in filtering. These come from the API request.
 
         Returns:
             Q(): Subquery filter containing Award IDs that are associated with the
@@ -45,7 +44,7 @@ class DefCodes:
                     join rpt.award_search as aws
                         on ss.award_id = aws.award_id
                     where
-                         array[{def_codes}] && aws.disaster_emergency_fund_codes
+                         %s::text[] && aws.disaster_emergency_fund_codes
                     )
                     select
                         us.broker_subaward_id
@@ -54,14 +53,13 @@ class DefCodes:
                     join disaster_emergency_fund_code as defc
                         on defc.code = us.singular_defc
                     where
-                        us.singular_defc in ({def_codes})
+                        us.singular_defc = any(%s)
                         and (
                             defc.earliest_public_law_enactment_date is null
                             or defc.earliest_public_law_enactment_date <= sub_action_date
                         );
-                """.format(
-                    def_codes=",".join([f"'{code}'" for code in filter_values])
-                )
+                """,
+                [filter_values, filter_values]
             )
 
             results = cursor.fetchall()

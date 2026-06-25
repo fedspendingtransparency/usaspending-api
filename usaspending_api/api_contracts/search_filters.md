@@ -594,5 +594,16 @@ Request parameter description:
 }
 ```
 
+## Object classes
+
+**Description:** Filtering based on a list of Object class codes (not names). Only for 'awards'.
+
+**Example Request:**
+```
+{
+    "program_activities": [{"name": "program_name", "code": "1234", type": "PARK"}]
+}
+```
+
 Request parameter description:
-* `extent_competed_type_codes` (List) : Top level key name for filter. Contains list of Strings corresponding to Extent Competed type codes.
+* `object_classes` (List) : Top level key name for filter. Contains list of object class code Strings.
