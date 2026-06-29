@@ -2,7 +2,7 @@
 
 from django.db import models
 
-from usaspending_api.common.data_classes import TableSpec
+from usaspending_api.common.spark_data_classes import TableSpec
 
 
 class TestModel(models.Model):

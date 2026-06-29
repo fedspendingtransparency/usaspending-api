@@ -170,6 +170,16 @@ This route sends a request to the backend to begin generating a zipfile of award
         + `C`
         + `D`
         + `-1`
+        + `F001`
+        + `F002`
+        + `F003`
+        + `F004`
+        + `F005`
+        + `F006`
+        + `F007`
+        + `F008`
+        + `F009`
+        + `F010`
 + `date_range` (required, TimePeriod, fixed-type)
     Object with start and end dates
 + `date_type` (required, enum[string])

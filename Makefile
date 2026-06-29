@@ -53,7 +53,7 @@ printvars: ## Print the Environment variables present in calls to make, plus var
 	@printenv
 
 uv-sync:
-	uv sync --no-cache --extra dev --locked
+	uv sync --no-cache --extra dev --extra spark --locked
 
 .ivy2: ## Ensure user has a ~/.ivy2 dir, which will be bound to in a docker container volume to save on dependency downloads
 	@mkdir -p ~/.ivy2

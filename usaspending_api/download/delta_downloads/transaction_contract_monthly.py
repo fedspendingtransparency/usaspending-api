@@ -41,7 +41,7 @@ class ContractMixin:
 
     @property
     def select_cols(self) -> list[Column | DuckDBSparkColumn]:
-        return [
+        cols = [
             self.sf.col("transaction_unique_key").alias("contract_transaction_unique_key"),
             self.sf.col("generated_unique_award_id").alias("contract_award_unique_key"),
             self.sf.col("piid").alias("award_id_piid"),
@@ -348,6 +348,15 @@ class ContractMixin:
             self.sf.col("initial_report_date"),
             self.sf.col("last_modified_date"),
         ]
+        # For DELTA downloads, insert correction indicator at the beginning
+        if self.monthly_type == MonthlyType.DELTA:
+            correction_indicator = self.sf.when(
+                self.sf.col("transaction_delta_id").isNotNull(),
+                self.sf.lit("C")
+            ).otherwise(self.sf.lit(""))
+            cols.insert(0, correction_indicator.alias("correction_delete_indicator"))
+
+        return cols
 
     def _build_dataframes(self) -> list[DataFrame | DuckDBSparkDataFrame]:
         return [self.download_table.filter(self.dynamic_filters).select(*self.select_cols)]
