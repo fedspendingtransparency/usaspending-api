@@ -1,7 +1,9 @@
-from elasticsearch_dsl import A
+from typing import Any
+
+from opensearchpy.helpers.aggs import A
 
 
-def create_count_aggregation(field_name):
+def create_count_aggregation(field_name: str) -> Any:
     """
     This method creates an ElasticSearch aggregation that determines the count of unique
     entries for a provided field name.

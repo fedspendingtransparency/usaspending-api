@@ -1,12 +1,15 @@
 import logging
 from decimal import Decimal
-from typing import List
+from typing import Any, List
 
 from django.contrib.postgres.fields import ArrayField
-from django.db.models import F, IntegerField, OuterRef, Subquery, Value
+from django.db.models import F, IntegerField, OuterRef, QuerySet, Subquery, Value
+from django.http import HttpResponseBase
 from django.views.decorators.csrf import csrf_exempt
+from rest_framework.request import Request
 from rest_framework.response import Response
 
+from usaspending_api.awards.v2.lookups.lookups import loan_type_mapping
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.helpers.generic_helper import get_pagination_metadata
 from usaspending_api.disaster.v2.views.disaster_base import (
@@ -24,7 +27,7 @@ from usaspending_api.search.v2.elasticsearch_helper import get_summed_value_as_f
 logger = logging.getLogger(__name__)
 
 
-def route_agency_loans_backend(**initkwargs):
+def route_agency_loans_backend(**initkwargs) -> HttpResponseBase:
     """
     Per API contract, delegate requests that specify `award_type_codes` to the Elasticsearch-backend that gets sum
     amounts based on subtier Agency associated with the linked award.
@@ -34,14 +37,14 @@ def route_agency_loans_backend(**initkwargs):
     loans_by_agency = LoansByAgencyViewSet.as_view(**initkwargs)
 
     @csrf_exempt
-    def route_agency_loans_backend(request, *args, **kwargs):
+    def route_agency_loans_backend_inner(request: Request, *args, **kwargs) -> HttpResponseBase:
         if DisasterBase.requests_award_type_codes(request):
             return loans_by_subtier_agency(request, *args, **kwargs)
         return loans_by_agency(request, *args, **kwargs)
 
-    route_agency_loans_backend.endpoint_doc = LoansBySubtierAgencyViewSet.endpoint_doc
-    route_agency_loans_backend.__doc__ = LoansBySubtierAgencyViewSet.__doc__
-    return route_agency_loans_backend
+    route_agency_loans_backend_inner.endpoint_doc = LoansBySubtierAgencyViewSet.endpoint_doc
+    route_agency_loans_backend_inner.__doc__ = LoansBySubtierAgencyViewSet.__doc__
+    return route_agency_loans_backend_inner
 
 
 class LoansByAgencyViewSet(LoansPaginationMixin, DisasterBase, LoansMixin):
@@ -55,8 +58,8 @@ class LoansByAgencyViewSet(LoansPaginationMixin, DisasterBase, LoansMixin):
     required_filters = ["def_codes", "query"]
 
     @cache_response()
-    def post(self, request):
-        self.filters.update({"award_type_codes": ["07", "08"]})
+    def post(self, request: Request) -> Response:
+        self.filters.update({"award_type_codes": [*loan_type_mapping.keys()]})
 
         covid_faba_spending_by_toptier_agency = self.get_covid_faba_spending(
             spending_level="subtier_agency",
@@ -118,8 +121,7 @@ class LoansByAgencyViewSet(LoansPaginationMixin, DisasterBase, LoansMixin):
         return response
 
     @property
-    def queryset(self):
-
+    def queryset(self) -> QuerySet:
         query = self.construct_loan_queryset(
             "treasury_account__funding_toptier_agency_id", ToptierAgency, "toptier_agency_id"
         )
@@ -171,7 +173,7 @@ class LoansBySubtierAgencyViewSet(ElasticsearchLoansPaginationMixin, Elasticsear
 
         return results
 
-    def _build_json_result(self, bucket: dict, child: bool):
+    def _build_json_result(self, bucket: dict, child: bool) -> dict[str, Any]:
         agency_id = None
         tier = "sub" if child else "top"
         tid = Agency.objects.filter(

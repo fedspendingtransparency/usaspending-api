@@ -1,4 +1,4 @@
-from elasticsearch_dsl import Q
+from opensearchpy.helpers.query import Q
 from rest_framework.request import Request
 from rest_framework.response import Response
 
@@ -6,10 +6,8 @@ from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.elasticsearch.aggregation_helpers import create_count_aggregation
 from usaspending_api.common.elasticsearch.search_wrappers import AwardSearch
 from usaspending_api.common.query_with_filters import QueryWithFilters
-from usaspending_api.disaster.v2.views.disaster_base import DisasterBase
+from usaspending_api.disaster.v2.views.disaster_base import AwardTypeMixin, DisasterBase, FabaOutlayMixin
 from usaspending_api.search.filters.elasticsearch.filter import QueryType
-
-from usaspending_api.disaster.v2.views.disaster_base import FabaOutlayMixin, AwardTypeMixin
 
 
 class RecipientCountViewSet(FabaOutlayMixin, AwardTypeMixin, DisasterBase):

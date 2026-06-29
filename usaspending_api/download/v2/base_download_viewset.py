@@ -90,6 +90,21 @@ class BaseDownloadViewSet(APIView):
         return json_request["request_type"] == "account" and "award_financial" in json_request["download_types"]
 
     @staticmethod
+    def is_duckdb_download(json_request: dict) -> bool:
+        # TODO: Update the `spark_jobs` line in `process_request()` below to use DuckDB locally when
+        #  DuckDB is fully integrated and tested
+        return (
+            json_request["request_type"] == "account"
+            and not (
+                set(json_request.get("download_types", set())).isdisjoint([
+                    "account_balances",
+                    "object_class_program_activity",
+                    "award_financial"
+                ])
+            )
+        )
+
+    @staticmethod
     def validate_columns(json_request: dict):
         all_cols = set()
         for download_type in json_request["download_types"]:
@@ -108,6 +123,18 @@ class BaseDownloadViewSet(APIView):
 
         if settings.IS_LOCAL and settings.RUN_LOCAL_DOWNLOAD_IN_PROCESS:
             # Eagerly execute the download in this running process
+            # if self.is_duckdb_download(json_request):
+            #     spark_jobs = SparkJobs(DuckDBStrategy())
+            #     spark_jobs.start(
+            #         job_name=job_name,
+            #         command_name="generate_spark_download",
+            #         command_options=[
+            #             f"--download-job-id={download_job.download_job_id}",
+            #             "--skip-local-cleanup",
+            #             "--use-duckdb"
+            #         ],
+            #         run_as_container=False,
+            #     )
             if self.is_spark_download(json_request):
                 spark_jobs = SparkJobs(LocalStrategy())
                 spark_jobs.start(

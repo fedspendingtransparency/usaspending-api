@@ -514,8 +514,8 @@ def _build_usas_data_for_spark():
         latest_transaction_id=2,
         earliest_transaction_search_id=1,
         latest_transaction_search_id=2,
-        type_raw="07",
-        type="07",
+        type_raw="F003",
+        type="F003",
         category="loans",
         generated_unique_award_id="UNIQUE AWARD KEY B",
         generated_unique_award_id_legacy="ASST_NON_FAIN_789",
@@ -621,6 +621,7 @@ def _build_usas_data_for_spark():
             {"code": "1000", "name": "PAP name", "type": "PARK"},
             {"name": "OPERATIONS AND MAINTENANCE", "code": "0002", "type": "PAC/PAN"},
         ],
+        object_classes=[],
         federal_accounts=[
             {
                 "id": federal_account.id,
@@ -823,6 +824,7 @@ def _build_usas_data_for_spark():
         pop_county_fips=None,
         generated_pragmatic_obligation=0.00,
         program_activities=[{"name": "TRAINING AND RECRUITING", "code": "0003", "type": "PAC/PAN"}],
+        object_classes=[],
         federal_accounts=[
             {
                 "id": federal_account.id,
@@ -925,8 +927,8 @@ def _build_usas_data_for_spark():
         fain=asst_award.fain,
         uri=asst_award.uri,
         is_fpds=False,
-        type_raw="07",
-        type="07",
+        type_raw="F003",
+        type="F003",
         awarding_agency_id=awarding_agency.id,
         funding_agency_id=funding_agency.id,
         awarding_toptier_agency_abbreviation=awarding_toptier_agency.abbreviation,
@@ -1038,8 +1040,8 @@ def _build_usas_data_for_spark():
         fain=asst_award.fain,
         uri=asst_award.uri,
         is_fpds=False,
-        type_raw="07",
-        type="07",
+        type_raw="F003",
+        type="F003",
         record_type=None,
         awarding_agency_id=awarding_agency.id,
         funding_agency_id=funding_agency.id,

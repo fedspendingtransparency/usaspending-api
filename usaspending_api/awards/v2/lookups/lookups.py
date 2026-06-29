@@ -1,3 +1,5 @@
+from usaspending_api.common.helpers.sql_helpers import convert_list_to_sql_array
+
 grant_award_mapping = {
     "Award ID": "fain",
     "Recipient Name": "latest_transaction__assistance_data__awardee_or_recipient_legal",
@@ -157,12 +159,16 @@ loan_type_mapping = {
     "F003": "Direct Loan",
     "F004": "Loan Guarantee",
 }
+# This is broken out from the rest of "other_type_mapping" to accommodate an "insurance" award category
+insurance_type_mapping = {
+    "09": "Insurance",
+    "F005": "Indemnity / Insurance (non-loan)",
+}
 # -1 is a derived type that we added as a "catch-all" for any invalid `type` values
 other_type_mapping = {
-    "09": "Insurance",
+    **insurance_type_mapping,
     "11": "Other Financial Assistance",
     "-1": "Not Specified",
-    "F005": "Indemnity / Insurance (non-loan)",
     "F008": "Asset Forfeiture / Equitable Sharing",
     "F009": "Sale, Exchange, or Donation of Property and Goods",
     "F010": "Other Financial Assistance",
@@ -189,13 +195,24 @@ all_award_types_mappings = {
 }
 
 all_awards_types_to_category = {
-    type_code: category
-    for category, type_codes in all_award_types_mappings.items()
-    for type_code in type_codes
+    type_code: category for category, type_codes in all_award_types_mappings.items() for type_code in type_codes
 }
 
 all_subaward_types = ["grant", "procurement"]
 
-SUBAWARD_MAPPING_LOOKUP = {
-    key: value.replace(".keyword", "") for key, value in subaward_mapping.items()
-}
+SUBAWARD_MAPPING_LOOKUP = {key: value.replace(".keyword", "") for key, value in subaward_mapping.items()}
+
+# TODO: Implemented this way for a more 1:1 with current functionality to limit changes.
+#       This is a good candidate to refactor and move away from raw SQL where possible.
+# Capture different Award types for pairing with an Award category
+contract_types_sql_string = convert_list_to_sql_array(contract_type_mapping.keys())
+idv_types_sql_string = convert_list_to_sql_array(idv_type_mapping.keys())
+grant_types_sql_string = convert_list_to_sql_array(grant_type_mapping.keys())
+direct_payment_types_sql_string = convert_list_to_sql_array(direct_payment_type_mapping.keys())
+loan_types_sql_string = convert_list_to_sql_array(loan_type_mapping.keys())
+insurance_types_sql_string = convert_list_to_sql_array(insurance_type_mapping.keys())
+
+# Remove both "Insurance" and "Not Specified" type to carry forward previous functionality
+other_types_sql_string = convert_list_to_sql_array(
+    set(other_type_mapping.keys() - {*insurance_type_mapping.keys(), "-1"})
+)

@@ -40,7 +40,12 @@ from usaspending_api.download.delta_downloads.filters.account_filters import Acc
 from usaspending_api.download.delta_downloads.object_class_program_activity import (
     ObjectClassProgramActivityDownloadFactory,
 )
-from usaspending_api.download.lookups import FILE_FORMATS, JOB_STATUS_DICT, JOB_STATUS_DICT_BY_ID
+from usaspending_api.download.helpers.cleanup_helpers import cleanup_download_files, cleanup_previous_download_attempt
+from usaspending_api.download.lookups import (
+    FILE_FORMATS,
+    JOB_STATUS_DICT,
+    JOB_STATUS_DICT_BY_ID,
+)
 from usaspending_api.download.models import DownloadJob
 from usaspending_api.settings import TRACE_ENV
 
@@ -96,9 +101,17 @@ class Command(BaseCommand):
         self.use_duckdb = options["use_duckdb"]
         self.spark, spark_created_by_command = self.setup_spark_session(options["use_duckdb"])
 
+        cleanup_previous_download_attempt(
+            self.download_job,
+            working_dir_path=self.working_dir_path,
+            use_logger=True
+        )
+
+        self.start_download()
+
         if not self.working_dir_path.exists():
             self.working_dir_path.mkdir()
-        create_ref_temp_views(self.spark)
+        create_ref_temp_views(self.spark, download_job=self.download_job)
         self.process_download()
         if spark_created_by_command:
             self.spark.stop()
@@ -155,81 +168,16 @@ class Command(BaseCommand):
 
     def process_download(self) -> None:
         with SubprocessTrace(
-            name=f"job.{JOB_TYPE}.download.spark.{self.request_type}",
-            kind=SpanKind.INTERNAL,
-            service="spark",
+                name=f"job.{JOB_TYPE}.download.spark.{self.request_type}",
+                kind=SpanKind.INTERNAL,
+                service="spark",
         ) as main_trace:
-            main_trace.set_attributes(
-                {
-                    "service": "spark",
-                    "span_type": "Internal",
-                    "job_type": str(JOB_TYPE),
-                    "message": "Processing spark account download.",
-                    # download job details
-                    "download_job_id": str(self.download_job.download_job_id),
-                    "download_job_status": str(self.download_job.job_status.name),
-                    "download_file_name": str(self.download_job.file_name),
-                    "download_file_size": self.download_job.file_size if self.download_job.file_size is not None else 0,
-                    "number_of_rows": (
-                        self.download_job.number_of_rows if self.download_job.number_of_rows is not None else 0
-                    ),
-                    "number_of_columns": (
-                        self.download_job.number_of_columns if self.download_job.number_of_columns is not None else 0
-                    ),
-                    "error_message": self.download_job.error_message if self.download_job.error_message else "",
-                    "monthly_download": str(self.download_job.monthly_download),
-                    "json_request": str(self.download_job.json_request) if self.download_job.json_request else "",
-                    "file_name": str(self.download_job.file_name),
-                }
-            )
-        self.start_download()
+            main_trace.set_attributes(self._get_trace_attributes())
+
         files_to_cleanup = []
         try:
-            spark_to_csv_strategy = (
-                DuckDBToCSVStrategy(logger, self.spark) if self.use_duckdb else SparkToCSVStrategy(logger)
-            )
-            zip_file_path = self.working_dir_path / f"{self.download_zip_file_name}.zip"
-            download_request = self.get_download_request()
-            if self.columns is not None:
-                for download in download_request.download_list:
-                    download.dataframes = [df.select(*self.columns) for df in download.dataframes]
-
-            csvs_metadata = [
-                spark_to_csv_strategy.download_to_csv(
-                    source_sql=None,
-                    destination_path=self.working_dir_path,
-                    destination_file_name=file_name,
-                    working_dir_path=self.working_dir_path,
-                    download_zip_path=zip_file_path,
-                    source_df=df,
-                    delimiter=download_request.file_delimiter,
-                    file_format=download_request.file_extension,
-                )
-                for download in download_request.download_list
-                for file_name, df in zip(download.file_names, download.dataframes, strict=True)
-            ]
-            for csv_metadata in csvs_metadata:
-                files_to_cleanup.extend(csv_metadata.filepaths)
-            self.download_job.file_size = os.stat(zip_file_path).st_size
-            self.download_job.number_of_rows = sum([csv_metadata.number_of_rows for csv_metadata in csvs_metadata])
-            self.download_job.number_of_columns = sum(
-                [csv_metadata.number_of_columns for csv_metadata in csvs_metadata]
-            )
-            if not settings.IS_LOCAL:
-                with SubprocessTrace(
-                    name=f"job.{JOB_TYPE}.download.s3",
-                    kind=SpanKind.INTERNAL,
-                    service="spark",
-                ) as span:
-                    span.set_attributes(
-                        {
-                            "service": "spark",
-                            "span_type": "Internal",
-                            "resource": f"s3://{CONFIG.BULK_DOWNLOAD_S3_BUCKET_NAME}",
-                            "message": "Push file to S3 bucket, if not local",
-                        }
-                    )
-            upload_download_file_to_s3(zip_file_path)
+            files_to_cleanup = self._generate_download_files()
+            self._upload_to_s3_if_needed()
         except InvalidParameterException as e:
             exc_msg = "InvalidParameterException was raised while attempting to process the DownloadJob"
             self.fail_download(exc_msg, e)
@@ -240,8 +188,116 @@ class Command(BaseCommand):
             raise
         finally:
             if self.should_cleanup:
-                self.cleanup(files_to_cleanup)
+                self._cleanup_files(files_to_cleanup)
+
         self.finish_download()
+
+    def _get_trace_attributes(self) -> dict:
+        """Build trace attributes for the download job"""
+        return {
+            "service": "spark",
+            "span_type": "Internal",
+            "job_type": str(JOB_TYPE),
+            "message": "Processing spark account download.",
+            "download_job_id": str(self.download_job.download_job_id),
+            "download_job_status": str(self.download_job.job_status.name),
+            "download_file_name": str(self.download_job.file_name),
+            "download_file_size": self.download_job.file_size if self.download_job.file_size is not None else 0,
+            "number_of_rows": self.download_job.number_of_rows if self.download_job.number_of_rows is not None else 0,
+            "number_of_columns": (
+                self.download_job.number_of_columns if self.download_job.number_of_columns is not None else 0
+            ),
+            "error_message": self.download_job.error_message if self.download_job.error_message else "",
+            "monthly_download": str(self.download_job.monthly_download),
+            "json_request": str(self.download_job.json_request) if self.download_job.json_request else "",
+            "file_name": str(self.download_job.file_name),
+        }
+
+    def _generate_download_files(self) -> list[str]:
+        """Generate CSV files and return list of files to cleanup"""
+        spark_to_csv_strategy = (
+            DuckDBToCSVStrategy(logger, self.spark) if self.use_duckdb else SparkToCSVStrategy(logger)
+        )
+        zip_file_path = self.working_dir_path / f"{self.download_zip_file_name}.zip"
+        download_request = self.get_download_request()
+
+        if self.columns is not None:
+            self._filter_columns(download_request)
+
+        csvs_metadata = self._create_csv_files(spark_to_csv_strategy, download_request, zip_file_path)
+
+        files_to_cleanup = []
+        for csv_metadata in csvs_metadata:
+            files_to_cleanup.extend(csv_metadata.filepaths)
+
+        self._update_job_metadata(csvs_metadata, zip_file_path)
+
+        return files_to_cleanup
+
+    def _filter_columns(self, download_request: DownloadRequest) -> None:
+        """Filter dataframes to only include requested columns"""
+        for download in download_request.download_list:
+            download.dataframes = [df.select(self.columns) for df in download.dataframes]
+
+    def _create_csv_files(
+            self,
+            strategy: Union[DuckDBToCSVStrategy, SparkToCSVStrategy],
+            download_request: DownloadRequest,
+            zip_file_path: Path
+    ) -> list:
+        """Create CSV files from dataframes"""
+        return [
+            strategy.download_to_csv(
+                source_sql=None,
+                destination_path=self.working_dir_path,
+                destination_file_name=file_name,
+                working_dir_path=self.working_dir_path,
+                download_zip_path=zip_file_path,
+                source_df=df,
+                delimiter=download_request.file_delimiter,
+                file_format=download_request.file_extension,
+            )
+            for download in download_request.download_list
+            for file_name, df in zip(download.file_names, download.dataframes, strict=True)
+        ]
+
+    def _update_job_metadata(self, csvs_metadata: list, zip_file_path: Path) -> None:
+        """Update download job with file size and row/column counts"""
+        self.download_job.file_size = os.stat(zip_file_path).st_size
+        self.download_job.number_of_rows = sum(csv_metadata.number_of_rows for csv_metadata in csvs_metadata)
+        self.download_job.number_of_columns = sum(csv_metadata.number_of_columns for csv_metadata in csvs_metadata)
+
+    def _upload_to_s3_if_needed(self) -> None:
+        """Upload zip file to S3 if not running locally"""
+        if not settings.IS_LOCAL:
+            with SubprocessTrace(
+                    name=f"job.{JOB_TYPE}.download.s3",
+                    kind=SpanKind.INTERNAL,
+                    service="spark",
+            ) as span:
+                span.set_attributes({
+                    "service": "spark",
+                    "span_type": "Internal",
+                    "resource": f"s3://{CONFIG.BULK_DOWNLOAD_S3_BUCKET_NAME}",
+                    "message": "Push file to S3 bucket, if not local",
+                })
+
+            zip_file_path = self.working_dir_path / f"{self.download_zip_file_name}.zip"
+            upload_download_file_to_s3(zip_file_path)
+
+    def _cleanup_files(self, files_to_cleanup: list[Union[Path, str]]) -> None:
+        """Clean up temporary files and directories"""
+        cleanup_download_files(files_to_cleanup, use_logger=True, download_job=self.download_job)
+
+        # DuckDB-specific cleanup: remove empty directory left behind
+        if isinstance(self.spark, DuckDBSparkSession) and files_to_cleanup:
+            empty_dir = Path(files_to_cleanup[0]).parent
+            if empty_dir.exists() and not any(empty_dir.iterdir()):
+                logger.info(f"Removing empty DuckDB directory {empty_dir}")
+                try:
+                    empty_dir.rmdir()
+                except OSError as e:
+                    logger.warning(f"Failed to remove empty directory: {e}")
 
     def get_download_request(self) -> DownloadRequest:
         download_factories = {
@@ -303,16 +359,3 @@ class Command(BaseCommand):
         self.download_job.save()
         logger.info(f"Finished processing DownloadJob {self.download_job.download_job_id}")
         logger.info(f"Download generation took {(time.time() - self.start_time):3f} seconds")
-
-    def cleanup(self, path_list: list[Union[Path, str]]) -> None:
-        for path in path_list:
-            if isinstance(path, str):
-                path = Path(path)
-            logger.info(f"Removing {path}")
-            path.unlink()
-
-        # DuckDB will leave behind an empty directory that can be deleted
-        if isinstance(self.spark, DuckDBSparkSession):
-            empty_dir = Path(path_list[0]).parent
-            logger.info(f"Removing empty directory {empty_dir}")
-            Path.rmdir(empty_dir)

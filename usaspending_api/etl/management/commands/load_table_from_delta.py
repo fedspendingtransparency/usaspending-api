@@ -44,7 +44,6 @@ _PG_WORK_MEM_FOR_LARGE_CSV_COPY = 256 * 1024  # MiB of work_mem * KiBs in 1 MiB
 
 
 class Command(BaseCommand):
-
     help = """
     This command reads data from a Delta table and copies it into a corresponding Postgres database table (under a
     temp name). As of now, it only supports a full reload of a table. If the table with the chosen temp name already
@@ -71,7 +70,7 @@ class Command(BaseCommand):
             "--alt-delta-name",
             type=str,
             required=False,
-            help="An alternate delta table name to load, overriding the TABLE_SPEC destination_table" "name",
+            help="An alternate delta table name to load, overriding the TABLE_SPEC destination_table_name",
         )
         parser.add_argument(
             "--jdbc-inserts",
@@ -174,18 +173,18 @@ class Command(BaseCommand):
         table_spec = TABLE_SPEC[delta_table]
 
         # Delta side
-        destination_database = options["alt_delta_db"] or table_spec["destination_database"]
+        destination_database = options["alt_delta_db"] or table_spec.destination_database
         delta_table_name = options["alt_delta_name"] or delta_table
         delta_table = f"{destination_database}.{delta_table_name}" if destination_database else delta_table_name
 
         # Postgres side - source
         postgres_table = None
-        postgres_model = table_spec["model"]
-        postgres_schema = table_spec["source_database"] or table_spec["swap_schema"]
-        postgres_table_name = table_spec["source_table"] or table_spec["swap_table"]
-        postgres_cols = table_spec["source_schema"]
-        column_names = table_spec.get("column_names")
-        tsvectors = table_spec.get("tsvectors") or {}
+        postgres_model = table_spec.model
+        postgres_schema = table_spec.source_database or table_spec.swap_schema
+        postgres_table_name = table_spec.source_table or table_spec.swap_table
+        postgres_cols = table_spec.source_schema
+        column_names = table_spec.column_names
+        tsvectors = table_spec.tsvectors or {}
         if postgres_table_name:
             postgres_table = f"{postgres_schema}.{postgres_table_name}" if postgres_schema else postgres_table_name
 
@@ -226,7 +225,7 @@ class Command(BaseCommand):
             temp_dest_table_exists = False
         make_new_table = not temp_dest_table_exists
 
-        is_postgres_table_partitioned = table_spec.get("postgres_partition_spec") is not None
+        is_postgres_table_partitioned = table_spec.postgres_partition_spec is not None
 
         if postgres_table or postgres_cols:
             # Recreate the table if it doesn't exist. Spark's df.write automatically does this but doesn't account for
@@ -238,19 +237,19 @@ class Command(BaseCommand):
                 partitions_sql = []
                 if is_postgres_table_partitioned:
                     partition_clause = (
-                        f"PARTITION BY {table_spec['postgres_partition_spec']['partitioning_form']}"
-                        f"({', '.join(table_spec['postgres_partition_spec']['partition_keys'])})"
+                        f"PARTITION BY {table_spec.postgres_partition_spec['partitioning_form']}"
+                        f"({', '.join(table_spec.postgres_partition_spec['partition_keys'])})"
                     )
                     storage_parameters = ""
                     partitions_sql = [
                         (
                             f"CREATE TABLE "
                             # Below: e.g. my_tbl_temp -> my_tbl_part_temp
-                            f"{temp_table[:-len(temp_table_suffix)]}{pt['table_suffix']}{temp_table_suffix} "
+                            f"{temp_table[: -len(temp_table_suffix)]}{pt['table_suffix']}{temp_table_suffix} "
                             f"PARTITION OF {temp_table} {pt['partitioning_clause']} "
                             f"{storage_parameters}"
                         )
-                        for pt in table_spec["postgres_partition_spec"]["partitions"]
+                        for pt in table_spec.postgres_partition_spec["partitions"]
                     ]
                 if postgres_table:
                     create_temp_sql = f"""
@@ -261,7 +260,7 @@ class Command(BaseCommand):
                 elif postgres_cols:
                     create_temp_sql = f"""
                         CREATE TABLE {temp_table} (
-                            {", ".join([f'{key} {val}' for key, val in postgres_cols.items()])}
+                            {", ".join([f"{key} {val}" for key, val in postgres_cols.items()])}
                         ) {partition_clause} {storage_parameters}
                     """
                 else:
@@ -322,8 +321,8 @@ class Command(BaseCommand):
                 logger.info(f"{temp_table} truncated.")
 
         # Reset the sequence before load for a table if it exists
-        if options["reset_sequence"] and table_spec.get("postgres_seq_name"):
-            postgres_seq_last_value = self._set_sequence_value(table_spec["postgres_seq_name"])
+        if options["reset_sequence"] and table_spec.postgres_seq_name:
+            postgres_seq_last_value = self._set_sequence_value(table_spec.postgres_seq_name)
         else:
             postgres_seq_last_value = None
 
@@ -331,7 +330,7 @@ class Command(BaseCommand):
         use_jdbc_inserts = options["jdbc_inserts"]
         strategy = "JDBC INSERTs" if use_jdbc_inserts else "SQL bulk COPY CSV"
         logger.info(
-            f"LOAD (START): Loading data from Delta table {delta_table} to {temp_table} using {strategy} " f"strategy"
+            f"LOAD (START): Loading data from Delta table {delta_table} to {temp_table} using {strategy} strategy"
         )
 
         try:
@@ -364,11 +363,11 @@ class Command(BaseCommand):
                 logger.error(
                     f"Command failed unexpectedly; resetting the sequence to previous value: {postgres_seq_last_value}"
                 )
-                self._set_sequence_value(table_spec["postgres_seq_name"], postgres_seq_last_value)
+                self._set_sequence_value(table_spec.postgres_seq_name, postgres_seq_last_value)
             raise Exception(exc) from exc
 
         logger.info(
-            f"LOAD (FINISH): Loaded data from Delta table {delta_table} to {temp_table} using {strategy} " f"strategy"
+            f"LOAD (FINISH): Loaded data from Delta table {delta_table} to {temp_table} using {strategy} strategy"
         )
 
         # We're done with spark at this point

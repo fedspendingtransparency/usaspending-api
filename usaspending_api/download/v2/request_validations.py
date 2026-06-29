@@ -4,6 +4,7 @@ from datetime import MAXYEAR, MINYEAR, datetime
 from typing import Any, Optional
 
 from django.conf import settings
+from rest_framework.exceptions import NotFound
 
 from usaspending_api.awards.models import Award
 from usaspending_api.awards.v2.lookups.lookups import (
@@ -141,7 +142,11 @@ class AwardDownloadValidator(DownloadValidatorBase):
                         "name": {"type": "text", "text_type": "search", "optional": False},
                     },
                 },
-                {"name": "agency", "key": "filters|agency", "type": "integer"},
+                {
+                    "name": "agency",
+                    "key": "filters|agency",
+                    "type": "integer"
+                 },
                 {
                     "name": "date_range",
                     "key": "filters|date_range",
@@ -622,7 +627,13 @@ class AccountDownloadValidator(DownloadValidatorBase):
                     "array_type": "enum",
                     "enum_values": VALID_ACCOUNT_SUBMISSION_TYPES,
                 },
-                {"name": "agency", "key": "filters|agency", "type": "text", "text_type": "search", "default": "all"},
+                {
+                    "name": "agency",
+                    "key": "filters|agency",
+                    "type": "text",
+                    "text_type": "search",
+                    "default": "all"
+                },
                 {
                     "name": "def_codes",
                     "key": "filters|def_codes",
@@ -660,6 +671,18 @@ class AccountDownloadValidator(DownloadValidatorBase):
         fy = self._json_request["filters"].get("fy")
         quarter = self._json_request["filters"].get("quarter")
         period = self._json_request["filters"].get("period")
+
+        agency_filter = self._json_request["filters"].get("agency")
+        has_agency_filter = agency_filter and agency_filter.lower() != "all"
+        is_valid_id = (
+            agency_filter.isdigit()
+            and ToptierAgency.objects.filter(toptier_agency_id=agency_filter).exists()
+        )
+        is_valid_abbr = ToptierAgency.objects.filter(abbreviation=agency_filter).exists()
+        if has_agency_filter and not (is_valid_id or is_valid_abbr):
+            raise NotFound(
+                f"No agency was found with {'id' if agency_filter.isdigit() else 'abbreviation'} {agency_filter}"
+            )
 
         fy, quarter, period = _validate_and_bolster_requested_submission_window(fy, quarter, period)
 
@@ -751,6 +774,8 @@ class SearchDownloadValidator(DownloadValidatorBase):
         self._json_request["filters"] = _validate_filters_exist(request_data)
         self.set_filter_defaults({"award_type_codes": list(award_type_mapping.keys())})
 
+        original_spending_level = self.request_data.get("spending_level")
+
         self.tinyshield_models.extend(
             [
                 {
@@ -791,8 +816,13 @@ class SearchDownloadValidator(DownloadValidatorBase):
         self._json_request["limit"] = self.request_data.get("limit", settings.MAX_DOWNLOAD_LIMIT)
         self._json_request = self.get_validated_request()
 
+        # Use original value for processing download_types
+        spending_level_to_process = original_spending_level if original_spending_level is not None else ["awards",
+                                                                                                         "transactions",
+                                                                                                         "subawards"]
+
         dltypes = []
-        for dltype in self.request_data.get("spending_level", ["awards", "transactions", "subawards"]):
+        for dltype in spending_level_to_process:
             if dltype.lower() == "subawards":
                 dltypes.append("elasticsearch_sub_awards")
             elif dltype.lower() in ["awards", "transactions"]:
@@ -803,6 +833,9 @@ class SearchDownloadValidator(DownloadValidatorBase):
                 )
 
         self._json_request["download_types"] = dltypes
+        # Restore original spending_level in response
+        if original_spending_level is not None:
+            self._json_request["spending_level"] = original_spending_level
 
 
 def _validate_award_id(award_id: Any) -> Any:

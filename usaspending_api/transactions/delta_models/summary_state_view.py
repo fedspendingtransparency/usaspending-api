@@ -1,3 +1,5 @@
+from usaspending_api.awards.v2.lookups.lookups import loan_types_sql_string
+
 SUMMARY_STATE_VIEW_COLUMNS = {
     "duh": {"delta": "STRING", "postgres": "UUID"},
     "fiscal_year": {"delta": "INTEGER", "postgres": "INTEGER"},
@@ -18,7 +20,7 @@ SUMMARY_STATE_VIEW_POSTGRES_COLUMNS = {k: v["postgres"] for k, v in SUMMARY_STAT
 
 summary_state_view_create_sql_string = rf"""
     CREATE OR REPLACE TABLE {{DESTINATION_TABLE}} (
-        {", ".join([f'{key} {val}' for key, val in SUMMARY_STATE_VIEW_DELTA_COLUMNS.items()])}
+        {", ".join([f"{key} {val}" for key, val in SUMMARY_STATE_VIEW_DELTA_COLUMNS.items()])}
     )
     USING DELTA
     LOCATION 's3a://{{SPARK_S3_BUCKET}}/{{DELTA_LAKE_S3_PATH}}/{{DESTINATION_DATABASE}}/{{DESTINATION_TABLE}}'
@@ -62,7 +64,7 @@ summary_state_view_load_sql_string = [
             COALESCE(
                 SUM(
                     CASE
-                        WHEN COALESCE(transaction_normalized.type, '') IN ('07', '08')
+                        WHEN COALESCE(transaction_normalized.type, '') IN ({loan_types_sql_string})
                             THEN transaction_normalized.original_loan_subsidy_cost
                         ELSE transaction_normalized.federal_action_obligation
                     END
@@ -98,8 +100,12 @@ summary_state_view_load_sql_string = [
         int.transaction_fabs ON (transaction_normalized.id = transaction_fabs.transaction_id)
     WHERE
         transaction_normalized.action_date >= '2007-10-01'
-        AND COALESCE(transaction_fpds.place_of_perform_country_c, transaction_fabs.place_of_perform_country_c, 'USA') = 'USA'
-        AND COALESCE(transaction_fpds.place_of_performance_state, transaction_fabs.place_of_perfor_state_code) IS NOT NULL
+        AND COALESCE(
+            transaction_fpds.place_of_perform_country_c, transaction_fabs.place_of_perform_country_c, 'USA'
+        ) = 'USA'
+        AND COALESCE(
+            transaction_fpds.place_of_performance_state, transaction_fabs.place_of_perfor_state_code
+        ) IS NOT NULL
     GROUP BY
         transaction_normalized.fiscal_year,
         transaction_normalized.type,
@@ -175,9 +181,9 @@ summary_state_view_load_sql_string = [
     # -----
     # Update the summary_state_view.total_outlays with calculated values
     # -----
-    f"""
+    """
     MERGE INTO
-        {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}} ssv
+        {DESTINATION_DATABASE}.{DESTINATION_TABLE} ssv
     USING
         outlays_breakdown ob
     ON
