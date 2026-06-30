@@ -21,18 +21,21 @@ class AbstractMonthlyDownload(AbstractDownload):
 
         self.sf = functions
 
-        # TODO: Update Monthly Delta download to limit results to only recent changes
-        #       (see populate_monthly_delta_files.py)
         self._validate_filters_for_monthly_type()
         self._add_category_filter()
 
-    @property
-    @abstractmethod
-    def category(self) -> AwardCategory: ...
+        if self.monthly_type == MonthlyType.DELTA:
+            self._add_delta_filters()
 
     @property
     @abstractmethod
-    def monthly_type(self) -> MonthlyType: ...
+    def category(self) -> AwardCategory:
+        ...
+
+    @property
+    @abstractmethod
+    def monthly_type(self) -> MonthlyType:
+        ...
 
     @property
     def download_table(self) -> DataFrame | DuckDBSparkDataFrame:
@@ -41,7 +44,7 @@ class AbstractMonthlyDownload(AbstractDownload):
     @property
     def file_name_prefix(self) -> str:
         agency = (
-            self.filters.awarding_toptier_agency_code or "All"
+                self.filters.awarding_toptier_agency_code or "All"
         )
         category = self.category.title
         monthly_type = self.monthly_type.title
@@ -54,6 +57,8 @@ class AbstractMonthlyDownload(AbstractDownload):
             case MonthlyType.DELTA:
                 if self.filters.fiscal_year is not None:
                     raise ValueError("'fiscal_year' is not supported for monthly_type of 'DELTA'")
+                if self.filters.delta_start_date is None:
+                    raise ValueError("'delta_start_date' is required for monthly_type of 'DELTA'")
             case MonthlyType.FULL:
                 if self.filters.fiscal_year is None:
                     raise ValueError("'fiscal_year' is required for monthly_type of 'FULL'")
@@ -68,6 +73,27 @@ class AbstractMonthlyDownload(AbstractDownload):
                 raise NotImplementedError(f"Dynamic filters doesn't support category of '{self.category}'")
 
         self._dynamic_filters &= category_filter
+
+    def _add_delta_filters(self) -> None:
+        """
+        Add delta-specific filters to limit results to only changed records.
+        This is called only for DELTA downloads.
+        """
+        if not self.filters.delta_start_date:
+            raise ValueError("delta_start_date is required for DELTA downloads")
+
+        # Convert YYYY-MM-DD to date type for comparison
+        delta_date = self.sf.to_date(self.sf.lit(self.filters.delta_start_date), "yyyy-MM-dd")
+
+        # Filter for records modified since delta_start_date
+        # This includes new records, updated records, and corrections
+        delta_filter = (
+                               self.sf.col("etl_update_date") >= delta_date
+                       ) | (
+                           self.sf.col("transaction_delta_id").isNotNull()
+                       )
+
+        self._dynamic_filters &= delta_filter
 
     def _build_file_names(self) -> list[str]:
         return [f"{self.file_name_prefix}_{self.filters.as_of_date}"]
