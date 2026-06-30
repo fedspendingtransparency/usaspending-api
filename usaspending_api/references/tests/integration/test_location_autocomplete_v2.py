@@ -1,7 +1,7 @@
 import json
 
 import pytest
-from elasticsearch_dsl import Q as ES_Q
+from opensearchpy.helpers.query import Q as ES_Q
 from rest_framework import status
 
 from usaspending_api.common.elasticsearch.search_wrappers import LocationSearch
