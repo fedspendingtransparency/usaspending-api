@@ -1,6 +1,3 @@
-from typing import Any, Callable, Literal
-
-from pydantic import BaseModel, Field
 from typing import Annotated, Any, Callable, Literal
 
 from pydantic import BaseModel, Field, model_validator
@@ -49,6 +46,8 @@ class SelectedRecipient(BaseModel):
     )
     filter: RecipientFilter
     display: RecipientDisplay
+
+
 class LocationFilter(BaseModel):
     country: str = "USA"
     state: str | None = Field(default=None, description="Two-letter state code (e.g., 'MO', 'TX', 'CA')")
