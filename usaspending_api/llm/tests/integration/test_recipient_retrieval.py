@@ -2,7 +2,7 @@
 import pytest
 from django.conf import settings
 from elasticsearch import Elasticsearch
-from elasticsearch_dsl import Index
+from elasticsearch_dsl import Index, connections
 
 from usaspending_api.common.elasticsearch.search_wrappers import RecipientSearch
 from usaspending_api.llm.retrieval.recipient_retrieval import (
@@ -27,8 +27,11 @@ def elasticsearch_connection():
         timeout=30,
     )
 
+    connections.add_connection('default', es)
+
     yield es
 
+    connections.remove_connection('default')
     es.close()
 
 
@@ -41,9 +44,9 @@ def elasticsearch_recipient_index(elasticsearch_connection):
 
     # Create index
     index = Index(index_name)
-    if index.exists():
-        index.delete()
-    index.create()
+    if index.exists(using='default'):
+        index.delete(using='default')
+    index.create(using='default')
 
     # Add test data
     test_recipients = [
@@ -83,8 +86,8 @@ def elasticsearch_recipient_index(elasticsearch_connection):
     yield index_name
 
     # Cleanup
-    if index.exists():
-        index.delete()
+    if index.exists(using='default'):
+        index.delete(using='default')
 
 
 @pytest.fixture

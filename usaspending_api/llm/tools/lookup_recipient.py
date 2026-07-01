@@ -57,7 +57,7 @@ class RecipientLookupTool:
         Returns:
             Dictionary with results or error information
         """
-        error_response = self.validate_inputs(query)
+        error_response = self._validate_inputs(query)
         if error_response:
             return error_response
 
@@ -107,10 +107,11 @@ class RecipientLookupTool:
                     ES_Q("wildcard", **{f"{field}__keyword": {"value": f"{query_upper}*", "boost": 2.0}}),
                 ]
             )
+        should_queries_dict = [q.to_dict() for q in should_queries]
 
         return (
             RecipientSearch()
-            .query("bool", should=should_queries, minimum_should_match=1)
+            .query("bool", should=should_queries_dict, minimum_should_match=1)
             .source(list(self.RECIPIENT_SOURCE_FIELDS))
             .sort({"_score": {"order": "desc"}})[:top_k]
         )
@@ -264,11 +265,11 @@ class RecipientLookupTool:
             duns: Optional[str],
             recipient_name: Optional[str],
     ) -> list[dict[str, Optional[str]]]:
-        prime_filter = []
+        prime_filter = Q()
         if uei:
             prime_filter |= Q(awardee_or_recipient_uei=uei) | Q(ultimate_parent_uei=uei)
         if duns:
-            prime_filter |= Q(awardee_or_recipient_uniq=duns) | Q(ultimate_parent_unique_ide=duns)
+            prime_filter |= Q(awardee_or_recipient_uniqu=duns) | Q(ultimate_parent_unique_ide=duns)
         if recipient_name:
             prime_filter |= Q(awardee_or_recipient_legal__iexact=recipient_name)
 
@@ -277,16 +278,30 @@ class RecipientLookupTool:
 
         subcontractor_rows = (
             SubawardSearch.objects.filter(prime_filter)
-            .exclude(sub_awardee_or_recipient_legal__isnull=True)
-            .exclude(sub_awardee_or_recipient_legal="")
-            .exclude("sub_awardee_or_recipient_legal", "sub_awardee_or_recipient_uei", "sub_awardee_or_recipient_uniq")
+            .exclude(
+                Q(sub_awardee_or_recipient_legal__isnull=True)
+                  | Q(sub_awardee_or_recipient_legal='')
+            )
+            .exclude(
+                Q(sub_awardee_or_recipient_uei__isnull=True)
+                  | Q(sub_awardee_or_recipient_uei='')
+            )
+            .exclude(
+                Q(sub_awardee_or_recipient_uniqu__isnull=True)
+                  | Q(sub_awardee_or_recipient_uniqu='')
+            )
+            .values(
+                "sub_awardee_or_recipient_legal",
+                "sub_awardee_or_recipient_uei",
+                "sub_awardee_or_recipient_uniqu"
+            )
             .distinct()
         )
         return [
             {
                 "recipient_name": row["sub_awardee_or_recipient_legal"],
                 "uei": row["sub_awardee_or_recipient_uei"],
-                "duns": row["sub_awardee_or_recipient_uniq"],
+                "duns": row["sub_awardee_or_recipient_uniqu"],
             }
             for row in subcontractor_rows
         ]
