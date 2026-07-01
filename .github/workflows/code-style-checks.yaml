@@ -37,6 +37,8 @@ jobs:
         with:
           files: |
             **.py
+          files_ignore: |
+            **/migrations/**
           separator: " "
 
       - name: Check If `changed-python-files` Is An Empty String
