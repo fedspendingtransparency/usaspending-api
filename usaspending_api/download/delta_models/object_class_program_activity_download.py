@@ -218,13 +218,13 @@ def object_class_program_activity_df(spark: SparkSession) -> DataFrame:
                 "obligations_undelivered_orders_unpaid_total"
             ),
             fabpaoc.obligations_delivered_orders_unpaid_total_cpe.alias("obligations_delivered_orders_unpaid_total"),
-            fabpaoc.obligations_delivered_orders_unpaid_total_cpe.alias(
+            fabpaoc.obligations_delivered_orders_unpaid_total_fyb.alias(
                 "obligations_delivered_orders_unpaid_total_FYB"
             ),
             fabpaoc.gross_outlays_undelivered_orders_prepaid_total_cpe.alias(
                 "gross_outlays_undelivered_orders_prepaid_total"
             ),
-            fabpaoc.gross_outlays_undelivered_orders_prepaid_total_cpe.alias(
+            fabpaoc.gross_outlays_undelivered_orders_prepaid_total_fyb.alias(
                 "gross_outlays_undelivered_orders_prepaid_total_FYB"
             ),
             fabpaoc.gross_outlays_delivered_orders_paid_total_fyb.alias(

@@ -187,7 +187,7 @@ SELECT
     "latest_transaction"."cost_accounting_standards" AS "cost_accounting_standards_clause_code",
     "latest_transaction"."cost_accounting_stand_desc" AS "cost_accounting_standards_clause",
     "latest_transaction"."government_furnished_prope" AS "government_furnished_property_code",
-    "latest_transaction"."government_furnished_prope" AS "government_furnished_property",
+    "latest_transaction"."government_furnished_desc" AS "government_furnished_property",
     "latest_transaction"."sea_transportation" AS "sea_transportation_code",
     "latest_transaction"."sea_transportation_desc" AS "sea_transportation",
     "latest_transaction"."consolidated_contract" AS "consolidated_contract_code",
