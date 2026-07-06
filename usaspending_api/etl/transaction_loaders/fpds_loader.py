@@ -42,8 +42,8 @@ def delete_stale_fpds(detached_award_procurement_ids: dict) -> list:
     if not detached_award_procurement_ids:
         return []
 
-    ids_to_delete = ",".join([str(id) for ids in detached_award_procurement_ids.values() for id in ids])
-    logger.debug(f"Obtained these delete record IDs: [{ids_to_delete}]")
+    ids_to_delete = [int(id) for ids in detached_award_procurement_ids.values() for id in ids]
+    logger.debug(f"Obtained these delete record IDs: [{','.join(map(str, ids_to_delete))}]")
 
     with connection.cursor() as cursor:
         cursor.execute(
@@ -51,16 +51,14 @@ def delete_stale_fpds(detached_award_procurement_ids: dict) -> list:
             [ids_to_delete]
         )
         # assumes that this won't be too many IDs and lead to degraded performance or require too much memory
-        transaction_normalized_ids = [str(row[0]) for row in cursor.fetchall()]
+        transaction_normalized_ids = [int(row[0]) for row in cursor.fetchall()]
 
         if not transaction_normalized_ids:
             return []
 
-        txn_id_str = ",".join(transaction_normalized_ids)
-
         cursor.execute(
             "SELECT DISTINCT award_id FROM transaction_normalized WHERE id = ANY(%s)",
-            [txn_id_str]
+            [transaction_normalized_ids]
         )
         awards_touched = cursor.fetchall()
 
@@ -71,25 +69,25 @@ def delete_stale_fpds(detached_award_procurement_ids: dict) -> list:
             WHERE latest_transaction_id = ANY(%s) OR earliest_transaction_id = ANY(%s)
             RETURNING id
             """,
-            [txn_id_str, txn_id_str]
+            [transaction_normalized_ids, transaction_normalized_ids]
         )
         deleted_awards = cursor.fetchall()
         logger.info(f"{len(deleted_awards):,} awards were unlinked from transactions due to pending deletes")
 
         cursor.execute(
             "DELETE FROM transaction_fpds WHERE transaction_id = ANY(%s) RETURNING transaction_id",
-            [txn_id_str]
+            [transaction_normalized_ids]
         )
         deleted_fpds = set(cursor.fetchall())
 
         cursor.execute(
             "DELETE FROM transaction_search WHERE transaction_id = ANY(%s)",
-            [txn_id_str]
+            [transaction_normalized_ids]
         )
 
         cursor.execute(
             "DELETE FROM transaction_normalized WHERE id = ANY(%s) RETURNING id",
-            [txn_id_str]
+            [transaction_normalized_ids]
         )
         deleted_transactions = set(cursor.fetchall())
 
