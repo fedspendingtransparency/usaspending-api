@@ -213,7 +213,7 @@ class TestFilterSearchAssistant:
         assistant.client.converse.return_value = response
 
         with patch("usaspending_api.llm.models.db_models.ToolUse.objects.create"):
-            assistant.search("test query")
+            list(assistant.search("test query"))
 
         assert assistant.tool_iterations == assistant.MAX_TOOL_ITERATIONS
         assert assistant.client.converse.call_count == assistant.MAX_TOOL_ITERATIONS + 1
