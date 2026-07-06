@@ -8,9 +8,9 @@ CodePath = list[str]
 class BaseNode(ABC):
 
     code: str
-    ancestors: list
+    ancestors: list[str]
     positive: bool
-    children: list
+    children: list["BaseNode"]
 
     def __init__(
         self, code: CodePath, positive: bool, positive_codes: list[CodePath], negative_codes: list[CodePath]
@@ -65,7 +65,6 @@ class BaseHierarchicalFilter(ABC):
 
     MAX_TOTAL_CODES = 100
     MAX_TREE_DEPTH = 10
-    MAX_CHAIN_LENGTH = 15
 
     @classmethod
     def _validate_complexity(cls, require: list[list[str]], exclude: list[list[str]]) -> None:
@@ -80,19 +79,6 @@ class BaseHierarchicalFilter(ABC):
         max_depth = max(len(code) for code in all_codes)
         if max_depth > cls.MAX_TREE_DEPTH:
             raise ValueError(f"Code depth ({max_depth}) exceeds limit ({cls.MAX_TREE_DEPTH})")
-
-        sorted_codes = sorted(all_codes, key=len)
-        chain_length = 1
-        for i in range(1, len(sorted_codes)):
-            if cls.code_is_parent_of(sorted_codes[i - 1], sorted_codes[i]):
-                chain_length += 1
-                if chain_length > cls.MAX_CHAIN_LENGTH:
-                    raise ValueError(
-                        f"Detected nested chain of {chain_length} paths that would "
-                        f"cause exponential expansion (limit: {cls.MAX_CHAIN_LENGTH})"
-                    )
-            else:
-                chain_length = 1
 
     @classmethod
     def _has_no_parents(cls, code: list[str], other_codes: list[list[str]]) -> bool:

@@ -1,4 +1,5 @@
 from abc import ABC
+
 from django.db.models import Q, QuerySet
 
 from usaspending_api.search.filters.shared.abstract_filter import BaseHierarchicalFilter, BaseNode, CodePath
@@ -7,6 +8,7 @@ from usaspending_api.search.filters.shared.abstract_filter import BaseHierarchic
 class HierarchicalFilter(BaseHierarchicalFilter, ABC):
     @classmethod
     def _query_string(cls, queryset: QuerySet, require: list[CodePath], exclude: list[CodePath]) -> QuerySet:
+        cls._validate_complexity(require, exclude)
         positive_nodes = [
             cls.node(code, True, require, exclude) for code in require if cls._has_no_parents(code, require + exclude)
         ]
