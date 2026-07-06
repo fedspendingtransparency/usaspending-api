@@ -1,4 +1,5 @@
-from typing import Any, Generator
+from functools import cached_property
+from typing import Generator
 
 import boto3
 
@@ -31,7 +32,7 @@ class FilterSearchAssistant:
 
         self.tool_iterations = 0
 
-    @property
+    @cached_property
     def tool_config(self) -> dict[str, list[dict]]:
         specs = [tool.description.model_dump() for tool in self.tools]
         return {"tools": [{"toolSpec": {"inputSchema": {"json": spec.pop("input_schema")}, **spec}} for spec in specs]}
@@ -62,11 +63,18 @@ class FilterSearchAssistant:
         )
         self.message_order += 1
         stop_reason = response["stopReason"]
-        while stop_reason == "tool_use" and self.tool_iterations < self.MAX_TOOL_ITERATIONS:
+        search_complete = False
+        while stop_reason == "tool_use" and not search_complete and self.tool_iterations < self.MAX_TOOL_ITERATIONS:
             self.tool_iterations += 1
             tool_requests = [request for request in response["output"]["message"]["content"] if "toolUse" in request]
 
-            yield self.handle_tool_use(tool_requests, m)
+            for event in self.handle_tool_use(tool_requests, m):
+                yield event
+                if event.get("type") == "search_complete":
+                    search_complete = True
+
+            if search_complete:
+                break
 
             response = self.client.converse(
                 modelId=self.model.model_id,
@@ -110,7 +118,6 @@ class FilterSearchAssistant:
 
             tool_result = {"toolUseId": tool_use["toolUseId"], "content": [{"json": result}]}
             tool_result_message["content"].append({"toolResult": tool_result})
-            if tool.description.name == "search_federal_contracts_and_assistance" and "error" not in result:
+            if tool.description.name == "execute_filter" and "error" not in result:
                 yield {"search_id": self.session.id, "type": "search_complete", "result": result["hash"]}
-                break
         self.messages.append(tool_result_message)
