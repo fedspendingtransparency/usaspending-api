@@ -33,12 +33,14 @@ STANDARD_FILTER_TREE_MODEL = {
             "array_type": "any",
             "models": [{"type": "array", "array_type": "text", "text_type": "search"}],
             "min": 0,
+            "max": 100,
         },
         "exclude": {
             "type": "array",
             "array_type": "any",
             "models": [{"type": "array", "array_type": "text", "text_type": "search"}],
             "min": 0,
+            "max": 100,
         },
     },
 }
