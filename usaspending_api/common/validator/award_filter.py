@@ -1,12 +1,12 @@
 import copy
+from sys import maxsize
 
 from django.conf import settings
-from sys import maxsize
+
 from usaspending_api.awards.v2.lookups.lookups import award_type_mapping
 from usaspending_api.common.validator.helpers import TINY_SHIELD_SEPARATOR
 from usaspending_api.search.filters.elasticsearch.psc import PSCCodes
 from usaspending_api.search.filters.elasticsearch.tas import TasCodes, TreasuryAccounts
-
 
 TIME_PERIOD_MIN_MESSAGE = (
     "%s falls before the earliest available search date of {min}.  For data going back to %s, use either the "
