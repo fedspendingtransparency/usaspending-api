@@ -80,21 +80,23 @@ class TestSQLInjectionMitigation:
     @pytest.mark.django_db
     def test_null_byte_injection_in_array(self):
         """
-        Test that null bytes are handled safely.
+        Test that null bytes are rejected by psycopg.
 
         Attack vector: Using \x00 to terminate strings early
+
+        psycopg3 correctly rejects null bytes as they cannot be stored in
+        PostgreSQL text fields, preventing this attack vector entirely.
         """
+        from psycopg import DataError
+
         from usaspending_api.search.models import TransactionSearch
 
         malicious = ["test\x00'; DROP TABLE users; --"]
         qs = TransactionSearch.objects.filter(business_categories__overlap=malicious)
 
-        sql = generate_raw_quoted_query(qs)
-
-        # psycopg should handle null bytes safely
-        # Either removed or escaped
-        assert sql  # Should generate valid SQL without crashing
-        assert isinstance(sql, str)
+        # psycopg should raise DataError for null bytes
+        with pytest.raises(DataError, match="PostgreSQL text fields cannot contain NUL"):
+            generate_raw_quoted_query(qs)
 
     @pytest.mark.django_db
     def test_repr_breakout_attack_in_array(self):
@@ -289,7 +291,7 @@ class TestSQLInjectionMitigation:
         "'; DELETE FROM awards WHERE '1'='1'; --",
         "' UNION SELECT password FROM auth_user --",
         "\\'; DROP TABLE transaction_search; --",
-        "test\x00'; DROP TABLE users; --",
+        # Removed null byte test case - tested separately above
         "') TO PROGRAM 'rm -rf /'; --",
         "', (SELECT string_agg(password, ',') FROM auth_user), '",
     ])
@@ -298,6 +300,7 @@ class TestSQLInjectionMitigation:
         Test various SQL injection payloads are properly escaped.
 
         These are real-world attack patterns that should all be neutralized.
+        Note: Null byte attacks are tested separately as psycopg rejects them.
         """
         from usaspending_api.search.models import TransactionSearch
 
