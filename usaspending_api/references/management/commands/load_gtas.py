@@ -94,18 +94,23 @@ class Command(mixins.ETLMixin, BaseCommand):
                     ELSE sf.availability_type_code END,
                     '-', sf.main_account_code, '-', sf.sub_account_code)
                 AS tas_rendering_label,
-                STRING_AGG(budget_object_class, ',') AS budget_object_class,
-                STRING_AGG(program_activity_reporting_key, ',') AS program_activity_reporting_key_id,
-                STRING_AGG(prior_year_adjustment, ',') AS prior_year_adjustment,
-                STRING_AGG(by_direct_reimbursable_fun, ',') AS by_direct_reimbursable_fun,
-                STRING_AGG(bea_category, ',') AS bea_category
+                   budget_object_class,
+                   program_activity_reporting_key as program_activity_reporting_key_id,
+                   prior_year_adjustment,
+                   by_direct_reimbursable_fun,
+                   bea_category
             FROM
                 sf_133 sf
             GROUP BY
                 fiscal_year,
                 fiscal_period,
                 disaster_emergency_fund_code,
-                tas_rendering_label
+                tas_rendering_label,
+                budget_object_class,
+                program_activity_reporting_key,
+                prior_year_adjustment,
+                by_direct_reimbursable_fun,
+                bea_category
             ORDER BY
                 fiscal_year,
                 fiscal_period;
