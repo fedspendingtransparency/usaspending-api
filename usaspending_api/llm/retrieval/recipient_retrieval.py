@@ -31,51 +31,8 @@ def fuzzy_search_recipients(
     ]
 
 
-def expand_prime_recipient_subcontractors(**kwargs) -> dict[str, Any]:
-    subcontractors = _tool._get_subcontractors(
-        uei=kwargs.get("uei"),
-        duns=kwargs.get("duns"),
-        recipient_name=kwargs.get("recipient_name"),
-    )
-    prime = {
-        "recipient_name": kwargs.get("recipient_name"),
-        "uei": kwargs.get("uei"),
-        "duns": kwargs.get("duns"),
-        "recipient_hash": kwargs.get("recipient_hash"),
-        "recipient_level": kwargs.get("recipient_level"),
-    }
-    all_names = []
-    if prime.get("recipient_name"):
-        all_names.append(prime["recipient_name"])
-    for subcontractor in subcontractors:
-        name = subcontractor.get("recipient_name")
-        if name and name not in all_names:
-            all_names.append(name)
-
-    return {
-        "prime": prime,
-        "subcontractors": subcontractors,
-        "all_recipient_names": all_names,
-    }
-
-
-def retrieve_company_and_subcontractors(
+def retrieve_recipient_names(
         search_text: str,
         limit: int = 5,
-) -> dict[str, Any]:
-    result = _tool.lookup_recipient(
-        search_text,
-        include_subcontractors=True,
-        top_k=limit,
-    )
-    recipient_names = []
-    for item in result.get("results", []):
-        recipient_obj = next(iter(item.values()))
-        filter_obj = recipient_obj.get("filter", {})
-        recipient_names.extend(filter_obj.get("recipient_search_text", []))
-    recipient_names = list(dict.fromkeys(recipient_names))
-    return {
-        "query": search_text,
-        "matches": result.get("results", []),
-        "recipient_names": recipient_names,
-    }
+) -> list[str]:
+    return _tool.lookup_recipient(search_text, top_k=limit)
