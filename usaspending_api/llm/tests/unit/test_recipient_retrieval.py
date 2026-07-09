@@ -1,7 +1,7 @@
 """Unit tests for recipient_retrieval module"""
 from unittest.mock import Mock, patch
 
-from usaspending_api.llm.retrieval.recipient_retrieval import (
+from usaspending_api.llm.tests.helper import (
     build_fuzzy_recipient_query,
     fuzzy_search_recipients,
     retrieve_recipient_names,

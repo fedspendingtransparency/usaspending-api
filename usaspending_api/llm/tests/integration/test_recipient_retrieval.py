@@ -5,7 +5,7 @@ from elasticsearch import Elasticsearch
 from elasticsearch_dsl import Index, connections
 
 from usaspending_api.common.elasticsearch.search_wrappers import RecipientSearch
-from usaspending_api.llm.retrieval.recipient_retrieval import (
+from usaspending_api.llm.tests.helper import (
     build_fuzzy_recipient_query,
     expand_prime_recipient_subcontractors,
     fuzzy_search_recipients,
