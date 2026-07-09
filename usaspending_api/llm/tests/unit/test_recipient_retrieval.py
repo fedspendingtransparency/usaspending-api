@@ -11,8 +11,8 @@ from usaspending_api.llm.tests.helper import (
 class TestBuildFuzzyRecipientQuery:
     """Tests for build_fuzzy_recipient_query function"""
 
-    @patch("usaspending_api.llm.retrieval.recipient_retrieval._tool")
-    @patch("usaspending_api.llm.retrieval.recipient_retrieval.es_sanitize")
+    @patch("usaspending_api.llm.tests.helper._tool")
+    @patch("usaspending_api.llm.tests.helper.es_sanitize")
     def test_builds_query_with_sanitized_text(self, mock_sanitize, mock_tool):
         """Test that query is built with sanitized and uppercase text"""
         mock_sanitize.return_value = "acme corp"
@@ -25,8 +25,8 @@ class TestBuildFuzzyRecipientQuery:
         mock_tool._build_search.assert_called_once_with("ACME CORP", top_k=10)
         assert result == mock_search
 
-    @patch("usaspending_api.llm.retrieval.recipient_retrieval._tool")
-    @patch("usaspending_api.llm.retrieval.recipient_retrieval.es_sanitize")
+    @patch("usaspending_api.llm.tests.helper._tool")
+    @patch("usaspending_api.llm.tests.helper.es_sanitize")
     def test_strips_whitespace(self, mock_sanitize, mock_tool):
         """Test that whitespace is stripped from search text"""
         mock_sanitize.return_value = "  test  "
@@ -37,8 +37,8 @@ class TestBuildFuzzyRecipientQuery:
 
         mock_tool._build_search.assert_called_once_with("TEST", top_k=10)
 
-    @patch("usaspending_api.llm.retrieval.recipient_retrieval._tool")
-    @patch("usaspending_api.llm.retrieval.recipient_retrieval.es_sanitize")
+    @patch("usaspending_api.llm.tests.helper._tool")
+    @patch("usaspending_api.llm.tests.helper.es_sanitize")
     def test_converts_to_uppercase(self, mock_sanitize, mock_tool):
         """Test that search text is converted to uppercase"""
         mock_sanitize.return_value = "lowercase text"
@@ -53,8 +53,8 @@ class TestBuildFuzzyRecipientQuery:
 class TestFuzzySearchRecipients:
     """Tests for fuzzy_search_recipients function"""
 
-    @patch("usaspending_api.llm.retrieval.recipient_retrieval._tool")
-    @patch("usaspending_api.llm.retrieval.recipient_retrieval.es_sanitize")
+    @patch("usaspending_api.llm.tests.helper._tool")
+    @patch("usaspending_api.llm.tests.helper.es_sanitize")
     def test_returns_empty_list_when_no_hits(self, mock_sanitize, mock_tool):
         """Test that empty list is returned when no hits found"""
         mock_sanitize.return_value = "test"
@@ -68,8 +68,8 @@ class TestFuzzySearchRecipients:
 
         assert result == []
 
-    @patch("usaspending_api.llm.retrieval.recipient_retrieval._tool")
-    @patch("usaspending_api.llm.retrieval.recipient_retrieval.es_sanitize")
+    @patch("usaspending_api.llm.tests.helper._tool")
+    @patch("usaspending_api.llm.tests.helper.es_sanitize")
     def test_returns_formatted_results_with_hits(self, mock_sanitize, mock_tool):
         """Test that results are properly formatted when hits exist"""
         mock_sanitize.return_value = "acme"
@@ -102,8 +102,8 @@ class TestFuzzySearchRecipients:
         assert result[0]["score"] == 0.95
         mock_tool._build_search.assert_called_once_with("ACME", top_k=5)
 
-    @patch("usaspending_api.llm.retrieval.recipient_retrieval._tool")
-    @patch("usaspending_api.llm.retrieval.recipient_retrieval.es_sanitize")
+    @patch("usaspending_api.llm.tests.helper._tool")
+    @patch("usaspending_api.llm.tests.helper.es_sanitize")
     def test_handles_multiple_hits(self, mock_sanitize, mock_tool):
         """Test that multiple hits are properly formatted"""
         mock_sanitize.return_value = "corp"
@@ -141,8 +141,8 @@ class TestFuzzySearchRecipients:
         assert result[0]["recipient_name"] == "ACME CORP"
         assert result[1]["recipient_name"] == "BETA CORP"
 
-    @patch("usaspending_api.llm.retrieval.recipient_retrieval._tool")
-    @patch("usaspending_api.llm.retrieval.recipient_retrieval.es_sanitize")
+    @patch("usaspending_api.llm.tests.helper._tool")
+    @patch("usaspending_api.llm.tests.helper.es_sanitize")
     def test_handles_missing_fields_in_hits(self, mock_sanitize, mock_tool):
         """Test that missing fields are handled gracefully"""
         mock_sanitize.return_value = "test"
@@ -170,8 +170,8 @@ class TestFuzzySearchRecipients:
         assert result[0]["recipient_hash"] is None
         assert result[0]["score"] == 0.5
 
-    @patch("usaspending_api.llm.retrieval.recipient_retrieval._tool")
-    @patch("usaspending_api.llm.retrieval.recipient_retrieval.es_sanitize")
+    @patch("usaspending_api.llm.tests.helper._tool")
+    @patch("usaspending_api.llm.tests.helper.es_sanitize")
     def test_respects_limit_parameter(self, mock_sanitize, mock_tool):
         """Test that limit parameter is passed to _build_search"""
         mock_sanitize.return_value = "test"
@@ -189,7 +189,7 @@ class TestFuzzySearchRecipients:
 class TestRetrieveRecipientNames:
     """Tests for retrieve_recipient_names function"""
 
-    @patch("usaspending_api.llm.retrieval.recipient_retrieval._tool")
+    @patch("usaspending_api.llm.tests.helper._tool")
     def test_returns_list_of_recipient_names(self, mock_tool):
         """Test that function returns a list of recipient names"""
         mock_tool.lookup_recipient.return_value = [
@@ -205,7 +205,7 @@ class TestRetrieveRecipientNames:
         assert isinstance(result, list), f"Expected list, got {type(result)}"
         assert result == ["ACME CORP", "UEI123456789", "123456789"]
 
-    @patch("usaspending_api.llm.retrieval.recipient_retrieval._tool")
+    @patch("usaspending_api.llm.tests.helper._tool")
     def test_handles_no_results(self, mock_tool):
         """Test when no results are returned"""
         mock_tool.lookup_recipient.return_value = []
@@ -215,7 +215,7 @@ class TestRetrieveRecipientNames:
         assert isinstance(result, list)
         assert result == []
 
-    @patch("usaspending_api.llm.retrieval.recipient_retrieval._tool")
+    @patch("usaspending_api.llm.tests.helper._tool")
     def test_respects_limit_parameter(self, mock_tool):
         """Test that limit parameter is passed to lookup_recipient"""
         mock_tool.lookup_recipient.return_value = []
@@ -224,7 +224,7 @@ class TestRetrieveRecipientNames:
 
         mock_tool.lookup_recipient.assert_called_once_with("test", top_k=10)
 
-    @patch("usaspending_api.llm.retrieval.recipient_retrieval._tool")
+    @patch("usaspending_api.llm.tests.helper._tool")
     def test_uses_default_limit(self, mock_tool):
         """Test that default limit is used when not specified"""
         mock_tool.lookup_recipient.return_value = []
@@ -233,7 +233,7 @@ class TestRetrieveRecipientNames:
 
         mock_tool.lookup_recipient.assert_called_once_with("test", top_k=5)
 
-    @patch("usaspending_api.llm.retrieval.recipient_retrieval._tool")
+    @patch("usaspending_api.llm.tests.helper._tool")
     def test_returns_deduplicated_list(self, mock_tool):
         """Test that lookup_recipient returns deduplicated results"""
         mock_tool.lookup_recipient.return_value = [
@@ -250,7 +250,7 @@ class TestRetrieveRecipientNames:
         assert "UEI123" in result
         assert "456" in result
 
-    @patch("usaspending_api.llm.retrieval.recipient_retrieval._tool")
+    @patch("usaspending_api.llm.tests.helper._tool")
     def test_handles_multiple_recipients(self, mock_tool):
         """Test handling multiple recipient identifiers"""
         mock_tool.lookup_recipient.return_value = [
@@ -271,7 +271,7 @@ class TestRetrieveRecipientNames:
         assert "UEI111" in result
         assert "UEI222" in result
 
-    @patch("usaspending_api.llm.retrieval.recipient_retrieval._tool")
+    @patch("usaspending_api.llm.tests.helper._tool")
     def test_passes_search_text_unchanged(self, mock_tool):
         """Test that search text is passed to lookup_recipient unchanged"""
         mock_tool.lookup_recipient.return_value = []
@@ -281,7 +281,7 @@ class TestRetrieveRecipientNames:
         # Should pass the search text as-is (lookup_recipient handles sanitization)
         mock_tool.lookup_recipient.assert_called_once_with("  Test Query  ", top_k=10)
 
-    @patch("usaspending_api.llm.retrieval.recipient_retrieval._tool")
+    @patch("usaspending_api.llm.tests.helper._tool")
     def test_returns_empty_list_on_none(self, mock_tool):
         """Test handling when lookup_recipient returns None"""
         mock_tool.lookup_recipient.return_value = None
