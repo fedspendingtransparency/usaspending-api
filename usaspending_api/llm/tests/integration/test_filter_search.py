@@ -37,7 +37,7 @@ def mock_llm_api_key():
         yield mock_validate
 
 
-class TestFilterSearchEndpoint:
+class TestFilterSearch:
     """Integration tests for /api/v2/llm/filter-search/ API endpoint."""
 
     url = "/api/v2/llm/filter-search/"
