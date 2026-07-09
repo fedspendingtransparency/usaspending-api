@@ -2,6 +2,8 @@ from abc import ABC, abstractmethod
 
 from django.db.models import Q
 
+from usaspending_api.common.exceptions import UnprocessableEntityException
+
 CodePath = list[str]
 
 
@@ -113,14 +115,14 @@ class BaseNode(ABC):
 class BaseHierarchicalFilter(ABC):
     """Shared logic for hierarchical code filtering (TAS, PSC, NAICS)"""
 
-    MAX_TOTAL_CODES = 100
+    MAX_TOTAL_CODES = 200
     MAX_TREE_DEPTH = 10
 
     @classmethod
     def _validate_complexity(cls, require: list[list[str]], exclude: list[list[str]]) -> None:
         total_codes = len(require) + len(exclude)
         if total_codes > cls.MAX_TOTAL_CODES:
-            raise ValueError(f"Total codes ({total_codes}) exceeds limit ({cls.MAX_TOTAL_CODES})")
+            raise UnprocessableEntityException(f"Total codes ({total_codes}) exceeds limit ({cls.MAX_TOTAL_CODES})")
 
         all_codes = require + exclude
         if not all_codes:
@@ -128,7 +130,7 @@ class BaseHierarchicalFilter(ABC):
 
         max_depth = max(len(code) for code in all_codes)
         if max_depth > cls.MAX_TREE_DEPTH:
-            raise ValueError(f"Code depth ({max_depth}) exceeds limit ({cls.MAX_TREE_DEPTH})")
+            raise UnprocessableEntityException(f"Code depth ({max_depth}) exceeds limit ({cls.MAX_TREE_DEPTH})")
 
     @classmethod
     def _has_no_parents(cls, code: list[str], other_codes: list[list[str]]) -> bool:
