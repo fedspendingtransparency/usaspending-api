@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 
-from pyspark.sql import DataFrame, SparkSession, functions as sf, Column, Window
+from pyspark.sql import Column, DataFrame, SparkSession, Window
+from pyspark.sql import functions as sf
 from pyspark.sql.types import (
     ShortType,
     StringType,
@@ -110,6 +111,7 @@ class AbstractSearch(ABC):
         self.treasury_appropriation_account = spark.table("global_temp.treasury_appropriation_account")
         self.ref_program_activity = spark.table("global_temp.ref_program_activity")
         self.program_activity_park = spark.table("global_temp.program_activity_park")
+        self.object_class = spark.table("global_temp.object_class")
         self.product_service_code = spark.table("global_temp.psc")
 
     @property

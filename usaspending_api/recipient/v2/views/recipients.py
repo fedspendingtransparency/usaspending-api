@@ -1,37 +1,36 @@
 import logging
 import uuid
-
 from decimal import Decimal
 
-from django.db.models import F
 from django.conf import settings
+from django.db.models import F
 from django.utils.decorators import method_decorator
-from elasticsearch_dsl import A
+from opensearchpy.helpers.aggs import A
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from usaspending_api.awards.v2.lookups.lookups import loan_type_mapping
 from usaspending_api.broker.helpers.get_business_categories import get_business_categories
+from usaspending_api.common.api_versioning import deprecated
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.elasticsearch.search_wrappers import TransactionSearch
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.query_with_filters import QueryWithFilters
-from usaspending_api.recipient.models import RecipientProfile, RecipientLookup, DUNS
-from usaspending_api.recipient.v2.helpers import validate_year, reshape_filters, get_duns_business_types_mapping
+from usaspending_api.recipient.models import DUNS, RecipientLookup, RecipientProfile
+from usaspending_api.recipient.v2.helpers import get_duns_business_types_mapping, reshape_filters, validate_year
 from usaspending_api.recipient.v2.lookups import RECIPIENT_LEVELS, SPECIAL_CASES
 from usaspending_api.references.models import RefCountryCode
-from usaspending_api.search.models import TransactionSearch as TransactionSearchModel
-from usaspending_api.common.api_versioning import deprecated
 from usaspending_api.search.filters.elasticsearch.filter import QueryType
+from usaspending_api.search.models import TransactionSearch as TransactionSearchModel
 from usaspending_api.search.v2.elasticsearch_helper import (
-    get_scaled_sum_aggregations,
     get_number_of_unique_terms_for_transactions,
+    get_scaled_sum_aggregations,
 )
 
 logger = logging.getLogger(__name__)
 
 
-def validate_recipient_id(recipient_id):
+def validate_recipient_id(recipient_id: str) -> None:
     """Validate [uei/duns/name]-[recipient_type] hash
 
     Args:
@@ -53,13 +52,13 @@ def validate_recipient_id(recipient_id):
     try:
         uuid.UUID(recipient_hash)
     except ValueError:
-        raise InvalidParameterException("Recipient Hash not valid UUID: '{}'.".format(recipient_hash))
+        raise InvalidParameterException("Recipient Hash not valid UUID: '{}'.".format(recipient_hash)) from ValueError
     if not RecipientProfile.objects.filter(recipient_hash=recipient_hash, recipient_level=recipient_level).count():
         raise InvalidParameterException("Recipient ID not found: '{}'.".format(recipient_id))
     return recipient_hash, recipient_level
 
 
-def extract_duns_uei_name_from_hash(recipient_hash):
+def extract_duns_uei_name_from_hash(recipient_hash: str):  # noqa: ANN201
     """Extract the name and duns from the recipient hash
 
     Args:
@@ -79,7 +78,7 @@ def extract_duns_uei_name_from_hash(recipient_hash):
         return duns_uei_name_qs["duns"], duns_uei_name_qs["uei"], duns_uei_name_qs["legal_business_name"]
 
 
-def extract_parents_from_hash(recipient_hash):
+def extract_parents_from_hash(recipient_hash: str) -> dict:
     """Extract the parent name and parent duns from the recipient hash
 
     Args:
@@ -117,7 +116,7 @@ def extract_parents_from_hash(recipient_hash):
     return parents
 
 
-def cleanup_location(location):
+def cleanup_location(location: dict) -> dict:
     """Various little fixes to cleanup the location object, given bad data from transactions
 
     Args:
@@ -146,7 +145,7 @@ def cleanup_location(location):
     return location
 
 
-def extract_location(recipient_hash):
+def extract_location(recipient_hash: str) -> dict:
     """Extract the location data via the recipient hash
 
     Args:
@@ -197,7 +196,7 @@ def extract_location(recipient_hash):
     return location
 
 
-def extract_business_categories(recipient_name, recipient_uei, recipient_hash):
+def extract_business_categories(recipient_name: str, recipient_uei: str, recipient_hash: str) -> list:
     """Extract the business categories via the recipient hash
 
     Args:
@@ -246,7 +245,7 @@ def extract_business_categories(recipient_name, recipient_uei, recipient_hash):
     return sorted(business_categories)
 
 
-def obtain_recipient_totals(recipient_id, children=False, year="latest"):
+def obtain_recipient_totals(recipient_id: str, children: bool = False, year: str = "latest") -> list:
     """Extract the total amount and transaction count for the recipient_hash given the time frame
 
     Args:
@@ -342,7 +341,7 @@ class RecipientOverView(APIView):
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/recipient/recipient_id.md"
 
     @cache_response()
-    def get(self, request, recipient_id):
+    def get(self, request, recipient_id):  # noqa: ANN201 ANN001
         get_request = request.query_params
         year = validate_year(get_request.get("year", "latest"))
         recipient_hash, recipient_level = validate_recipient_id(recipient_id)
@@ -406,7 +405,7 @@ class RecipientOverView(APIView):
 class RecipientOverViewDuns(RecipientOverView):
     """
     <em>Deprecated: Please see <a href="/api/v2/recipient/99a44eeb-23ef-e7c4-1f84-9a695b6f5d2e-R/">this endpoint</a> instead.</em>
-    """
+    """  # noqa: E501
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/recipient/duns/recipient_id.md"
 
@@ -414,7 +413,7 @@ class RecipientOverViewDuns(RecipientOverView):
         super().__init__()
 
 
-def extract_hash_from_duns_or_uei(duns_or_uei):
+def extract_hash_from_duns_or_uei(duns_or_uei: str):  # noqa: ANN201
     """Extract the all the names and hashes associated with the DUNS or UEI provided
     Args:
         duns_or_uei: Either the duns or uei to find the equivalent hash
@@ -438,7 +437,7 @@ class ChildRecipients(APIView):
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/recipient/children/duns_or_uei.md"
 
     @cache_response()
-    def get(self, request, duns_or_uei):
+    def get(self, request, duns_or_uei):  # noqa: ANN001 ANN201
         # Validate and extract data from request header
         get_request = request.query_params
         year = validate_year(get_request.get("year", "latest"))

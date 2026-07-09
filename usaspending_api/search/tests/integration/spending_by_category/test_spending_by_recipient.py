@@ -1,8 +1,8 @@
 import json
 import logging
 
-from elasticsearch_dsl import A
 from model_bakery import baker
+from opensearchpy.helpers.aggs import A
 from rest_framework import status
 
 from usaspending_api.common.elasticsearch.search_wrappers import TransactionSearch

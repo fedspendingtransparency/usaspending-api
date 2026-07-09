@@ -26,12 +26,17 @@ This endpoint returns data corresponding to the latest data dictionary csv file.
                             "1862 Land Grant College",
                             "https://www.sam.gov",
                             "1862 Land Grant College",
-                            "all_contracts_prime_awards_1.csv,\nall_contracts_prime_transactions_1.csv",
+                            "Award Recipient",
+                            "F = False\nT = True",
+                            "N/A",
+                            "Contracts_PrimeAwardSummaries.csv,\nContracts_PrimeTransactions.csv",
                             "1862_land_grant_college",
                             null,
                             null,
                             null,
                             null,
+                            "transaction_fpds",
+                            "c1862_land_grant_college",
                             "Contracts",
                             "is1862landgrantcollege",
                             null
@@ -40,12 +45,17 @@ This endpoint returns data corresponding to the latest data dictionary csv file.
                             "1890 Land Grant College",
                             "https://www.sam.gov",
                             "1890 Land Grant College",
-                            "all_contracts_prime_awards_1.csv,\nall_contracts_prime_transactions_1.csv",
+                            "Award Recipient",
+                            "F = False\nT = True",
+                            "N/A",
+                            "Contracts_PrimeAwardSummaries.csv,\nContracts_PrimeTransactions.csv",
                             "1890_land_grant_college",
                             null,
                             null,
                             null,
                             null,
+                            "transaction_fpds",
+                            "c1890_land_grant_college",
                             "Contracts",
                             "is1890landgrantcollege",
                             null
@@ -54,12 +64,17 @@ This endpoint returns data corresponding to the latest data dictionary csv file.
                             "1994 Land Grant College",
                             "https://www.sam.gov",
                             "1994 Land Grant College",
-                            "all_contracts_prime_awards_1.csv,\nall_contracts_prime_transactions_1.csv",
+                            "Award Recipient",
+                            "F = False\nT = True",
+                            "N/A",
+                            "Contracts_PrimeAwardSummaries.csv,\nContracts_PrimeTransactions.csv",
                             "1994_land_grant_college",
                             null,
                             null,
                             null,
                             null,
+                            "transaction_fpds",
+                            "c1994_land_grant_college",
                             "Contracts",
                             "is1994landgrantcollege",
                             null
@@ -67,27 +82,37 @@ This endpoint returns data corresponding to the latest data dictionary csv file.
                         [
                             "8a Program Participant",
                             "List characteristic of the contractor such as whether the selected contractor is an 8(a) Program Participant Organization or not. It can be derived from the SAM data element, 'Business Types'.",
-                            "8(a) Program Participant",
-                            "all_contracts_prime_awards_1.csv,\nall_contracts_prime_transactions_1.csv",
+                            "SBA-Certified 8(a) Program Participant",
+                            "Award Recipient",
+                            "F = False\nT = True",
+                            "N/A",
+                            "Contracts_PrimeAwardSummaries.csv,\nContracts_PrimeTransactions.csv",
                             "c8a_program_participant",
                             null,
                             null,
                             null,
                             null,
+                            "transaction_fpds",
+                            "c8a_program_participant",
                             "Contracts",
                             "firm8aflag",
                             null
                         ],
                         [
                             "A-76 FAIR Act Action",
-                            "Indicates whether the contract action resulted from an A- 76/Fair Act competitive sourcing process.",
+                            "Indicates whether the contract action has resulted from an A-76/Fair Act competitive sourcing process.",
                             "A-76 (FAIR Act) Action",
-                            "all_contracts_prime_awards_1.csv,\nall_contracts_prime_transactions_1.csv",
+                            "Award Attribute",
+                            "F = False\nT = True",
+                            "Y = Contract action resulted from an A-76/Fair Act competitive sourcing process.\nN = Contract action did not result from an A-76/Fair Act competitive sourcing process.",
+                            "Contracts_PrimeAwardSummaries.csv,\nContracts_PrimeTransactions.csv",
                             "a76_fair_act_action_code",
                             null,
                             null,
                             null,
                             null,
+                            "transaction_fpds",
+                            "a_76_fair_act_action",
                             "Contracts",
                             "a76action",
                             null
@@ -103,8 +128,20 @@ This endpoint returns data corresponding to the latest data dictionary csv file.
                             "display": "Definition"
                         },
                         {
-                            "raw": "fpds_element",
+                            "raw": "fpds_data_dictionary_element",
                             "display": "FPDS Data Dictionary Element"
+                        },
+                        {
+                            "raw": "grouping",
+                            "display": "Grouping"
+                        },
+                        {
+                            "raw": "domain_values",
+                            "display": "Domain Values"
+                        },
+                        {
+                            "raw": "domain_values_code_description",
+                            "display": "Domain Values Code Description"
                         },
                         {
                             "raw": "award_file",
@@ -131,6 +168,14 @@ This endpoint returns data corresponding to the latest data dictionary csv file.
                             "display": "Account Element"
                         },
                         {
+                            "raw": "table",
+                            "display": "Table"
+                        },
+                        {
+                            "raw": "database_element",
+                            "display": "Element"
+                        },
+                        {
                             "raw": "legacy_award_file",
                             "display": "Award File"
                         },
@@ -144,19 +189,23 @@ This endpoint returns data corresponding to the latest data dictionary csv file.
                         }
                     ],
                     "metadata": {
-                        "total_rows": 412,
-                        "total_size": "57.03KB",
-                        "total_columns": 12,
+                        "total_rows": 461,
+                        "total_size": "110.90KB",
+                        "total_columns": 17,
                         "download_location": "https://files.usaspending.gov/docs/Data_Dictionary_Crosswalk.xlsx"
                     },
                     "sections": [
                         {
-                            "colspan": 3,
+                            "colspan": 6,
                             "section": "Schema Data Label & Description"
                         },
                         {
                             "colspan": 6,
                             "section": "USA Spending Downloads"
+                        },
+                        {
+                            "colspan": 2,
+                            "section": "Database Download"
                         },
                         {
                             "colspan": 3,

@@ -3,16 +3,10 @@ from ssl import CERT_NONE
 from typing import Callable, Optional, Union
 
 from django.conf import settings
-from elasticsearch import (
-    ConnectionError,
-    ConnectionTimeout,
-    Elasticsearch,
-    NotFoundError,
-    TransportError,
-)
-from elasticsearch.connection import create_ssl_context
-from elasticsearch_dsl import Search as SearchBase
-from elasticsearch_dsl.response import Response
+from opensearchpy import ConnectionError, ConnectionTimeout, NotFoundError, OpenSearch, TransportError
+from opensearchpy.connection import create_ssl_context
+from opensearchpy.helpers.response import Response
+from opensearchpy.helpers.search import Search as SearchBase
 
 logger = logging.getLogger("console")
 
@@ -21,12 +15,12 @@ class Search(SearchBase):
     _index_name = None
 
     def __init__(self, **kwargs) -> None:
-        self.client: Elasticsearch = self._create_es_client()
+        self.client: OpenSearch = self._create_es_client()
         kwargs.update({"index": self._index_name, "using": self.client})
         super().__init__(**kwargs)
 
     @staticmethod
-    def _create_es_client() -> Elasticsearch:
+    def _create_es_client() -> OpenSearch:
         if settings.ES_HOSTNAME is None or settings.ES_HOSTNAME == "":
             logger.error("env var 'ES_HOSTNAME' needs to be set for Elasticsearch connection")
         es_config = {"hosts": [settings.ES_HOSTNAME], "timeout": settings.ES_TIMEOUT}
@@ -44,7 +38,7 @@ class Search(SearchBase):
                 ssl_context.verify_mode = CERT_NONE
                 es_config["ssl_context"] = ssl_context
 
-            return Elasticsearch(**es_config)
+            return OpenSearch(**es_config)
         except Exception as e:
             logger.error("Error creating the elasticsearch client: {}".format(e))
 
@@ -68,7 +62,7 @@ class Search(SearchBase):
         logger.error(f"Unable to reach elasticsearch cluster. {retries} attempt(s) made.")
         return None
 
-    def _handle_errors(self, func: Callable, retries: int, timeout: str) -> Response:
+    def _handle_errors(self, func: Callable, retries: int, timeout: int) -> Response:
         error_template = "[ERROR] ({type}) with ElasticSearch cluster: {e}"
         try:
             result = self._handle_retry(func, retries, timeout)
@@ -89,7 +83,7 @@ class Search(SearchBase):
             raise
         return result
 
-    def handle_execute(self, retries: int = 5, timeout: str = "90s") -> Response:
+    def handle_execute(self, retries: int = 5, timeout: int = 90) -> Response:
         return self._handle_errors(self._execute, retries, timeout)
 
     def handle_count(self, retries: int = 5) -> int:

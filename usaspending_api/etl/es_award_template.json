@@ -819,6 +819,27 @@
           }
         }
       },
+      "object_classes": {
+        "type": "nested",
+        "properties": {
+          "code": {
+            "type": "text",
+            "fields": {
+              "keyword": {
+                "type": "keyword"
+              }
+            }
+          },
+          "name": {
+            "type": "text",
+            "fields": {
+              "keyword":{
+                "type": "keyword"
+              }
+            }
+          }
+        }
+      },
       "subaward_count": {
         "type": "integer"
       },

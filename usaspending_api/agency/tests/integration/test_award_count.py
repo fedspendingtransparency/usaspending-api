@@ -1,7 +1,7 @@
 import pytest
 from model_bakery import baker
-
 from rest_framework import status
+
 from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
 
 url = "/api/v2/agency/awards/count/{filters}"
@@ -139,7 +139,6 @@ def award_data(db):
 def test_award_count_success(client, monkeypatch, award_data, helpers, elasticsearch_award_index):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
     helpers.mock_current_fiscal_year(monkeypatch)
-
     resp = client.get(url.format(filters=""))
     results = resp.data["results"]
     assert resp.status_code == status.HTTP_200_OK

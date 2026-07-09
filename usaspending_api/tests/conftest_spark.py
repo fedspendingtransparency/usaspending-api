@@ -621,6 +621,7 @@ def _build_usas_data_for_spark():
             {"code": "1000", "name": "PAP name", "type": "PARK"},
             {"name": "OPERATIONS AND MAINTENANCE", "code": "0002", "type": "PAC/PAN"},
         ],
+        object_classes=[],
         federal_accounts=[
             {
                 "id": federal_account.id,
@@ -823,6 +824,7 @@ def _build_usas_data_for_spark():
         pop_county_fips=None,
         generated_pragmatic_obligation=0.00,
         program_activities=[{"name": "TRAINING AND RECRUITING", "code": "0003", "type": "PAC/PAN"}],
+        object_classes=[],
         federal_accounts=[
             {
                 "id": federal_account.id,

@@ -241,3 +241,37 @@ def test_download_search_with_invalid_spending_level(
 
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
     assert resp.json()["detail"] == 'Invalid parameter: spending_level must be "awards", "subawards", or "transactions"'
+
+
+@pytest.mark.django_db(databases=[settings.DOWNLOAD_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
+def test_download_search_single_spending_level_in_response(
+        client, monkeypatch, download_test_data,
+        elasticsearch_award_index, elasticsearch_transaction_index, elasticsearch_subaward_index
+):
+    """Test that response reflects the actual spending_level sent, not all three defaults"""
+    setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
+    setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
+    setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
+    download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string(settings.DOWNLOAD_DB_ALIAS))
+
+    resp = client.post(
+        "/api/v2/download/search/",
+        content_type="application/json",
+        data=json.dumps(
+            {
+                "filters": {"award_type_codes": ["A"]},
+                "spending_level": ["subawards"]  # Only one!
+            }
+        ),
+    )
+
+    assert resp.status_code == status.HTTP_200_OK
+    response_data = resp.json()
+
+    # Verify the response returns only the spending_level that was sent
+    assert response_data["download_request"]["spending_level"] == ["subawards"]
+    assert len(response_data["download_request"]["spending_level"]) == 1
+
+    # Also verify download_types is correctly set to only subawards
+    assert response_data["download_request"]["download_types"] == ["elasticsearch_sub_awards"]
+    assert len(response_data["download_request"]["download_types"]) == 1
