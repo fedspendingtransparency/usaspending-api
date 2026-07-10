@@ -8,7 +8,6 @@ from rest_framework_extensions.key_constructor import bits
 from rest_framework_extensions.key_constructor.constructors import DefaultKeyConstructor
 
 from usaspending_api.common.helpers.dict_helpers import order_nested_object
-from usaspending_api.recipient.v2.views.list_recipients import RecipientCount
 
 
 class PathKeyBit(bits.QueryParamsKeyBit):
@@ -36,9 +35,9 @@ class GetPostQueryParamsKeyBit(bits.QueryParamsKeyBit):
             whitelist = view_instance.cache_key_whitelist
             params = {}
             for param in whitelist:
-                if param in request.query_params and not isinstance(view_instance, RecipientCount):
-                    # RecipientCount Views only care about request body, and ignore query params for proper caching
-                    params[param] = request.query_params[param]
+                # Currently, the only view with a whitelist attr is RecipientCount
+                # RecipientCount only reads the request body, not query params.
+                # Take this into consideration when implementing whitelist attr
                 if param in request.data:
                     params[param] = request.data[param]
         else:
