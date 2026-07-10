@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 class FilterSearchViewSet(LLMBase):
     """
     This endpoint provides a streaming response for LLM-powered search operations with advanced filtering capabilities.
-    The response is delivered as a series of JSON chunks, allowing real-time updates on search progress, 
+    The response is delivered as a series of JSON chunks, allowing real-time updates on search progress,
     tool execution, and results.
     """
 
