@@ -42,39 +42,53 @@ def delete_stale_fpds(detached_award_procurement_ids: dict) -> list:
     if not detached_award_procurement_ids:
         return []
 
-    ids_to_delete = ",".join([str(id) for ids in detached_award_procurement_ids.values() for id in ids])
-    logger.debug(f"Obtained these delete record IDs: [{ids_to_delete}]")
+    ids_to_delete = [int(id) for ids in detached_award_procurement_ids.values() for id in ids]
+    logger.debug(f"Obtained these delete record IDs: [{','.join(map(str, ids_to_delete))}]")
 
     with connection.cursor() as cursor:
         cursor.execute(
-            f"select transaction_id from transaction_fpds where detached_award_procurement_id in ({ids_to_delete})"
+            "SELECT transaction_id FROM transaction_fpds WHERE detached_award_procurement_id = ANY(%s)",
+            [ids_to_delete]
         )
         # assumes that this won't be too many IDs and lead to degraded performance or require too much memory
-        transaction_normalized_ids = [str(row[0]) for row in cursor.fetchall()]
+        transaction_normalized_ids = [int(row[0]) for row in cursor.fetchall()]
 
         if not transaction_normalized_ids:
             return []
 
-        txn_id_str = ",".join(transaction_normalized_ids)
-
-        cursor.execute(f"select distinct award_id from transaction_normalized where id in ({txn_id_str})")
+        cursor.execute(
+            "SELECT DISTINCT award_id FROM transaction_normalized WHERE id = ANY(%s)",
+            [transaction_normalized_ids]
+        )
         awards_touched = cursor.fetchall()
 
         # Set backreferences from Awards to Transaction Normalized to null. These FKs will be updated later
         cursor.execute(
-            "update award_search set latest_transaction_id = null, earliest_transaction_id = null "
-            "where latest_transaction_id in ({ids}) or earliest_transaction_id in ({ids}) "
-            "returning id".format(ids=txn_id_str)
+            """
+            UPDATE award_search SET latest_transaction_id = NULL, earliest_transaction_id = NULL
+            WHERE latest_transaction_id = ANY(%s) OR earliest_transaction_id = ANY(%s)
+            RETURNING id
+            """,
+            [transaction_normalized_ids, transaction_normalized_ids]
         )
         deleted_awards = cursor.fetchall()
         logger.info(f"{len(deleted_awards):,} awards were unlinked from transactions due to pending deletes")
 
-        cursor.execute(f"delete from transaction_fpds where transaction_id in ({txn_id_str}) returning transaction_id")
+        cursor.execute(
+            "DELETE FROM transaction_fpds WHERE transaction_id = ANY(%s) RETURNING transaction_id",
+            [transaction_normalized_ids]
+        )
         deleted_fpds = set(cursor.fetchall())
 
-        cursor.execute(f"delete from transaction_search where transaction_id in ({txn_id_str})")
+        cursor.execute(
+            "DELETE FROM transaction_search WHERE transaction_id = ANY(%s)",
+            [transaction_normalized_ids]
+        )
 
-        cursor.execute(f"delete from transaction_normalized where id in ({txn_id_str}) returning id")
+        cursor.execute(
+            "DELETE FROM transaction_normalized WHERE id = ANY(%s) RETURNING id",
+            [transaction_normalized_ids]
+        )
         deleted_transactions = set(cursor.fetchall())
 
         if deleted_transactions != deleted_fpds:
@@ -202,21 +216,20 @@ def _load_transactions(load_objects: list) -> list:
 
 def _matching_award(cursor: Cursor, load_object: dict) -> Any | None:
     """Try to find an award for this transaction to belong to by unique_award_key"""
-    find_matching_award_sql = "select id from vw_awards where generated_unique_award_id = '{}'".format(
-        load_object["transaction_fpds"]["unique_award_key"]
+    cursor.execute(
+        "SELECT id FROM vw_awards WHERE generated_unique_award_id = %s",
+        [load_object["transaction_fpds"]["unique_award_key"]]
     )
-    cursor.execute(find_matching_award_sql)
     results = cursor.fetchall()
     return results[0][0] if results else None
 
 
 def _lookup_existing_transaction(cursor: Cursor, load_object: dict) -> Any | None:
     """find existing fpds transaction, if any"""
-    find_matching_transaction_sql = (
-        "select transaction_id from vw_transaction_fpds "
-        "where detached_award_proc_unique = '{}'".format(load_object["transaction_fpds"]["detached_award_proc_unique"])
+    cursor.execute(
+        "SELECT transaction_id FROM vw_transaction_fpds WHERE detached_award_proc_unique = %s",
+        [load_object["transaction_fpds"]["detached_award_proc_unique"]]
     )
-    cursor.execute(find_matching_transaction_sql)
     results = cursor.fetchall()
     return results[0][0] if results else None
 
