@@ -1,311 +1,484 @@
-"""Unit tests for LLM Pydantic models"""
+"""Unit tests for recipient-related fields in py_models"""
 import pytest
 from pydantic import ValidationError
 
-from usaspending_api.llm.models.py_models import (
-    AITool,
-    AIToolDescription,
-    RecipientDisplay,
-    RecipientFilter,
-    SelectedRecipient,
-)
+from usaspending_api.llm.models.py_models import Filters
 
 
-class TestAIToolDescription:
-    """Tests for AIToolDescription model"""
+class TestRecipientFields:
+    """Tests for recipient-related fields in Filters model"""
 
-    def test_valid_creation(self):
-        """Test creating AIToolDescription with valid data"""
-        tool_desc = AIToolDescription(
-            name="test_tool",
-            description="A test tool",
-            input_schema={"type": "object", "properties": {"param": {"type": "string"}}}
-        )
-        assert tool_desc.name == "test_tool"
-        assert tool_desc.description == "A test tool"
-        assert tool_desc.input_schema["type"] == "object"
+    def test_selected_recipients_default_empty_list(self):
+        """Test that selectedRecipients defaults to empty list"""
+        filters = Filters()
 
-    def test_missing_required_fields(self):
-        """Test that missing required fields raise ValidationError"""
+        assert filters.selectedRecipients == []
+        assert isinstance(filters.selectedRecipients, list)
+
+    def test_selected_recipients_accepts_string_list(self):
+        """Test that selectedRecipients accepts list of strings"""
+        recipient_ids = ["ACME CORP", "UEI123456789", "123456789"]
+        filters = Filters(selectedRecipients=recipient_ids)
+
+        assert filters.selectedRecipients == recipient_ids
+        assert len(filters.selectedRecipients) == 3
+
+    def test_selected_recipients_accepts_empty_list(self):
+        """Test that selectedRecipients accepts empty list"""
+        filters = Filters(selectedRecipients=[])
+
+        assert filters.selectedRecipients == []
+
+    def test_selected_recipients_accepts_single_recipient(self):
+        """Test that selectedRecipients works with single recipient"""
+        filters = Filters(selectedRecipients=["ACME CORPORATION"])
+
+        assert filters.selectedRecipients == ["ACME CORPORATION"]
+        assert len(filters.selectedRecipients) == 1
+
+    def test_selected_recipients_preserves_order(self):
+        """Test that selectedRecipients preserves order of recipients"""
+        recipients = ["BETA CORP", "ACME CORP", "ZETA INDUSTRIES"]
+        filters = Filters(selectedRecipients=recipients)
+
+        assert filters.selectedRecipients == recipients
+        assert filters.selectedRecipients[0] == "BETA CORP"
+        assert filters.selectedRecipients[2] == "ZETA INDUSTRIES"
+
+    def test_selected_recipients_allows_duplicates(self):
+        """Test that selectedRecipients allows duplicate entries"""
+        recipients = ["ACME CORP", "ACME CORP", "BETA CORP"]
+        filters = Filters(selectedRecipients=recipients)
+
+        assert len(filters.selectedRecipients) == 3
+        assert filters.selectedRecipients.count("ACME CORP") == 2
+
+    def test_selected_recipients_rejects_non_string_values(self):
+        """Test that selectedRecipients rejects non-string values"""
         with pytest.raises(ValidationError) as exc_info:
-            AIToolDescription(name="test_tool")
+            Filters(selectedRecipients=[123, 456])
 
-        errors = exc_info.value.errors()
-        missing_fields = {error["loc"][0] for error in errors}
-        assert "description" in missing_fields
-        assert "input_schema" in missing_fields
+        assert "selectedRecipients" in str(exc_info.value)
 
-    def test_empty_input_schema(self):
-        """Test that empty input_schema is valid"""
-        tool_desc = AIToolDescription(
-            name="test_tool",
-            description="A test tool",
-            input_schema={}
-        )
-        assert tool_desc.input_schema == {}
-
-
-class TestAITool:
-    """Tests for AITool model"""
-
-    def test_valid_creation_with_defaults(self):
-        """Test creating AITool with default logging function"""
-
-        def sample_function():
-            return "result"
-
-        tool_desc = AIToolDescription(
-            name="test_tool",
-            description="A test tool",
-            input_schema={"type": "object"}
-        )
-
-        tool = AITool(
-            description=tool_desc,
-            function=sample_function
-        )
-
-        assert tool.description == tool_desc
-        assert tool.function == sample_function
-        assert callable(tool.logging)
-
-    def test_valid_creation_with_custom_logging(self):
-        """Test creating AITool with custom logging function"""
-
-        def sample_function():
-            return "result"
-
-        def custom_logging(tool_use):
-            return f"Custom log: {tool_use}"
-
-        tool_desc = AIToolDescription(
-            name="test_tool",
-            description="A test tool",
-            input_schema={"type": "object"}
-        )
-
-        tool = AITool(
-            description=tool_desc,
-            function=sample_function,
-            logging=custom_logging
-        )
-
-        assert tool.logging == custom_logging
-
-    def test_function_must_be_callable(self):
-        """Test that function field must be callable"""
-        tool_desc = AIToolDescription(
-            name="test_tool",
-            description="A test tool",
-            input_schema={"type": "object"}
-        )
-
-        with pytest.raises(ValidationError):
-            AITool(
-                description=tool_desc,
-                function="not_a_function"
-            )
-
-
-class TestRecipientFilter:
-    """Tests for RecipientFilter model"""
-
-    def test_valid_creation_with_single_value(self):
-        """Test creating RecipientFilter with single search text"""
-        recipient_filter = RecipientFilter(recipient_search_text=["ACME CORP"])
-        assert recipient_filter.recipient_search_text == ["ACME CORP"]
-
-    def test_valid_creation_with_multiple_values(self):
-        """Test creating RecipientFilter with multiple search texts"""
-        search_texts = ["ACME CORP", "123456789", "UEI123"]
-        recipient_filter = RecipientFilter(recipient_search_text=search_texts)
-        assert recipient_filter.recipient_search_text == search_texts
-
-    def test_default_empty_list(self):
-        """Test that default value is empty list"""
-        recipient_filter = RecipientFilter()
-        assert recipient_filter.recipient_search_text == []
-
-    def test_min_length_validation(self):
-        """Test that min_length validation works when explicitly set"""
-        # Note: Pydantic's min_length on default_factory doesn't enforce on empty default
-        # This test documents current behavior
-        recipient_filter = RecipientFilter()
-        assert len(recipient_filter.recipient_search_text) == 0
-
-    def test_invalid_type(self):
-        """Test that invalid type raises ValidationError"""
-        with pytest.raises(ValidationError):
-            RecipientFilter(recipient_search_text="not_a_list")
-
-
-class TestRecipientDisplay:
-    """Tests for RecipientDisplay model"""
-
-    @pytest.mark.parametrize("entity_type", [
-        "Recipient",
-        "Parent recipient",
-        "Child recipient",
-        "Subcontractor",
-    ])
-    def test_valid_entity_types(self, entity_type):
-        """Test all valid entity types"""
-        display = RecipientDisplay(
-            entity=entity_type,
-            standalone="ACME CORP",
-            title="ACME Corporation"
-        )
-        assert display.entity == entity_type
-
-    def test_invalid_entity_type(self):
-        """Test that invalid entity type raises ValidationError"""
+    def test_selected_recipients_rejects_mixed_types(self):
+        """Test that selectedRecipients rejects mixed types"""
         with pytest.raises(ValidationError) as exc_info:
-            RecipientDisplay(
-                entity="Invalid Type",
-                standalone="ACME CORP",
-                title="ACME Corporation"
-            )
+            Filters(selectedRecipients=["ACME CORP", 123, None])
 
-        errors = exc_info.value.errors()
-        assert any("entity" in str(error["loc"]) for error in errors)
+        assert "selectedRecipients" in str(exc_info.value)
 
-    def test_all_fields_required(self):
-        """Test that all fields are required"""
+    def test_selected_recipients_handles_special_characters(self):
+        """Test that selectedRecipients handles special characters in names"""
+        recipients = [
+            "O'REILLY MEDIA",
+            "ACME & CO.",
+            "BETA CORP (2024)",
+            "GAMMA-DELTA LLC",
+        ]
+        filters = Filters(selectedRecipients=recipients)
+
+        assert filters.selectedRecipients == recipients
+        assert "O'REILLY MEDIA" in filters.selectedRecipients
+
+    def test_selected_recipients_handles_unicode(self):
+        """Test that selectedRecipients handles unicode characters"""
+        recipients = ["Société Générale", "日本株式会社", "Москва ООО"]
+        filters = Filters(selectedRecipients=recipients)
+
+        assert filters.selectedRecipients == recipients
+
+    def test_selected_recipients_handles_whitespace(self):
+        """Test that selectedRecipients preserves whitespace"""
+        recipients = ["  ACME CORP  ", "BETA  CORP", "GAMMA\tCORP"]
+        filters = Filters(selectedRecipients=recipients)
+
+        # Whitespace should be preserved as-is
+        assert filters.selectedRecipients == recipients
+
+
+class TestRecipientType:
+    """Tests for recipientType field in Filters model"""
+
+    def test_recipient_type_default_empty_list(self):
+        """Test that recipientType defaults to empty list"""
+        filters = Filters()
+
+        assert filters.recipientType == []
+        assert isinstance(filters.recipientType, list)
+
+    def test_recipient_type_accepts_valid_business_types(self):
+        """Test that recipientType accepts valid business types"""
+        types = ["business", "small_business", "other_than_small_business"]
+        filters = Filters(recipientType=types)
+
+        assert filters.recipientType == types
+        assert len(filters.recipientType) == 3
+
+    def test_recipient_type_accepts_minority_owned_types(self):
+        """Test that recipientType accepts minority-owned business types"""
+        types = [
+            "minority_owned_business",
+            "black_american_owned_business",
+            "hispanic_american_owned_business",
+        ]
+        filters = Filters(recipientType=types)
+
+        assert filters.recipientType == types
+
+    def test_recipient_type_accepts_women_owned_types(self):
+        """Test that recipientType accepts women-owned business types"""
+        types = [
+            "woman_owned_business",
+            "women_owned_small_business",
+            "economically_disadvantaged_women_owned_small_business",
+        ]
+        filters = Filters(recipientType=types)
+
+        assert filters.recipientType == types
+
+    def test_recipient_type_accepts_veteran_owned_types(self):
+        """Test that recipientType accepts veteran-owned business types"""
+        types = [
+            "veteran_owned_business",
+            "service_disabled_veteran_owned_business",
+        ]
+        filters = Filters(recipientType=types)
+
+        assert filters.recipientType == types
+
+    def test_recipient_type_accepts_special_designations(self):
+        """Test that recipientType accepts special designation types"""
+        types = [
+            "8a_program_participant",
+            "historically_underutilized_business_firm",
+            "ability_one_program",
+        ]
+        filters = Filters(recipientType=types)
+
+        assert filters.recipientType == types
+
+    def test_recipient_type_accepts_nonprofit_types(self):
+        """Test that recipientType accepts nonprofit types"""
+        types = ["nonprofit", "foundation", "community_development_corporations"]
+        filters = Filters(recipientType=types)
+
+        assert filters.recipientType == types
+
+    def test_recipient_type_accepts_higher_education_types(self):
+        """Test that recipientType accepts higher education types"""
+        types = [
+            "higher_education",
+            "public_institution_of_higher_education",
+            "private_institution_of_higher_education",
+            "minority_serving_institution_of_higher_education",
+        ]
+        filters = Filters(recipientType=types)
+
+        assert filters.recipientType == types
+
+    def test_recipient_type_accepts_government_types(self):
+        """Test that recipientType accepts government types"""
+        types = [
+            "government",
+            "national_government",
+            "local_government",
+            "indian_native_american_tribal_government",
+        ]
+        filters = Filters(recipientType=types)
+
+        assert filters.recipientType == types
+
+    def test_recipient_type_accepts_individuals(self):
+        """Test that recipientType accepts individuals type"""
+        filters = Filters(recipientType=["individuals"])
+
+        assert filters.recipientType == ["individuals"]
+
+    def test_recipient_type_accepts_mixed_categories(self):
+        """Test that recipientType accepts types from different categories"""
+        types = [
+            "small_business",
+            "woman_owned_business",
+            "veteran_owned_business",
+            "nonprofit",
+            "local_government",
+        ]
+        filters = Filters(recipientType=types)
+
+        assert filters.recipientType == types
+        assert len(filters.recipientType) == 5
+
+    def test_recipient_type_rejects_invalid_type(self):
+        """Test that recipientType rejects invalid type values"""
         with pytest.raises(ValidationError) as exc_info:
-            RecipientDisplay()
+            Filters(recipientType=["invalid_type"])
 
-        errors = exc_info.value.errors()
-        missing_fields = {error["loc"][0] for error in errors}
-        assert "entity" in missing_fields
-        assert "standalone" in missing_fields
-        assert "title" in missing_fields
+        assert "recipientType" in str(exc_info.value)
 
-    def test_standalone_and_title_can_differ(self):
-        """Test that standalone and title can have different values"""
-        display = RecipientDisplay(
-            entity="Recipient",
-            standalone="ACME",
-            title="ACME Corporation International, LLC"
-        )
-        assert display.standalone == "ACME"
-        assert display.title == "ACME Corporation International, LLC"
-
-
-class TestSelectedRecipient:
-    """Tests for SelectedRecipient model"""
-
-    def test_valid_creation_complete(self):
-        """Test creating SelectedRecipient with all valid data"""
-        recipient = SelectedRecipient(
-            identifier="UEI123456789",
-            filter=RecipientFilter(recipient_search_text=["ACME CORP"]),
-            display=RecipientDisplay(
-                entity="Recipient",
-                standalone="ACME CORP",
-                title="ACME Corporation"
-            )
-        )
-
-        assert recipient.identifier == "UEI123456789"
-        assert recipient.filter.recipient_search_text == ["ACME CORP"]
-        assert recipient.display.entity == "Recipient"
-        assert recipient.display.standalone == "ACME CORP"
-        assert recipient.display.title == "ACME Corporation"
-
-    def test_valid_creation_with_duns(self):
-        """Test creating SelectedRecipient with DUNS identifier"""
-        recipient = SelectedRecipient(
-            identifier="123456789",
-            filter=RecipientFilter(recipient_search_text=["123456789"]),
-            display=RecipientDisplay(
-                entity="Parent recipient",
-                standalone="Parent Corp",
-                title="Parent Corporation"
-            )
-        )
-
-        assert recipient.identifier == "123456789"
-
-    def test_valid_creation_with_internal_id(self):
-        """Test creating SelectedRecipient with internal ID"""
-        recipient = SelectedRecipient(
-            identifier="internal-12345",
-            filter=RecipientFilter(recipient_search_text=["John Smith"]),
-            display=RecipientDisplay(
-                entity="Subcontractor",
-                standalone="John Smith",
-                title="John Smith (Individual)"
-            )
-        )
-
-        assert recipient.identifier == "internal-12345"
-
-    def test_nested_validation_filter(self):
-        """Test that invalid filter data raises ValidationError"""
-        with pytest.raises(ValidationError):
-            SelectedRecipient(
-                identifier="UEI123",
-                filter="invalid_type_not_dict_or_object",
-                display=RecipientDisplay(
-                    entity="Recipient",
-                    standalone="ACME",
-                    title="ACME Corp"
-                )
-            )
-
-    def test_nested_validation_display(self):
-        """Test that invalid display data raises ValidationError"""
-        with pytest.raises(ValidationError):
-            SelectedRecipient(
-                identifier="UEI123",
-                filter=RecipientFilter(recipient_search_text=["ACME"]),
-                display={"invalid": "data"}
-            )
-
-    def test_all_fields_required(self):
-        """Test that all fields are required"""
+    def test_recipient_type_rejects_empty_string(self):
+        """Test that recipientType rejects empty string"""
         with pytest.raises(ValidationError) as exc_info:
-            SelectedRecipient()
+            Filters(recipientType=[""])
 
-        errors = exc_info.value.errors()
-        missing_fields = {error["loc"][0] for error in errors}
-        assert "identifier" in missing_fields
-        assert "filter" in missing_fields
-        assert "display" in missing_fields
+        assert "recipientType" in str(exc_info.value)
 
-    def test_model_serialization(self):
-        """Test that model can be serialized to dict"""
-        recipient = SelectedRecipient(
-            identifier="UEI123",
-            filter=RecipientFilter(recipient_search_text=["ACME CORP"]),
-            display=RecipientDisplay(
-                entity="Recipient",
-                standalone="ACME",
-                title="ACME Corporation"
-            )
+    def test_recipient_type_rejects_non_string_values(self):
+        """Test that recipientType rejects non-string values"""
+        with pytest.raises(ValidationError) as exc_info:
+            Filters(recipientType=[123, 456])
+
+        assert "recipientType" in str(exc_info.value)
+
+    def test_recipient_type_case_sensitive(self):
+        """Test that recipientType is case-sensitive"""
+        with pytest.raises(ValidationError) as exc_info:
+            Filters(recipientType=["SMALL_BUSINESS"])  # Should be lowercase
+
+        assert "recipientType" in str(exc_info.value)
+
+    def test_recipient_type_allows_duplicates(self):
+        """Test that recipientType allows duplicate entries"""
+        types = ["small_business", "small_business", "nonprofit"]
+        filters = Filters(recipientType=types)
+
+        assert len(filters.recipientType) == 3
+        assert filters.recipientType.count("small_business") == 2
+
+    def test_recipient_type_preserves_order(self):
+        """Test that recipientType preserves order"""
+        types = ["nonprofit", "business", "government"]
+        filters = Filters(recipientType=types)
+
+        assert filters.recipientType == types
+        assert filters.recipientType[0] == "nonprofit"
+        assert filters.recipientType[2] == "government"
+
+    def test_recipient_type_accepts_all_valid_types(self):
+        """Test that all documented recipient types are valid"""
+        all_types = [
+            # Business types
+            "business",
+            "small_business",
+            "other_than_small_business",
+            "corporate_entity_tax_exempt",
+            "corporate_entity_not_tax_exempt",
+            "partnership_or_limited_liability_partnership",
+            "sole_proprietorship",
+            "manufacturer_of_goods",
+            "subchapter_s_corporation",
+            "limited_liability_corporation",
+            # Minority owned
+            "minority_owned_business",
+            "alaskan_native_corporation_owned_firm",
+            "american_indian_owned_business",
+            "asian_pacific_american_owned_business",
+            "black_american_owned_business",
+            "hispanic_american_owned_business",
+            "native_american_owned_business",
+            "native_hawaiian_organization_owned_firm",
+            "subcontinent_asian_indian_american_owned_business",
+            "tribally_owned_firm",
+            "other_minority_owned_business",
+            # Women owned
+            "woman_owned_business",
+            "women_owned_small_business",
+            "economically_disadvantaged_women_owned_small_business",
+            "joint_venture_women_owned_small_business",
+            "joint_venture_economically_disadvantaged_women_owned_small_business",
+            # Veteran owned
+            "veteran_owned_business",
+            "service_disabled_veteran_owned_business",
+            # Special designations
+            "special_designations",
+            "8a_program_participant",
+            "ability_one_program",
+            "dot_certified_disadvantaged_business_enterprise",
+            "emerging_small_business",
+            "federally_funded_research_and_development_corp",
+            "historically_underutilized_business_firm",
+            "labor_surplus_area_firm",
+            "sba_certified_8a_joint_venture",
+            "self_certified_small_disadvanted_business",
+            "small_agricultural_cooperative",
+            "community_developed_corporation_owned_firm",
+            "us_owned_business",
+            "foreign_owned_and_us_located_business",
+            "foreign_owned",
+            "foreign_government",
+            "international_organization",
+            "domestic_shelter",
+            "hospital",
+            "veterinary_hospital",
+            # Nonprofit
+            "nonprofit",
+            "foundation",
+            "community_development_corporations",
+            # Higher education
+            "higher_education",
+            "public_institution_of_higher_education",
+            "private_institution_of_higher_education",
+            "minority_serving_institution_of_higher_education",
+            "school_of_forestry",
+            "veterinary_college",
+            # Government
+            "government",
+            "national_government",
+            "interstate_entity",
+            "regional_and_state_government",
+            "regional_organization",
+            "us_territory_or_possession",
+            "council_of_governments",
+            "local_government",
+            "indian_native_american_tribal_government",
+            "authorities_and_commissions",
+            # Individuals
+            "individuals",
+        ]
+
+        # Should not raise validation error
+        filters = Filters(recipientType=all_types)
+        assert len(filters.recipientType) == len(all_types)
+
+
+class TestRecipientDomesticForeign:
+    """Tests for recipientDomesticForeign field in Filters model"""
+
+    def test_recipient_domestic_foreign_default_all(self):
+        """Test that recipientDomesticForeign defaults to 'all'"""
+        filters = Filters()
+
+        assert filters.recipientDomesticForeign == "all"
+
+    def test_recipient_domestic_foreign_accepts_all(self):
+        """Test that recipientDomesticForeign accepts 'all'"""
+        filters = Filters(recipientDomesticForeign="all")
+
+        assert filters.recipientDomesticForeign == "all"
+
+    def test_recipient_domestic_foreign_accepts_foreign(self):
+        """Test that recipientDomesticForeign accepts 'foreign'"""
+        filters = Filters(recipientDomesticForeign="foreign")
+
+        assert filters.recipientDomesticForeign == "foreign"
+
+    def test_recipient_domestic_foreign_rejects_invalid_value(self):
+        """Test that recipientDomesticForeign rejects invalid values"""
+        with pytest.raises(ValidationError) as exc_info:
+            Filters(recipientDomesticForeign="domestic")
+
+        assert "recipientDomesticForeign" in str(exc_info.value)
+
+    def test_recipient_domestic_foreign_rejects_empty_string(self):
+        """Test that recipientDomesticForeign rejects empty string"""
+        with pytest.raises(ValidationError) as exc_info:
+            Filters(recipientDomesticForeign="")
+
+        assert "recipientDomesticForeign" in str(exc_info.value)
+
+    def test_recipient_domestic_foreign_case_sensitive(self):
+        """Test that recipientDomesticForeign is case-sensitive"""
+        with pytest.raises(ValidationError) as exc_info:
+            Filters(recipientDomesticForeign="ALL")
+
+        assert "recipientDomesticForeign" in str(exc_info.value)
+
+    def test_recipient_domestic_foreign_rejects_none(self):
+        """Test that recipientDomesticForeign rejects None"""
+        with pytest.raises(ValidationError) as exc_info:
+            Filters(recipientDomesticForeign=None)
+
+        assert "recipientDomesticForeign" in str(exc_info.value)
+
+
+class TestRecipientFieldsCombinations:
+    """Tests for combinations of recipient-related fields"""
+
+    def test_all_recipient_fields_together(self):
+        """Test that all recipient fields can be set together"""
+        filters = Filters(
+            selectedRecipients=["ACME CORP", "BETA CORP"],
+            recipientType=["small_business", "woman_owned_business"],
+            recipientDomesticForeign="foreign",
         )
 
-        data = recipient.model_dump()
+        assert filters.selectedRecipients == ["ACME CORP", "BETA CORP"]
+        assert filters.recipientType == ["small_business", "woman_owned_business"]
+        assert filters.recipientDomesticForeign == "foreign"
 
-        assert data["identifier"] == "UEI123"
-        assert data["filter"]["recipient_search_text"] == ["ACME CORP"]
-        assert data["display"]["entity"] == "Recipient"
-        assert data["display"]["standalone"] == "ACME"
-        assert data["display"]["title"] == "ACME Corporation"
-
-    def test_model_json_serialization(self):
-        """Test that model can be serialized to JSON"""
-        recipient = SelectedRecipient(
-            identifier="UEI123",
-            filter=RecipientFilter(recipient_search_text=["ACME CORP"]),
-            display=RecipientDisplay(
-                entity="Recipient",
-                standalone="ACME",
-                title="ACME Corporation"
-            )
+    def test_recipient_fields_with_empty_values(self):
+        """Test recipient fields with empty values"""
+        filters = Filters(
+            selectedRecipients=[],
+            recipientType=[],
+            recipientDomesticForeign="all",
         )
 
-        json_str = recipient.model_dump_json()
-        assert "UEI123" in json_str
-        assert "ACME CORP" in json_str
-        assert "Recipient" in json_str
+        assert filters.selectedRecipients == []
+        assert filters.recipientType == []
+        assert filters.recipientDomesticForeign == "all"
+
+    def test_recipient_fields_independent(self):
+        """Test that recipient fields are independent"""
+        # Set only selectedRecipients
+        filters1 = Filters(selectedRecipients=["ACME CORP"])
+        assert filters1.selectedRecipients == ["ACME CORP"]
+        assert filters1.recipientType == []
+        assert filters1.recipientDomesticForeign == "all"
+
+        # Set only recipientType
+        filters2 = Filters(recipientType=["small_business"])
+        assert filters2.selectedRecipients == []
+        assert filters2.recipientType == ["small_business"]
+        assert filters2.recipientDomesticForeign == "all"
+
+        # Set only recipientDomesticForeign
+        filters3 = Filters(recipientDomesticForeign="foreign")
+        assert filters3.selectedRecipients == []
+        assert filters3.recipientType == []
+        assert filters3.recipientDomesticForeign == "foreign"
+
+    def test_recipient_fields_serialization(self):
+        """Test that recipient fields serialize correctly"""
+        filters = Filters(
+            selectedRecipients=["ACME CORP"],
+            recipientType=["small_business", "nonprofit"],
+            recipientDomesticForeign="foreign",
+        )
+
+        data = filters.model_dump()
+
+        assert data["selectedRecipients"] == ["ACME CORP"]
+        assert data["recipientType"] == ["small_business", "nonprofit"]
+        assert data["recipientDomesticForeign"] == "foreign"
+
+    def test_recipient_fields_deserialization(self):
+        """Test that recipient fields deserialize correctly"""
+        data = {
+            "selectedRecipients": ["BETA CORP", "GAMMA CORP"],
+            "recipientType": ["veteran_owned_business", "8a_program_participant"],
+            "recipientDomesticForeign": "all",
+        }
+
+        filters = Filters(**data)
+
+        assert filters.selectedRecipients == ["BETA CORP", "GAMMA CORP"]
+        assert filters.recipientType == ["veteran_owned_business", "8a_program_participant"]
+        assert filters.recipientDomesticForeign == "all"
+
+    def test_recipient_fields_json_schema(self):
+        """Test that recipient fields have proper JSON schema"""
+        schema = Filters.model_json_schema()
+
+        # Check selectedRecipients schema
+        assert "selectedRecipients" in schema["properties"]
+        assert schema["properties"]["selectedRecipients"]["type"] == "array"
+        assert schema["properties"]["selectedRecipients"]["items"]["type"] == "string"
+
+        # Check recipientType schema
+        assert "recipientType" in schema["properties"]
+        assert schema["properties"]["recipientType"]["type"] == "array"
+
+        # Check recipientDomesticForeign schema
+        assert "recipientDomesticForeign" in schema["properties"]
+        assert "enum" in schema["properties"]["recipientDomesticForeign"]
+        assert set(schema["properties"]["recipientDomesticForeign"]["enum"]) == {"all", "foreign"}

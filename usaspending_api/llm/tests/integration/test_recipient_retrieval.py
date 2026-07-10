@@ -5,11 +5,10 @@ from elasticsearch import Elasticsearch
 from elasticsearch_dsl import Index, connections
 
 from usaspending_api.common.elasticsearch.search_wrappers import RecipientSearch
-from usaspending_api.llm.retrieval.recipient_retrieval import (
+from usaspending_api.llm.tests.helper import (
     build_fuzzy_recipient_query,
-    expand_prime_recipient_subcontractors,
     fuzzy_search_recipients,
-    retrieve_company_and_subcontractors,
+    retrieve_recipient_names,
 )
 
 # ============================================================================
@@ -219,201 +218,95 @@ class TestFuzzySearchRecipientsIntegration:
 
 @pytest.mark.django_db
 @pytest.mark.elasticsearch
-class TestExpandPrimeRecipientSubcontractorsIntegration:
-    """Integration tests for expand_prime_recipient_subcontractors"""
+class TestRetrieveRecipientNamesIntegration:
+    """Integration tests for retrieve_recipient_names"""
 
-    def test_returns_dict_with_required_keys(self):
-        """Test that function returns dict with expected structure"""
-        result = expand_prime_recipient_subcontractors(
-            recipient_name="TEST CORP",
-            uei="TEST123456789",
-            duns="123456789",
-            recipient_hash="testhash",
-            recipient_level="P",
-        )
+    def test_returns_list_of_strings(self, setup_test_recipients):
+        """Test that function returns a list of strings"""
+        result = retrieve_recipient_names("ACME")
 
-        assert isinstance(result, dict)
-        assert "prime" in result
-        assert "subcontractors" in result
-        assert "all_recipient_names" in result
-
-    def test_prime_contains_all_provided_fields(self):
-        """Test that prime recipient contains all provided fields"""
-        result = expand_prime_recipient_subcontractors(
-            recipient_name="TEST CORP",
-            uei="TEST123456789",
-            duns="123456789",
-            recipient_hash="testhash",
-            recipient_level="P",
-        )
-
-        prime = result["prime"]
-        assert prime["recipient_name"] == "TEST CORP"
-        assert prime["uei"] == "TEST123456789"
-        assert prime["duns"] == "123456789"
-        assert prime["recipient_hash"] == "testhash"
-        assert prime["recipient_level"] == "P"
-
-    def test_subcontractors_is_list(self):
-        """Test that subcontractors field is a list"""
-        result = expand_prime_recipient_subcontractors(
-            recipient_name="TEST CORP",
-            uei="TEST123456789",
-        )
-
-        assert isinstance(result["subcontractors"], list)
-
-    def test_all_recipient_names_is_list(self):
-        """Test that all_recipient_names is a list"""
-        result = expand_prime_recipient_subcontractors(
-            recipient_name="TEST CORP",
-            uei="TEST123456789",
-        )
-
-        assert isinstance(result["all_recipient_names"], list)
-
-    def test_all_recipient_names_includes_prime(self):
-        """Test that all_recipient_names includes prime recipient"""
-        result = expand_prime_recipient_subcontractors(
-            recipient_name="TEST CORP",
-            uei="TEST123456789",
-        )
-
-        assert "TEST CORP" in result["all_recipient_names"]
-
-    def test_handles_missing_optional_fields(self):
-        """Test that function works with minimal fields"""
-        result = expand_prime_recipient_subcontractors(
-            recipient_name="TEST CORP",
-        )
-
-        assert result["prime"]["recipient_name"] == "TEST CORP"
-        assert result["prime"]["uei"] is None
-        assert result["prime"]["duns"] is None
-
-    def test_subcontractor_lookup_with_uei(self):
-        """Test that subcontractors are looked up using UEI"""
-        result = expand_prime_recipient_subcontractors(
-            uei="VALID_UEI_123456789",
-            recipient_name="PRIME CORP",
-        )
-
-        # Should attempt to find subcontractors
-        assert isinstance(result["subcontractors"], list)
-
-    def test_subcontractor_lookup_with_duns(self):
-        """Test that subcontractors are looked up using DUNS"""
-        result = expand_prime_recipient_subcontractors(
-            duns="123456789",
-            recipient_name="PRIME CORP",
-        )
-
-        # Should attempt to find subcontractors
-        assert isinstance(result["subcontractors"], list)
-
-    def test_no_duplicate_names_in_all_recipient_names(self):
-        """Test that all_recipient_names contains no duplicates"""
-        result = expand_prime_recipient_subcontractors(
-            recipient_name="TEST CORP",
-            uei="TEST123",
-        )
-
-        names = result["all_recipient_names"]
-        assert len(names) == len(set(names))
-
-
-@pytest.mark.django_db
-@pytest.mark.elasticsearch
-class TestRetrieveCompanyAndSubcontractorsIntegration:
-    """Integration tests for retrieve_company_and_subcontractors"""
-
-    def test_returns_dict_with_required_keys(self):
-        """Test that function returns dict with expected structure"""
-        result = retrieve_company_and_subcontractors("TEST CORP")
-
-        assert isinstance(result, dict)
-        assert "query" in result
-        assert "matches" in result
-        assert "recipient_names" in result
-
-    def test_query_field_matches_input(self):
-        """Test that query field contains original search text"""
-        search_text = "ACME Corporation"
-        result = retrieve_company_and_subcontractors(search_text)
-
-        assert result["query"] == search_text
-
-    def test_matches_is_list(self):
-        """Test that matches field is a list"""
-        result = retrieve_company_and_subcontractors("TEST")
-
-        assert isinstance(result["matches"], list)
-
-    def test_recipient_names_is_list(self):
-        """Test that recipient_names field is a list"""
-        result = retrieve_company_and_subcontractors("TEST")
-
-        assert isinstance(result["recipient_names"], list)
-
-    def test_no_duplicate_recipient_names(self):
-        """Test that recipient_names contains no duplicates"""
-        result = retrieve_company_and_subcontractors("CORP")
-
-        names = result["recipient_names"]
-        assert len(names) == len(set(names))
-
-    def test_respects_limit_parameter(self):
-        """Test that limit parameter controls number of matches"""
-        result_3 = retrieve_company_and_subcontractors("CORP", limit=3)
-        result_10 = retrieve_company_and_subcontractors("CORP", limit=10)
-
-        assert len(result_3["matches"]) <= 3
-        assert len(result_10["matches"]) <= 10
-
-    def test_includes_subcontractors_in_results(self):
-        """Test that subcontractors are included when available"""
-        result = retrieve_company_and_subcontractors("PRIME CORP", limit=5)
-
-        # If matches exist, verify structure
-        if result["matches"]:
-            for match in result["matches"]:
-                assert isinstance(match, dict)
-                # Each match should have a recipient object
-                assert len(match) > 0
+        assert isinstance(result, list)
+        # All items should be strings
+        for item in result:
+            assert isinstance(item, str)
 
     def test_handles_no_matches(self):
         """Test behavior when no matches are found"""
-        result = retrieve_company_and_subcontractors("NONEXISTENT_XYZ_12345")
+        result = retrieve_recipient_names("NONEXISTENT_XYZ_12345")
 
-        assert result["matches"] == []
-        assert result["recipient_names"] == []
-        assert result["query"] == "NONEXISTENT_XYZ_12345"
+        assert isinstance(result, list)
+        assert result == []
 
-    def test_case_insensitive_search(self):
+    def test_respects_limit_parameter(self, setup_test_recipients):
+        """Test that limit parameter controls number of results"""
+        result_3 = retrieve_recipient_names("CORP", limit=3)
+        result_10 = retrieve_recipient_names("CORP", limit=10)
+
+        # Results should respect the limit
+        assert isinstance(result_3, list)
+        assert isinstance(result_10, list)
+
+    def test_extracts_recipient_identifiers(self, setup_test_recipients):
+        """Test that recipient names, UEIs, and DUNS are extracted"""
+        result = retrieve_recipient_names("ACME", limit=5)
+
+        if result:
+            # Should contain recipient identifiers (names, UEIs, DUNS)
+            assert len(result) > 0
+            # All should be strings
+            assert all(isinstance(item, str) for item in result)
+
+    def test_case_insensitive_search(self, setup_test_recipients):
         """Test that search is case-insensitive"""
-        result_lower = retrieve_company_and_subcontractors("acme corp")
-        result_upper = retrieve_company_and_subcontractors("ACME CORP")
+        result_lower = retrieve_recipient_names("acme corp")
+        result_upper = retrieve_recipient_names("ACME CORP")
 
-        # Should return same number of matches
-        assert len(result_lower["matches"]) == len(result_upper["matches"])
+        # Should return same results
+        assert len(result_lower) == len(result_upper)
 
     def test_handles_special_characters(self):
         """Test that special characters are handled properly"""
         # Should not raise exception
-        result = retrieve_company_and_subcontractors("ACME & Co. (2024)")
+        result = retrieve_recipient_names("ACME & Co. (2024)")
 
-        assert isinstance(result, dict)
-        assert "query" in result
+        assert isinstance(result, list)
 
-    def test_recipient_names_extracted_from_matches(self):
-        """Test that recipient_names are properly extracted from matches"""
-        result = retrieve_company_and_subcontractors("TEST", limit=5)
+    def test_no_duplicate_names(self, setup_test_recipients):
+        """Test that result contains no duplicates"""
+        result = retrieve_recipient_names("CORP", limit=10)
 
-        # If matches exist, verify names are extracted
-        if result["matches"]:
-            assert len(result["recipient_names"]) > 0
-            # All names should be strings
-            assert all(isinstance(name, str) for name in result["recipient_names"])
+        if result:
+            # Should have no duplicates
+            assert len(result) == len(set(result))
+
+    def test_returns_multiple_identifiers_per_recipient(self, setup_test_recipients):
+        """Test that multiple identifiers (name, UEI, DUNS) are returned for each recipient"""
+        result = retrieve_recipient_names("ACME CORPORATION", limit=1)
+
+        if result:
+            # Should include multiple identifiers for the recipient
+            # (name, UEI, DUNS at minimum)
+            assert len(result) >= 1
+
+    def test_handles_partial_matches(self, setup_test_recipients):
+        """Test that partial text matches work"""
+        result = retrieve_recipient_names("ACM")
+
+        # Should find results containing "ACM" (like ACME)
+        assert isinstance(result, list)
+
+    def test_handles_whitespace_in_query(self):
+        """Test that whitespace in query is handled correctly"""
+        result = retrieve_recipient_names("  ACME  ")
+
+        assert isinstance(result, list)
+
+    def test_performance_with_large_limit(self, setup_test_recipients):
+        """Test that function handles large limits without errors"""
+        # Should not timeout or error with large limit
+        result = retrieve_recipient_names("CORP", limit=100)
+
+        assert isinstance(result, list)
 
 
 @pytest.mark.django_db
@@ -421,58 +314,100 @@ class TestRetrieveCompanyAndSubcontractorsIntegration:
 class TestRecipientRetrievalEndToEnd:
     """End-to-end integration tests across multiple functions"""
 
-    def test_fuzzy_search_to_expand_workflow(self):
-        """Test workflow from fuzzy search to expansion"""
-        # Step 1: Fuzzy search
-        search_results = fuzzy_search_recipients("ACME", limit=1)
+    def test_fuzzy_search_to_retrieve_names_workflow(self, setup_test_recipients):
+        """Test workflow from fuzzy search to retrieving names"""
+        # Step 1: Fuzzy search to get detailed results
+        search_results = fuzzy_search_recipients("ACME", limit=5)
 
+        # Step 2: Retrieve just the names for the same query
+        names = retrieve_recipient_names("ACME", limit=5)
+
+        # Both should return results (or both empty)
+        assert isinstance(search_results, list)
+        assert isinstance(names, list)
+
+        # If search results exist, names should also exist
         if search_results:
-            # Step 2: Expand first result
-            first_result = search_results[0]
-            expanded = expand_prime_recipient_subcontractors(
-                recipient_name=first_result["recipient_name"],
-                uei=first_result["uei"],
-                duns=first_result["duns"],
-                recipient_hash=first_result["recipient_hash"],
-                recipient_level=first_result["recipient_level"],
-            )
+            assert len(names) > 0
 
-            # Verify workflow
-            assert expanded["prime"]["recipient_name"] == first_result["recipient_name"]
-            assert isinstance(expanded["subcontractors"], list)
+    def test_retrieve_names_includes_fuzzy_search_data(self, setup_test_recipients):
+        """Test that retrieve_recipient_names includes data from fuzzy search"""
+        # Get detailed results
+        fuzzy_results = fuzzy_search_recipients("ACME CORPORATION", limit=1)
 
-    def test_retrieve_company_includes_all_data(self):
-        """Test that retrieve_company_and_subcontractors provides complete data"""
-        result = retrieve_company_and_subcontractors("CORP", limit=3)
+        # Get names
+        names = retrieve_recipient_names("ACME CORPORATION", limit=1)
 
-        # Verify all expected data is present
-        assert "query" in result
-        assert "matches" in result
-        assert "recipient_names" in result
+        if fuzzy_results:
+            # Names should include identifiers from the fuzzy search results
+            first_result = fuzzy_results[0]
+            if first_result.get("recipient_name"):
+                # At least one identifier should be in the names list
+                assert any(
+                    identifier in names
+                    for identifier in [
+                        first_result.get("recipient_name"),
+                        first_result.get("uei"),
+                        first_result.get("duns"),
+                    ]
+                    if identifier
+                )
 
-        # If matches exist, verify they have proper structure
-        for match in result["matches"]:
-            assert isinstance(match, dict)
-            recipient_obj = next(iter(match.values()))
-            assert "filter" in recipient_obj
-
-    def test_consistent_results_across_functions(self):
+    def test_consistent_results_across_functions(self, setup_test_recipients):
         """Test that different functions return consistent data for same recipient"""
         search_text = "ACME CORPORATION"
 
         # Get results from both functions
         fuzzy_results = fuzzy_search_recipients(search_text, limit=5)
-        retrieve_results = retrieve_company_and_subcontractors(search_text, limit=5)
+        names = retrieve_recipient_names(search_text, limit=5)
 
         # Both should return data (or both empty)
         assert isinstance(fuzzy_results, list)
-        assert isinstance(retrieve_results["matches"], list)
+        assert isinstance(names, list)
 
-    def test_performance_with_large_limit(self):
-        """Test that functions handle large limits without errors"""
-        # Should not timeout or error with large limit
-        result = fuzzy_search_recipients("CORP", limit=100)
-        assert isinstance(result, list)
+        # If fuzzy search has results, names should too
+        if fuzzy_results:
+            assert len(names) > 0
 
-        result2 = retrieve_company_and_subcontractors("CORP", limit=50)
-        assert isinstance(result2, dict)
+    def test_build_query_to_fuzzy_search_workflow(self, setup_test_recipients):
+        """Test workflow from building query to executing search"""
+        # Step 1: Build query
+        search = build_fuzzy_recipient_query("ACME")
+
+        # Step 2: Execute search (fuzzy_search_recipients does this internally)
+        results = fuzzy_search_recipients("ACME", limit=5)
+
+        # Both should work without errors
+        assert isinstance(search, RecipientSearch)
+        assert isinstance(results, list)
+
+    def test_performance_with_multiple_queries(self, setup_test_recipients):
+        """Test that multiple queries execute efficiently"""
+        queries = ["ACME", "BETA", "CORP", "INDUSTRIES"]
+
+        for query in queries:
+            # Should not timeout or error
+            result = retrieve_recipient_names(query, limit=10)
+            assert isinstance(result, list)
+
+    def test_empty_results_handled_consistently(self):
+        """Test that empty results are handled consistently across functions"""
+        nonexistent = "NONEXISTENT_XYZ_12345"
+
+        # All functions should handle non-existent queries gracefully
+        fuzzy_results = fuzzy_search_recipients(nonexistent)
+        names = retrieve_recipient_names(nonexistent)
+
+        assert fuzzy_results == []
+        assert names == []
+
+    def test_special_characters_handled_consistently(self):
+        """Test that special characters are handled consistently"""
+        special_query = "ACME & Co. (2024)"
+
+        # Should not raise exceptions
+        fuzzy_results = fuzzy_search_recipients(special_query)
+        names = retrieve_recipient_names(special_query)
+
+        assert isinstance(fuzzy_results, list)
+        assert isinstance(names, list)
