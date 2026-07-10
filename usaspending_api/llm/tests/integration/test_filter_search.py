@@ -6,7 +6,7 @@ import pytest
 from model_bakery import baker
 from rest_framework import status
 
-from usaspending_api.llm.models.db_models import AIModel, Session
+from usaspending_api.llm.models.db_models import Session
 
 
 @pytest.fixture
@@ -325,7 +325,9 @@ class TestFilterSearch:
         error_event = next(e for e in events if e["type"] == "search_error")
         assert "error" in error_event["message"].lower()
 
-    def test_endpoint_validates_query_length_boundaries(self, client, ai_model_data, mock_llm_api_key, mock_bedrock_client):
+    def test_endpoint_validates_query_length_boundaries(
+        self, client, ai_model_data, mock_llm_api_key, mock_bedrock_client
+    ):
         """Test query length validation at boundaries."""
         # Mock Bedrock response.
         mock_bedrock_client.converse.return_value = {

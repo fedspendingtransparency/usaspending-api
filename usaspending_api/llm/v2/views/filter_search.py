@@ -1,4 +1,5 @@
 import logging
+from typing import Generator
 
 from django.http import StreamingHttpResponse
 from rest_framework.request import Request
@@ -7,7 +8,6 @@ from usaspending_api.common.api_request_utils import LLMAPIKeyHandler
 from usaspending_api.common.validator.tinyshield import TinyShield
 from usaspending_api.llm.assistants.filter_search import FilterSearchAssistant
 from usaspending_api.llm.models.db_models import Session
-from usaspending_api.llm.models.py_models import AITool
 from usaspending_api.llm.tools.lookup_location import lookup_location_tool
 from usaspending_api.llm.tools.lookup_recipient import lookup_recipient_tool
 from usaspending_api.llm.v2.views.llm_base import LLMBase
@@ -18,11 +18,12 @@ logger = logging.getLogger(__name__)
 class FilterSearchViewSet(LLMBase):
     """
     This endpoint provides a streaming response for LLM-powered search operations with advanced filtering capabilities.
-    The response is delivered as a series of JSON chunks, allowing real-time updates on search progress, tool execution, and results.
+    The response is delivered as a series of JSON chunks, allowing real-time updates on search progress, 
+    tool execution, and results.
     """
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/llm/filter_search.md"
-    
+
     # Define a list of allowed AI tools to pass to the assistant.
     tools = [
         lookup_location_tool,
@@ -63,7 +64,7 @@ class FilterSearchViewSet(LLMBase):
                 session=session,
             )
 
-            def event_stream():
+            def event_stream() -> Generator[str, None, None]:
                 try:
                     for event in assistant.search(query):
                         yield self._ndjson_format(event)

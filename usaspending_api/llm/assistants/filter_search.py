@@ -1,7 +1,6 @@
 import logging
-
 from functools import cached_property
-from typing import Generator
+from typing import Any, Generator
 
 import boto3
 
@@ -42,11 +41,11 @@ class FilterSearchAssistant:
         return {"tools": [{"toolSpec": {"inputSchema": {"json": spec.pop("input_schema")}, **spec}} for spec in specs]}
 
     @cached_property
-    def client(self):
+    def client(self) -> Any:
         """
         Lazy-load the Bedrock client so instantiation is deferred to first access and cached thereafter.
         This prevents the client from being created and never used (e.g., if __init__ fails).
-        
+
         Returns:
             boto3 Bedrock Runtime client.
         """
@@ -67,7 +66,7 @@ class FilterSearchAssistant:
 
         Returns:
             Concatenated text from all text blocks, or an empty string if none are found.
-        
+
         References:
             AWS Bedrock ContentBlock documentation:
             https://docs.aws.amazon.com/bedrock/latest/APIReference/API_runtime_ContentBlock.html
@@ -174,14 +173,14 @@ class FilterSearchAssistant:
                 error_result = {"error": str(e)}
                 t.result = error_result
                 t.save()
-                
+
                 yield {
                     "search_id": self.session.id,
                     "type": "tool_error",
                     "tool_use_id": t.id,
                     "message": f"Tool execution failed: {str(e)}"
                 }
-            
+
             # Still send results to LLM so it can handle the error.
             tool_result = {"toolUseId": tool_use["toolUseId"], "content": [{"json": result}]}
             tool_result_message["content"].append({"toolResult": tool_result})
