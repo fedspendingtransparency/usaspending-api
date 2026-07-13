@@ -96,7 +96,7 @@ class FilterSearchAssistant:
 
     def search(self, query: str) -> Generator[dict[str, str], None, None]:
 
-        yield {"search_id": self.session.id, "type": "search_start", "message": "Thinking..."}
+        yield {"search_id": str(self.session.id), "type": "search_start", "message": "Thinking..."}
 
         Message.objects.create(session=self.session, role="user", message=query, order=self.message_order)
         self.message_order += 1
@@ -134,7 +134,7 @@ class FilterSearchAssistant:
         # Communicate if tool iteration limit reached.
         if self.tool_iterations >= self.MAX_TOOL_ITERATIONS and not search_complete:
             yield {
-                "search_id": self.session.id,
+                "search_id": str(self.session.id),
                 "type": "search_error",
                 "message": f"Maximum tool iterations ({self.MAX_TOOL_ITERATIONS}) reached without completing search.",
             }
@@ -154,7 +154,7 @@ class FilterSearchAssistant:
             tool = self.tools_by_name[tool_use["name"]]
 
             yield {
-                "search_id": self.session.id,
+                "search_id": str(self.session.id),
                 "type": "tool_start",
                 "tool_use_id": t.id,
                 "message": tool.logging(tool_use["input"]) + "\n",
@@ -165,7 +165,7 @@ class FilterSearchAssistant:
                 t.result = result
                 t.save()
 
-                yield {"search_id": self.session.id, "type": "tool_complete", "tool_use_id": t.id}
+                yield {"search_id": str(self.session.id), "type": "tool_complete", "tool_use_id": t.id}
 
                 tool_result = {"toolUseId": tool_use["toolUseId"], "content": [{"json": result}]}
                 tool_result_message["content"].append({"toolResult": tool_result})
@@ -175,7 +175,7 @@ class FilterSearchAssistant:
                 t.save()
 
                 yield {
-                    "search_id": self.session.id,
+                    "search_id": str(self.session.id),
                     "type": "tool_error",
                     "tool_use_id": t.id,
                     "message": f"Tool execution failed: {str(e)}"
@@ -186,5 +186,5 @@ class FilterSearchAssistant:
             tool_result_message["content"].append({"toolResult": tool_result})
 
             if tool.description.name == self.COMPLETION_TOOL_NAME and "error" not in result:
-                yield {"search_id": self.session.id, "type": "search_complete", "result": result["hash"]}
+                yield {"search_id": str(self.session.id), "type": "search_complete", "result": result["hash"]}
         self.messages.append(tool_result_message)

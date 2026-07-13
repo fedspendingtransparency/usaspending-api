@@ -1,7 +1,6 @@
 import json
 import logging
 import os
-import uuid
 from typing import Generator
 
 from django.http import StreamingHttpResponse
@@ -58,19 +57,19 @@ class LLMBase(APIView):
         """
         return json.dumps(event) + "\n"
 
-    def _error_response(self, message: str, search_id: str = None) -> StreamingHttpResponse:
+    def _error_response(self, message: str, search_id: str | int = None) -> StreamingHttpResponse:
         """
         Generate a streaming error response in newline-delimited JSON (NDJSON) format.
 
         Args:
             message: Error message to return to the client.
-            search_id: Optional session/search ID. If None, generates a temporary UUID.
+            search_id: Optional session/search ID (ints will be converted to strings).
 
         Returns:
-            StreamingHttpResponse with error event.
+            StreamingHttpResponse with error event in NDJSON format.
         """
         error_event = {
-            "search_id": search_id if search_id else str(uuid.uuid4()),
+            "search_id": str(search_id) if search_id is not None else None,
             "type": "search_error",
             "message": message
         }

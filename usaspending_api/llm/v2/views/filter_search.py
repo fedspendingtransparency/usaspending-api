@@ -2,12 +2,13 @@ import logging
 from typing import Generator
 
 from django.http import StreamingHttpResponse
+from django.utils import timezone
 from rest_framework.request import Request
 
 from usaspending_api.common.api_request_utils import LLMAPIKeyHandler
 from usaspending_api.common.validator.tinyshield import TinyShield
 from usaspending_api.llm.assistants.filter_search import FilterSearchAssistant
-from usaspending_api.llm.models.db_models import Session
+from usaspending_api.llm.models.db_models import Prompts, Session
 from usaspending_api.llm.tools.lookup_location import lookup_location_tool
 from usaspending_api.llm.tools.lookup_recipient import lookup_recipient_tool
 from usaspending_api.llm.v2.views.llm_base import LLMBase
@@ -51,18 +52,31 @@ class FilterSearchViewSet(LLMBase):
             # Get available tools.
             tools = self.tools
 
+            # Retrieve system prompt from database (fall back to Assistant's default if not found).
+            system_prompt = None
+            try:
+                system_prompt = Prompts.objects.get(name="initial")
+            except Prompts.DoesNotExist:
+                logger.warning("System prompt not found in database, using Assistant's default.")
+
             # Instantiate session.
             session = Session.objects.create(
                 ai_model=ai_model,
                 tools=[tool.description.name for tool in tools],
+                system_prompt=system_prompt,
             )
 
-            # Add the above to the filter search assistant.
-            assistant = FilterSearchAssistant(
-                model=ai_model,
-                tools=tools,
-                session=session,
-            )
+            # Create assistant with appropriate arguments.
+            assistant_kwargs = {
+                "model": ai_model,
+                "tools": tools,
+                "session": session,
+            }
+            # If system_prompt is set, override the Assistant's default prompt.
+            if system_prompt:
+                assistant_kwargs["system_message"] = system_prompt.text
+
+            assistant = FilterSearchAssistant(**assistant_kwargs)
 
             def event_stream() -> Generator[str, None, None]:
                 try:
@@ -76,6 +90,10 @@ class FilterSearchViewSet(LLMBase):
                         "message": f"An error occurred: {str(e)}"
                     }
                     yield self._ndjson_format(error_event)
+                finally:
+                    # Update session end time when stream completes (success or error).
+                    session.ended_at = timezone.now()
+                    session.save(update_fields=["ended_at"])
 
             # Craft Response stream.
             response = StreamingHttpResponse(
