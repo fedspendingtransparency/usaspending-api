@@ -2,7 +2,6 @@ from typing import Any
 
 from pydantic import ValidationError
 
-
 # Pydantic V2 error types mapped to the type names our API has always used
 API_TYPE_BY_ERROR_TYPE = {
     "bool_parsing": "boolean",
@@ -17,7 +16,7 @@ API_TYPE_BY_ERROR_TYPE = {
     "list_type": "array",
     "model_attributes_type": "object",
     "model_type": "object",
-    "string_type": "text"
+    "string_type": "text",
 }
 
 
@@ -32,7 +31,7 @@ def _key_name(loc: tuple[str | int, ...]) -> str:
     return "|".join(field_names)
 
 
-def pydantic_error_formatter(error: ValidationError) -> str:
+def pydantic_error_formatter(error: ValidationError) -> str:  # noqa: PLR0911
     errors: list[dict[str, Any]] = error.errors()
     key_name = _key_name(errors[0]["loc"])
 
