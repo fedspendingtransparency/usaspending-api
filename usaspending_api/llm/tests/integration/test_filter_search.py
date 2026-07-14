@@ -374,7 +374,9 @@ class TestFilterSearch:
         assert resp.status_code == status.HTTP_200_OK
 
     @pytest.mark.django_db
-    def test_endpoint_search_id_consistency(self, client, ai_model_data, mock_llm_api_key, mock_bedrock_client, system_prompt_data):
+    def test_endpoint_search_id_consistency(
+        self, client, ai_model_data, mock_llm_api_key, mock_bedrock_client, system_prompt_data
+    ):
         """Test that all events in a stream share the same search_id (as strings)."""
         # Mock Bedrock with tool use.
         mock_bedrock_client.converse.side_effect = [
