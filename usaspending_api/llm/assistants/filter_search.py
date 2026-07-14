@@ -36,11 +36,6 @@ class FilterSearchAssistant:
         self.tool_iterations = 0
 
     @cached_property
-    def tool_config(self) -> dict[str, list[dict]]:
-        specs = [tool.description.model_dump() for tool in self.tools]
-        return {"tools": [{"toolSpec": {"inputSchema": {"json": spec.pop("input_schema")}, **spec}} for spec in specs]}
-
-    @cached_property
     def client(self) -> Any:
         """
         Lazy-load the Bedrock client so instantiation is deferred to first access and cached thereafter.
@@ -51,7 +46,8 @@ class FilterSearchAssistant:
         """
         return boto3.client("bedrock-runtime")
 
-    def _extract_text_from_content(self, content: list[dict]) -> str:
+    @staticmethod
+    def _extract_text_from_content(content: list[dict]) -> str:
         """
         Safely extract text content from Bedrock message's "content" array.
 
@@ -94,13 +90,18 @@ class FilterSearchAssistant:
         self.messages.append(output_message)
         return message
 
+    @cached_property
+    def tool_config(self) -> dict[str, list[dict]]:
+        specs = [tool.description.model_dump() for tool in self.tools]
+        return {"tools": [{"toolSpec": {"inputSchema": {"json": spec.pop("input_schema")}, **spec}} for spec in specs]}
+
     def search(self, query: str) -> Generator[dict[str, str], None, None]:
 
         yield {"search_id": str(self.session.id), "type": "search_start", "message": "Thinking..."}
 
         Message.objects.create(session=self.session, role="user", message=query, order=self.message_order)
         self.message_order += 1
-        self.messages.append([{"role": "user", "content": [{"text": query}]}])
+        self.messages.append({"role": "user", "content": [{"text": query}]})
         response = self.client.converse(
             modelId=self.model.model_id,
             messages=self.messages,
@@ -140,21 +141,24 @@ class FilterSearchAssistant:
             }
 
         # Log each search.
-        logger.info(f"Search completed for session {self.session.id}", extra={
-            "session_id": self.session.id,
-            "tool_iterations": self.tool_iterations,
-            "search_complete": search_complete,
-        })
+        logger.info(
+            f"Search completed for session {self.session.id}",
+            extra={
+                "session_id": self.session.id,
+                "tool_iterations": self.tool_iterations,
+                "search_complete": search_complete,
+            },
+        )
 
     def handle_tool_use(self, tool_requests: list[dict], message: Message) -> Generator[dict, None, None]:
         tool_result_message = {"role": "user", "content": []}
-        for tool_request in tool_requests[::-1]:
+        for tool_request in tool_requests:
             tool_use = tool_request["toolUse"]
             t = ToolUse.objects.create(name=tool_use["name"], tool_input=tool_use["input"], message=message, result="")
             tool = self.tools_by_name[tool_use["name"]]
 
             yield {
-                "search_id": str(self.session.id),
+                "search_id": self.session.id,
                 "type": "tool_start",
                 "tool_use_id": t.id,
                 "message": tool.logging(tool_use["input"]) + "\n",
@@ -166,25 +170,21 @@ class FilterSearchAssistant:
                 t.save()
 
                 yield {"search_id": str(self.session.id), "type": "tool_complete", "tool_use_id": t.id}
-
                 tool_result = {"toolUseId": tool_use["toolUseId"], "content": [{"json": result}]}
                 tool_result_message["content"].append({"toolResult": tool_result})
             except Exception as e:
                 error_result = {"error": str(e)}
                 t.result = error_result
                 t.save()
-
                 yield {
                     "search_id": str(self.session.id),
                     "type": "tool_error",
                     "tool_use_id": t.id,
-                    "message": f"Tool execution failed: {str(e)}"
+                    "message": f"Tool execution failed: {str(e)}",
                 }
 
-            # Still send results to LLM so it can handle the error.
             tool_result = {"toolUseId": tool_use["toolUseId"], "content": [{"json": result}]}
             tool_result_message["content"].append({"toolResult": tool_result})
-
             if tool.description.name == self.COMPLETION_TOOL_NAME and "error" not in result:
                 yield {"search_id": str(self.session.id), "type": "search_complete", "result": result["hash"]}
         self.messages.append(tool_result_message)
