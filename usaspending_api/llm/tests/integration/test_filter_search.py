@@ -37,6 +37,17 @@ def mock_llm_api_key():
         yield mock_validate
 
 
+@pytest.fixture
+def system_prompt_data(db):
+    """Create system prompt test data."""
+    return baker.make(
+        "llm.Prompts",
+        name="initial",
+        description="initial system prompt for the search assistant",
+        text="You are USAspending search assistant. You help the user search for federal spending."
+    )
+
+
 class TestFilterSearch:
     """Integration tests for /api/v2/llm/filter-search/ API endpoint."""
 
@@ -53,6 +64,7 @@ class TestFilterSearch:
         # The actual status depends on whether the secret is configured.
         assert resp.status_code in [status.HTTP_403_FORBIDDEN, status.HTTP_500_INTERNAL_SERVER_ERROR]
 
+    @pytest.mark.django_db
     def test_endpoint_rejects_missing_query(self, client, ai_model_data, mock_llm_api_key):
         """Test that endpoint rejects requests without query parameter."""
         resp = client.post(
@@ -241,6 +253,7 @@ class TestFilterSearch:
         for tool_event in tool_events:
             assert "tool_use_id" in tool_event
 
+    @pytest.mark.django_db
     def test_endpoint_handles_missing_ai_model(self, client, mock_llm_api_key):
         """Test that endpoint handles missing AI model gracefully."""
         # Don't create ai_model_data fixture.
@@ -261,7 +274,8 @@ class TestFilterSearch:
         assert event["type"] == "search_error"
         assert "not found" in event["message"].lower()
 
-    def test_endpoint_uses_environment_model(self, client, mock_llm_api_key, mock_bedrock_client):
+    @pytest.mark.django_db
+    def test_endpoint_uses_environment_model(self, client, mock_llm_api_key, mock_bedrock_client, system_prompt_data):
         """Test that endpoint respects LLM_DEFAULT_MODEL environment variable."""
         # Create a different model.
         custom_model = baker.make(
@@ -359,8 +373,9 @@ class TestFilterSearch:
         )
         assert resp.status_code == status.HTTP_200_OK
 
-    def test_endpoint_search_id_consistency(self, client, ai_model_data, mock_llm_api_key, mock_bedrock_client):
-        """Test that all events in a stream share the same search_id."""
+    @pytest.mark.django_db
+    def test_endpoint_search_id_consistency(self, client, ai_model_data, mock_llm_api_key, mock_bedrock_client, system_prompt_data):
+        """Test that all events in a stream share the same search_id (as strings)."""
         # Mock Bedrock with tool use.
         mock_bedrock_client.converse.side_effect = [
             {
@@ -406,6 +421,8 @@ class TestFilterSearch:
         lines = [line for line in content.strip().split("\n") if line]
         events = [json.loads(line) for line in lines]
 
-        # All events should have the same search_id.
+        # All events should have the same search_id (as strings).
         search_ids = [e["search_id"] for e in events]
         assert len(set(search_ids)) == 1, "All events should share the same search_id"
+        # Verify all search_ids are strings (not mixed types).
+        assert all(isinstance(sid, str) for sid in search_ids), "All search_ids should be strings"
