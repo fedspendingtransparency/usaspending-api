@@ -72,10 +72,19 @@ class TestFilterSearch:
             content_type="application/json",
             data=json.dumps({})
         )
-        assert resp.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
-        response_data = resp.json()
-        assert "query" in response_data["detail"].lower()
+        # Endpoint returns streaming response even for validation errors.
+        assert resp.status_code == status.HTTP_200_OK
+        assert resp["Content-Type"] == "application/x-ndjson"
 
+        # Parse streaming response.
+        content = b"".join(resp.streaming_content).decode("utf-8")
+        lines = [line for line in content.strip().split("\n") if line]
+        event = json.loads(lines[0])
+
+        assert event["type"] == "search_error"
+        assert "query" in event["message"].lower()
+
+    @pytest.mark.django_db
     def test_endpoint_rejects_empty_query(self, client, ai_model_data, mock_llm_api_key):
         """Test that endpoint rejects empty query string."""
         resp = client.post(
@@ -83,8 +92,19 @@ class TestFilterSearch:
             content_type="application/json",
             data=json.dumps({"query": ""})
         )
-        assert resp.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+        # Endpoint returns streaming response even for validation errors.
+        assert resp.status_code == status.HTTP_200_OK
+        assert resp["Content-Type"] == "application/x-ndjson"
 
+        # Parse streaming response.
+        content = b"".join(resp.streaming_content).decode("utf-8")
+        lines = [line for line in content.strip().split("\n") if line]
+        event = json.loads(lines[0])
+
+        assert event["type"] == "search_error"
+        assert "query" in event["message"].lower() or "min" in event["message"].lower()
+
+    @pytest.mark.django_db
     def test_endpoint_rejects_query_too_long(self, client, ai_model_data, mock_llm_api_key):
         """Test that endpoint rejects query strings longer than 1000 characters."""
         long_query = "a" * 1001
@@ -93,7 +113,17 @@ class TestFilterSearch:
             content_type="application/json",
             data=json.dumps({"query": long_query})
         )
-        assert resp.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+        # Endpoint returns streaming response even for validation errors.
+        assert resp.status_code == status.HTTP_200_OK
+        assert resp["Content-Type"] == "application/x-ndjson"
+
+        # Parse streaming response.
+        content = b"".join(resp.streaming_content).decode("utf-8")
+        lines = [line for line in content.strip().split("\n") if line]
+        event = json.loads(lines[0])
+
+        assert event["type"] == "search_error"
+        assert "max" in event["message"].lower() or "1000" in event["message"]
         # NOTE: The backend limitation on queries should be unnecessary if client-side restricts input length,
         #       but it's good to have in case users find ways to bypass client-side restrictions.
 
