@@ -38,20 +38,12 @@ class FilterSearchViewSet(LLMBase):
         models = [
             {"name": "filter_search", "key": "query", "type": "text", "text_type": "search", "min": 1, "max": 1000}
         ]
-        # On failure, TinyShield raises UnprocessableEntityException.
+        
         try:
+            # Validate request and retrieve AI model.
             validated_request_data = TinyShield(models).block(request.data)
             query = validated_request_data["query"]
-        except Exception as e:
-            # TinyShield validation failed - return error as streaming response.
-            return self._error_response(str(e), search_id=None)
-
-        try:
-            # Retrieve AI Model.
-            try:
-                ai_model = self._get_ai_model()
-            except ValueError as e:
-                return self._error_response(str(e), search_id=None)
+            ai_model = self._get_ai_model()
 
             # Get available tools.
             tools = self.tools
