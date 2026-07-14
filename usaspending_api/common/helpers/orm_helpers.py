@@ -1,21 +1,18 @@
-from datetime import date
 from functools import reduce
 from operator import add
 from typing import List, Union
 
 from django.contrib.postgres.aggregates import StringAgg
-from django.db import DEFAULT_DB_ALIAS
+from django.db import DEFAULT_DB_ALIAS, connections
+from django.db.backends.postgresql.psycopg_any import mogrify
 from django.db.models import Aggregate, Case, CharField, F, Func, IntegerField, QuerySet, TextField, Value, When
 from django.db.models.functions import Cast, Coalesce, Concat, LPad
 
 from usaspending_api.awards.v2.lookups.lookups import (
+    all_award_types_mappings,
     assistance_type_mapping,
     procurement_type_mapping,
-    all_award_types_mappings,
 )
-
-
-TYPES_TO_QUOTE_IN_SQL = (str, date)
 
 
 class AwardGroupsException(Exception):
@@ -103,7 +100,7 @@ class StringAggWithDefault(StringAgg):
     output_field = TextField()
 
 
-def get_fyp_notation(relation_name=None):
+def get_fyp_notation(relation_name: str = None) -> Concat:
     """
     Generates FYyyyyPpp syntax from submission table.  relation_name is the Django ORM
     relation name from the foreign key table to the submission table.
@@ -117,7 +114,7 @@ def get_fyp_notation(relation_name=None):
     )
 
 
-def get_fyq_notation(relation_name=None):
+def get_fyq_notation(relation_name: str = None) -> Concat:
     """
     Generates FYyyyyPpp syntax from submission table.  relation_name is the Django ORM
     relation name from the foreign key table to the submission table.
@@ -131,7 +128,7 @@ def get_fyq_notation(relation_name=None):
     )
 
 
-def get_fyp_or_q_notation(relation_name=None):
+def get_fyp_or_q_notation(relation_name: str = None) -> Case:
     """
     Generates FYyyyyQq or FYyyyyPpp syntax from submission table.  relation_name is the Django ORM
     relation name from the foreign key table to the submission table.
@@ -144,7 +141,7 @@ def get_fyp_or_q_notation(relation_name=None):
     )
 
 
-def get_gtas_fyp_notation():
+def get_gtas_fyp_notation() -> Concat:
     """
     Generates FYyyyyPpp syntax from gtas_sf133_balances table.
     """
@@ -157,31 +154,21 @@ def get_gtas_fyp_notation():
 
 
 def generate_raw_quoted_query(queryset: QuerySet) -> str:
-    """Generates the raw sql from a queryset with quotable types quoted.
+    """Generates the raw sql from a queryset parameters safely quoted by the DB driver.
 
-    This function provided benefit since the Django queryset.query doesn't quote
-        some types such as dates and strings. If Django is updated to fix this,
-        please use that instead.
-
-    Note: To add new python data types that should be quoted in queryset.query output,
-        add them to TYPES_TO_QUOTE_IN_SQL global
+    Compiles the queryset to parameterized SQL (%s placeholders) and uses psycopg
+    client-side binding to quote values.
     """
     sql, params = queryset.query.get_compiler(DEFAULT_DB_ALIAS).as_sql()
-    str_fix_params = []
-    for param in params:
-        if isinstance(param, TYPES_TO_QUOTE_IN_SQL):
-            # single quotes are escaped with two '' for strings in sql
-            param = param.replace("'", "''") if isinstance(param, str) else param
-            str_fix_param = "'{}'".format(param)
-        elif isinstance(param, list):
-            str_fix_param = "ARRAY{}".format(param)
-        else:
-            str_fix_param = param
-        str_fix_params.append(str_fix_param)
-    return sql % tuple(str_fix_params)
+    if not params:
+        return sql
+    quoted_sql = mogrify(sql, params, connections[DEFAULT_DB_ALIAS])
+    if isinstance(quoted_sql, bytes):
+        quoted_sql = quoted_sql.decode()
+    return quoted_sql
 
 
-def obtain_category_from_award_group(type_list):
+def obtain_category_from_award_group(type_list: list) -> str:
     if not type_list:
         raise AwardGroupsException("Invalid award type list: No types provided.")
 
@@ -210,7 +197,7 @@ def award_types_are_valid_groups(type_list: list) -> bool:
     return is_valid
 
 
-def subaward_types_are_valid_groups(type_list):
+def subaward_types_are_valid_groups(type_list: list) -> bool:
     """Check to ensure the award type list is a subset of one and only one award group.
 
     Groups: are "Procurement" and "Assistance"
