@@ -38,7 +38,7 @@ class FilterSearchViewSet(LLMBase):
         models = [
             {"name": "filter_search", "key": "query", "type": "text", "text_type": "search", "min": 1, "max": 1000}
         ]
-        
+
         try:
             # Validate request and retrieve AI model.
             validated_request_data = TinyShield(models).block(request.data)
