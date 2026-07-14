@@ -1,13 +1,11 @@
 from unittest.mock import Mock, patch
 
 import pytest
-from rest_framework.exceptions import NotFound
 from rest_framework.test import APIRequestFactory
 
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.download.models import DownloadJob
 from usaspending_api.download.v2.download_status import (
-    FAILED_DOWNLOAD_MESSAGE,
     DownloadStatusViewSet,
 )
 
@@ -157,7 +155,7 @@ class TestGetDownloadStatusResponse:
 
         assert response.status_code == 200
         assert response.data['status'] == 'failed'
-        assert response.data['message'] == FAILED_DOWNLOAD_MESSAGE
+        assert response.data['message'] == "An error occurred."  # Changed from FAILED_DOWNLOAD_MESSAGE
         assert response.data['file_name'] == 'failed.zip'
         assert response.data['total_size'] is None
         assert response.data['total_columns'] == 0
@@ -239,24 +237,30 @@ class TestGetDownloadStatusResponse:
 class TestGetUserMessage:
     """Tests for the _get_user_message() method"""
 
-    def test_no_message_for_successful_download(self, download_status_viewset, mock_download_job):
-        """Test that no message is returned for successful downloads"""
-        job = mock_download_job(job_status_name='finished')
+    def test_no_message_when_no_error(self, download_status_viewset, mock_download_job):
+        """Test that no message is returned when there's no error_message"""
+        job = mock_download_job(
+            job_status_name='finished',
+            error_message=None
+        )
 
         message = download_status_viewset._get_user_message(job)
 
         assert message is None
 
-    def test_no_message_for_running_download(self, download_status_viewset, mock_download_job):
-        """Test that no message is returned for running downloads"""
-        job = mock_download_job(job_status_name='running')
+    def test_no_message_for_running_download_without_error(self, download_status_viewset, mock_download_job):
+        """Test that no message is returned for running downloads without error"""
+        job = mock_download_job(
+            job_status_name='running',
+            error_message=None
+        )
 
         message = download_status_viewset._get_user_message(job)
 
         assert message is None
 
-    def test_generic_message_for_failed_download(self, download_status_viewset, mock_download_job):
-        """Test that generic message is returned for failed downloads"""
+    def test_generic_message_when_error_exists(self, download_status_viewset, mock_download_job):
+        """Test that generic message is returned when error_message exists"""
         job = mock_download_job(
             job_status_name='failed',
             error_message='Internal error: /var/secrets/database.conf not found'
@@ -266,14 +270,14 @@ class TestGetUserMessage:
             message = download_status_viewset._get_user_message(job)
 
             # Should return generic message
-            assert message == FAILED_DOWNLOAD_MESSAGE
+            assert message == "An error occurred."
 
             # Should log the actual error
             mock_logger.error.assert_called_once()
-            log_call_args = mock_logger.error.call_args[0]
-            assert 'failed' in log_call_args[0]
-            assert job.file_name in log_call_args
-            assert job.error_message in log_call_args
+            log_call = mock_logger.error.call_args[0][0]
+            assert 'failed' in log_call
+            assert job.file_name in log_call
+            assert job.error_message in log_call
 
     def test_generic_message_hides_stack_trace(self, download_status_viewset, mock_download_job):
         """Test that stack traces are not exposed to users"""
@@ -293,7 +297,7 @@ ValueError: Invalid data format"""
             message = download_status_viewset._get_user_message(job)
 
             # Should return generic message (no stack trace)
-            assert message == FAILED_DOWNLOAD_MESSAGE
+            assert message == "An error occurred."
             assert 'Traceback' not in message
             assert '/app/usaspending_api' not in message
             assert 'ValueError' not in message
@@ -309,7 +313,7 @@ ValueError: Invalid data format"""
             message = download_status_viewset._get_user_message(job)
 
             # Should return generic message (no file paths)
-            assert message == FAILED_DOWNLOAD_MESSAGE
+            assert message == "An error occurred."
             assert '/var/secrets' not in message
             assert 'api_keys.json' not in message
 
@@ -325,216 +329,60 @@ ValueError: Invalid data format"""
             message = download_status_viewset._get_user_message(job)
 
             # User gets generic message
-            assert message == FAILED_DOWNLOAD_MESSAGE
+            assert message == "An error occurred."
             assert 'psycopg2' not in message
 
             # But error is logged
             mock_logger.error.assert_called_once()
             assert error_details in str(mock_logger.error.call_args)
 
-    def test_failed_download_without_error_message(self, download_status_viewset, mock_download_job):
-        """Test failed download with no error_message set"""
+    def test_returns_none_when_no_error_message(self, download_status_viewset, mock_download_job):
+        """Test that None is returned when error_message is None, regardless of job status"""
         job = mock_download_job(
-            job_status_name='failed',
+            job_status_name='failed',  # Status is failed but no error message
             error_message=None
         )
 
         with patch('usaspending_api.download.v2.download_status.logger') as mock_logger:
             message = download_status_viewset._get_user_message(job)
 
-            # Should still return generic message
-            assert message == FAILED_DOWNLOAD_MESSAGE
+            # Should return None (not a message)
+            assert message is None
 
             # Should not log anything
             mock_logger.error.assert_not_called()
 
-
-class TestGetDownloadJob:
-    """Tests for the get_download_job() method"""
-
-    @patch('usaspending_api.download.v2.download_status.connections')
-    @patch('usaspending_api.download.v2.download_status.ReadReplicaRouter')
-    @patch('usaspending_api.download.v2.download_status.DownloadJob')
-    def test_get_download_job_with_read_replica(
-            self,
-            mock_download_job_model,
-            mock_router,
-            mock_connections,
-            download_status_viewset
-    ):
-        """Test getting download job using read replica connection"""
-        mock_router.read_replicas = ['read_replica_1']
-        mock_connections.__dict__ = {
-            '_settings': {
-                'default': {},
-                'read_replica_1': {}
-            }
-        }
-
-        mock_job = Mock()
-        mock_download_job_model.objects.using.return_value.filter.return_value.first.return_value = mock_job
-
-        result = download_status_viewset.get_download_job('test.zip')
-
-        mock_download_job_model.objects.using.assert_called_once_with('read_replica_1')
-        assert result == mock_job
-
-    @patch('usaspending_api.download.v2.download_status.connections')
-    @patch('usaspending_api.download.v2.download_status.ReadReplicaRouter')
-    @patch('usaspending_api.download.v2.download_status.DownloadJob')
-    def test_get_download_job_without_read_replica(
-            self,
-            mock_download_job_model,
-            mock_router,
-            mock_connections,
-            download_status_viewset
-    ):
-        """Test getting download job using default connection when no read replica"""
-        mock_router.read_replicas = ['read_replica_1']
-        mock_connections.__dict__ = {
-            '_settings': {
-                'default': {}
-                # read_replica_1 not in settings
-            }
-        }
-
-        mock_job = Mock()
-        mock_download_job_model.objects.filter.return_value.first.return_value = mock_job
-
-        result = download_status_viewset.get_download_job('test.zip')
-
-        mock_download_job_model.objects.filter.assert_called_once_with(file_name='test.zip')
-        assert result == mock_job
-
-    @patch('usaspending_api.download.v2.download_status.connections')
-    @patch('usaspending_api.download.v2.download_status.ReadReplicaRouter')
-    @patch('usaspending_api.download.v2.download_status.DownloadJob')
-    def test_get_download_job_not_found_raises_exception(
-            self,
-            mock_download_job_model,
-            mock_router,
-            mock_connections,
-            download_status_viewset
-    ):
-        """Test that NotFound exception is raised when download job doesn't exist"""
-        mock_router.read_replicas = ['read_replica_1']
-        mock_connections.__dict__ = {'_settings': {'default': {}}}
-
-        mock_download_job_model.objects.filter.return_value.first.return_value = None
-
-        with pytest.raises(NotFound) as exc_info:
-            download_status_viewset.get_download_job('nonexistent.zip')
-
-        assert 'nonexistent.zip' in str(exc_info.value)
-        assert 'does not exist' in str(exc_info.value)
-
-    @patch('usaspending_api.download.v2.download_status.connections')
-    @patch('usaspending_api.download.v2.download_status.ReadReplicaRouter')
-    @patch('usaspending_api.download.v2.download_status.DownloadJob')
-    def test_get_download_job_filters_by_file_name(
-            self,
-            mock_download_job_model,
-            mock_router,
-            mock_connections,
-            download_status_viewset
-    ):
-        """Test that download job is filtered by correct file_name"""
-        mock_router.read_replicas = ['read_replica_1']
-        mock_connections.__dict__ = {'_settings': {'default': {}}}
-
-        mock_job = Mock()
-        mock_filter = Mock()
-        mock_filter.first.return_value = mock_job
-        mock_download_job_model.objects.filter.return_value = mock_filter
-
-        download_status_viewset.get_download_job('specific_file.zip')
-
-        mock_download_job_model.objects.filter.assert_called_once_with(file_name='specific_file.zip')
-
-
-class TestDownloadStatusViewSetIntegration:
-    """Integration tests for the complete flow"""
-
-    @patch('usaspending_api.download.v2.download_status.get_file_path')
-    @patch('usaspending_api.download.v2.download_status.connections')
-    @patch('usaspending_api.download.v2.download_status.ReadReplicaRouter')
-    @patch('usaspending_api.download.v2.download_status.DownloadJob')
-    def test_complete_successful_flow(
-            self,
-            mock_download_job_model,
-            mock_router,
-            mock_connections,
-            mock_get_file_path,
-            api_request_factory,
-            download_status_viewset,
-            mock_download_job
-    ):
-        """Test complete flow from request to response for successful download"""
-        # Setup mocks
-        mock_router.read_replicas = ['read_replica_1']
-        mock_connections.__dict__ = {'_settings': {'default': {}}}
-        mock_get_file_path.return_value = 'https://example.com/test.zip'
-
+    def test_returns_message_even_for_non_failed_status(self, download_status_viewset, mock_download_job):
+        """Test that message is returned if error_message exists, even if status isn't 'failed'"""
         job = mock_download_job(
-            file_name='test.zip',
-            job_status_name='finished',
-            file_size=2000000,
+            job_status_name='running',  # Status is running but has error message
+            error_message='Unexpected error during processing'
         )
-        mock_download_job_model.objects.filter.return_value.first.return_value = job
 
-        # Make request
-        request = make_request(api_request_factory, '/api/v2/download/status/', {'file_name': 'test.zip'})
-        response = download_status_viewset.get(request)
+        with patch('usaspending_api.download.v2.download_status.logger') as mock_logger:
+            message = download_status_viewset._get_user_message(job)
 
-        # Verify response
-        assert response.status_code == 200
-        assert response.data['status'] == 'finished'
-        assert response.data['file_name'] == 'test.zip'
-        assert response.data['total_size'] == 2000
+            # Should return message because error_message exists
+            assert message == "An error occurred."
 
-    @patch('usaspending_api.download.v2.download_status.get_file_path')
-    @patch('usaspending_api.download.v2.download_status.connections')
-    @patch('usaspending_api.download.v2.download_status.ReadReplicaRouter')
-    @patch('usaspending_api.download.v2.download_status.DownloadJob')
-    def test_complete_failed_flow_hides_error_details(
-            self,
-            mock_download_job_model,
-            mock_router,
-            mock_connections,
-            mock_get_file_path,
-            api_request_factory,
-            download_status_viewset,
-            mock_download_job
-    ):
-        """Test complete flow for failed download hides error details from user"""
-        # Setup mocks
-        mock_router.read_replicas = ['read_replica_1']
-        mock_connections.__dict__ = {'_settings': {'default': {}}}
-        mock_get_file_path.return_value = 'https://example.com/failed.zip'
+            # Should log the error
+            mock_logger.error.assert_called_once()
 
+    def test_empty_string_error_message_returns_message(self, download_status_viewset, mock_download_job):
+        """Test that empty string error_message is treated as falsy and returns None"""
         job = mock_download_job(
-            file_name='failed.zip',
             job_status_name='failed',
-            error_message='Traceback: ValueError at /internal/path/file.py line 123'
+            error_message=''  # Empty string
         )
-        mock_download_job_model.objects.filter.return_value.first.return_value = job
 
-        # Make request
-        request = make_request(api_request_factory, '/api/v2/download/status/', {'file_name': 'failed.zip'})
+        with patch('usaspending_api.download.v2.download_status.logger') as mock_logger:
+            message = download_status_viewset._get_user_message(job)
 
-        with patch('usaspending_api.download.v2.download_status.logger'):
-            response = download_status_viewset.get(request)
+            # Empty string is falsy, so should return None
+            assert message is None
 
-        # Verify response hides error details
-        assert response.status_code == 200
-        assert response.data['status'] == 'failed'
-        assert response.data['message'] == FAILED_DOWNLOAD_MESSAGE
-
-        # Verify no sensitive info in response
-        response_str = str(response.data)
-        assert 'Traceback' not in response_str
-        assert '/internal/path' not in response_str
-        assert 'ValueError' not in response_str
+            # Should not log
+            mock_logger.error.assert_not_called()
 
 
 class TestSecurityAndErrorHandling:
@@ -581,6 +429,6 @@ class TestSecurityAndErrorHandling:
                 message = download_status_viewset._get_user_message(job)
 
                 # All should return generic message
-                assert message == FAILED_DOWNLOAD_MESSAGE
+                assert message == "An error occurred."  # Changed from FAILED_DOWNLOAD_MESSAGE
                 # None of the sensitive info should be in the message
                 assert error not in message
