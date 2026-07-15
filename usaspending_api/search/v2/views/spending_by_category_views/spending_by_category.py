@@ -1,7 +1,7 @@
 import copy
 import logging
 from abc import ABCMeta, abstractmethod
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import List, Optional, Union
 
 from django.conf import settings
@@ -126,8 +126,10 @@ class AbstractSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
     def perform_search(self, original_filters: dict) -> dict:
         if self.spending_level == SpendingLevel.SUBAWARD:
             # Swap the agg_key fields for the equivalent Subaward fields, if applicable
-            self.category.agg_key = self.subaward_agg_key_mapper.get(self.category.agg_key, self.category.agg_key)
-
+            self.category = replace(
+                self.category,
+                agg_key=self.subaward_agg_key_mapper.get(self.category.agg_key, self.category.agg_key)
+            )
             query_with_filters = QueryWithFilters(QueryType.SUBAWARDS)
             filter_query = query_with_filters.generate_elasticsearch_query(self.filters)
             results = self.query_elasticsearch(filter_query)
