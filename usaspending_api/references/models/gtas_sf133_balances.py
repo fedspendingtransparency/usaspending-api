@@ -59,4 +59,14 @@ class GTASSF133Balances(models.Model):
     class Meta:
         managed = True
         db_table = "gtas_sf133_balances"
-        unique_together = ("fiscal_year", "fiscal_period", "disaster_emergency_fund", "tas_rendering_label")
+        unique_together = (
+            "fiscal_year",
+            "fiscal_period",
+            "disaster_emergency_fund",
+            "tas_rendering_label",
+            "budget_object_class",
+            "program_activity_reporting_key",
+            "prior_year_adjustment",
+            "by_direct_reimbursable_fun",
+            "bea_category",
+        )

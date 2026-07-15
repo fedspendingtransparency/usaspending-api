@@ -1,5 +1,5 @@
-from django.contrib.postgres.constraints import OpClass
 from django.contrib.postgres.fields import ArrayField
+from django.contrib.postgres.indexes import OpClass
 from django.db import models
 from django.db.models import F, Q
 from django.db.models.functions import Upper
@@ -259,6 +259,7 @@ class AwardSearch(models.Model):
         max_digits=23, decimal_places=2, blank=True, null=True
     )
     program_activities = models.JSONField(null=True)
+    object_classes = models.JSONField(null=True)
     transaction_count = models.IntegerField(null=True)
 
     objects = CTEManager()

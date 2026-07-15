@@ -1311,7 +1311,7 @@ def test_load_award_financial_download(
             "recipient_name": "FABS RECIPIENT 12345",
             "recipient_name_raw": "FABS RECIPIENT 12345",
             "recipient_parent_uei": "PARENTUEI12345",
-            "recipient_parent_duns": "PARENTUEI12345",
+            "recipient_parent_duns": "PARENTDUNS12345",
             "recipient_parent_name": "PARENT RECIPIENT 12345",
             "recipient_parent_name_raw": "PARENT RECIPIENT 12345",
             "recipient_country": "USA",

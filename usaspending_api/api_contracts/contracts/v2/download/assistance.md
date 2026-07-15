@@ -62,7 +62,17 @@ Creates a new download job for the requested award and returns a link to a zippe
                             "10",
                             "03",
                             "11",
-                            "09"
+                            "09",
+                            "F001",
+                            "F002",
+                            "F003",
+                            "F004",
+                            "F005",
+                            "F006",
+                            "F007",
+                            "F008",
+                            "F009",
+                            "F010"
                         ]
                     },
                     "include_data_dictionary": true,
