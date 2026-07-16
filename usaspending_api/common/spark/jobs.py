@@ -166,7 +166,7 @@ class EmrServerlessStrategy(_AbstractStrategy):
             mode="BATCH",
             jobDriver={
                 "sparkSubmit": {
-                    "entryPoint": f"s3://{CONFIG.SPARK_S3_BUCKET}/master/manage.py",
+                    "entryPoint": f"s3://{CONFIG.SPARK_S3_BUCKET}/manage.py",
                     "entryPointArguments": [command_name, *command_options],
                 }
             },
