@@ -32,7 +32,7 @@ from usaspending_api.search.v2.views.enums import SpendingLevel
 logger = logging.getLogger(__name__)
 
 
-@dataclass
+@dataclass(frozen=True)
 class Category:
     name: str
     agg_key: str
@@ -67,6 +67,10 @@ class AbstractSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
     @cache_response()
     def post(self, request: Request, *args, **kwargs) -> Response:
         original_filters = request.data.get("filters")
+
+        # Creates an instance copy for the category for each request
+        # Prevents modifications from previous requests affecting current requests
+        self.category = copy.deepcopy(self.category)
 
         # Handles case where the request has already been validated by an implementation of the abstract class
         validated_payload = kwargs.get("validated_payload", self.validate_payload(request))
