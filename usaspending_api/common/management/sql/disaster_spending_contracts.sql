@@ -182,7 +182,7 @@ SELECT
     "transaction_fpds"."cost_accounting_standards" AS "cost_accounting_standards_clause_code",
     "transaction_fpds"."cost_accounting_stand_desc" AS "cost_accounting_standards_clause",
     "transaction_fpds"."government_furnished_prope" AS "government_furnished_property_code",
-    "transaction_fpds"."government_furnished_prope" AS "government_furnished_property",
+    "transaction_fpds"."government_furnished_desc" AS "government_furnished_property",
     "transaction_fpds"."sea_transportation" AS "sea_transportation_code",
     "transaction_fpds"."sea_transportation_desc" AS "sea_transportation",
     "transaction_fpds"."consolidated_contract" AS "consolidated_contract_code",

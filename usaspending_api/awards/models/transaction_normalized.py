@@ -152,7 +152,9 @@ class TransactionNormalized(models.Model):
     class Meta:
         managed = False
         db_table = "vw_transaction_normalized"
-        index_together = ["award", "action_date"]
+        indexes = [
+            models.Index(fields=["award", "action_date"])
+        ]
 
 
 NORM_ALT_COL_NAMES_IN_TRANSACTION_SEARCH = {

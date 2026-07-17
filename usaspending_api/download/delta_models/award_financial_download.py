@@ -232,7 +232,7 @@ def award_financial_df(spark: SparkSession) -> DataFrame:
             ts.recipient_name,
             ts.recipient_name_raw,
             ts.parent_uei.alias("recipient_parent_uei"),
-            ts.parent_uei.alias("recipient_parent_duns"),
+            ts.parent_recipient_unique_id.alias("recipient_parent_duns"),
             ts.parent_recipient_name.alias("recipient_parent_name"),
             ts.parent_recipient_name_raw.alias("recipient_parent_name_raw"),
             ts.recipient_location_country_code.alias("recipient_country"),
