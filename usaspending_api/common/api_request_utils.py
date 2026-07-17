@@ -533,9 +533,11 @@ class LLMAPIKeyHandler:
         """
 
         @wraps(function)
-        def wrapper(*args: Any, **kwargs: Any) -> Response:
-            # Extract request from args
-            request = args[0] if args else kwargs.get('request')
+        def wrapper(*args: Any, **kwargs: Any) -> Any:
+            # Extract request from kwargs
+            request = kwargs.get('request')
+            if not request and args:
+                request = next((arg for arg in args if hasattr(arg, 'headers')), None)
 
             # Validate request and authentication
             error_response = LLMAPIKeyHandler._validate_llm_request(request)
