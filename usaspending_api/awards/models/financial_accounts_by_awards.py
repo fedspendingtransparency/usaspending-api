@@ -1,6 +1,6 @@
 from django.db import models
-from django_cte import CTEManager
 from django.db.models import Q
+from django_cte import CTEManager
 
 from usaspending_api.common.models import DataSourceTrackedModel
 
@@ -154,21 +154,6 @@ class FinancialAccountsByAwards(AbstractFinancialAccountsByAwards):
     class Meta:
         managed = True
         db_table = "financial_accounts_by_awards"
-        index_together = [
-            # This index dramatically sped up disaster endpoint queries.  VERY IMPORTANT!  It needs
-            # to cover all of the fields being queried in order to eek out maximum performance.
-            [
-                "disaster_emergency_fund",
-                "submission",
-                "award",
-                "piid",
-                "fain",
-                "uri",
-                "parent_award_id",
-                "transaction_obligated_amount",
-                "gross_outlay_amount_by_award_cpe",
-            ]
-        ]
         indexes = [
             models.Index(
                 fields=["submission_id", "treasury_account_id"],
@@ -192,5 +177,20 @@ class FinancialAccountsByAwards(AbstractFinancialAccountsByAwards):
                 ],
                 name="faba_subid_awardkey_sums_idx",
                 condition=Q(disaster_emergency_fund__in=["L", "M", "N", "O", "P", "U", "V"]),
+            ),
+            # This index dramatically sped up disaster endpoint queries.  VERY IMPORTANT!  It needs
+            # to cover all of the fields being queried in order to eek out maximum performance.
+            models.Index(
+                fields=[
+                    "disaster_emergency_fund",
+                    "submission",
+                    "award",
+                    "piid",
+                    "fain",
+                    "uri",
+                    "parent_award_id",
+                    "transaction_obligated_amount",
+                    "gross_outlay_amount_by_award_cpe",
+                ]
             ),
         ]
