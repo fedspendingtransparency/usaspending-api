@@ -571,7 +571,7 @@ class LLMAPIKeyHandler:
         llm_api_key, secret_name = validation_result
 
         # Retrieve and validate secret from AWS
-        stored_uuid = "72212483-d370-4efc-818e-602af6801357" #LLMAPIKeyHandler._get_secret_uuid(secret_name)
+        stored_uuid = LLMAPIKeyHandler._get_secret_uuid(secret_name)
         if isinstance(stored_uuid, Response):
             return stored_uuid
 
