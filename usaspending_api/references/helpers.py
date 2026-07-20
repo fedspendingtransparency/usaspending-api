@@ -1,3 +1,4 @@
+import hashlib
 from typing import Optional
 
 from django.contrib.postgres.aggregates import ArrayAgg
@@ -51,3 +52,15 @@ def get_def_codes_by_group(group_names: list[str] | None) -> dict[str, list[str]
         )
 
     return {group_name: def_codes for group_name, def_codes in def_codes_by_group}
+
+
+def create_hash(payload):
+    """
+    Create a MD5 hash from a Python dict
+    """
+    m = hashlib.md5(usedforsecurity=False)
+    m.update(payload)
+    hash_key = m.hexdigest().encode("utf8")
+    if len(str(hash_key)) > 2 and str(hash_key)[:2] == "b'":
+        hash_key = str(hash_key)[2:-1]
+    return hash_key
