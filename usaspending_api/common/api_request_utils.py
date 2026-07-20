@@ -535,9 +535,17 @@ class LLMAPIKeyHandler:
         @wraps(function)
         def wrapper(*args: Any, **kwargs: Any) -> Any:
             # Extract request from kwargs
+            required_header = 'X-LLM-API-Key'
             request = kwargs.get('request')
+
             if not request and args:
-                request = next((arg for arg in args if hasattr(arg, 'headers')), None)
+                request = next((
+                    arg
+                    for arg in args
+                    if (
+                        hasattr(arg, 'headers')
+                        and required_header.lower() in [header.lower() for header in arg.headers]
+                )), None)
 
             # Validate request and authentication
             error_response = LLMAPIKeyHandler._validate_llm_request(request)
