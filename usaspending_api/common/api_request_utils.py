@@ -534,13 +534,25 @@ class LLMAPIKeyHandler:
         @wraps(function)
         def wrapper(*args: Any, **kwargs: Any) -> Any:
             # Extract request from kwargs
+            required_header = 'X-LLM-API-Key'
             request = kwargs.get('request')
 
             if not request and args:
+                # Import here to avoid circular dependency
+                from rest_framework.request import Request as DRFRequest
+
+                # Find the request object by checking if it's a DRF Request type,
+                # or if it has the required header (to distinguish from OPTIONS requests).
                 request = next((
                     arg
                     for arg in args
-                    if hasattr(arg, 'headers')
+                    if (
+                        hasattr(arg, 'headers')
+                        and (
+                            isinstance(arg, DRFRequest)
+                            or required_header.lower() in [header.lower() for header in arg.headers]
+                        )
+                    )
                 ), None)
 
             # Validate request and authentication
