@@ -15,8 +15,21 @@ def sample_filters():
     """Fixture providing sample valid filter data."""
     return {
         "time_period": [{"start_date": "2023-01-01", "end_date": "2023-12-31"}],
-        "award_type_codes": ["A", "B"],
-        "agencies": [{"type": "awarding", "tier": "toptier", "name": "Department of Agriculture"}],
+        "timePeriodType": "dr",
+        "awardType": ["A", "B"],
+        "selectedAwardingAgencies": {
+            "1_toptier": {
+                "id": 1,
+                "agencyType": "toptier",
+                "toptier_flag": True,
+                "toptier_agency": {
+                    "id": 1,
+                    "toptier_code": "001",
+                    "abbreviation": "USDA",
+                    "name": "Department of Agriculture",
+                },
+            }
+        },
     }
 
 
@@ -24,6 +37,7 @@ def sample_filters():
 def mock_filter_hash():
     """Fixture to mock FilterHash model."""
     with patch("usaspending_api.llm.tools.execute_filter.FilterHash") as mock:
+        mock.DoesNotExist = FilterHash.DoesNotExist
         yield mock
 
 
@@ -62,7 +76,7 @@ class TestInputValidation:
 
     def test_partial_valid_filters(self):
         """Test filters with only some valid fields."""
-        result = execute_filter(award_type_codes=["A", "B"], invalid_field="should_be_ignored")
+        result = execute_filter(awardType=["A", "B"], invalid_field="should_be_ignored")
 
         # Should fail validation due to invalid field
         assert "error" in result
@@ -75,14 +89,16 @@ class TestFilterProcessing:
         """Test that filters are properly converted to FilterRequest format."""
         mock_filter_hash.objects.get.side_effect = FilterHash.DoesNotExist
         mock_instance = MagicMock()
+        mock_instance.hash = "test_hash_value"
         mock_filter_hash.return_value = mock_instance
 
         result = execute_filter(**sample_filters)
 
         assert "hash" in result
-        # Verify FilterHash was called with proper structure
-        call_args = mock_filter_hash.call_args
-        saved_filter = json.loads(call_args[1]["filter"])
+        assert mock_filter_hash.called
+        assert mock_instance.save.called
+        call_args = mock_filter_hash.call_args[1]
+        saved_filter = json.loads(call_args["filter"])
         assert "filters" in saved_filter
 
     def test_exclude_none_values(self, mock_filter_hash):
@@ -91,13 +107,13 @@ class TestFilterProcessing:
         mock_instance = MagicMock()
         mock_filter_hash.return_value = mock_instance
 
-        result = execute_filter(award_type_codes=["A"])
+        result = execute_filter(awardType=["A"])
 
         call_args = mock_filter_hash.call_args
         saved_filter = json.loads(call_args[1]["filter"])
 
         # Should only contain non-None fields
-        assert "award_type_codes" in saved_filter["filters"]
+        assert "awardType" in saved_filter["filters"]
         # None fields should not be present
         assert all(v is not None for v in saved_filter["filters"].values())
 
@@ -141,7 +157,22 @@ class TestFilterProcessing:
 
         # Create filters with multiple fields
         result = execute_filter(
-            award_type_codes=["A"], agencies=[{"type": "awarding"}], time_period=[{"start_date": "2023-01-01"}]
+            awardType=["A"],
+            selectedAwardingAgencies={
+                "1_toptier": {
+                    "id": 1,
+                    "agencyType": "toptier",
+                    "toptier_flag": True,
+                    "toptier_agency": {
+                        "id": 1,
+                        "toptier_code": "001",
+                        "abbreviation": "USDA",
+                        "name": "Department of Agriculture",
+                    },
+                }
+            },
+            timePeriodType="dr",
+            time_period=[{"start_date": "2023-01-01", "end_date": "2023-12-31"}],
         )
 
         # Verify hash was created (keys were sorted)
@@ -159,7 +190,7 @@ class TestHashCreationAndStorage:
         mock_instance = MagicMock()
         mock_filter_hash.return_value = mock_instance
 
-        result = execute_filter(award_type_codes=["A"])
+        result = execute_filter(awardType=["A"])
 
         # Verify create_hash was called
         assert mock_create_hash.called
@@ -172,7 +203,7 @@ class TestHashCreationAndStorage:
         existing_hash.hash = "existing_hash_456"
         mock_filter_hash.objects.get.return_value = existing_hash
 
-        result = execute_filter(award_type_codes=["A"])
+        result = execute_filter(awardType=["A"])
 
         # Should return existing hash
         assert "hash" in result
@@ -185,7 +216,7 @@ class TestHashCreationAndStorage:
         mock_instance = MagicMock()
         mock_filter_hash.return_value = mock_instance
 
-        result = execute_filter(award_type_codes=["A"])
+        result = execute_filter(awardType=["A"])
 
         # Verify FilterHash was created
         assert mock_filter_hash.called
@@ -200,14 +231,14 @@ class TestHashCreationAndStorage:
         mock_instance = MagicMock()
         mock_filter_hash.return_value = mock_instance
 
-        result = execute_filter(award_type_codes=["A", "B"])
+        result = execute_filter(awardType=["A", "B"])
 
         # Verify FilterHash was called with filter JSON
         call_args = mock_filter_hash.call_args
         assert "filter" in call_args[1]
         saved_filter = json.loads(call_args[1]["filter"])
         assert "filters" in saved_filter
-        assert saved_filter["filters"]["award_type_codes"] == ["A", "B"]
+        assert saved_filter["filters"]["awardType"] == ["A", "B"]
 
     def test_same_filters_produce_same_hash(self, mock_filter_hash):
         """Test that identical filters produce identical hashes."""
@@ -215,7 +246,7 @@ class TestHashCreationAndStorage:
         mock_instance = MagicMock()
         mock_filter_hash.return_value = mock_instance
 
-        filters = {"award_type_codes": ["A", "B"]}
+        filters = {"awardType": ["A", "B"]}
 
         result1 = execute_filter(**filters)
         result2 = execute_filter(**filters)
@@ -229,8 +260,8 @@ class TestHashCreationAndStorage:
         mock_instance = MagicMock()
         mock_filter_hash.return_value = mock_instance
 
-        result1 = execute_filter(award_type_codes=["A"])
-        result2 = execute_filter(award_type_codes=["B"])
+        result1 = execute_filter(awardType=["A"])
+        result2 = execute_filter(awardType=["B"])
 
         # Should produce different hashes
         assert result1["hash"] != result2["hash"]
@@ -255,7 +286,7 @@ class TestErrorHandling:
         mock_instance.save.side_effect = Exception("Database error")
         mock_filter_hash.return_value = mock_instance
 
-        result = execute_filter(award_type_codes=["A"])
+        result = execute_filter(awardType=["A"])
 
         assert "error" in result
         assert "message" in result
@@ -268,7 +299,7 @@ class TestErrorHandling:
         mock_instance.save.side_effect = Exception("Specific database error")
         mock_filter_hash.return_value = mock_instance
 
-        result = execute_filter(award_type_codes=["A"])
+        result = execute_filter(awardType=["A"])
 
         assert "Specific database error" in result["error"]
 
@@ -314,12 +345,12 @@ class TestAIToolImplementation:
 
     def test_logging_function_formats_filters(self):
         """Test that logging function formats filters properly."""
-        tool_input = {"award_type_codes": ["A", "B"], "time_period": [{"start_date": "2023-01-01"}]}
+        tool_input = {"awardType": ["A", "B"], "time_period": [{"start_date": "2023-01-01"}]}
 
         log_msg = execute_filter_tool.logging(tool_input)
 
         assert isinstance(log_msg, str)
-        assert "award_type_codes" in log_msg
+        assert "awardType" in log_msg
         assert "time_period" in log_msg
 
     def test_logging_function_handles_empty_input(self):
@@ -335,7 +366,7 @@ class TestAIToolImplementation:
         mock_instance = MagicMock()
         mock_filter_hash.return_value = mock_instance
 
-        result = execute_filter_tool.function(award_type_codes=["A"])
+        result = execute_filter_tool.function(awardType=["A"])
 
         assert "hash" in result
 
@@ -379,12 +410,22 @@ class TestIntegrationWithFiltersModel:
         mock_filter_hash.return_value = mock_instance
 
         result = execute_filter(
-            award_type_codes=["A", "B", "C"],
+            awardType=["A", "B", "C"],
+            timePeriodType="dr",
             time_period=[{"start_date": "2023-01-01", "end_date": "2023-12-31"}],
-            agencies=[
-                {"type": "awarding", "tier": "toptier", "name": "USDA"},
-                {"type": "funding", "tier": "subtier", "name": "Forest Service"},
-            ],
+            selectedAwardingAgencies={
+                "1_toptier": {
+                    "id": 1,
+                    "agencyType": "toptier",
+                    "toptier_flag": True,
+                    "toptier_agency": {
+                        "id": 1,
+                        "toptier_code": "001",
+                        "abbreviation": "USDA",
+                        "name": "Department of Agriculture",
+                    },
+                }
+            },
             keyword=["fire", "prevention"],
         )
 
@@ -403,7 +444,7 @@ class TestEdgeCases:
         # Create large filter set
         large_codes = [f"CODE_{i}" for i in range(100)]
 
-        result = execute_filter(award_type_codes=large_codes)
+        result = execute_filter(awardType=large_codes)
 
         assert "hash" in result
 
@@ -434,9 +475,19 @@ class TestEdgeCases:
         mock_filter_hash.return_value = mock_instance
 
         result = execute_filter(
-            agencies=[
-                {"type": "awarding", "tier": "toptier", "name": "Department of Agriculture", "toptier_name": "USDA"}
-            ]
+            selectedAwardingAgencies={
+                "1_toptier": {
+                    "id": 1,
+                    "agencyType": "toptier",
+                    "toptier_flag": True,
+                    "toptier_agency": {
+                        "id": 1,
+                        "toptier_code": "001",
+                        "abbreviation": "USDA",
+                        "name": "Department of Agriculture",
+                    },
+                }
+            },
         )
 
         assert "hash" in result
@@ -447,7 +498,7 @@ class TestEdgeCases:
         mock_instance = MagicMock()
         mock_filter_hash.return_value = mock_instance
 
-        result = execute_filter(award_type_codes=[], keyword=[])
+        result = execute_filter(awardType=[], keyword=[])
 
         assert "hash" in result
 
@@ -462,9 +513,22 @@ class TestRealWorldScenarios:
         mock_filter_hash.return_value = mock_instance
 
         result = execute_filter(
+            timePeriodType="dr",
             time_period=[{"start_date": "2023-01-01", "end_date": "2023-12-31"}],
-            award_type_codes=["A", "B", "C", "D"],
-            agencies=[{"type": "awarding", "tier": "toptier", "name": "Department of Agriculture"}],
+            awardType=["A", "B", "C", "D"],
+            selectedAwardingAgencies={
+                "1_toptier": {
+                    "id": 1,
+                    "agencyType": "toptier",
+                    "toptier_flag": True,
+                    "toptier_agency": {
+                        "id": 1,
+                        "toptier_code": "001",
+                        "abbreviation": "USDA",
+                        "name": "Department of Agriculture",
+                    },
+                }
+            },
             keyword=["forestry", "prevention"],
         )
 
@@ -476,7 +540,7 @@ class TestRealWorldScenarios:
         mock_instance = MagicMock()
         mock_filter_hash.return_value = mock_instance
 
-        result = execute_filter(recipient_search_text=["ACME Corporation"], recipient_type_names=["category_business"])
+        result = execute_filter(selectedRecipients=["ACME Corporation"], recipientType=["business"])
 
         assert "hash" in result
 
@@ -491,7 +555,7 @@ class TestRealWorldScenarios:
                 "USA_TX": {
                     "identifier": "USA_TX",
                     "filter": {"country": "USA", "state": "TX"},
-                    "display": {"entity": "State", "standalone": "Texas"},
+                    "display": {"entity": "State", "standalone": "Texas", "title": "TEXAS"},
                 }
             }
         )
@@ -505,7 +569,7 @@ class TestRealWorldScenarios:
         mock_instance = MagicMock()
         mock_filter_hash.return_value = mock_instance
 
-        filters = {"award_type_codes": ["A", "B"]}
+        filters = {"awardType": ["A", "B"]}
         result1 = execute_filter(**filters)
 
         # Second call finds existing hash
