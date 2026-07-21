@@ -31,7 +31,8 @@ class TestLLMAPIKeyHandler:
         AC: If header isn't included in the API request, return 403 with appropriate message
         """
         request = api_rf.get('/test/')
-        response = mock_llm_view(request)
+        # Pass Request via kwargs to match how the decorator extracts it.
+        response = mock_llm_view(request=request)
 
         assert response.status_code == 403
         assert "detail" in response.data
@@ -52,7 +53,7 @@ class TestLLMAPIKeyHandler:
         mock_session.return_value.client.return_value = mock_client
 
         request = api_rf.get('/test/', HTTP_X_LLM_API_KEY='test-uuid-123')
-        response = mock_llm_view(request)
+        response = mock_llm_view(request=request)
 
         assert response.status_code == 403
         assert "detail" in response.data
@@ -73,7 +74,7 @@ class TestLLMAPIKeyHandler:
         mock_session.return_value.client.return_value = mock_client
 
         request = api_rf.get('/test/', HTTP_X_LLM_API_KEY='wrong-uuid-456')
-        response = mock_llm_view(request)
+        response = mock_llm_view(request=request)
 
         assert response.status_code == 403
         assert "detail" in response.data
@@ -87,7 +88,7 @@ class TestLLMAPIKeyHandler:
         Tests that missing environment variable returns 403
         """
         request = api_rf.get('/test/', HTTP_X_LLM_API_KEY='test-uuid-123')
-        response = mock_llm_view(request)
+        response = mock_llm_view(request=request)
 
         assert response.status_code == 403
         assert "detail" in response.data
@@ -107,7 +108,7 @@ class TestLLMAPIKeyHandler:
         mock_session.return_value.client.return_value = mock_client
 
         request = api_rf.get('/test/', HTTP_X_LLM_API_KEY='correct-uuid-123')
-        response = mock_llm_view(request)
+        response = mock_llm_view(request=request)
 
         assert response.status_code == 200
         assert response.data['success'] is True
@@ -126,7 +127,7 @@ class TestLLMAPIKeyHandler:
         mock_session.return_value.client.return_value = mock_client
 
         request = api_rf.get('/test/', HTTP_X_LLM_API_KEY='correct-uuid-456')
-        response = mock_llm_view(request)
+        response = mock_llm_view(request=request)
 
         assert response.status_code == 200
         assert response.data['success'] is True
@@ -144,7 +145,7 @@ class TestLLMAPIKeyHandler:
         mock_session.return_value.client.return_value = mock_client
 
         request = api_rf.get('/test/', HTTP_X_LLM_API_KEY='correct-uuid-789')
-        response = mock_llm_view(request)
+        response = mock_llm_view(request=request)
 
         assert response.status_code == 200
         assert response.data['success'] is True
@@ -162,7 +163,7 @@ class TestLLMAPIKeyHandler:
         mock_session.return_value.client.return_value = mock_client
 
         request = api_rf.get('/test/', HTTP_X_LLM_API_KEY='correct-uuid-abc')
-        response = mock_llm_view(request)
+        response = mock_llm_view(request=request)
 
         assert response.status_code == 200
         assert response.data['success'] is True
@@ -181,7 +182,7 @@ class TestLLMAPIKeyHandler:
         mock_session.return_value.client.return_value = mock_client
 
         request = api_rf.get('/test/', HTTP_X_LLM_API_KEY='correct-uuid-with-spaces')
-        response = mock_llm_view(request)
+        response = mock_llm_view(request=request)
 
         assert response.status_code == 200
         assert response.data['success'] is True
@@ -199,7 +200,7 @@ class TestLLMAPIKeyHandler:
         mock_session.return_value.client.return_value = mock_client
 
         request = api_rf.post('/test/', {}, HTTP_X_LLM_API_KEY='post-uuid-123')
-        response = mock_llm_view(request)
+        response = mock_llm_view(request=request)
 
         assert response.status_code == 200
         assert response.data['success'] is True
@@ -217,7 +218,7 @@ class TestLLMAPIKeyHandler:
         mock_session.return_value.client.return_value = mock_client
 
         request = api_rf.get('/test/', HTTP_X_LLM_API_KEY='test-uuid')
-        response = mock_llm_view(request)
+        response = mock_llm_view(request=request)
 
         assert response.status_code == 403
         assert "does not contain a valid UUID key" in response.data['detail']
@@ -235,7 +236,7 @@ class TestLLMAPIKeyHandler:
         mock_session.return_value.client.return_value = mock_client
 
         request = api_rf.get('/test/', HTTP_X_LLM_API_KEY='test-uuid')
-        response = mock_llm_view(request)
+        response = mock_llm_view(request=request)
 
         assert response.status_code == 403
         assert "secret format is invalid" in response.data['detail']
@@ -254,7 +255,7 @@ class TestLLMAPIKeyHandler:
         mock_session.return_value.client.return_value = mock_client
 
         request = api_rf.get('/test/', HTTP_X_LLM_API_KEY='test-uuid')
-        response = mock_llm_view(request)
+        response = mock_llm_view(request=request)
 
         assert response.status_code == 403
         assert "Error retrieving LLM API secret" in response.data['detail']
@@ -271,7 +272,7 @@ class TestLLMAPIKeyHandler:
         mock_session.return_value.client.return_value = mock_client
 
         request = api_rf.get('/test/', HTTP_X_LLM_API_KEY='test-uuid')
-        response = mock_llm_view(request)
+        response = mock_llm_view(request=request)
 
         assert response.status_code == 403
         assert "Unexpected error accessing LLM API secret" in response.data['detail']
@@ -289,7 +290,7 @@ class TestLLMAPIKeyHandler:
         mock_session.return_value.client.return_value = mock_client
 
         request = api_rf.get('/test/', HTTP_X_LLM_API_KEY='test-uuid-region')
-        response = mock_llm_view(request)
+        response = mock_llm_view(request=request)
 
         # Verify the client was created with the correct region
         mock_session.return_value.client.assert_called_with(
@@ -311,7 +312,7 @@ class TestLLMAPIKeyHandler:
         mock_session.return_value.client.return_value = mock_client
 
         request = api_rf.get('/test/', HTTP_X_LLM_API_KEY='test-uuid-default-region')
-        response = mock_llm_view(request)
+        response = mock_llm_view(request=request)
 
         # Verify the client was created with the default region
         mock_session.return_value.client.assert_called_with(
