@@ -38,11 +38,8 @@ This route sends a request to the backend to retrieve recipients matching the sp
             }
 
     + Attributes (object)
-        + `limit` (optional, number)
+        + `limit` (optional, number) - Number of results to return (min: 1, max: 500)
           + Default: `10`
-          + Members
-            + Minimum: `1`
-            + Maximum: `500`
         + `search_text` (required, string)
         + `recipient_levels` (optional, array[enum[string]])
             + Members
