@@ -534,6 +534,7 @@ class LLMAPIKeyHandler:
 
         @wraps(function)
         def wrapper(*args: Any, **kwargs: Any) -> Any:
+
             # Extract request from kwargs
             required_header = 'X-LLM-API-Key'
             request = kwargs.get('request')
@@ -586,8 +587,8 @@ class LLMAPIKeyHandler:
         """
         if not request:
             return LLMAPIKeyHandler._error_response(
-                "Request object not found",
-                status.HTTP_500_INTERNAL_SERVER_ERROR
+                "X-LLM-API-Key header is required for LLM API access",
+                status.HTTP_403_FORBIDDEN
             )
 
         llm_api_key = request.headers.get('X-LLM-API-Key')
