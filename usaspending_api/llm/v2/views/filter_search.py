@@ -85,7 +85,7 @@ class FilterSearchViewSet(LLMBase):
                     error_event = {
                         "search_id": str(session.id),
                         "type": "search_error",
-                        "message": f"An error occurred.",
+                        "message": "An error occurred.",
                     }
                     yield self._ndjson_format(error_event)
                 finally:
