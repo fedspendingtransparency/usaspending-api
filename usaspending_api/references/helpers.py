@@ -4,9 +4,9 @@ from typing import Optional
 from django.contrib.postgres.aggregates import ArrayAgg
 from django.utils.text import slugify
 
+from usaspending_api.references.models import DisasterEmergencyFundCode, ToptierAgencyPublishedDABSView
 from usaspending_api.references.models.cgac import CGAC
 from usaspending_api.references.models.frec import FREC
-from usaspending_api.references.models import ToptierAgencyPublishedDABSView, DisasterEmergencyFundCode
 
 
 def retrive_agency_name_from_code(code: str) -> Optional[str]:
@@ -23,7 +23,7 @@ def retrive_agency_name_from_code(code: str) -> Optional[str]:
     return None
 
 
-def generate_agency_slugs_for_agency_list(agency_list):
+def generate_agency_slugs_for_agency_list(agency_list: list) -> dict:
     """
     Generates a dictionary of { <toptier_agency_id>: <agency_slug> } if the toptier_agency
     has a valid File C submission. This dictionary can then be used to populate results for an
@@ -54,9 +54,9 @@ def get_def_codes_by_group(group_names: list[str] | None) -> dict[str, list[str]
     return {group_name: def_codes for group_name, def_codes in def_codes_by_group}
 
 
-def create_hash(payload):
+def create_hash(payload: bytes) -> str:
     """
-    Create a MD5 hash from a Python dict
+    Create a MD5 hash
     """
     m = hashlib.md5(usedforsecurity=False)
     m.update(payload)

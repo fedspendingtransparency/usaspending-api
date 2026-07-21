@@ -1,6 +1,5 @@
-import hashlib
-
 from django.http import HttpResponseBadRequest
+from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -13,7 +12,7 @@ class FilterEndpoint(APIView):
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/references/filter.md"
 
-    def post(self, request, format=None):
+    def post(self, request: Request, format: str | None = None) -> Response:
         hash_key = create_hash(request.body)
 
         try:
@@ -34,7 +33,7 @@ class HashEndpoint(APIView):
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/references/hash.md"
 
-    def post(self, request, format=None):
+    def post(self, request: Request, format: str | None = None) -> Response | HttpResponseBadRequest:
         if "hash" not in request.data:
             return HttpResponseBadRequest("Missing `hash` key in request body")
 

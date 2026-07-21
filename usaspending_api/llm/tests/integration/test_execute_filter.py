@@ -107,7 +107,7 @@ class TestFilterProcessing:
         mock_instance = MagicMock()
         mock_filter_hash.return_value = mock_instance
 
-        result = execute_filter(awardType=["A"])
+        execute_filter(awardType=["A"])
 
         call_args = mock_filter_hash.call_args
         saved_filter = json.loads(call_args[1]["filter"])
@@ -123,7 +123,7 @@ class TestFilterProcessing:
         mock_instance = MagicMock()
         mock_filter_hash.return_value = mock_instance
 
-        result = execute_filter(keyword=["test", "search"])
+        execute_filter(keyword=["test", "search"])
 
         call_args = mock_filter_hash.call_args
         saved_filter = json.loads(call_args[1]["filter"])
@@ -140,7 +140,7 @@ class TestFilterProcessing:
         mock_instance = MagicMock()
         mock_filter_hash.return_value = mock_instance
 
-        result = execute_filter(keyword=[])
+        execute_filter(keyword=[])
 
         call_args = mock_filter_hash.call_args
         saved_filter = json.loads(call_args[1]["filter"])
@@ -231,7 +231,7 @@ class TestHashCreationAndStorage:
         mock_instance = MagicMock()
         mock_filter_hash.return_value = mock_instance
 
-        result = execute_filter(awardType=["A", "B"])
+        execute_filter(awardType=["A", "B"])
 
         # Verify FilterHash was called with filter JSON
         call_args = mock_filter_hash.call_args
@@ -305,7 +305,7 @@ class TestErrorHandling:
 
     def test_validation_error_does_not_save_to_database(self, mock_filter_hash):
         """Test that validation errors don't attempt database save."""
-        result = execute_filter(invalid_field="invalid")
+        execute_filter(invalid_field="invalid")
 
         # Should not attempt to access database
         assert not mock_filter_hash.objects.get.called

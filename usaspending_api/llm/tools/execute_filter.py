@@ -12,7 +12,7 @@ from usaspending_api.references.helpers import create_hash
 from usaspending_api.references.models import FilterHash
 
 
-def execute_filter(**kwargs):
+def execute_filter(**kwargs) -> dict[str, str]:
     try:
         filters = Filters(**kwargs)
     except ValidationError as e:
@@ -50,7 +50,8 @@ execute_filter_tool = AITool(
         description="""
             This tool selects filters for a USASspending advanced search.
             Use multiple filters if necessary to filter the results to the user's intent.
-            Filters are combined with an AND operator.  Awards will only appear if they meet all of the filter conditions.
+            Filters are combined with an AND operator.
+            Awards will only appear if they meet all of the filter conditions.
         """,
         input_schema=Filters.model_json_schema(),
     ),
