@@ -148,7 +148,7 @@ def test_limits_by_location_type(client, elasticsearch_location_index):
 
     assert response.status_code == status.HTTP_200_OK
     assert len(response.data) == 3
-    assert response.data["count"] == 6
+    assert response.data["count"] == 7
     assert response.data["messages"] == [""]
 
     assert 0 < len(response.data["results"]["cities"]) <= 10
