@@ -525,11 +525,10 @@ class LLMAPIKeyHandler:
             - UUID in the header doesn't match the AWS secret
 
         Example:
-            @LLMAPIKeyHandler.require_api_key
-            @cache_response()
-            @api_view(['GET', 'POST'])
-            def llm_endpoint(request):
-                return Response({"message": "LLM endpoint"})
+            class LLMEndpointView(APIView):
+                @LLMAPIKeyHandler.require_api_key
+                def post(self, request):
+                    return StreamingHttpResponse(...)
         """
 
         @wraps(function)
