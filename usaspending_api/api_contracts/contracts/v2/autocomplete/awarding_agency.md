@@ -22,6 +22,10 @@ This route sends a request to the backend to retrieve awarding agencies matching
 
     + Attributes (object)
         + `limit` (optional, number)
+          + Default: `10`
+          + Members
+            + Minimum: `1`
+            + Maximum: `500`
         + `search_text` (required, string)
     + Body
 

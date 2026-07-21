@@ -19,7 +19,10 @@ This route sends a request to the backend to retrieve CFDA programs matching the
 
     + Attributes (object)
         + `limit` (optional, number)
-            + Default: 10
+          + Default: `10`
+          + Members
+            + Minimum: `1`
+            + Maximum: `500`
         + `search_text` (required, string)
     + Body
 

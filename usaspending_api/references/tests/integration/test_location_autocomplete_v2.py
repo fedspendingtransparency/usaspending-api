@@ -151,8 +151,8 @@ def test_limits_by_location_type(client, elasticsearch_location_index):
     assert response.data["count"] == 6
     assert response.data["messages"] == [""]
 
-    assert 0 < len(response.data["results"]["cities"]) <= 5
-    assert 0 < len(response.data["results"]["states"]) <= 5
+    assert 0 < len(response.data["results"]["cities"]) <= 10
+    assert 0 < len(response.data["results"]["states"]) <= 10
 
     assert "cities" in response.data["results"].keys()
     assert "states" in response.data["results"].keys()

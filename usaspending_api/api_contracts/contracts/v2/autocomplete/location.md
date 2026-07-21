@@ -19,7 +19,10 @@ This route sends a request to the backend to retrieve locations matching the spe
 
     + Attributes (object)
         + `limit` (optional, number)
-            + Default: 5
+          + Default: `10`
+          + Members
+            + Minimum: `1`
+            + Maximum: `500`
         + `search_text` (required, string)
     + Body
 

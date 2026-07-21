@@ -20,6 +20,10 @@ List of cities matching search criteria
     + Attributes (object)
         + `search_text` (required, string)
         + `limit` (required, number)
+          + Default: `10`
+          + Members
+            + Minimum: `1`
+            + Maximum: `500`
         + `filter` (optional, object)
             + `country_code` (required, string)
             + `scope` (required, enum[string])

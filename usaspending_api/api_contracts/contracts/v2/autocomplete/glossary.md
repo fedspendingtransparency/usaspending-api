@@ -22,6 +22,10 @@ List Autocomplete Glossary
             The text snippet that you are trying to autocomplete using a glossary term.
         + `limit` (optional, number)
             Maximum number to return
+          + Default: `10`
+          + Members
+            + Minimum: `1`
+            + Maximum: `500`
     + Body
 
             {

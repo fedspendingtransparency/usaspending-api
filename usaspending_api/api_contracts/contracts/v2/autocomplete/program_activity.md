@@ -20,6 +20,10 @@ This may be the 4-character program activity code or a name string.
 
     + Attributes (object)
         + `limit` (optional, number)
+          + Default: `10`
+          + Members
+            + Minimum: `1`
+            + Maximum: `500`
         + `search_text` (required, string)
     + Body
 

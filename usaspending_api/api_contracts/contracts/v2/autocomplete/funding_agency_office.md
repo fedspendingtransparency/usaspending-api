@@ -22,6 +22,10 @@ This route sends a request to the backend to retrieve funding agencies and offic
 
     + Attributes (object)
         + `limit` (optional, number)
+          + Default: `10`
+          + Members
+            + Minimum: `1`
+            + Maximum: `500`
         + `search_text` (required, string)
             Search text can be an office or agency name, or it can be an agency abbreviation. For example, try searching for DoD and Department of Defence.
     + Body
