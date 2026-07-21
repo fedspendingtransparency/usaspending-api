@@ -31,6 +31,7 @@ class TestLLMAPIKeyHandler:
         AC: If header isn't included in the API request, return 403 with appropriate message
         """
         request = api_rf.get('/test/')
+        # Pass Request via kwargs to match how the decorator extracts it.
         response = mock_llm_view(request=request)
 
         assert response.status_code == 403
