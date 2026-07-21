@@ -26,4 +26,8 @@ def test_autocomplete_limit_validation(client: Client, endpoint: str):
     response_data = response.json()
 
     assert response.status_code == 400
-    #assert response_data.get("detail") == "Field 'limit' value '501' is above max '500'"
+    assert (
+        response_data.get("detail") == "Field 'limit' value '501' is above max '500'"
+        or
+        "limit: Input should be less than or equal to 500" in response_data.get("detail")
+    )

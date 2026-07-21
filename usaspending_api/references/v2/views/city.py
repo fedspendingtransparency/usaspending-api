@@ -3,7 +3,7 @@ from typing import Literal, Optional
 
 from opensearchpy.helpers.aggs import A
 from opensearchpy.helpers.query import Q as ES_Q
-from pydantic import BaseModel, Field, ValidationError, field_validator
+from pydantic import BaseModel, Field, ValidationError
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
