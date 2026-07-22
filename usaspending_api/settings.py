@@ -8,8 +8,8 @@ import os
 from pathlib import Path
 
 import dj_database_url
-from django.db import DEFAULT_DB_ALIAS
 from django.core.management.utils import get_random_secret_key
+from django.db import DEFAULT_DB_ALIAS
 
 from usaspending_api.config import CONFIG
 from usaspending_api.config.utils import convert_json_conf_to_url
