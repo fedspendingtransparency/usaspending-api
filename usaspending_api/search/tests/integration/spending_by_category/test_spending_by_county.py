@@ -76,6 +76,7 @@ def test_correct_response_of_empty_list(client, monkeypatch, elasticsearch_trans
     assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
     assert resp.json() == expected_response
 
+
 def test_category_dataclass_subaward_caching(client, monkeypatch, awards_and_transactions,
                                                 elasticsearch_subaward_index, elasticsearch_transaction_index):
     # Tests that the Category dataclass is not being cached incorrectly
@@ -87,11 +88,11 @@ def test_category_dataclass_subaward_caching(client, monkeypatch, awards_and_tra
         "/api/v2/search/spending_by_category/county",
         content_type="application/json",
         data=json.dumps({
-            "filters": {"time_period": [{"start_date": "2018-10-01", "end_date": "2020-09-30"}]}, 
-            "spending_level": "subawards"       
+            "filters": {"time_period": [{"start_date": "2018-10-01", "end_date": "2020-09-30"}]},
+            "spending_level": "subawards"
         }),
     )
-    
+
     assert sub_resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
     assert sub_resp.json().get("spending_level") == "subawards"
     setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
@@ -100,8 +101,8 @@ def test_category_dataclass_subaward_caching(client, monkeypatch, awards_and_tra
         "/api/v2/search/spending_by_category/county",
         content_type="application/json",
         data=json.dumps({
-            "filters": {"time_period": [{"start_date": "2018-10-01", "end_date": "2020-09-30"}]}, 
-            "spending_level": "transactions"       
+            "filters": {"time_period": [{"start_date": "2018-10-01", "end_date": "2020-09-30"}]},
+            "spending_level": "transactions"
         }),
     )
 
