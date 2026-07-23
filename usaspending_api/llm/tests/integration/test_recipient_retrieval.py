@@ -66,6 +66,13 @@ def elasticsearch_recipient_index(monkeypatch, elasticsearch_connection):
             "recipient_hash": "hash456",
         },
         {
+            "recipient_name": "TEST CORP",
+            "uei": "UEI000000000",
+            "duns": "000000000",
+            "recipient_level": "C",
+            "recipient_hash": "hash000",
+        },
+        {
             "recipient_name": "ACME INDUSTRIES",
             "uei": "UEI111222333",
             "duns": "111222333",
@@ -245,8 +252,8 @@ class TestRetrieveRecipientNamesIntegration:
 
     def test_respects_limit_parameter(self, setup_test_recipients):
         """Test that limit parameter controls number of results"""
-        result_1 = retrieve_recipient_names("CORP*", limit=1)
-        result_2 = retrieve_recipient_names("CORP*", limit=2)
+        result_1 = retrieve_recipient_names("CORP", limit=1)
+        result_2 = retrieve_recipient_names("CORP", limit=2)
 
         # Results should respect the limit
         assert isinstance(result_1, dict)
