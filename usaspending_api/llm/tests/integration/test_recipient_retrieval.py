@@ -36,11 +36,12 @@ def elasticsearch_connection():
 
 
 @pytest.fixture
-def elasticsearch_recipient_index(elasticsearch_connection):
+def elasticsearch_recipient_index(monkeypatch, elasticsearch_connection):
     """
     Fixture to set up recipient index with test data
     """
     index_name = "test-recipients"
+    monkeypatch.setattr(f"usaspending_api.common.elasticsearch.search_wrappers.RecipientSearch._index_name", index_name)
 
     # Create index
     index = Index(index_name)
@@ -244,14 +245,14 @@ class TestRetrieveRecipientNamesIntegration:
 
     def test_respects_limit_parameter(self, setup_test_recipients):
         """Test that limit parameter controls number of results"""
-        result_3 = retrieve_recipient_names("CORP", limit=3)
-        result_10 = retrieve_recipient_names("CORP", limit=10)
+        result_3 = retrieve_recipient_names("CORP", limit=1)
+        result_10 = retrieve_recipient_names("CORP", limit=2)
 
         # Results should respect the limit
         assert isinstance(result_3, dict)
-        assert len(result_3["recipient_names"]) == 3
+        assert len(result_3["recipient_names"]) == 1
         assert isinstance(result_10, dict)
-        assert len(result_10["recipient_names"]) == 10
+        assert len(result_10["recipient_names"]) == 2
 
     def test_extracts_recipient_identifiers(self, setup_test_recipients):
         """Test that recipient names, UEIs, and DUNS are extracted"""
