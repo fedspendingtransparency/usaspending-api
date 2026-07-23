@@ -97,6 +97,12 @@ class AggregateQuerysetMixin(object):
             if resolved_field.is_relation and not is_last:
                 current_model = resolved_field.related_model
             elif not is_last:
+                # Check if the next segment is a valid SQL function transformation
+                next_segment = segments[index + 1]
+                is_next_last = (index + 1) == len(segments) - 1
+                if is_next_last and next_segment in self._sql_function_transformations:
+                    # Valid transform suffix on this field, allow it
+                    return field_path, None
                 raise InvalidParameterException("Invalid field: {}".format(field_path))
 
         return field_path, resolved_field
