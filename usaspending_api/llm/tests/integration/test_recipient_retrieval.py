@@ -41,7 +41,7 @@ def elasticsearch_recipient_index(monkeypatch, elasticsearch_connection):
     Fixture to set up recipient index with test data
     """
     index_name = "test-recipients"
-    monkeypatch.setattr(f"usaspending_api.common.elasticsearch.search_wrappers.RecipientSearch._index_name", index_name)
+    monkeypatch.setattr("usaspending_api.common.elasticsearch.search_wrappers.RecipientSearch._index_name", index_name)
 
     # Create index
     index = Index(index_name)
