@@ -158,7 +158,7 @@ class FilterSearchAssistant:
             tool = self.tools_by_name[tool_use["name"]]
 
             yield {
-                "search_id": self.session.id,
+                "search_id": str(self.session.id),
                 "type": "tool_start",
                 "tool_use_id": t.id,
                 "message": tool.logging(tool_use["input"]) + "\n",
