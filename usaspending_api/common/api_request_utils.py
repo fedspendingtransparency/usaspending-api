@@ -2,6 +2,7 @@ import json
 import os
 from datetime import date, datetime, time
 from functools import wraps
+from inspect import signature
 from typing import Any, Dict, List, Optional, Union
 
 import boto3
@@ -11,6 +12,7 @@ from django.core.exceptions import FieldDoesNotExist
 from django.db.models import Q
 from django.utils import timezone
 from rest_framework import status
+from rest_framework.request import Request as DRFRequest
 from rest_framework.response import Response
 
 from usaspending_api.common.exceptions import InvalidParameterException
@@ -608,24 +610,47 @@ class LLMAPIKeyHandler:
             - UUID in the header doesn't match the AWS secret
 
         Example:
-            @LLMAPIKeyHandler.require_api_key
-            @cache_response()
-            @api_view(['GET', 'POST'])
-            def llm_endpoint(request):
-                return Response({"message": "LLM endpoint"})
+            class LLMEndpointView(APIView):
+                @LLMAPIKeyHandler.require_api_key
+                def post(self, request):
+                    return StreamingHttpResponse(...)
         """
+        # Capture the original function signature once when the decorator is applied.
+        function_signature = signature(function)
 
         @wraps(function)
-        def wrapper(*args: Any, **kwargs: Any) -> Response:
-            # Extract request from args
-            request = args[0] if args else kwargs.get('request')
+        def wrapper(*args: Any, **kwargs: Any) -> Any:
+            # Map args and kwargs to the parameter names (e.g., "self", "request").
+            error_response = None
+            try:
+                bound = function_signature.bind_partial(*args, **kwargs)
+            except TypeError:
+                error_response = LLMAPIKeyHandler._error_response(
+                    "Request object not found",
+                    status.HTTP_500_INTERNAL_SERVER_ERROR,
+                )
+            else:
+                # Retrieve values assigned to the "request" parameter.
+                # (Should prevent accidentally selecting the APIRequest instance)
+                # TODO: Add flexibility. This is rigidly tied to the parameter name "request"
+                request = bound.arguments.get("request")
 
-            # Validate request and authentication
-            error_response = LLMAPIKeyHandler._validate_llm_request(request)
-            if error_response:
+                # Require an actual DRF Request before attempting header validation.
+                if not isinstance(request, DRFRequest):
+                    error_response = LLMAPIKeyHandler._error_response(
+                        "Request object not found",
+                        status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    )
+                else:
+                    # Validate the API-key header, secrets config, and UUID.
+                    # Returns a Response when validation fails and None when successful.
+                    error_response = LLMAPIKeyHandler._validate_llm_request(request)
+            # Return the validation error without executing the protected view.
+            if error_response is not None:
                 return error_response
 
-            # UUID is valid, proceed with the view
+            # If authentication succeeds, execute original view method with the
+            # same args/kwargs that were passed to the wrapper.
             return function(*args, **kwargs)
 
         return wrapper
