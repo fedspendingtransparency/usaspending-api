@@ -245,14 +245,14 @@ class TestRetrieveRecipientNamesIntegration:
 
     def test_respects_limit_parameter(self, setup_test_recipients):
         """Test that limit parameter controls number of results"""
-        result_3 = retrieve_recipient_names("CORP", limit=1)
-        result_10 = retrieve_recipient_names("CORP", limit=2)
+        result_1 = retrieve_recipient_names("CORP*", limit=1)
+        result_2 = retrieve_recipient_names("CORP*", limit=2)
 
         # Results should respect the limit
-        assert isinstance(result_3, dict)
-        assert len(result_3["recipient_names"]) == 1
-        assert isinstance(result_10, dict)
-        assert len(result_10["recipient_names"]) == 2
+        assert isinstance(result_1, dict)
+        assert len(result_1["recipient_names"]) == 1
+        assert isinstance(result_2, dict)
+        assert len(result_2["recipient_names"]) == 2
 
     def test_extracts_recipient_identifiers(self, setup_test_recipients):
         """Test that recipient names, UEIs, and DUNS are extracted"""
