@@ -120,7 +120,7 @@ class AggregateQuerysetMixin(object):
                 return result
         return F(col_name)
 
-    def validate_request(self, params, queryset) -> tuple[str, list[str], str | None]:
+    def validate_request(self, params: dict[str, Any], queryset: QuerySet) -> tuple[str, list[str], str | None]:
         """Validate request parameters."""
 
         agg_field = params.get("field")
