@@ -48,7 +48,7 @@ class AbstractSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
     """
     Abstract class inherited by the different spending by category endpoints.
     """
-    
+
     _category: Category
     filters: dict
     pagination: Pagination
