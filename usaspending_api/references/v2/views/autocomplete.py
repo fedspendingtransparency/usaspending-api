@@ -2,6 +2,7 @@ import re
 
 from django.db.models import Case, F, IntegerField, Q, When
 from django.db.models.functions import Upper
+from pydantic import ValidationError
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -10,13 +11,14 @@ from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers.generic_helper import deprecated_api_endpoint_message
 from usaspending_api.references.models import NAICS, PSC, Cfda, Definition, RefProgramActivity
+from usaspending_api.references.pydantic_models import AutocompleteRequest
 from usaspending_api.references.v2.views.glossary import DefinitionSerializer
 from usaspending_api.search.models import AgencyAutocompleteMatview, AgencyOfficeAutocompleteMatview
 
 
 class BaseAutocompleteViewSet(APIView):
     @staticmethod
-    def get_request_payload(request: Request) -> Response:
+    def get_request_payload(request: Request) -> tuple[str, int]:
         """
         Retrieves all the request attributes needed for the autocomplete endpoints.
 
@@ -25,21 +27,12 @@ class BaseAutocompleteViewSet(APIView):
         * limit : number of items to return
         """
 
-        json_request = request.data
-
-        # retrieve search_text from request
-        search_text = json_request.get("search_text", None)
-
         try:
-            limit = int(json_request.get("limit", 10))
-        except ValueError as ve:
-            raise InvalidParameterException("Limit request parameter is not a valid, positive integer") from ve
-
-        # required query parameters were not provided
-        if not search_text:
-            raise InvalidParameterException("Missing one or more required request parameters: search_text")
-
-        return search_text, limit
+            validated_data = AutocompleteRequest(**request.data)
+            return validated_data.search_text, validated_data.limit
+        except ValidationError as e:
+            error_messages = "; ".join([f"{err['loc'][0]}: {err['msg']}" for err in e.errors()])
+            raise InvalidParameterException(error_messages) from e
 
     # Shared autocomplete...
     def agency_autocomplete(self, request: Request) -> Response:
