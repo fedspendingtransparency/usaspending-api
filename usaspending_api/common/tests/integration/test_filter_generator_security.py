@@ -81,34 +81,19 @@ def test_post_filter_allows_fk_traversal(client):
 @pytest.mark.django_db
 def test_get_filter_blocks_regex_injection(client):
     """Test that __regex in GET params is rejected."""
-    response = client.get(
-        "/api/v1/tas/categories/total/"
-        "?field=obligations_incurred_by_program_object_class_cpe"
-        "&group=treasury_account"
-        "&submission__reporting_fiscal_year__regex=.*2020.*"
-    )
+    response = client.get("/api/v1/federal_accounts/?account_title__regex=.*sensitive.*")
     assert response.status_code == 400
 
 
 @pytest.mark.django_db
 def test_get_filter_blocks_iregex_injection(client):
     """Test that __iregex in GET params is rejected."""
-    response = client.get(
-        "/api/v1/tas/categories/total/"
-        "?field=obligations_incurred_by_program_object_class_cpe"
-        "&group=treasury_account"
-        "&submission__reporting_fiscal_year__iregex=.*2020.*"
-    )
+    response = client.get("/api/v1/federal_accounts/?account_title__iregex=.*sensitive.*")
     assert response.status_code == 400
 
 
 @pytest.mark.django_db
 def test_get_filter_allows_safe_lookups(client):
     """Test that safe lookups work in GET params."""
-    response = client.get(
-        "/api/v1/tas/categories/total/"
-        "?field=obligations_incurred_by_program_object_class_cpe"
-        "&group=treasury_account"
-        "&submission__reporting_fiscal_year__gte=2020"
-    )
+    response = client.get("/api/v1/federal_accounts/?account_title__icontains=defense")
     assert response.status_code == 200
