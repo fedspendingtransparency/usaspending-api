@@ -98,7 +98,7 @@ class TestFilterProcessing:
         assert mock_filter_hash.called
         assert mock_instance.save.called
         call_args = mock_filter_hash.call_args[1]
-        saved_filter = json.loads(call_args["filter"])
+        saved_filter = call_args["filter"]
         assert "filters" in saved_filter
 
     def test_exclude_none_values(self, mock_filter_hash):
@@ -110,7 +110,7 @@ class TestFilterProcessing:
         execute_filter(awardType=["A"])
 
         call_args = mock_filter_hash.call_args
-        saved_filter = json.loads(call_args[1]["filter"])
+        saved_filter = call_args[1]["filter"]
 
         # Should only contain non-None fields
         assert "awardType" in saved_filter["filters"]
@@ -126,7 +126,7 @@ class TestFilterProcessing:
         execute_filter(keyword=["test", "search"])
 
         call_args = mock_filter_hash.call_args
-        saved_filter = json.loads(call_args[1]["filter"])
+        saved_filter = call_args[1]["filter"]
 
         # Keyword should be transformed to {value: value} format
         assert "keyword" in saved_filter["filters"]
@@ -143,7 +143,7 @@ class TestFilterProcessing:
         execute_filter(keyword=[])
 
         call_args = mock_filter_hash.call_args
-        saved_filter = json.loads(call_args[1]["filter"])
+        saved_filter = call_args[1]["filter"]
 
         # Empty keyword should result in empty dict
         if "keyword" in saved_filter["filters"]:
@@ -236,7 +236,7 @@ class TestHashCreationAndStorage:
         # Verify FilterHash was called with filter JSON
         call_args = mock_filter_hash.call_args
         assert "filter" in call_args[1]
-        saved_filter = json.loads(call_args[1]["filter"])
+        saved_filter = call_args[1]["filter"]
         assert "filters" in saved_filter
         assert saved_filter["filters"]["awardType"] == ["A", "B"]
 
