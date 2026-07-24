@@ -30,7 +30,7 @@ def execute_filter(**kwargs) -> dict[str, str]:
         FilterHash.objects.get(hash=hash_key)
     except FilterHash.DoesNotExist:
         try:
-            fh = FilterHash(hash=hash_key, filter=json.dumps(filter_request))
+            fh = FilterHash(hash=hash_key, filter=filter_request)
             fh.save()
         except Exception as e:
             return {
