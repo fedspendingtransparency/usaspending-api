@@ -13,6 +13,7 @@ logger = logging.getLogger(__name__)
 # take a string name, uei or duns and get list of entities and subs
 # uses recipient_retrieval.py
 
+
 class RecipientLookupTool:
     """Tool for looking up recipients in OpenSearch with fuzzy matching support."""
 
@@ -25,9 +26,9 @@ class RecipientLookupTool:
     ]
 
     def lookup_recipient(
-            self,
-            query: str,
-            top_k: int = 10,
+        self,
+        query: str,
+        top_k: int = 10,
     ) -> list[str]:
         """
         Search for recipients by name, uei, duns, and return recipient names.
@@ -51,7 +52,15 @@ class RecipientLookupTool:
         for field in ("recipient_name", "uei", "duns"):
             should_queries.extend(
                 [
-                    ES_Q("term", **{f"{field}__keyword": {"value": query_upper, "boost": 10.0, }}),
+                    ES_Q(
+                        "term",
+                        **{
+                            f"{field}__keyword": {
+                                "value": query_upper,
+                                "boost": 10.0,
+                            }
+                        },
+                    ),
                     ES_Q("match", **{field: {"query": query_upper, "boost": 8.0}}),
                     ES_Q("match", **{field: {"query": query_upper, "fuzziness": "AUTO", "boost": 5.0}}),
                     ES_Q("match", **{f"{field}__contains": {"query": query_upper, "boost": 3.0}}),
@@ -76,7 +85,7 @@ class RecipientLookupTool:
                 continue
             seen_names.add(recipient_name)
             recipient_names.append(recipient_name)
-        return recipient_names
+        return {"recipient_names": recipient_names}
 
 
 lookup_recipient_tool = AITool(
@@ -100,14 +109,11 @@ Examples:
         input_schema={
             "type": "object",
             "properties": {
-                "query": {
-                    "type": "string",
-                    "description": "Recipient search (name, uai, duns)"
-                },
+                "query": {"type": "string", "description": "Recipient search (name, uai, duns)"},
                 "top_k": {
                     "type": "integer",
-                    "description": "Maximum number of recipient results to return (1-100, default: 10)"
-                }
+                    "description": "Maximum number of recipient results to return (1-100, default: 10)",
+                },
             },
             "required": ["query"],
         },

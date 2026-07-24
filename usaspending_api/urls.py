@@ -23,7 +23,6 @@ from usaspending_api.common.views import MarkdownView
 
 urlpatterns = [
     re_path(r"^$", MarkdownView.as_view(markdown="landing_page.md")),
-    re_path(r"^api-auth/", include("rest_framework.urls", namespace="rest_framework")),
     re_path(r"^api/v1/accounts/", include("usaspending_api.accounts.urls")),
     re_path(r"^api/v1/awards/", include("usaspending_api.awards.v1.urls_awards")),
     re_path(r"^api/v1/federal_accounts/", include("usaspending_api.accounts.urls_federal_account")),

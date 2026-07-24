@@ -8,8 +8,8 @@ import os
 from pathlib import Path
 
 import dj_database_url
+from django.core.management.utils import get_random_secret_key
 from django.db import DEFAULT_DB_ALIAS
-from django.utils.crypto import get_random_string
 
 from usaspending_api.config import CONFIG
 from usaspending_api.config.utils import convert_json_conf_to_url
@@ -50,7 +50,7 @@ API_SEARCH_MIN_DATE = "2007-10-01"  # Beginning of FY2008
 # See https://docs.djangoproject.com/en/3.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = get_random_string(length=12)
+SECRET_KEY = get_random_secret_key()
 
 # SECURITY WARNING: don't run with debug turned on in production!
 # Defaults to False, unless DJANGO_DEBUG env var is set to a truthy value
