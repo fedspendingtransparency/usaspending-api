@@ -47,7 +47,11 @@ def test_post_filter_allows_fk_traversal(client):
         "/api/v1/awards/",
         {
             "filters": [
-                {"field": "awarding_agency__toptier_agency__name", "operation": "equals", "value": "Department of Defense"}
+                {
+                    "field": "awarding_agency__toptier_agency__name",
+                    "operation": "equals",
+                    "value": "Department of Defense",
+                }
             ]
         },
         content_type="application/json",
