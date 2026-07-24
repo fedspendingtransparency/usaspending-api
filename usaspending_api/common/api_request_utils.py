@@ -311,6 +311,12 @@ class FilterGenerator:
             if resolved_field.is_relation and not is_last:
                 current_model = resolved_field.related_model
             elif not is_last:
+                # Non-relation field with more segments. Check if remaining segments are all valid lookups.
+                remaining_segments = segments[index + 1:]
+                allowed_lookups = self._get_allowed_lookups()
+                if all(seg in allowed_lookups for seg in remaining_segments):
+                    # All remaining segments are valid lookups, validation complete.
+                    return
                 raise InvalidParameterException("Invalid field: {}".format(field_path))
 
     def _get_allowed_lookups(self) -> set:

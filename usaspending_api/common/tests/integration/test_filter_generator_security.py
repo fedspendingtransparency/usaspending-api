@@ -44,13 +44,17 @@ def test_post_filter_blocks_iregex_injection(client):
 
 @pytest.mark.django_db
 def test_post_filter_allows_safe_lookups(client):
-    """Test that safe lookups like __gte work in filter fields."""
+    """Test that safe lookups like greater_than_or_equal work in filter operations."""
     response = client.post(
         "/api/v1/tas/categories/total/",
         {
             "field": "obligations_incurred_by_program_object_class_cpe",
             "group": "treasury_account",
-            "filters": [{"field": "submission__reporting_fiscal_year__gte", "operation": "equals", "value": 2020}],
+            "filters": [{
+                "field": "submission__reporting_fiscal_year",
+                "operation": "greater_than_or_equal",
+                "value": 2020
+            }],
         },
         content_type="application/json",
     )
