@@ -5,11 +5,10 @@ from operator import itemgetter
 from unittest.mock import Mock
 
 import pytest
-from model_bakery.recipe import Recipe
 from model_bakery import baker
+from model_bakery.recipe import Recipe
 
-from usaspending_api.awards.models import Award
-from usaspending_api.awards.models import TransactionNormalized
+from usaspending_api.awards.models import Award, TransactionNormalized
 from usaspending_api.common.mixins import AggregateQuerysetMixin
 from usaspending_api.search.models import AwardSearch
 
