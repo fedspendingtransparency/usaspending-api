@@ -14,7 +14,9 @@ def test_post_filter_blocks_regex_injection(client):
         {
             "field": "obligations_incurred_by_program_object_class_cpe",
             "group": "treasury_account",
-            "filters": [{"field": "submission__reporting_fiscal_year__regex", "operation": "equals", "value": ".*2020.*"}],
+            "filters": [
+                {"field": "submission__reporting_fiscal_year__regex", "operation": "equals", "value": ".*2020.*"}
+            ],
         },
         content_type="application/json",
     )
@@ -30,7 +32,9 @@ def test_post_filter_blocks_iregex_injection(client):
         {
             "field": "obligations_incurred_by_program_object_class_cpe",
             "group": "treasury_account",
-            "filters": [{"field": "submission__reporting_fiscal_year__iregex", "operation": "equals", "value": ".*2020.*"}],
+            "filters": [
+                {"field": "submission__reporting_fiscal_year__iregex", "operation": "equals", "value": ".*2020.*"}
+            ],
         },
         content_type="application/json",
     )
@@ -74,7 +78,10 @@ def test_post_filter_allows_fk_traversal(client):
 def test_get_filter_blocks_regex_injection(client):
     """Test that __regex in GET params is rejected."""
     response = client.get(
-        "/api/v1/tas/categories/total/?field=obligations_incurred_by_program_object_class_cpe&group=treasury_account&submission__reporting_fiscal_year__regex=.*2020.*"
+        "/api/v1/tas/categories/total/"
+        "?field=obligations_incurred_by_program_object_class_cpe"
+        "&group=treasury_account"
+        "&submission__reporting_fiscal_year__regex=.*2020.*"
     )
     assert response.status_code == 400
 
@@ -83,7 +90,10 @@ def test_get_filter_blocks_regex_injection(client):
 def test_get_filter_blocks_iregex_injection(client):
     """Test that __iregex in GET params is rejected."""
     response = client.get(
-        "/api/v1/tas/categories/total/?field=obligations_incurred_by_program_object_class_cpe&group=treasury_account&submission__reporting_fiscal_year__iregex=.*2020.*"
+        "/api/v1/tas/categories/total/"
+        "?field=obligations_incurred_by_program_object_class_cpe"
+        "&group=treasury_account"
+        "&submission__reporting_fiscal_year__iregex=.*2020.*"
     )
     assert response.status_code == 400
 
@@ -92,6 +102,9 @@ def test_get_filter_blocks_iregex_injection(client):
 def test_get_filter_allows_safe_lookups(client):
     """Test that safe lookups work in GET params."""
     response = client.get(
-        "/api/v1/tas/categories/total/?field=obligations_incurred_by_program_object_class_cpe&group=treasury_account&submission__reporting_fiscal_year__gte=2020"
+        "/api/v1/tas/categories/total/"
+        "?field=obligations_incurred_by_program_object_class_cpe"
+        "&group=treasury_account"
+        "&submission__reporting_fiscal_year__gte=2020"
     )
     assert response.status_code == 200
