@@ -1,4 +1,3 @@
-import json
 import os
 from datetime import date, datetime, time
 from functools import wraps
@@ -657,7 +656,6 @@ class LLMAPIKeyHandler:
             )
 
         return get_secret_value_response['SecretString']
-
 
     @staticmethod
     def _handle_error(error: Exception, secret_name: str) -> Response:
