@@ -48,8 +48,8 @@ class AbstractSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
     """
     Abstract class inherited by the different spending by category endpoints.
     """
-
-    category: Category
+    
+    _category: Category
     filters: dict
     pagination: Pagination
     high_cardinality_categories: List[str] = ["recipient", "recipient_duns"]
@@ -70,7 +70,7 @@ class AbstractSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
 
         # Creates an instance copy for the category for each request
         # Prevents modifications from previous requests affecting current requests
-        self.category = copy.deepcopy(self.category)
+        self.category = copy.deepcopy(self._category)
 
         # Handles case where the request has already been validated by an implementation of the abstract class
         validated_payload = kwargs.get("validated_payload", self.validate_payload(request))
