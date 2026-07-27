@@ -1,4 +1,5 @@
 """Integration tests for recipient_retrieval module"""
+
 import pytest
 from django.conf import settings
 from elasticsearch import Elasticsearch
@@ -26,26 +27,27 @@ def elasticsearch_connection():
         timeout=30,
     )
 
-    connections.add_connection('default', es)
+    connections.add_connection("default", es)
 
     yield es
 
-    connections.remove_connection('default')
+    connections.remove_connection("default")
     es.close()
 
 
 @pytest.fixture
-def elasticsearch_recipient_index(elasticsearch_connection):
+def elasticsearch_recipient_index(monkeypatch, elasticsearch_connection):
     """
     Fixture to set up recipient index with test data
     """
     index_name = "test-recipients"
+    monkeypatch.setattr("usaspending_api.common.elasticsearch.search_wrappers.RecipientSearch._index_name", index_name)
 
     # Create index
     index = Index(index_name)
-    if index.exists(using='default'):
-        index.delete(using='default')
-    index.create(using='default')
+    if index.exists(using="default"):
+        index.delete(using="default")
+    index.create(using="default")
 
     # Add test data
     test_recipients = [
@@ -62,6 +64,13 @@ def elasticsearch_recipient_index(elasticsearch_connection):
             "duns": "987654321",
             "recipient_level": "C",
             "recipient_hash": "hash456",
+        },
+        {
+            "recipient_name": "TEST CORP",
+            "uei": "UEI000000000",
+            "duns": "000000000",
+            "recipient_level": "C",
+            "recipient_hash": "hash000",
         },
         {
             "recipient_name": "ACME INDUSTRIES",
@@ -85,8 +94,8 @@ def elasticsearch_recipient_index(elasticsearch_connection):
     yield index_name
 
     # Cleanup
-    if index.exists(using='default'):
-        index.delete(using='default')
+    if index.exists(using="default"):
+        index.delete(using="default")
 
 
 @pytest.fixture
@@ -100,6 +109,7 @@ def setup_test_recipients(elasticsearch_recipient_index):
 # ============================================================================
 # TESTS
 # ============================================================================
+
 
 @pytest.mark.django_db
 class TestBuildFuzzyRecipientQueryIntegration:
@@ -222,29 +232,34 @@ class TestRetrieveRecipientNamesIntegration:
     """Integration tests for retrieve_recipient_names"""
 
     def test_returns_list_of_strings(self, setup_test_recipients):
-        """Test that function returns a list of strings"""
+        """Test that function returns a dictionary for a list of strings"""
         result = retrieve_recipient_names("ACME")
 
-        assert isinstance(result, list)
+        assert isinstance(result, dict)
         # All items should be strings
-        for item in result:
-            assert isinstance(item, str)
+        for k, v in result.items():
+            assert isinstance(k, str)
+            assert isinstance(v, list)
+            for item in v:
+                assert isinstance(item, str)
 
     def test_handles_no_matches(self):
         """Test behavior when no matches are found"""
         result = retrieve_recipient_names("NONEXISTENT_XYZ_12345")
 
-        assert isinstance(result, list)
-        assert result == []
+        assert isinstance(result, dict)
+        assert result["recipient_names"] == []
 
     def test_respects_limit_parameter(self, setup_test_recipients):
         """Test that limit parameter controls number of results"""
-        result_3 = retrieve_recipient_names("CORP", limit=3)
-        result_10 = retrieve_recipient_names("CORP", limit=10)
+        result_1 = retrieve_recipient_names("CORP", limit=1)
+        result_2 = retrieve_recipient_names("CORP", limit=2)
 
         # Results should respect the limit
-        assert isinstance(result_3, list)
-        assert isinstance(result_10, list)
+        assert isinstance(result_1, dict)
+        assert len(result_1["recipient_names"]) == 1
+        assert isinstance(result_2, dict)
+        assert len(result_2["recipient_names"]) == 2
 
     def test_extracts_recipient_identifiers(self, setup_test_recipients):
         """Test that recipient names, UEIs, and DUNS are extracted"""
@@ -252,9 +267,9 @@ class TestRetrieveRecipientNamesIntegration:
 
         if result:
             # Should contain recipient identifiers (names, UEIs, DUNS)
-            assert len(result) > 0
+            assert len(result["recipient_names"]) > 0
             # All should be strings
-            assert all(isinstance(item, str) for item in result)
+            assert all(isinstance(item, str) for v in result.values() for item in v)
 
     def test_case_insensitive_search(self, setup_test_recipients):
         """Test that search is case-insensitive"""
@@ -262,14 +277,14 @@ class TestRetrieveRecipientNamesIntegration:
         result_upper = retrieve_recipient_names("ACME CORP")
 
         # Should return same results
-        assert len(result_lower) == len(result_upper)
+        assert len(result_lower["recipient_names"]) == len(result_upper["recipient_names"])
 
     def test_handles_special_characters(self):
         """Test that special characters are handled properly"""
         # Should not raise exception
         result = retrieve_recipient_names("ACME & Co. (2024)")
 
-        assert isinstance(result, list)
+        assert isinstance(result, dict)
 
     def test_no_duplicate_names(self, setup_test_recipients):
         """Test that result contains no duplicates"""
@@ -277,7 +292,7 @@ class TestRetrieveRecipientNamesIntegration:
 
         if result:
             # Should have no duplicates
-            assert len(result) == len(set(result))
+            assert len(result["recipient_names"]) == len(set(result["recipient_names"]))
 
     def test_returns_multiple_identifiers_per_recipient(self, setup_test_recipients):
         """Test that multiple identifiers (name, UEI, DUNS) are returned for each recipient"""
@@ -286,27 +301,27 @@ class TestRetrieveRecipientNamesIntegration:
         if result:
             # Should include multiple identifiers for the recipient
             # (name, UEI, DUNS at minimum)
-            assert len(result) >= 1
+            assert len(result["recipient_names"]) >= 1
 
     def test_handles_partial_matches(self, setup_test_recipients):
         """Test that partial text matches work"""
         result = retrieve_recipient_names("ACM")
 
         # Should find results containing "ACM" (like ACME)
-        assert isinstance(result, list)
+        assert isinstance(result, dict)
 
     def test_handles_whitespace_in_query(self):
         """Test that whitespace in query is handled correctly"""
         result = retrieve_recipient_names("  ACME  ")
 
-        assert isinstance(result, list)
+        assert isinstance(result, dict)
 
     def test_performance_with_large_limit(self, setup_test_recipients):
         """Test that function handles large limits without errors"""
         # Should not timeout or error with large limit
         result = retrieve_recipient_names("CORP", limit=100)
 
-        assert isinstance(result, list)
+        assert isinstance(result, dict)
 
 
 @pytest.mark.django_db
@@ -324,11 +339,11 @@ class TestRecipientRetrievalEndToEnd:
 
         # Both should return results (or both empty)
         assert isinstance(search_results, list)
-        assert isinstance(names, list)
+        assert isinstance(names, dict)
 
         # If search results exist, names should also exist
         if search_results:
-            assert len(names) > 0
+            assert len(names["recipient_names"]) > 0
 
     def test_retrieve_names_includes_fuzzy_search_data(self, setup_test_recipients):
         """Test that retrieve_recipient_names includes data from fuzzy search"""
@@ -344,7 +359,7 @@ class TestRecipientRetrievalEndToEnd:
             if first_result.get("recipient_name"):
                 # At least one identifier should be in the names list
                 assert any(
-                    identifier in names
+                    identifier in names["recipient_names"]
                     for identifier in [
                         first_result.get("recipient_name"),
                         first_result.get("uei"),
@@ -363,11 +378,11 @@ class TestRecipientRetrievalEndToEnd:
 
         # Both should return data (or both empty)
         assert isinstance(fuzzy_results, list)
-        assert isinstance(names, list)
+        assert isinstance(names, dict)
 
         # If fuzzy search has results, names should too
         if fuzzy_results:
-            assert len(names) > 0
+            assert len(names["recipient_names"]) > 0
 
     def test_build_query_to_fuzzy_search_workflow(self, setup_test_recipients):
         """Test workflow from building query to executing search"""
@@ -388,7 +403,7 @@ class TestRecipientRetrievalEndToEnd:
         for query in queries:
             # Should not timeout or error
             result = retrieve_recipient_names(query, limit=10)
-            assert isinstance(result, list)
+            assert isinstance(result, dict)
 
     def test_empty_results_handled_consistently(self):
         """Test that empty results are handled consistently across functions"""
@@ -399,7 +414,7 @@ class TestRecipientRetrievalEndToEnd:
         names = retrieve_recipient_names(nonexistent)
 
         assert fuzzy_results == []
-        assert names == []
+        assert names["recipient_names"] == []
 
     def test_special_characters_handled_consistently(self):
         """Test that special characters are handled consistently"""
@@ -410,4 +425,4 @@ class TestRecipientRetrievalEndToEnd:
         names = retrieve_recipient_names(special_query)
 
         assert isinstance(fuzzy_results, list)
-        assert isinstance(names, list)
+        assert isinstance(names, dict)

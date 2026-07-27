@@ -1,6 +1,6 @@
 from typing import Annotated, Any, Callable, Literal
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
 class AIToolDescription(BaseModel):
@@ -97,7 +97,7 @@ class SelectedAgency(BaseModel):
     id: int
     toptier_flag: bool
     toptier_agency: ToptierAgency
-    subtier_agency: SubtierAgency
+    subtier_agency: SubtierAgency | None = None
     agencyType: str = Field(alias="agencyType")
 
 
@@ -265,6 +265,8 @@ class DEFCodeLists(BaseModel):
 
 class Filters(BaseModel):
     """Model for all filter criteria"""
+
+    model_config = ConfigDict(extra="forbid")
 
     keyword: list[str] = Field(
         default_factory=list, description="List of keywords. Use query fan out to expand user query to 2-3 synonyms"
