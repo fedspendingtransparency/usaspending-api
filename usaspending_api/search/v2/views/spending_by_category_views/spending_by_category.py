@@ -68,10 +68,6 @@ class AbstractSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
     def post(self, request: Request, *args, **kwargs) -> Response:
         original_filters = request.data.get("filters")
 
-        # Creates an instance copy for the category for each request
-        # Prevents modifications from previous requests affecting current requests
-        self.category = copy.deepcopy(self._category)
-
         # Handles case where the request has already been validated by an implementation of the abstract class
         validated_payload = kwargs.get("validated_payload", self.validate_payload(request))
 
@@ -83,6 +79,10 @@ class AbstractSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
         return Response(raw_response)
 
     def validate_payload(self, request: Request) -> dict:
+        # Creates an instance copy for the category for each request
+        # Prevents modifications from previous requests affecting current requests
+        self.category = copy.deepcopy(self._category)
+
         models = [
             {"name": "subawards", "key": "subawards", "type": "boolean", "default": False, "optional": True},
             {
