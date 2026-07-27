@@ -9,6 +9,7 @@ from usaspending_api.common.api_request_utils import LLMAPIKeyHandler
 from usaspending_api.common.validator.tinyshield import TinyShield
 from usaspending_api.llm.assistants.filter_search import FilterSearchAssistant
 from usaspending_api.llm.models.db_models import Prompts, Session
+from usaspending_api.llm.tools.execute_filter import execute_filter_tool
 from usaspending_api.llm.tools.lookup_location import lookup_location_tool
 from usaspending_api.llm.tools.lookup_recipient import lookup_recipient_tool
 from usaspending_api.llm.v2.views.llm_base import LLMBase
@@ -29,6 +30,7 @@ class FilterSearchViewSet(LLMBase):
     tools = [
         lookup_location_tool,
         lookup_recipient_tool,
+        execute_filter_tool,
     ]
 
     @LLMAPIKeyHandler.require_api_key
@@ -83,7 +85,7 @@ class FilterSearchViewSet(LLMBase):
                     error_event = {
                         "search_id": str(session.id),
                         "type": "search_error",
-                        "message": f"An error occurred: {str(e)}"
+                        "message": "An error occurred.",
                     }
                     yield self._ndjson_format(error_event)
                 finally:
@@ -92,10 +94,7 @@ class FilterSearchViewSet(LLMBase):
                     session.save(update_fields=["ended_at"])
 
             # Craft Response stream.
-            response = StreamingHttpResponse(
-                event_stream(),
-                content_type="application/x-ndjson"
-            )
+            response = StreamingHttpResponse(event_stream(), content_type="application/x-ndjson")
             # Disable webserver caching/buffering to enable pass-through behavior of chunks in the stream.
             response["Cache-Control"] = "no-cache"
             response["X-Accel-Buffering"] = "no"
