@@ -24,7 +24,7 @@ class LocationType(Enum):
     CONGRESSIONAL_DISTRICT = "congressional"
 
 
-def _combine_dicts_by_keys(dicts, keys, sum_key) -> List[Dict]:
+def _combine_dicts_by_keys(dicts: list[dict], keys: list[str], sum_key: str) -> List[Dict]:
     """Combine all dictionaries in a list that have the same values for the given field(s)
 
     Args:
