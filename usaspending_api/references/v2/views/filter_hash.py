@@ -1,9 +1,9 @@
-import hashlib
-
 from django.http import HttpResponseBadRequest
+from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from usaspending_api.references.helpers import create_hash
 from usaspending_api.references.models import FilterHash
 
 
@@ -12,21 +12,8 @@ class FilterEndpoint(APIView):
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/references/filter.md"
 
-    @staticmethod
-    def create_hash(payload):
-        """
-        Create a MD5 hash from a Python dict
-        (Some tomfoolery here due to Python's handling of byte strings)
-        """
-        m = hashlib.md5(usedforsecurity=False)
-        m.update(payload)
-        hash_key = m.hexdigest().encode("utf8")
-        if len(str(hash_key)) > 2 and str(hash_key)[:2] == "b'":
-            hash_key = str(hash_key)[2:-1]
-        return hash_key
-
-    def post(self, request, format=None):
-        hash_key = self.create_hash(request.body)
+    def post(self, request: Request, format: str | None = None) -> Response:
+        hash_key = create_hash(request.body)
 
         try:
             fh = FilterHash.objects.get(hash=hash_key)
@@ -46,7 +33,7 @@ class HashEndpoint(APIView):
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/references/hash.md"
 
-    def post(self, request, format=None):
+    def post(self, request: Request, format: str | None = None) -> Response | HttpResponseBadRequest:
         if "hash" not in request.data:
             return HttpResponseBadRequest("Missing `hash` key in request body")
 
