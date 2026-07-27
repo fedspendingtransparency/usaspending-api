@@ -1,7 +1,7 @@
-import json
 import os
 from datetime import date, datetime, time
 from functools import wraps
+from inspect import signature
 from typing import Any, Dict, List, Optional, Union
 
 import boto3
@@ -10,6 +10,7 @@ from django.contrib.postgres.search import SearchVector
 from django.db.models import Q
 from django.utils import timezone
 from rest_framework import status
+from rest_framework.request import Request as DRFRequest
 from rest_framework.response import Response
 
 from usaspending_api.common.exceptions import InvalidParameterException
@@ -525,24 +526,47 @@ class LLMAPIKeyHandler:
             - UUID in the header doesn't match the AWS secret
 
         Example:
-            @LLMAPIKeyHandler.require_api_key
-            @cache_response()
-            @api_view(['GET', 'POST'])
-            def llm_endpoint(request):
-                return Response({"message": "LLM endpoint"})
+            class LLMEndpointView(APIView):
+                @LLMAPIKeyHandler.require_api_key
+                def post(self, request):
+                    return StreamingHttpResponse(...)
         """
+        # Capture the original function signature once when the decorator is applied.
+        function_signature = signature(function)
 
         @wraps(function)
-        def wrapper(*args: Any, **kwargs: Any) -> Response:
-            # Extract request from args
-            request = args[0] if args else kwargs.get('request')
+        def wrapper(*args: Any, **kwargs: Any) -> Any:
+            # Map args and kwargs to the parameter names (e.g., "self", "request").
+            error_response = None
+            try:
+                bound = function_signature.bind_partial(*args, **kwargs)
+            except TypeError:
+                error_response = LLMAPIKeyHandler._error_response(
+                    "Request object not found",
+                    status.HTTP_500_INTERNAL_SERVER_ERROR,
+                )
+            else:
+                # Retrieve values assigned to the "request" parameter.
+                # (Should prevent accidentally selecting the APIRequest instance)
+                # TODO: Add flexibility. This is rigidly tied to the parameter name "request"
+                request = bound.arguments.get("request")
 
-            # Validate request and authentication
-            error_response = LLMAPIKeyHandler._validate_llm_request(request)
-            if error_response:
+                # Require an actual DRF Request before attempting header validation.
+                if not isinstance(request, DRFRequest):
+                    error_response = LLMAPIKeyHandler._error_response(
+                        "Request object not found",
+                        status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    )
+                else:
+                    # Validate the API-key header, secrets config, and UUID.
+                    # Returns a Response when validation fails and None when successful.
+                    error_response = LLMAPIKeyHandler._validate_llm_request(request)
+            # Return the validation error without executing the protected view.
+            if error_response is not None:
                 return error_response
 
-            # UUID is valid, proceed with the view
+            # If authentication succeeds, execute original view method with the
+            # same args/kwargs that were passed to the wrapper.
             return function(*args, **kwargs)
 
         return wrapper
@@ -558,10 +582,10 @@ class LLMAPIKeyHandler:
         if isinstance(validation_result, Response):
             return validation_result
 
-        llm_api_key, secret_name = validation_result
+        llm_api_key = validation_result
 
         # Retrieve and validate secret from AWS
-        stored_uuid = LLMAPIKeyHandler._get_secret_uuid(secret_name)
+        stored_uuid = LLMAPIKeyHandler._get_secret_uuid()
         if isinstance(stored_uuid, Response):
             return stored_uuid
 
@@ -569,31 +593,24 @@ class LLMAPIKeyHandler:
         return LLMAPIKeyHandler._validate_uuid_match(llm_api_key, stored_uuid)
 
     @staticmethod
-    def _validate_request_components(request: Any) -> Union[tuple, Response]:
+    def _validate_request_components(request: Any) -> Union[str, Response]:
         """
-        Validate request, API key header, and secret name configuration.
-        Returns tuple of (api_key, secret_name) on success or error Response on failure.
+        Validate request, API key header configuration.
+        Returns the api_key on success or error Response on failure.
         """
         if not request:
             return LLMAPIKeyHandler._error_response(
-                "Request object not found",
-                status.HTTP_500_INTERNAL_SERVER_ERROR
+                "X-LLM-API-Key header is required for LLM API access",
+                status.HTTP_403_FORBIDDEN
             )
 
         llm_api_key = request.headers.get('X-LLM-API-Key')
-        secret_name = os.environ.get('LLM_API_SECRET_NAME')
 
-        # Validate both required components - prioritize API key error
-        error_detail = None
         if not llm_api_key:
             error_detail = "X-LLM-API-Key header is required for LLM API access"
-        elif not secret_name:
-            error_detail = "LLM API secret configuration is not set"
-
-        if error_detail:
             return LLMAPIKeyHandler._error_response(error_detail, status.HTTP_403_FORBIDDEN)
 
-        return llm_api_key, secret_name
+        return llm_api_key
 
     @staticmethod
     def _validate_uuid_match(llm_api_key: str, stored_uuid: str) -> Optional[Response]:
@@ -606,16 +623,15 @@ class LLMAPIKeyHandler:
         return None
 
     @staticmethod
-    def _get_secret_uuid(secret_name: str) -> Union[str, Response]:
+    def _get_secret_uuid() -> Union[str, Response]:
         """
         Retrieve UUID from AWS Secrets Manager.
         Returns UUID string on success or error Response on failure.
         """
+        secret_name = "llm_api_secret"
         try:
             secret_string = LLMAPIKeyHandler._fetch_aws_secret(secret_name)
-            if isinstance(secret_string, Response):
-                return secret_string
-            return LLMAPIKeyHandler._parse_secret_uuid(secret_string)
+            return secret_string
         except (ClientError, Exception) as e:
             return LLMAPIKeyHandler._handle_error(e, secret_name)
 
@@ -640,29 +656,6 @@ class LLMAPIKeyHandler:
             )
 
         return get_secret_value_response['SecretString']
-
-    @staticmethod
-    def _parse_secret_uuid(secret: str) -> Union[str, Response]:
-        """
-        Parse UUID from secret string (handles both JSON and plain text).
-        Returns UUID string or error Response.
-        """
-        try:
-            secret_dict = json.loads(secret)
-            stored_uuid = (
-                    secret_dict.get('uuid') or
-                    secret_dict.get('LLM_API_KEY') or
-                    secret_dict.get('api_key')
-            )
-            if not stored_uuid:
-                return LLMAPIKeyHandler._error_response(
-                    "LLM API secret does not contain a valid UUID key",
-                    status.HTTP_403_FORBIDDEN
-                )
-            return stored_uuid
-        except json.JSONDecodeError:
-            # Secret is a plain string UUID
-            return secret
 
     @staticmethod
     def _handle_error(error: Exception, secret_name: str) -> Response:
