@@ -138,6 +138,9 @@ def _process_location(nested_locations: dict[str, Any], location_data: dict[str,
     # Process state-level data
     if location_data["state"]:
         _process_state_data(nested_locations[country], location_data)
+    elif location_data["city"]:
+        # City without state goes to country level
+        nested_locations[country]["city"].append(location_data["city"])
 
 
 def _process_zip_code(country_data: dict[str, Any], zip_code: str | None) -> None:
@@ -190,9 +193,6 @@ def _process_state_data(country_data: dict[str, Any], location_data: dict[str, A
     # Add city data
     if location_data["city"]:
         state_data["city"].append(location_data["city"])
-    elif location_data["city"] and not state:
-        # City without state goes to country level
-        country_data["city"].append(location_data["city"])
 
 
 def location_error_handling(fields: Any) -> None:
