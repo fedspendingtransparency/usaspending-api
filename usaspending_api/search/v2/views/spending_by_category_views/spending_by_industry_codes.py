@@ -5,6 +5,8 @@ from enum import Enum
 from typing import List
 
 from django.db.models import F
+from rest_framework.request import Request
+from rest_framework.response import Response
 
 from usaspending_api.references.models import NAICS, PSC, Cfda, DisasterEmergencyFundCode
 from usaspending_api.search.v2.views.enums import SpendingLevel
@@ -101,7 +103,7 @@ class CfdaViewSet(AbstractIndustryCodeViewSet):
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/search/spending_by_category/cfda.md"
 
     industry_code_type = IndustryCodeType.CFDA
-    category = Category(name="cfda", agg_key="cfda_agg_key")
+    _category = Category(name="cfda", agg_key="cfda_agg_key")
 
 
 class NAICSViewSet(AbstractIndustryCodeViewSet):
@@ -112,7 +114,7 @@ class NAICSViewSet(AbstractIndustryCodeViewSet):
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/search/spending_by_category/naics.md"
 
     industry_code_type = IndustryCodeType.NAICS
-    category = Category(name="naics", agg_key="naics_agg_key")
+    _category = Category(name="naics", agg_key="naics_agg_key")
 
 
 class PSCViewSet(AbstractIndustryCodeViewSet):
@@ -123,7 +125,7 @@ class PSCViewSet(AbstractIndustryCodeViewSet):
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/search/spending_by_category/psc.md"
 
     industry_code_type = IndustryCodeType.PSC
-    category = Category(name="psc", agg_key="psc_agg_key")
+    _category = Category(name="psc", agg_key="psc_agg_key")
 
 
 class DEFCViewSet(AbstractIndustryCodeViewSet):
@@ -134,9 +136,9 @@ class DEFCViewSet(AbstractIndustryCodeViewSet):
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/search/spending_by_category/defc.md"
 
     industry_code_type = IndustryCodeType.DEFC
-    category = Category(name="defc", agg_key="defc_agg_key")
+    _category = Category(name="defc", agg_key="defc_agg_key")
 
-    def post(self, request, *args, **kwargs):
+    def post(self, request: Request, *args, **kwargs) -> Response:
         validated_payload = self.validate_payload(request)
         nested_path = "spending_by_defc"
         if self.spending_level == SpendingLevel.FILE_C:
