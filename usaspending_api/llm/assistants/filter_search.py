@@ -182,9 +182,6 @@ class FilterSearchAssistant:
                     "tool_use_id": t.id,
                     "message": f"Tool execution failed: {str(e)}",
                 }
-
-            tool_result = {"toolUseId": tool_use["toolUseId"], "content": [{"json": result}]}
-            tool_result_message["content"].append({"toolResult": tool_result})
             if tool.description.name == self.COMPLETION_TOOL_NAME and "error" not in result:
                 yield {"search_id": str(self.session.id), "type": "search_complete", "result": result["hash"]}
         self.messages.append(tool_result_message)
