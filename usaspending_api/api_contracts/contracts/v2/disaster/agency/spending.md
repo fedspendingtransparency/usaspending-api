@@ -191,3 +191,13 @@ List of procurement and assistance award type codes supported by USAspending.gov
 + `IDV_D`
 + `IDV_E`
 + `-1`
++ `F001`
++ `F002`
++ `F003`
++ `F004`
++ `F005`
++ `F006`
++ `F007`
++ `F008`
++ `F009`
++ `F010`

@@ -1,5 +1,5 @@
 from datetime import date, datetime
-from typing import Any
+from typing import Any, Optional
 
 from pydantic import BaseModel, ValidationInfo, field_validator
 
@@ -7,10 +7,10 @@ from usaspending_api.references.models import ToptierAgency
 
 
 class MonthlyDownloadFilters(BaseModel):
-
     as_of_date: str | None = None
     awarding_toptier_agency_code: str | None = None
     fiscal_year: int | None = None
+    delta_start_date: str | None = None
 
     @field_validator("as_of_date", mode='before')
     @classmethod
@@ -28,6 +28,27 @@ class MonthlyDownloadFilters(BaseModel):
             value = date.today().strftime("%Y%m%d")
         else:
             raise ValueError(f"Received unsupported type of '{type(value)}'; expected 'str'")
+        return value
+
+    @field_validator("delta_start_date", mode='before')
+    @classmethod
+    def validate_delta_start_date(cls, value: Any) -> Optional[str]:
+        """Validate delta_start_date format: YYYY-MM-DD"""
+        if value is None:
+            return value
+
+        if isinstance(value, str):
+            err_msg = "'delta_start_date' must be in the format YYYY-MM-DD"
+            if len(value) == 10:
+                try:
+                    datetime.strptime(value, "%Y-%m-%d")
+                except ValueError as err:
+                    raise ValueError(err_msg) from err
+            else:
+                raise ValueError(err_msg)
+        else:
+            raise ValueError(f"Received unsupported type of '{type(value)}'; expected 'str'")
+
         return value
 
     @field_validator("awarding_toptier_agency_code")

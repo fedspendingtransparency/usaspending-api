@@ -624,7 +624,7 @@ query_paths = {
                 ),
                 (
                     "government_furnished_property",
-                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['government_furnished_prope']}",
+                    f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['government_furnished_desc']}",
                 ),
                 (
                     "sea_transportation_code",
@@ -2576,7 +2576,7 @@ query_paths = {
                     "ussgl488100_upward_adjust_pri_undeliv_order_oblig_unpaid_cpe",
                 ),
                 ("obligations_delivered_orders_unpaid_total", "obligations_delivered_orders_unpaid_total_cpe"),
-                ("obligations_delivered_orders_unpaid_total_FYB", "obligations_delivered_orders_unpaid_total_cpe"),
+                ("obligations_delivered_orders_unpaid_total_FYB", "obligations_delivered_orders_unpaid_total_fyb"),
                 (
                     "USSGL490100_delivered_orders_obligations_unpaid",
                     "ussgl490100_delivered_orders_obligations_unpaid_cpe",
@@ -2600,7 +2600,7 @@ query_paths = {
                 ),
                 (
                     "gross_outlays_undelivered_orders_prepaid_total_FYB",
-                    "gross_outlays_undelivered_orders_prepaid_total_cpe",
+                    "gross_outlays_undelivered_orders_prepaid_total_fyb",
                 ),
                 (
                     "USSGL480200_undelivered_orders_obligations_prepaid_advanced",
@@ -2888,7 +2888,7 @@ query_paths = {
                 ("recipient_name", "award__latest_transaction_search__recipient_name"),
                 ("recipient_name_raw", "award__latest_transaction_search__recipient_name_raw"),
                 ("recipient_parent_uei", "award__latest_transaction_search__parent_uei"),
-                ("recipient_parent_duns", "award__latest_transaction_search__parent_uei"),
+                ("recipient_parent_duns", "award__latest_transaction_search__parent_recipient_unique_id"),
                 ("recipient_parent_name", "award__latest_transaction_search__parent_recipient_name"),
                 ("recipient_parent_name_raw", "award__latest_transaction_search__parent_recipient_name_raw"),
                 ("recipient_country", "award__latest_transaction_search__recipient_location_country_code"),
@@ -3008,7 +3008,7 @@ query_paths = {
                 ("recipient_name", "award__latest_transaction_search__recipient_name"),
                 ("recipient_name_raw", "award__latest_transaction_search__recipient_name_raw"),
                 ("recipient_parent_uei", "award__latest_transaction_search__parent_uei"),
-                ("recipient_parent_duns", "award__latest_transaction_search__parent_uei"),
+                ("recipient_parent_duns", "award__latest_transaction_search__parent_recipient_unique_id"),
                 ("recipient_parent_name", "award__latest_transaction_search__parent_recipient_name"),
                 ("recipient_parent_name_raw", "award__latest_transaction_search__parent_recipient_name_raw"),
                 ("recipient_country", "award__latest_transaction_search__recipient_location_country_code"),

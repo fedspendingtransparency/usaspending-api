@@ -1,6 +1,7 @@
+from typing import Any, Dict
+
 from usaspending_api.search.filters.elasticsearch.filter import QueryType
 from usaspending_api.search.filters.time_period import AbstractTimePeriod
-
 
 NEW_AWARDS_ONLY_KEYWORD = "new_awards_only"
 
@@ -10,7 +11,7 @@ class NewAwardsOnlyTimePeriod(AbstractTimePeriod):
     new awards only filter logic on top of a concrete AbstractTimePeriod subclass.
     """
 
-    def __init__(self, time_period_obj: AbstractTimePeriod, query_type: QueryType):
+    def __init__(self, time_period_obj: AbstractTimePeriod, query_type: QueryType) -> None:
         """A constructor for NewAwardsOnlyTimePeriod.
 
         Args:
@@ -21,7 +22,7 @@ class NewAwardsOnlyTimePeriod(AbstractTimePeriod):
         self._time_period_obj = time_period_obj
 
     @property
-    def _additional_lte_filters_for_new_awards_only(self):
+    def _additional_lte_filters_for_new_awards_only(self) -> dict[QueryType, list[dict[str, dict[str, str]]]]:
         # Making this variable a property to ensure it grabs
         # end date on the fly in case it wasn't set before
         # instantiating this class.
@@ -36,10 +37,12 @@ class NewAwardsOnlyTimePeriod(AbstractTimePeriod):
         }
 
     @property
-    def _additional_gte_filters_for_new_awards_only(self):
+    def _additional_gte_filters_for_new_awards_only(self) -> dict[QueryType, list[dict[str, dict[str, str]]]]:
         # Making this variable a property to ensure it grabs
         # end date on the fly in case it wasn't set before
         # instantiating this class.
+        # Awards also require action_date >= start date so new_awards_only filter remains
+        # a subset of the default award time filter (action_date >= start and date_signed <= end)
         return {
             QueryType.TRANSACTIONS: [
                 {"action_date": {"gte": self.start_date()}},
@@ -47,30 +50,31 @@ class NewAwardsOnlyTimePeriod(AbstractTimePeriod):
             ],
             QueryType.AWARDS: [
                 {"date_signed": {"gte": self.start_date()}},
+                {"action_date": {"gte": self.start_date()}},
             ],
         }
 
     @property
-    def filter_value(self):
+    def filter_value(self) -> Dict[str, str]:
         return self._time_period_obj.filter_value
 
     @filter_value.setter
-    def filter_value(self, filter_value):
+    def filter_value(self, filter_value: dict[str, str]) -> None:
         self._time_period_obj.filter_value = filter_value
 
-    def start_date(self):
+    def start_date(self) -> str:
         return self._time_period_obj.start_date()
 
-    def end_date(self):
+    def end_date(self) -> str:
         return self._time_period_obj.end_date()
 
-    def gte_date_type(self):
+    def gte_date_type(self) -> str:
         return self._time_period_obj.gte_date_type()
 
-    def lte_date_type(self):
+    def lte_date_type(self) -> str:
         return self._time_period_obj.lte_date_type()
 
-    def gte_date_range(self):
+    def gte_date_range(self) -> list[dict[str, str]] | list[Any]:
         wrapped_range = self._time_period_obj.gte_date_range()
         if self._new_awards_only():
             # When date type is new awards only we don't use date type directly in
@@ -80,7 +84,7 @@ class NewAwardsOnlyTimePeriod(AbstractTimePeriod):
                 wrapped_range.append(additional_filter)
         return wrapped_range
 
-    def lte_date_range(self):
+    def lte_date_range(self) -> list[dict[str, str]] | list[Any]:
         wrapped_range = self._time_period_obj.lte_date_range()
         if self._new_awards_only():
             # When date type is new awards only we don't use date type directly in

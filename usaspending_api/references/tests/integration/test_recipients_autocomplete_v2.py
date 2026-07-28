@@ -1,9 +1,12 @@
 import json
+from typing import Any
 
 import pytest
 from django.conf import settings
-from elasticsearch_dsl import AttrDict
+from django.test import Client
 from model_bakery import baker
+from opensearchpy.helpers.utils import AttrDict
+from pytest import MonkeyPatch
 
 from usaspending_api.references.v2.views.recipients import RecipientAutocompleteViewSet
 
@@ -305,7 +308,9 @@ def test_parse_elasticsearch_response():
     assert view_set_instance._parse_elasticsearch_response(hits_without_data) == expected_results
 
 
-def test_recipient_search_matches_found(client, monkeypatch, recipient_data_fixture, elasticsearch_recipient_index):
+def test_recipient_search_matches_found(
+    client: Client, monkeypatch: MonkeyPatch, recipient_data_fixture: Any, elasticsearch_recipient_index: Any
+):
     monkeypatch.setattr(
         "usaspending_api.common.elasticsearch.search_wrappers.RecipientSearch._index_name",
         settings.ES_RECIPIENTS_QUERY_ALIAS_PREFIX,
@@ -319,7 +324,7 @@ def test_recipient_search_matches_found(client, monkeypatch, recipient_data_fixt
 
 
 def test_recipient_partial_search_matches_found(
-    client, monkeypatch, recipient_data_fixture, elasticsearch_recipient_index
+    client: Client, monkeypatch: MonkeyPatch, recipient_data_fixture: Any, elasticsearch_recipient_index: Any
 ):
     monkeypatch.setattr(
         "usaspending_api.common.elasticsearch.search_wrappers.RecipientSearch._index_name",
@@ -334,7 +339,7 @@ def test_recipient_partial_search_matches_found(
 
 
 def test_recipient_search_multiple_recipient_levels(
-    client, monkeypatch, recipient_data_fixture, elasticsearch_recipient_index
+    client: Client, monkeypatch: MonkeyPatch, recipient_data_fixture: Any, elasticsearch_recipient_index: Any
 ):
     monkeypatch.setattr(
         "usaspending_api.common.elasticsearch.search_wrappers.RecipientSearch._index_name",
@@ -348,21 +353,23 @@ def test_recipient_search_multiple_recipient_levels(
         assert entry["recipient_name"].lower().find("batman") > -1
 
 
-def test_recipient_search_no_matches(client, monkeypatch, recipient_data_fixture, elasticsearch_recipient_index):
+def test_recipient_search_no_matches(
+    client: Client, monkeypatch: MonkeyPatch, recipient_data_fixture: Any, elasticsearch_recipient_index: Any
+):
     monkeypatch.setattr(
         "usaspending_api.common.elasticsearch.search_wrappers.RecipientSearch._index_name",
         settings.ES_RECIPIENTS_QUERY_ALIAS_PREFIX,
     )
     elasticsearch_recipient_index.update_index()
-    body = {"search_text": "nonexistent", "recipient_levels": ["R", "C", "D"], "limit": 20}
+    body = {"search_text": "nonexistent", "recipient_levels": ["R", "C"], "limit": 20}
     response = client.post("/api/v2/autocomplete/recipient", content_type="application/json", data=json.dumps(body))
     assert response.data["count"] == 0
-    for entry in response.data["results"]:
-        assert False  # this should never be reached
+    for _entry in response.data["results"]:
+        raise AssertionError()
 
 
 def test_recipient_search_special_characters(
-    client, monkeypatch, recipient_data_fixture, elasticsearch_recipient_index
+    client: Client, monkeypatch: MonkeyPatch, recipient_data_fixture: Any, elasticsearch_recipient_index: Any
 ):
     monkeypatch.setattr(
         "usaspending_api.common.elasticsearch.search_wrappers.RecipientSearch._index_name",
