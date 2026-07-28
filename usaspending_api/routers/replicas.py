@@ -21,7 +21,7 @@ class ReadReplicaRouter:
 
     def db_for_read(self, model: Model, **hints) -> str:
         """
-        FilterHash and DownloadJob are writable tables so always read from source (default) to
+        FilterHash, DownloadJob, and the LLM app models are writable tables so always read from source (default) to
         mitigate replication lag.  Otherwise, choose a connection randomly.
         """
         if model in [FilterHash, DownloadJob, AIModel, Message, Prompts, Session, ToolUse]:
