@@ -91,7 +91,7 @@ class AggregateQuerysetMixin(object):
                 if is_last and segment in self._sql_function_transformations:
                     # Valid transform suffix, no need to continue validation.
                     return field_path, None
-                raise InvalidParameterException("Invalid field: {}".format(field_path)) from None
+                raise InvalidParameterException(f"Invalid field: {field_path}") from None
 
             is_last = index == len(segments) - 1
             if resolved_field.is_relation and not is_last:
@@ -103,7 +103,7 @@ class AggregateQuerysetMixin(object):
                 if is_next_last and next_segment in self._sql_function_transformations:
                     # Valid transform suffix on this field, allow it
                     return field_path, None
-                raise InvalidParameterException("Invalid field: {}".format(field_path))
+                raise InvalidParameterException(f"Invalid field: {field_path}")
 
         return field_path, resolved_field
 

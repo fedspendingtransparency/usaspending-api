@@ -305,7 +305,7 @@ class FilterGenerator:
                 if is_last and segment in self._get_allowed_lookups():
                     # Valid lookup suffix, no need to continue validation.
                     return
-                raise InvalidParameterException("Invalid field: {}".format(field_path)) from None
+                raise InvalidParameterException(f"Invalid field: {field_path}") from None
 
             is_last = index == len(segments) - 1
             if resolved_field.is_relation and not is_last:
@@ -317,7 +317,7 @@ class FilterGenerator:
                 if all(seg in allowed_lookups for seg in remaining_segments):
                     # All remaining segments are valid lookups, validation complete.
                     return
-                raise InvalidParameterException("Invalid field: {}".format(field_path))
+                raise InvalidParameterException(f"Invalid field: {field_path}")
 
     def _get_allowed_lookups(self) -> set:
         """Return set of allowed Django field lookups that can appear as a final segment."""
