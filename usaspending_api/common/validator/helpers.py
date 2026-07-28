@@ -2,9 +2,9 @@ import datetime
 import logging
 import sys
 import urllib
+from typing import Any
 
-from usaspending_api.common.exceptions import InvalidParameterException
-from usaspending_api.common.exceptions import UnprocessableEntityException
+from usaspending_api.common.exceptions import InvalidParameterException, UnprocessableEntityException
 
 logger = logging.getLogger("console")
 
@@ -23,7 +23,7 @@ BELOW_MINIMUM_MSG = "Field '{key}' value '{value}' is below min '{min}'"
 SUPPORTED_TEXT_TYPES = ["search", "raw", "sql", "url", "password"]
 
 
-def _check_max(rule):
+def _check_max(rule: dict) -> None:
     value = rule["value"]
     if rule["type"] in ("integer", "float"):
         if value > rule["max"]:
@@ -34,7 +34,7 @@ def _check_max(rule):
             raise UnprocessableEntityException(ABOVE_MAXIMUM_MSG.format(**rule) + " items")
 
 
-def _check_min(rule):
+def _check_min(rule: dict) -> None:
     value = rule["value"]
     if rule["type"] in ("integer", "float"):
         if value < rule["min"]:
@@ -45,7 +45,7 @@ def _check_min(rule):
             raise UnprocessableEntityException(BELOW_MINIMUM_MSG.format(**rule) + " items")
 
 
-def _check_datetime_min_max(rule, value, dt_format):
+def _check_datetime_min_max(rule: dict, value: datetime.datetime, dt_format: str) -> None:
 
     # DEV-4097 introduces new behavior whereby minimum/maximum date violations should raise an error.  To
     # implement this, we added a min/max_exception property to the rule.  If that property exists, we will
@@ -69,7 +69,7 @@ def _check_datetime_min_max(rule, value, dt_format):
             value = max_cap
 
 
-def _verify_int_value(value):
+def _verify_int_value(value: str | int) -> int | None:
     if type(value) in (int, str):
         try:
             return int(value)
@@ -78,7 +78,7 @@ def _verify_int_value(value):
     return None
 
 
-def _verify_float_value(value):
+def _verify_float_value(value: str | int | float) -> float | None:
     try:
         return float(value)
     except Exception:
@@ -86,9 +86,9 @@ def _verify_float_value(value):
     return None
 
 
-def validate_array(rule):
-    rule["min"] = rule.get("min") or 1
-    rule["max"] = rule.get("max") or MAX_ITEMS
+def validate_array(rule: dict) -> list:
+    rule["min"] = rule["min"] if rule.get("min") else 1
+    rule["max"] = rule["max"] if rule.get("max") else MAX_ITEMS
     value = rule["value"]
     if type(value) is not list:
         raise InvalidParameterException(INVALID_TYPE_MSG.format(**rule))
@@ -97,7 +97,7 @@ def validate_array(rule):
     return value
 
 
-def validate_boolean(rule):
+def validate_boolean(rule: dict) -> bool:
     # Could restrict this to ONLY True or False. Some tools like to use 0/1 or t/f so this function is inclusive
     if str(rule["value"]).lower() in ("1", "t", "true"):
         return True
@@ -108,7 +108,7 @@ def validate_boolean(rule):
         raise InvalidParameterException(msg)
 
 
-def validate_datetime(rule):
+def validate_datetime(rule: dict) -> str:
     # Utilizing the Python datetime strptime since format errors are already provided by datetime methods
     dt_format = "%Y-%m-%dT%H:%M:%S"
     val = str(rule["value"])
@@ -119,9 +119,9 @@ def validate_datetime(rule):
         dt_format = "%Y-%m-%dT%H:%M:%SZ"
     try:
         value = datetime.datetime.strptime(val, dt_format)
-    except ValueError:
+    except ValueError as err:
         error_message = INVALID_TYPE_MSG.format(**rule) + ". Expected format: ({})".format(dt_format)
-        raise InvalidParameterException(error_message)
+        raise InvalidParameterException(error_message) from err
 
     _check_datetime_min_max(rule, value, dt_format)
 
@@ -131,7 +131,7 @@ def validate_datetime(rule):
     return value.isoformat() + "Z"  # adding in "zulu" timezone to keep the datetime UTC. Can switch to "+0000"
 
 
-def validate_enum(rule):
+def validate_enum(rule: dict) -> Any:
     value = rule["value"]
     if value not in rule["enum_values"]:
         error_message = "Field '{}' is outside valid values {}".format(rule["key"], list(rule["enum_values"]))
@@ -139,9 +139,9 @@ def validate_enum(rule):
     return value
 
 
-def validate_float(rule):
-    rule["min"] = rule.get("min") or MIN_FLOAT
-    rule["max"] = rule.get("max") or MAX_FLOAT
+def validate_float(rule: dict) -> str:
+    rule["min"] = rule["min"] if rule.get("min") else MIN_FLOAT
+    rule["max"] = rule["max"] if rule.get("max") else MAX_FLOAT
     temp = _verify_float_value(rule["value"])
     if temp is None:
         raise InvalidParameterException(INVALID_TYPE_MSG.format(**rule))
@@ -151,9 +151,9 @@ def validate_float(rule):
     return rule["value"]
 
 
-def validate_integer(rule):
-    rule["min"] = rule.get("min") or MIN_INT
-    rule["max"] = rule.get("max") or MAX_INT
+def validate_integer(rule: dict) -> int:
+    rule["min"] = rule["min"] if rule.get("min") else MIN_INT
+    rule["max"] = rule["max"] if rule.get("max") else MAX_INT
     temp = _verify_int_value(rule["value"])
     if temp is None:
         raise InvalidParameterException(INVALID_TYPE_MSG.format(**rule))
@@ -163,7 +163,7 @@ def validate_integer(rule):
     return rule["value"]
 
 
-def validate_object(rule):
+def validate_object(rule: dict) -> dict:
     provided_object = rule["value"]
 
     if type(provided_object) is not dict:
@@ -186,9 +186,9 @@ def validate_object(rule):
     return provided_object
 
 
-def validate_text(rule):
-    rule["min"] = rule.get("min") or 1
-    rule["max"] = rule.get("max") or MAX_ITEMS
+def validate_text(rule: dict) -> str:
+    rule["min"] = rule["min"] if rule.get("min") else 1
+    rule["max"] = rule["max"] if rule.get("max") else MAX_ITEMS
     if type(rule["value"]) is not str:
         raise InvalidParameterException(INVALID_TYPE_MSG.format(**rule))
     _check_max(rule)

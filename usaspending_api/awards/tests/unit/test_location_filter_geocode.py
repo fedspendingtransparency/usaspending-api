@@ -2,14 +2,15 @@ import pytest
 
 from usaspending_api.awards.v2.filters.location_filter_geocode import (
     create_nested_object,
+    geocode_filter_locations,
     get_fields_list,
     location_error_handling,
     validate_location_keys,
 )
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers.api_helper import (
-    INCOMPATIBLE_DISTRICT_LOCATION_PARAMETERS,
     DUPLICATE_DISTRICT_LOCATION_PARAMETERS,
+    INCOMPATIBLE_DISTRICT_LOCATION_PARAMETERS,
 )
 
 
@@ -101,3 +102,24 @@ def test_get_fields_list():
     assert get_fields_list("county_code", "01") == ["1", "01", "1.0"]
     assert get_fields_list("feet", "01") == ["01"]
     assert get_fields_list("congressional_code", "abc") == ["abc"]
+
+
+def test_geocode_filter_locations_for_both_district_original_and_current_across_elements():
+    """
+    Cross-element same-state current and original must OR not overwrite
+    """
+
+    values = [
+        {"country": "USA", "state": "VA", "district_original": "08"},
+        {"country": "USA", "state": "VA", "district_current": "11"}
+    ]
+    # validate_location_keys only checks for moth district types within a single element
+    assert validate_location_keys(values) is None
+    nested = create_nested_object(values)
+    assert nested["USA"]["VA"]["district_original"] == ["08"]
+    assert nested["USA"]["VA"]["district_current"] == ["11"]
+
+    q = geocode_filter_locations("test", values)
+    q_repr = repr(q)
+    assert "test_congressional_code_current__in" in q_repr
+    assert "test_congressional_code__in" in q_repr

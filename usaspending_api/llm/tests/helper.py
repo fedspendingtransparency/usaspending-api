@@ -12,8 +12,8 @@ def build_fuzzy_recipient_query(search_text: str) -> RecipientSearch:
 
 
 def fuzzy_search_recipients(
-        search_text: str,
-        limit: int = 10,
+    search_text: str,
+    limit: int = 10,
 ) -> list | dict[str, Any]:
     response = _tool._build_search(es_sanitize(search_text).strip().upper(), top_k=limit).handle_execute()
     if not response.hits:
@@ -32,7 +32,7 @@ def fuzzy_search_recipients(
 
 
 def retrieve_recipient_names(
-        search_text: str,
-        limit: int = 5,
-) -> list[str]:
+    search_text: str,
+    limit: int = 5,
+) -> dict[str, list[str]]:
     return _tool.lookup_recipient(search_text, top_k=limit)
