@@ -1,4 +1,3 @@
-import json
 import os
 from datetime import date, datetime, time
 from functools import wraps
@@ -672,10 +671,10 @@ class LLMAPIKeyHandler:
         if isinstance(validation_result, Response):
             return validation_result
 
-        llm_api_key, secret_name = validation_result
+        llm_api_key = validation_result
 
         # Retrieve and validate secret from AWS
-        stored_uuid = LLMAPIKeyHandler._get_secret_uuid(secret_name)
+        stored_uuid = LLMAPIKeyHandler._get_secret_uuid()
         if isinstance(stored_uuid, Response):
             return stored_uuid
 
@@ -683,31 +682,24 @@ class LLMAPIKeyHandler:
         return LLMAPIKeyHandler._validate_uuid_match(llm_api_key, stored_uuid)
 
     @staticmethod
-    def _validate_request_components(request: Any) -> Union[tuple, Response]:
+    def _validate_request_components(request: Any) -> Union[str, Response]:
         """
-        Validate request, API key header, and secret name configuration.
-        Returns tuple of (api_key, secret_name) on success or error Response on failure.
+        Validate request, API key header configuration.
+        Returns the api_key on success or error Response on failure.
         """
         if not request:
             return LLMAPIKeyHandler._error_response(
-                "Request object not found",
-                status.HTTP_500_INTERNAL_SERVER_ERROR
+                "X-LLM-API-Key header is required for LLM API access",
+                status.HTTP_403_FORBIDDEN
             )
 
         llm_api_key = request.headers.get('X-LLM-API-Key')
-        secret_name = os.environ.get('LLM_API_SECRET_NAME')
 
-        # Validate both required components - prioritize API key error
-        error_detail = None
         if not llm_api_key:
             error_detail = "X-LLM-API-Key header is required for LLM API access"
-        elif not secret_name:
-            error_detail = "LLM API secret configuration is not set"
-
-        if error_detail:
             return LLMAPIKeyHandler._error_response(error_detail, status.HTTP_403_FORBIDDEN)
 
-        return llm_api_key, secret_name
+        return llm_api_key
 
     @staticmethod
     def _validate_uuid_match(llm_api_key: str, stored_uuid: str) -> Optional[Response]:
@@ -720,16 +712,15 @@ class LLMAPIKeyHandler:
         return None
 
     @staticmethod
-    def _get_secret_uuid(secret_name: str) -> Union[str, Response]:
+    def _get_secret_uuid() -> Union[str, Response]:
         """
         Retrieve UUID from AWS Secrets Manager.
         Returns UUID string on success or error Response on failure.
         """
+        secret_name = "llm_api_secret"
         try:
             secret_string = LLMAPIKeyHandler._fetch_aws_secret(secret_name)
-            if isinstance(secret_string, Response):
-                return secret_string
-            return LLMAPIKeyHandler._parse_secret_uuid(secret_string)
+            return secret_string
         except (ClientError, Exception) as e:
             return LLMAPIKeyHandler._handle_error(e, secret_name)
 
@@ -754,29 +745,6 @@ class LLMAPIKeyHandler:
             )
 
         return get_secret_value_response['SecretString']
-
-    @staticmethod
-    def _parse_secret_uuid(secret: str) -> Union[str, Response]:
-        """
-        Parse UUID from secret string (handles both JSON and plain text).
-        Returns UUID string or error Response.
-        """
-        try:
-            secret_dict = json.loads(secret)
-            stored_uuid = (
-                    secret_dict.get('uuid') or
-                    secret_dict.get('LLM_API_KEY') or
-                    secret_dict.get('api_key')
-            )
-            if not stored_uuid:
-                return LLMAPIKeyHandler._error_response(
-                    "LLM API secret does not contain a valid UUID key",
-                    status.HTTP_403_FORBIDDEN
-                )
-            return stored_uuid
-        except json.JSONDecodeError:
-            # Secret is a plain string UUID
-            return secret
 
     @staticmethod
     def _handle_error(error: Exception, secret_name: str) -> Response:

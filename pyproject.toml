@@ -55,6 +55,7 @@ dependencies = [
     "pydantic==2.12",
     "pydantic-settings>=2.13.1",
     "python-json-logger==2.0.7",
+    "pyyaml>=6.0.3",
     "requests",
     "retrying==1.3.4",
     "sqlparse==0.5.*",
