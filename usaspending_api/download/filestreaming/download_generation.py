@@ -11,6 +11,7 @@ from copy import deepcopy
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional, Tuple
+from urllib.parse import urlparse
 
 import psutil as ps
 from django.conf import settings
@@ -887,10 +888,11 @@ def execute_psql(temp_sql_file_path: str, source_path: str, download_job: Downlo
     """Executes a single PSQL command within its own Subprocess"""
     download_sql = Path(temp_sql_file_path).read_text()
     if download_sql.startswith("\\COPY"):
-        # Trace library parses the SQL, but cannot understand the psql-specific \COPY command. Use standard COPY here.
         download_sql = download_sql[1:]
 
-    # Stack 3 context managers: (1) psql code, (2) Download replica query, (3) (same) Postgres query
+    # Parse the database URL to extract credentials
+    db_url = urlparse(retrieve_db_string())
+
     subprocess_trace = SubprocessTrace(
         name=f"job.{JOB_TYPE}.download.psql",
         kind=SpanKind.INTERNAL,
@@ -898,33 +900,34 @@ def execute_psql(temp_sql_file_path: str, source_path: str, download_job: Downlo
     )
 
     with subprocess_trace as span:
-        span.set_attributes(
-            {
-                "service": "bulk-download",
-                "resource": str(download_sql),
-                "span_type": "Internal",
-                "source_path": str(source_path),
-                # download job details
-                "download_job_id": str(download_job.download_job_id),
-                "download_job_status": str(download_job.job_status.name),
-                "download_file_name": str(download_job.file_name),
-                "download_file_size": download_job.file_size if download_job.file_size is not None else 0,
-                "number_of_rows": download_job.number_of_rows if download_job.number_of_rows is not None else 0,
-                "number_of_columns": (
-                    download_job.number_of_columns if download_job.number_of_columns is not None else 0
-                ),
-                "error_message": download_job.error_message if download_job.error_message else "",
-                "monthly_download": str(download_job.monthly_download),
-                "json_request": str(download_job.json_request) if download_job.json_request else "",
-            }
-        )
+        span.set_attributes({
+            "service": "bulk-download",
+            "resource": str(download_sql),
+            "span_type": "Internal",
+            "source_path": str(source_path),
+            "download_job_id": str(download_job.download_job_id),
+            "download_job_status": str(download_job.job_status.name),
+            "download_file_name": str(download_job.file_name),
+            "download_file_size": download_job.file_size if download_job.file_size is not None else 0,
+            "number_of_rows": download_job.number_of_rows if download_job.number_of_rows is not None else 0,
+            "number_of_columns": download_job.number_of_columns if download_job.number_of_columns is not None else 0,
+            "error_message": download_job.error_message if download_job.error_message else "",
+            "monthly_download": str(download_job.monthly_download),
+            "json_request": str(download_job.json_request) if download_job.json_request else "",
+        })
 
         try:
             log_time = time.perf_counter()
             temp_env = os.environ.copy()
+
+            # Set PostgreSQL environment variables
+            temp_env["PGHOST"] = db_url.hostname
+            temp_env["PGPORT"] = str(db_url.port or 5432)
+            temp_env["PGUSER"] = db_url.username
+            temp_env["PGPASSWORD"] = db_url.password
+            temp_env["PGDATABASE"] = db_url.path.lstrip('/')
+
             if download_job and not download_job.monthly_download:
-                # Since terminating the process isn't guaranteed to end the DB statement,
-                # add timeout to client connection
                 temp_env["PGOPTIONS"] = (
                     f"--statement-timeout={settings.DOWNLOAD_DB_TIMEOUT_IN_HOURS}h "
                     f"--work-mem={settings.DOWNLOAD_DB_WORK_MEM_IN_MB}MB"
@@ -932,7 +935,7 @@ def execute_psql(temp_sql_file_path: str, source_path: str, download_job: Downlo
 
             cat_command = subprocess.Popen(["cat", temp_sql_file_path], stdout=subprocess.PIPE)
             subprocess.check_output(
-                ["psql", "-q", "-o", source_path, retrieve_db_string(), "-v", "ON_ERROR_STOP=1"],
+                ["psql", "-q", "-o", source_path, "-v", "ON_ERROR_STOP=1"],  # No connection string!
                 stdin=cat_command.stdout,
                 stderr=subprocess.STDOUT,
                 env=temp_env,
@@ -948,7 +951,6 @@ def execute_psql(temp_sql_file_path: str, source_path: str, download_job: Downlo
             raise e
         except Exception as e:
             if not settings.IS_LOCAL:
-                # Not logging the command as it can contain the database connection string
                 e.cmd = "[redacted psql command]"
             write_to_log(message=e, is_error=True, download_job=download_job)
             sql = subprocess.check_output(["cat", temp_sql_file_path]).decode()
