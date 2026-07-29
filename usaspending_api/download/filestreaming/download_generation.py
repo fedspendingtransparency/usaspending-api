@@ -11,7 +11,6 @@ from copy import deepcopy
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional, Tuple
-from urllib.parse import urlparse
 
 import psutil as ps
 from django.conf import settings
@@ -36,6 +35,7 @@ from usaspending_api.download.filestreaming.zip_file import append_files_to_zip_
 from usaspending_api.download.helpers import verify_requested_columns_available
 from usaspending_api.download.helpers import write_to_download_log as write_to_log
 from usaspending_api.download.helpers.cleanup_helpers import cleanup_download_files, cleanup_previous_download_attempt
+from usaspending_api.download.helpers.psql_helpers import build_psql_env, run_psql_to_file
 from usaspending_api.download.lookups import FILE_FORMATS, JOB_STATUS_DICT, VALUE_MAPPINGS
 from usaspending_api.download.models.download_job import DownloadJob
 from usaspending_api.download.models.download_job_lookup import DownloadJobLookup
@@ -890,9 +890,6 @@ def execute_psql(temp_sql_file_path: str, source_path: str, download_job: Downlo
     if download_sql.startswith("\\COPY"):
         download_sql = download_sql[1:]
 
-    # Parse the database URL to extract credentials
-    db_url = urlparse(retrieve_db_string())
-
     subprocess_trace = SubprocessTrace(
         name=f"job.{JOB_TYPE}.download.psql",
         kind=SpanKind.INTERNAL,
@@ -918,27 +915,23 @@ def execute_psql(temp_sql_file_path: str, source_path: str, download_job: Downlo
 
         try:
             log_time = time.perf_counter()
-            temp_env = os.environ.copy()
 
-            # Set PostgreSQL environment variables
-            temp_env["PGHOST"] = db_url.hostname
-            temp_env["PGPORT"] = str(db_url.port or 5432)
-            temp_env["PGUSER"] = db_url.username
-            temp_env["PGPASSWORD"] = db_url.password
-            temp_env["PGDATABASE"] = db_url.path.lstrip('/')
+            # Build PostgreSQL environment using helper
+            psql_env = build_psql_env(
+                dsn=retrieve_db_string(),
+                statement_timeout_hours=settings.DOWNLOAD_DB_TIMEOUT_IN_HOURS if (
+                            download_job and not download_job.monthly_download) else None,
+                work_mem_mb=settings.DOWNLOAD_DB_WORK_MEM_IN_MB if (
+                            download_job and not download_job.monthly_download) else None
+            )
 
-            if download_job and not download_job.monthly_download:
-                temp_env["PGOPTIONS"] = (
-                    f"--statement-timeout={settings.DOWNLOAD_DB_TIMEOUT_IN_HOURS}h "
-                    f"--work-mem={settings.DOWNLOAD_DB_WORK_MEM_IN_MB}MB"
-                )
-
-            cat_command = subprocess.Popen(["cat", temp_sql_file_path], stdout=subprocess.PIPE)
-            subprocess.check_output(
-                ["psql", "-q", "-o", source_path, "-v", "ON_ERROR_STOP=1"],  # No connection string!
-                stdin=cat_command.stdout,
-                stderr=subprocess.STDOUT,
-                env=temp_env,
+            # Execute psql using helper
+            run_psql_to_file(
+                sql_path=temp_sql_file_path,
+                output_path=source_path,
+                env=psql_env,
+                quiet=True,
+                on_error_stop=True
             )
 
             duration = time.perf_counter() - log_time
