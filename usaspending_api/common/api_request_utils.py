@@ -7,6 +7,7 @@ from typing import Any, Dict, List, Optional, Union
 import boto3
 from botocore.exceptions import ClientError
 from django.contrib.postgres.search import SearchVector
+from django.core.exceptions import FieldDoesNotExist
 from django.db.models import Q
 from django.utils import timezone
 from rest_framework import status
@@ -117,6 +118,13 @@ class FilterGenerator:
         for key in parameters:
             if key in self.ignored_parameters:
                 continue
+
+            # Determine the actual field that will be used after mapping.
+            actual_field = self.filter_map.get(key, key)
+
+            # Validate the field path to prevent ORM injection.
+            self._resolve_field_path(actual_field)
+
             if key in self.filter_map:
                 return_arguments[self.filter_map[key]] = parameters[key]
             else:
@@ -259,9 +267,90 @@ class FilterGenerator:
         if "combine_method" in filt:
             self.validate_post_request(filt)
         elif "field" in filt and "operation" in filt and "value" in filt:
+            self._validate_filter_field(filt)
             self._validate_filter_operation(filt)
         else:
             raise InvalidParameterException("Malformed filter - missing field, operation, or value")
+
+    def _validate_filter_field(self, filt: Dict[str, Any]) -> None:
+        """Validate the field parameter to prevent ORM injection."""
+        field = filt["field"]
+
+        # Special cases: field arrays for range_intersect and search operations.
+        if isinstance(field, list):
+            operation = filt.get("operation", "")
+            if operation.replace("not_", "") in ["range_intersect", "search"]:
+                # Validate each field in the array.
+                for single_field in field:
+                    self._resolve_field_path(single_field)
+            else:
+                raise InvalidParameterException("Field arrays are only allowed for range_intersect and search ops.")
+        else:
+            # Standard case: validate single field.
+            self._resolve_field_path(field)
+
+    def _resolve_field_path(self, field_path: str) -> None:
+        """Validate field path against model schema, allowing FK traversal and known operations."""
+        segments = field_path.split("__")
+        current_model = self.model
+        resolved_field = None
+
+        for index, segment in enumerate(segments):
+            try:
+                resolved_field = current_model._meta.get_field(segment)
+            except FieldDoesNotExist:
+                # If this is the last segment, check if it's a known Django lookup/operation.
+                is_last = index == len(segments) - 1
+                if is_last and segment in self._get_allowed_lookups():
+                    # Valid lookup suffix, no need to continue validation.
+                    return
+                raise InvalidParameterException(f"Invalid field: {field_path}") from None
+
+            is_last = index == len(segments) - 1
+            if resolved_field.is_relation and not is_last:
+                current_model = resolved_field.related_model
+            elif not is_last:
+                # Non-relation field with more segments. Check if remaining segments are all valid lookups.
+                remaining_segments = segments[index + 1:]
+                allowed_lookups = self._get_allowed_lookups()
+                if all(seg in allowed_lookups for seg in remaining_segments):
+                    # All remaining segments are valid lookups, validation complete.
+                    return
+                raise InvalidParameterException(f"Invalid field: {field_path}")
+
+    def _get_allowed_lookups(self) -> set:
+        """Return set of allowed Django field lookups that can appear as a final segment."""
+        # Derive allowed lookups from operators dictionary to reduce duplication.
+        allowed = set()
+
+        for operation_value in self.operators.values():
+            if operation_value.startswith("__"):
+                # Extract lookup suffix: "__lt" → "lt", "__icontains" → "icontains".
+                lookup = operation_value[2:]
+
+                # Handle compound lookups like "__len__gt" → ["len", "gt"].
+                # These represent transform + lookup chains (e.g., field__len__gt).
+                if "__" in lookup:
+                    allowed.update(lookup.split("__"))
+                else:
+                    allowed.add(lookup)
+            elif operation_value == "":
+                # "equals" operation maps to "" which becomes "exact" lookup.
+                allowed.add("exact")
+
+        # Add additional safe Django lookups not covered by operators.
+        allowed.update({
+            "iexact", "startswith", "istartswith", "endswith", "iendswith",
+            "date", "year", "month", "day", "week", "week_day", "quarter",
+            "time", "hour", "minute", "second"
+        })
+
+        # Explicitly exclude dangerous lookups to prevent ReDoS attacks.
+        # NOTE: These must never be allowed even if accidentally added to operators dict.
+        allowed.discard("regex")
+        allowed.discard("iregex")
+
+        return allowed
 
     def _validate_filter_operation(self, filt: Dict[str, Any]) -> None:
         """Validate the operation and value for a filter"""
