@@ -139,6 +139,9 @@ class DEFCViewSet(AbstractIndustryCodeViewSet):
     _category = Category(name="defc", agg_key="defc_agg_key")
 
     def post(self, request: Request, *args, **kwargs) -> Response:
+        if hasattr(self, "category"):
+            delattr(self, "category")
+
         validated_payload = self.validate_payload(request)
         nested_path = "spending_by_defc"
         if self.spending_level == SpendingLevel.FILE_C:
@@ -149,7 +152,7 @@ class DEFCViewSet(AbstractIndustryCodeViewSet):
                 agg_key_suffix="",
                 obligation_field=f"{nested_path}.obligation",
                 outlay_field=f"{nested_path}.outlay",
-                filter_key_to_limit="def_codes",
+                filter_key_to_limit="def_codes"
             )
 
         return super().post(request, validated_payload=validated_payload)

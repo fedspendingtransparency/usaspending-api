@@ -81,7 +81,8 @@ class AbstractSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
     def validate_payload(self, request: Request) -> dict:
         # Creates an instance copy for the category for each request
         # Prevents modifications from previous requests affecting current requests
-        self.category = copy.deepcopy(self._category)
+        if not hasattr(self, "category"):
+            self.category = copy.deepcopy(self._category)
 
         models = [
             {"name": "subawards", "key": "subawards", "type": "boolean", "default": False, "optional": True},
