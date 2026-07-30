@@ -888,7 +888,7 @@ def _top_level_split(sql: str, splitter: str) -> str:
         if parens_depth == 0:
             if sql[index : index + len(splitter)] == splitter:
                 return [sql[:index], sql[index + len(splitter) :]]
-    raise Exception(f"SQL string ${sql} cannot be split on ${splitter}")
+    raise ValueError(f"SQL string ${sql} cannot be split on ${splitter}")
 
 
 def execute_psql(temp_sql_file_path: str, source_path: str, download_job: DownloadJob) -> None:

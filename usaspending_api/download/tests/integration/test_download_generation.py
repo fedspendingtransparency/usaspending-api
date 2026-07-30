@@ -1,6 +1,5 @@
 import pytest
 from django.db.models import F, Value
-from model_bakery import baker
 
 from usaspending_api.common.helpers.orm_helpers import ConcatAll, generate_raw_quoted_query
 from usaspending_api.download.filestreaming.download_generation import apply_annotations_to_sql

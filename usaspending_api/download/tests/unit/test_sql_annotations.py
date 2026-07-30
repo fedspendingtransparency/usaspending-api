@@ -2,9 +2,9 @@ import pytest
 
 # Imports from your apps
 from usaspending_api.download.filestreaming.download_generation import (
-    apply_annotations_to_sql,
-    _top_level_split,
     _select_columns,
+    _top_level_split,
+    apply_annotations_to_sql,
 )
 
 
@@ -30,7 +30,7 @@ def test_top_level_split_quote_logic():
 
 def test_top_level_split_unsplittable():
     unsplittable = "sdoiaghioweg oijfewiwje efoiwnovisper"
-    with pytest.raises(Exception):
+    with pytest.raises(ValueError):
         _top_level_split(unsplittable, "not in this")
 
 
