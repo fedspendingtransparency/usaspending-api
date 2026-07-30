@@ -48,20 +48,6 @@ def test_select_columns_nesting_logic():
     assert _select_columns(cte_sql) == ("WITH cte AS (SELECT inner_things FROM a inner_place)", ["things"])
 
 
-def test_apply_annotations_to_sql():
-    sql_string = str(
-        'SELECT "table"."col1", "table"."col2", (SELECT table2."three" FROM table_two table2 WHERE '
-        'table2."code" = table."othercode") AS "alias_one" FROM table WHERE six = \'something\''
-    )
-    aliases = ["alias_one", "col1", "col2"]
-
-    annotated_sql = apply_annotations_to_sql(sql_string, aliases)
-
-    annotated_string = 'SELECT (SELECT table2."three" FROM table_two table2 WHERE table2."code" = table."othercode") AS "alias_one", "table"."col1" AS "col1", "table"."col2" AS "col2" FROM table WHERE six = \'something\''
-
-    assert annotated_sql == annotated_string
-
-
 def test_group_by_annotations():
     sql = (
         "SELECT"

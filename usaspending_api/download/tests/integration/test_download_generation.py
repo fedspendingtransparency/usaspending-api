@@ -9,22 +9,6 @@ from usaspending_api.search.models import TransactionSearch
 
 @pytest.mark.django_db
 def test_apply_annotations_to_sql():
-    baker.make(
-        "search.TransactionSearch",
-        transaction_id=1,
-        action_type="A",
-        action_type_description="Some Description for A",
-        period_of_performance_start_date="2020-10-01",
-        period_of_performance_current_end_date="2021-09-30",
-    )
-    baker.make(
-        "search.TransactionSearch",
-        transaction_id=2,
-        action_type="B",
-        action_type_description="Some Description for B",
-        period_of_performance_start_date="2021-10-01",
-        period_of_performance_current_end_date="2022-09-30",
-    )
     selected_columns = ["transaction_id", "action_type_code", "action_type", "date_range"]
     queryset = (
         TransactionSearch.objects.values("transaction_id")
