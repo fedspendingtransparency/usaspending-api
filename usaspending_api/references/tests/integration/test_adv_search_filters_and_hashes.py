@@ -113,8 +113,7 @@ def test_filter_endpoint_with_version_field(client):
 def test_filter_endpoint_with_null_filters(client):
     filter_payload = {"filters": None}
     resp = client.post(FILTER_ENDPOINT, content_type="application/json", data=filter_payload)
-    assert resp.status_code == status.HTTP_200_OK
-    assert "hash" in resp.data
+    assert resp.status_code == status.HTTP_400_BAD_REQUEST
 
 
 @pytest.mark.django_db

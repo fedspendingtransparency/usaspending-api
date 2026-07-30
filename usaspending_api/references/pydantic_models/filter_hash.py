@@ -12,13 +12,13 @@ class FilterHashRequest(BaseModel):
     structure of the filters object. The 'filters' field can be:
     - A dictionary with any structure (e.g., advanced search filters)
     - A string (e.g., simple search term)
-    - null/None
 
+    The field is optional (can be omitted entirely), but if provided, it cannot be null.
     Additional fields beyond 'filters' and 'version' are also accepted.
     """
-    filters: dict[str, Any] | str | None = Field(
+    filters: dict[str, Any] | str = Field(
         default=None,
-        description="Filter criteria for advanced search. Can be a dictionary, string, or null."
+        description="Filter criteria for advanced search. Can be a dictionary or string, but not null."
     )
     version: str | None = Field(
         default=None,
