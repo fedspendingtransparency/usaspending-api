@@ -1,6 +1,7 @@
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
 import pytest
+
 from usaspending_api.references.management.commands.population_data_loaders.loaders import (
     CountryPopulationLoader,
     CountyPopulationLoader,
@@ -26,7 +27,7 @@ def test_country_population_loader_drop_temp_tables(connection_mock):
     logger = MagicMock()
     loader = CountryPopulationLoader(column_mapper, logger)
     loader.drop_temp_tables()
-    cursor_mock.execute.call_count == 0
+    assert cursor_mock.execute.call_count == 0
 
 
 @patch("usaspending_api.references.management.commands.population_data_loaders.loaders.connection")
@@ -53,22 +54,28 @@ def test_district_population_loader_drop_temp_tables(connection_mock):
 def test_generic_population_loader_create_tables(connection_mock):
     cursor_mock = connection_mock.cursor.return_value.__enter__.return_value
     column_mapper = MagicMock()
-    test_data_cols = ["test"]
+    test_data_cols = ["state_code", "test"]
     logger = MagicMock()
     loader = GenericPopulationLoader(column_mapper, logger)
     loader.create_tables(test_data_cols)
-    cursor_mock.execute.assert_called_with(f"CREATE TABLE {GenericPopulationLoader.TEMP_TABLE_NAME} (test TEXT);")
+    assert cursor_mock.execute.call_count == 0
 
 
 @patch("usaspending_api.references.management.commands.population_data_loaders.loaders.connection")
 def test_county_population_loader_create_tables(connection_mock):
     cursor_mock = connection_mock.cursor.return_value.__enter__.return_value
-    column_mapper = MagicMock()
-    test_data_cols = ["test"]
+    column_mapper = {
+        "state_code": "state_code",
+        "county_code": "county_number",
+        "state_name": "state_name",
+        "county_name": "county_name",
+        "population": "latest_population",
+    }
+    test_data_cols = ["state_code", "test"]
     logger = MagicMock()
     loader = CountyPopulationLoader(column_mapper, logger)
     loader.create_tables(test_data_cols)
-    cursor_mock.execute.assert_called_with(f"CREATE TABLE {GenericPopulationLoader.TEMP_TABLE_NAME} (test TEXT);")
+    cursor_mock.execute.assert_called_with(f"CREATE TABLE {GenericPopulationLoader.TEMP_TABLE_NAME} (state_code TEXT);")
 
 
 @patch("usaspending_api.references.management.commands.population_data_loaders.loaders.connection")
@@ -79,18 +86,24 @@ def test_country_population_loader_create_tables(connection_mock):
     logger = MagicMock()
     loader = CountryPopulationLoader(column_mapper, logger)
     loader.create_tables(test_data_cols)
-    cursor_mock.execute.call_count == 0
+    assert cursor_mock.execute.call_count == 0
 
 
 @patch("usaspending_api.references.management.commands.population_data_loaders.loaders.connection")
 def test_district_population_loader_create_tables(connection_mock):
     cursor_mock = connection_mock.cursor.return_value.__enter__.return_value
-    column_mapper = MagicMock()
-    test_data_cols = ["test"]
+    column_mapper = {
+        "state_code": "state_code",
+        "state_name": "state_name",
+        "state_abbreviation": "state_abbreviation",
+        "congressional_district": "congressional_district",
+        "population": "latest_population",
+    }
+    test_data_cols = ["state_code", "test"]
     logger = MagicMock()
     loader = DistrictPopulationLoader(column_mapper, logger)
     loader.create_tables(test_data_cols)
-    cursor_mock.execute.assert_called_with(f"CREATE TABLE {GenericPopulationLoader.TEMP_TABLE_NAME} (test TEXT);")
+    cursor_mock.execute.assert_called_with(f"CREATE TABLE {GenericPopulationLoader.TEMP_TABLE_NAME} (state_code TEXT);")
 
 
 @patch("usaspending_api.references.management.commands.population_data_loaders.loaders.connection")
@@ -106,7 +119,11 @@ def test_country_population_loader_load_data_missing_countries_error(django_mode
         loader.load_data(data=test_data)
     assert (
         str(err.value)
-        == "The provided data contains less than 50% of the known countries. We require at least 50% of the known countries to be present in the file to load. Data had 1 countries when there are 3 countries in RefCountryCode."
+        == (
+            "The provided data contains less than 50% of the known countries. "
+            "We require at least 50% of the known countries to be present in the file to load. "
+            "Data had 1 countries when there are 3 countries in RefCountryCode."
+        )
     )
 
 
