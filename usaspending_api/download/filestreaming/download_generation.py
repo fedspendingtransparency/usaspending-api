@@ -753,7 +753,7 @@ def apply_annotations_to_sql(
 
     # Django is pretty consistent with how it prints out queries
     # !!! IMPORTANT: This can change when changing versions of Django !!!
-    DIRECT_SELECT_QUERY_REGEX = r'^("[^"]*"\."[^"]*") AS "[^"]*"$'
+    DIRECT_SELECT_QUERY_REGEX = r'^("?[^"|\.]*"?\."[^"]*") AS "[^"]*"$'
     # Create a list from the non-derived values between SELECT and FROM
     selects_list = [
         re.fullmatch(DIRECT_SELECT_QUERY_REGEX, val).group(1)
