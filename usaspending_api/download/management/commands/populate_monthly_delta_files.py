@@ -168,7 +168,7 @@ class Command(BaseCommand):
 
         try:
             # Get database URL from settings or environment variable (for tests)
-            db_url = settings.DOWNLOAD_DATABASE_URL or os.environ.get("DOWNLOAD_DATABASE_URL")
+            db_url = os.environ.get("DOWNLOAD_DATABASE_URL") or settings.DOWNLOAD_DATABASE_URL
 
             if not db_url:
                 raise ValueError("DOWNLOAD_DATABASE_URL is not configured")
