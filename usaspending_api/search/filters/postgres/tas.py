@@ -1,6 +1,6 @@
 import re
 
-from django.db.models import Q, Queryset
+from django.db.models import Q, QuerySet
 
 from usaspending_api.accounts.helpers import TAS_COMPONENT_TO_FIELD_MAPPING
 from usaspending_api.accounts.models import FederalAccount, TreasuryAppropriationAccount
@@ -13,7 +13,7 @@ class TasCodes(HierarchicalFilter):
     underscore_name = "tas_codes"
 
     @classmethod
-    def build_tas_codes_filter(cls, queryset: Queryset, filter_values: list | dict) -> Q:
+    def build_tas_codes_filter(cls, queryset: QuerySet, filter_values: list | dict) -> Q:
         if isinstance(filter_values, list):
             # This is a legacy usage, and will be dealt with by the other filter
             return TreasuryAccounts.build_tas_codes_filter(queryset, filter_values)
@@ -94,7 +94,7 @@ class TreasuryAccounts:
     underscore_name = "treasury_account_components"
 
     @staticmethod
-    def build_tas_codes_filter(queryset: Queryset, tas_filters: list) -> Q:
+    def build_tas_codes_filter(queryset: QuerySet, tas_filters: list) -> Q:
         if not tas_filters:
             return Q(treasury_account_identifiers__overlap=[])
 
