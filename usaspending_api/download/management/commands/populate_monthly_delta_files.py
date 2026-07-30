@@ -113,7 +113,7 @@ class Command(BaseCommand):
         source.queryset = source.queryset.filter(Q(update_date_filter | Q(transaction__transactiondelta__isnull=False)))
 
         # Generate file using helper functions
-        file_path = self.create_local_file_with_psql(award_type, source, agency_code, generate_since)
+        file_path = self.create_local_file(award_type, source, agency_code, generate_since)
 
         if file_path is None:
             logger.info("No new, modified, or deleted data; discarding file")
@@ -131,39 +131,93 @@ class Command(BaseCommand):
             "Finished generation. {}, Agency: {}".format(award_type, agency if agency == "all" else agency["name"])
         )
 
-    def create_local_file_with_psql(self, award_type: str, source: DownloadSource, agency_code: str,
-                                    generate_since: str) -> str:
-        """Generate the file using psql helpers"""
-        # Generate SQL query
-        sql_query = self.generate_sql_query(source)
+    def create_local_file(
+            self, award_type: str, source: DownloadSource, agency_code: str, generate_since: str | None
+    ) -> str | None:
+        """Generate complete file from SQL query and S3 bucket deletion files, then zip it locally"""
+        import shutil
+        import subprocess
 
-        # Create temp SQL file
-        temp_sql_file = tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.sql')
-        temp_sql_file.write(sql_query)
-        temp_sql_file.close()
+        from usaspending_api.common.csv_helpers import count_rows_in_delimited_file
+        from usaspending_api.common.helpers.orm_helpers import generate_raw_quoted_query
+        from usaspending_api.download.filestreaming.download_generation import (
+            apply_annotations_to_sql,
+            split_and_zip_data_files,
+        )
 
-        # Build output path
-        output_path = self.build_output_path(award_type, agency_code, generate_since)
+        logger.info("Generating CSV file with creations and modifications")
+
+        # Create file paths and working directory
+        timestamp = datetime.strftime(datetime.now(), "%Y%m%d%H%M%S%f")
+        working_dir = f"{settings.CSV_LOCAL_PATH}_{agency_code}_delta_gen_{timestamp}/"
+        if not os.path.exists(working_dir):
+            os.mkdir(working_dir)
+        agency_str = "All" if agency_code == "all" else agency_code
+        source_name = f"FY(All)_{agency_str}_{award_type}_Delta_{datetime.strftime(date.today(), '%Y%m%d')}"
+        source_path = os.path.join(working_dir, "{}.csv".format(source_name))
+
+        # Create a unique temporary file with the raw query
+        raw_quoted_query = generate_raw_quoted_query(source.row_emitter(None))
+        csv_query_annotated = apply_annotations_to_sql(raw_quoted_query, source.human_names)
+
+        (temp_sql_file, temp_sql_file_path) = tempfile.mkstemp(prefix="bd_sql_", dir="/tmp")
+        with open(temp_sql_file_path, "w") as file:
+            file.write("\\copy ({}) To STDOUT with CSV HEADER".format(csv_query_annotated))
+
+        logger.info("Generated temp SQL file {}".format(temp_sql_file_path))
 
         try:
-            # Build PostgreSQL environment
+            # Get database URL from settings or environment variable (for tests)
+            db_url = settings.DOWNLOAD_DATABASE_URL or os.environ.get("DOWNLOAD_DATABASE_URL")
+
+            if not db_url:
+                raise ValueError("DOWNLOAD_DATABASE_URL is not configured")
+
+            logger.info(f"Using database URL: {db_url[:20]}...")  # Log first 20 chars for debugging
+
+            # Build PostgreSQL environment using helper
             psql_env = build_psql_env(
-                dsn=settings.DOWNLOAD_DATABASE_URL,
+                dsn=db_url,
                 statement_timeout_hours=settings.DOWNLOAD_DB_TIMEOUT_IN_HOURS,
                 work_mem_mb=settings.DOWNLOAD_DB_WORK_MEM_IN_MB
             )
 
-            # Execute psql
+            logger.info(
+                f"Built psql environment with PGHOST={psql_env.get('PGHOST')}, PGDATABASE={psql_env.get('PGDATABASE')}")
+
+            # Execute psql using helper
             run_psql_to_file(
-                sql_path=temp_sql_file.name,
-                output_path=output_path,
-                env=psql_env
+                sql_path=temp_sql_file_path,
+                output_path=source_path,
+                env=psql_env,
+                quiet=False,
+                on_error_stop=True
             )
 
-            return output_path
+        except subprocess.CalledProcessError as e:
+            logger.exception(e.output if hasattr(e, 'output') else str(e))
+            raise e
         finally:
-            # Cleanup temp SQL file
-            os.remove(temp_sql_file.name)
+            # Always cleanup temp SQL file
+            os.close(temp_sql_file)
+            os.remove(temp_sql_file_path)
+
+        # Append deleted rows to the end of the file
+        if not self.debugging_skip_deleted:
+            self.add_deletion_records(source_path, working_dir, award_type, agency_code, source, generate_since)
+
+        if count_rows_in_delimited_file(source_path, has_header=True, safe=True) > 0:
+            # Split the CSV into multiple files and zip it up
+            zipfile_path = "{}{}.zip".format(settings.CSV_LOCAL_PATH, source_name)
+
+            logger.info("Creating compressed file: {}".format(os.path.basename(zipfile_path)))
+            split_and_zip_data_files(zipfile_path, source_path, source_name, "csv")
+        else:
+            zipfile_path = None
+
+        shutil.rmtree(working_dir)
+
+        return zipfile_path
 
     @staticmethod
     def split_transaction_id(tid: str) -> pd.Series:

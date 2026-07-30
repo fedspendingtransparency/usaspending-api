@@ -10,28 +10,29 @@ def build_psql_env(
         work_mem_mb: Optional[int] = None,
         base_env: Optional[dict] = None
 ) -> dict:
-    """
-    Build PostgreSQL environment variables from a database connection string.
+    """Build PostgreSQL environment variables from a database connection string."""
+    import logging
 
-    Args:
-        dsn: Database connection string (e.g., postgresql://user:pass@host:port/dbname)
-        statement_timeout_hours: Optional statement timeout in hours
-        work_mem_mb: Optional work memory in MB
-        base_env: Base environment to copy from (defaults to os.environ)
+    logger = logging.getLogger(__name__)
 
-    Returns:
-        Dictionary of environment variables for psql
-    """
+    if not dsn:
+        raise ValueError("DSN cannot be empty")
+
+    logger.info(f"Parsing DSN: {dsn[:30]}...")
+
     db_url = urlparse(dsn)
 
     env = (base_env or os.environ).copy()
 
     # Set PostgreSQL connection parameters
-    env["PGHOST"] = db_url.hostname
+    env["PGHOST"] = db_url.hostname or "localhost"
     env["PGPORT"] = str(db_url.port or 5432)
-    env["PGUSER"] = db_url.username
-    env["PGPASSWORD"] = db_url.password
-    env["PGDATABASE"] = db_url.path.lstrip('/')
+    env["PGUSER"] = db_url.username or "postgres"
+    env["PGPASSWORD"] = db_url.password or ""
+    env["PGDATABASE"] = db_url.path.lstrip('/') if db_url.path else "postgres"
+
+    logger.info(
+        f"Set PGHOST={env['PGHOST']}, PGPORT={env['PGPORT']}, PGUSER={env['PGUSER']}, PGDATABASE={env['PGDATABASE']}")
 
     # Set optional PostgreSQL options
     if statement_timeout_hours or work_mem_mb:
@@ -51,23 +52,21 @@ def run_psql_to_file(
         env: dict,
         quiet: bool = True,
         on_error_stop: bool = True
-) -> subprocess.CompletedProcess:
+) -> None:
     """
     Execute a psql command that reads SQL from a file and writes output to another file.
-
-    Args:
-        sql_path: Path to SQL file to execute
-        output_path: Path where psql should write output
-        env: Environment variables (should include PGHOST, PGUSER, etc.)
-        quiet: If True, suppress psql output messages
-        on_error_stop: If True, stop on first error
-
-    Returns:
-        CompletedProcess object from subprocess
-
-    Raises:
-        subprocess.CalledProcessError: If psql command fails
     """
+    import logging
+    logger = logging.getLogger(__name__)
+
+    # Log the SQL file contents for debugging
+    try:
+        with open(sql_path, 'r') as f:
+            sql_content = f.read()
+            logger.info(f"SQL file contents (first 500 chars): {sql_content[:500]}")
+    except Exception as e:
+        logger.error(f"Could not read SQL file: {e}")
+
     psql_args = ["psql"]
 
     if quiet:
@@ -78,12 +77,69 @@ def run_psql_to_file(
     if on_error_stop:
         psql_args.extend(["-v", "ON_ERROR_STOP=1"])
 
-    # Pipe SQL file content to psql
-    cat_command = subprocess.Popen(["cat", sql_path], stdout=subprocess.PIPE)
+    logger.info(f"psql command: {' '.join(psql_args)}")
+    logger.info(
+        f"Environment: PGHOST={env.get('PGHOST')}, "
+        f"PGPORT={env.get('PGPORT')}, "
+        f"PGUSER={env.get('PGUSER')}, "
+        f"PGDATABASE={env.get('PGDATABASE')}"
+    )
 
-    return subprocess.check_output(
+    # Test database connection first
+    logger.info("Testing database connection...")
+    test_process = subprocess.run(
+        ["psql", "-c", "SELECT 1;"],
+        env=env,
+        capture_output=True,
+        timeout=5
+    )
+    if test_process.returncode != 0:
+        logger.error(f"Database connection test failed: {test_process.stderr.decode()}")
+        raise Exception(f"Cannot connect to database: {test_process.stderr.decode()}")
+    logger.info("Database connection test successful")
+
+    logger.info("Starting cat and psql processes...")
+
+    # Start cat process
+    cat_process = subprocess.Popen(["cat", sql_path], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+    # Start psql process with cat's stdout as stdin
+    psql_process = subprocess.Popen(
         psql_args,
-        stdin=cat_command.stdout,
-        stderr=subprocess.STDOUT,
+        stdin=cat_process.stdout,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,  # Changed to PIPE to capture stderr separately
         env=env,
     )
+
+    # Close cat's stdout in parent so psql gets EOF when cat exits
+    cat_process.stdout.close()
+
+    logger.info("Waiting for processes to complete...")
+
+    # Wait for both processes to complete with timeout
+    try:
+        psql_output, psql_error = psql_process.communicate(timeout=30)  # 30 second timeout
+        cat_process.wait(timeout=5)
+    except subprocess.TimeoutExpired:
+        logger.error("Process timed out! Killing processes...")
+        psql_process.kill()
+        cat_process.kill()
+        raise Exception("psql process timed out after 30 seconds") from None
+
+    logger.info(f"psql return code: {psql_process.returncode}")
+    logger.info(f"psql stdout: {psql_output.decode() if psql_output else 'empty'}")
+    logger.info(f"psql stderr: {psql_error.decode() if psql_error else 'empty'}")
+
+    # Check for errors
+    if psql_process.returncode != 0:
+        error_msg = psql_error.decode() if psql_error else psql_output.decode() if psql_output else "Unknown error"
+        logger.error(f"psql failed: {error_msg}")
+        raise subprocess.CalledProcessError(
+            psql_process.returncode,
+            psql_args,
+            output=psql_output,
+            stderr=psql_error
+        )
+
+    logger.info("psql completed successfully")
