@@ -19,15 +19,13 @@ from usaspending_api.search.filters.elasticsearch.filter import QueryType, _Filt
 from usaspending_api.search.filters.elasticsearch.naics import NaicsCodes
 from usaspending_api.search.filters.elasticsearch.psc import PSCCodes
 from usaspending_api.search.filters.elasticsearch.tas import TasCodes, TreasuryAccounts
-from usaspending_api.search.filters.time_period.decorators import (
-     NewAwardsOnlyTimePeriod,
-)
+from usaspending_api.search.filters.time_period.decorators import NewAwardsOnlyTimePeriod
 from usaspending_api.search.filters.time_period.query_types import (
     AwardSearchTimePeriod,
     SubawardSearchTimePeriod,
     TransactionSearchTimePeriod,
 )
-from usaspending_api.search.v2.es_sanitization import es_sanitize
+from usaspending_api.search.v2.es_sanitization import es_minimal_sanitize, es_sanitize
 
 logger = logging.getLogger(__name__)
 
@@ -195,9 +193,10 @@ class _KeywordSearch(_Filter):
             "sub_ultimate_parent_uei",
         ]
         for filter_value in filter_values:
-            keyword_queries.append(ES_Q("multi_match", query=filter_value, fields=text_fields, type="phrase_prefix"))
+            sanitized_value = es_minimal_sanitize(filter_value)
+            keyword_queries.append(ES_Q("multi_match", query=sanitized_value, fields=text_fields, type="phrase_prefix"))
             keyword_queries.append(
-                ES_Q("query_string", query=filter_value, default_operator="OR", fields=keyword_fields)
+                ES_Q("query_string", query=sanitized_value, default_operator="OR", fields=keyword_fields)
             )
 
         return ES_Q("dis_max", queries=keyword_queries)
