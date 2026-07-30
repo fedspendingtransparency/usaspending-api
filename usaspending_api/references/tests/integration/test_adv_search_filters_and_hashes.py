@@ -1,10 +1,8 @@
 import pytest
-
 from model_bakery import baker
 from rest_framework import status
 
 from usaspending_api.references.models import FilterHash
-
 
 HASH_ENDPOINT = "/api/v2/references/hash/"
 FILTER_ENDPOINT = "/api/v2/references/filter/"
@@ -72,3 +70,71 @@ def test_hash_algorithm(client):
     for fp in filter_payloads:
         assert get_hash_from_api(fp) == hash_payload(fp)
         assert fp == get_filters_from_db(hash_payload(fp))
+
+
+@pytest.mark.django_db
+def test_request_size_limit(client):
+    large_payload = {"filters": "x" * (512 * 1024 + 1)}
+    resp = client.post(FILTER_ENDPOINT, content_type="application/json", data=large_payload)
+    assert resp.status_code == 413
+    assert "exceeds maximum allowed size" in resp.content.decode()
+
+
+@pytest.mark.django_db
+def test_request_within_size_limit(client):
+    payload_size = 512 * 1024 - 100
+    valid_payload = {"filters": "x" * payload_size}
+    resp = client.post(FILTER_ENDPOINT, content_type="application/json", data=valid_payload)
+    assert resp.status_code == status.HTTP_200_OK
+    assert "hash" in resp.data
+
+
+@pytest.mark.django_db
+def test_hash_endpoint_with_invalid_hash_format(client):
+    resp = client.post(HASH_ENDPOINT, content_type="application/json", data={"hash": "invalid_hash"})
+    assert resp.status_code == status.HTTP_400_BAD_REQUEST
+
+
+@pytest.mark.django_db
+def test_hash_endpoint_with_missing_hash_key(client):
+    resp = client.post(HASH_ENDPOINT, content_type="application/json", data={})
+    assert resp.status_code == status.HTTP_400_BAD_REQUEST
+
+
+@pytest.mark.django_db
+def test_filter_endpoint_with_version_field(client):
+    filter_payload = {"filters": {"agency": "DOT"}, "version": "2019-07-26"}
+    resp = client.post(FILTER_ENDPOINT, content_type="application/json", data=filter_payload)
+    assert resp.status_code == status.HTTP_200_OK
+    assert "hash" in resp.data
+
+
+@pytest.mark.django_db
+def test_filter_endpoint_with_null_filters(client):
+    filter_payload = {"filters": None}
+    resp = client.post(FILTER_ENDPOINT, content_type="application/json", data=filter_payload)
+    assert resp.status_code == status.HTTP_200_OK
+    assert "hash" in resp.data
+
+
+@pytest.mark.django_db
+def test_filter_endpoint_with_complex_nested_filters(client):
+    filter_payload = {
+        "filters": {
+            "keyword": ["transportation", "infrastructure"],
+            "timePeriodType": "fy",
+            "timePeriodFY": ["2023", "2024"],
+            "selectedLocations": {
+                "USA_TX": {
+                    "identifier": "USA_TX",
+                    "filter": {"country": "USA", "state": "TX"},
+                    "display": {"entity": "State", "standalone": "TEXAS", "title": "TEXAS"}
+                }
+            },
+            "awardType": ["A", "B", "C"]
+        },
+        "version": "2020-06-01"
+    }
+    resp = client.post(FILTER_ENDPOINT, content_type="application/json", data=filter_payload)
+    assert resp.status_code == status.HTTP_200_OK
+    assert "hash" in resp.data
