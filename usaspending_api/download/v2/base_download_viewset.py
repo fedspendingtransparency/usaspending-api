@@ -4,6 +4,7 @@ from typing import List, Optional, Type
 
 from django.conf import settings
 from django.db.models import Max
+from pydantic import BaseModel, Field
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -31,6 +32,16 @@ from usaspending_api.download.models.download_job import DownloadJob
 from usaspending_api.download.v2.download_column_historical_lookups import query_paths
 from usaspending_api.download.v2.request_validations import DownloadValidatorBase
 from usaspending_api.submissions.models import DABSSubmissionWindowSchedule
+
+
+class DownloadJobMessage(BaseModel):
+    download_job_id: int = Field(..., gt=0)
+    download_logic: DownloadLogic
+    job_name: str | None = None
+
+    @classmethod
+    def from_json(cls, body: str) -> "DownloadJobMessage":
+        return cls.model_validate_json(body)
 
 
 @api_transformations(api_version=settings.API_VERSION, function_list=API_TRANSFORM_FUNCTIONS)
@@ -93,14 +104,9 @@ class BaseDownloadViewSet(APIView):
     def is_duckdb_download(json_request: dict) -> bool:
         # TODO: Update the `spark_jobs` line in `process_request()` below to use DuckDB locally when
         #  DuckDB is fully integrated and tested
-        return (
-            json_request["request_type"] == "account"
-            and not (
-                set(json_request.get("download_types", set())).isdisjoint([
-                    "account_balances",
-                    "object_class_program_activity",
-                    "award_financial"
-                ])
+        return json_request["request_type"] == "account" and not (
+            set(json_request.get("download_types", set())).isdisjoint(
+                ["account_balances", "object_class_program_activity", "award_financial"]
             )
         )
 
@@ -153,21 +159,18 @@ class BaseDownloadViewSet(APIView):
             if self.is_spark_download(json_request):
                 # Fallback to the non-priority queue if the priority queue isn't setup
                 queue_name = settings.PRIORITY_DOWNLOAD_SQS_QUEUE_NAME or settings.BULK_DOWNLOAD_SQS_QUEUE_NAME
-                message_body = json.dumps(
-                    {
-                        "download_job_id": download_job.download_job_id,
-                        "job_name": job_name,
-                        "download_logic": DownloadLogic.SPARK,
-                    }
-                )
+                message_body = DownloadJobMessage(
+                    download_job_id=download_job.download_job_id,
+                    job_name=job_name,
+                    download_logic=DownloadLogic.SPARK,
+                ).model_dump_json()
+
             else:
                 queue_name = settings.BULK_DOWNLOAD_SQS_QUEUE_NAME
-                message_body = json.dumps(
-                    {
-                        "download_job_id": download_job.download_job_id,
-                        "download_logic": DownloadLogic.POSTGRES,
-                    }
-                )
+                message_body = DownloadJobMessage(
+                    download_job_id=download_job.download_job_id,
+                    download_logic=DownloadLogic.POSTGRES,
+                ).model_dump_json()
 
             # Send a SQS message that will be processed by another server which will eventually run
             # download_generation.generate_download(download_source) for Postgres downloads
