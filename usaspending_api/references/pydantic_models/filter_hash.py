@@ -28,15 +28,9 @@ class FilterHashRequest(BaseModel):
     class Config:
         extra = "allow"
 
-    @field_validator("filters", mode="before")
-    @classmethod
-    def validate_filters(cls, v: Any) -> Any:
-        return v
-
 
 class HashLookupRequest(BaseModel):
     hash: str = Field(
-        ...,
         description="MD5 hash of the filter to retrieve.",
         min_length=32,
         max_length=32

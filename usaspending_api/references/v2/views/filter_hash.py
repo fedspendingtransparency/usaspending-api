@@ -1,7 +1,5 @@
-import json
-
-from django.http import HttpResponse, HttpResponseBadRequest
 from pydantic import ValidationError
+from rest_framework import status
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -18,12 +16,11 @@ class FilterEndpoint(APIView):
     # Cap request size at 512KB.
     MAX_REQUEST_SIZE = 512 * 1024
 
-    def post(self, request: Request, format: str | None = None) -> Response | HttpResponse:
+    def post(self, request: Request, format: str | None = None) -> Response:
         if len(request.body) > self.MAX_REQUEST_SIZE:
-            return HttpResponse(
-                "Request body exceeds maximum allowed size",
-                status=413,
-                content_type="text/plain",
+            return Response(
+                {"error": "Request body exceeds maximum allowed size"},
+                status=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
             )
 
         try:
@@ -38,10 +35,10 @@ class FilterEndpoint(APIView):
             return Response({"hash": hash_key})
         except (ValidationError, Exception) as e:
             if isinstance(e, ValidationError):
-                error_response = json.dumps({"error": "Invalid request format", "details": e.errors()})
+                error_response = {"error": "Invalid request format", "details": e.errors()}
             else:
-                error_response = "Error storing the filter for future retrieval"
-            return HttpResponseBadRequest(error_response)
+                error_response = {"error": "Error storing the filter for future retrieval"}
+            return Response(error_response, status=status.HTTP_400_BAD_REQUEST)
 
 
 class HashEndpoint(APIView):
@@ -49,20 +46,23 @@ class HashEndpoint(APIView):
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/references/hash.md"
 
-    def post(self, request: Request, format: str | None = None) -> Response | HttpResponseBadRequest:
+    def post(self, request: Request, format: str | None = None) -> Response:
         try:
             validated_request = HashLookupRequest(**request.data)
         except (ValidationError, Exception) as e:
             error_message = (
-                json.dumps({"error": "Invalid request format", "details": e.errors()})
+                {"error": "Invalid request format", "details": e.errors()}
                 if isinstance(e, ValidationError)
-                else f"Error parsing request: {str(e)}"
+                else {"error": f"Error parsing request: {str(e)}"}
             )
-            return HttpResponseBadRequest(error_message)
+            return Response(error_message, status=status.HTTP_400_BAD_REQUEST)
 
         try:
             fh = FilterHash.objects.get(hash=validated_request.hash)
         except FilterHash.DoesNotExist:
-            return HttpResponseBadRequest("A FilterHash object with that hash does not exist.")
+            return Response(
+                {"error": "A FilterHash object with that hash does not exist."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         return Response({"filter": fh.filter})
