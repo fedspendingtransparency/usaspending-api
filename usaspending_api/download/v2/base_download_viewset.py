@@ -35,7 +35,7 @@ from usaspending_api.submissions.models import DABSSubmissionWindowSchedule
 
 
 class DownloadJobMessage(BaseModel):
-    download_job_id: int = Field(..., gt=0)
+    download_job_id: int = Field(gt=0)
     download_logic: DownloadLogic
     job_name: str | None = None
 
