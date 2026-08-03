@@ -1,10 +1,11 @@
 import logging
 import re
+from typing import Any
 
 logger = logging.getLogger("console")
 
 
-def concat_if_array(data):
+def concat_if_array(data: Any) -> str:
     if isinstance(data, str):
         return data
     else:
@@ -17,7 +18,7 @@ def concat_if_array(data):
             return ""
 
 
-def es_sanitize(input_string):
+def es_sanitize(input_string: str) -> str:
     """Escapes reserved elasticsearch characters and removes when necessary"""
     processed_string = re.sub(r'([|{}()?\\"+\[\]<>])', "", input_string)
     processed_string = re.sub(r"[\-]", r"\-", processed_string)
@@ -35,7 +36,7 @@ def es_sanitize(input_string):
     return processed_string
 
 
-def es_minimal_sanitize(keyword):
+def es_minimal_sanitize(keyword: Any) -> str:
     keyword = concat_if_array(keyword)
     """Remove Lucene special characters and escapes when needed"""
     processed_string = re.sub(r"[{}\[\]\\]", "", keyword)
@@ -50,5 +51,4 @@ def es_minimal_sanitize(keyword):
     if len(processed_string) != len(keyword):
         msg = "Stripped characters from ES keyword search string New: '{}' Original: '{}'"
         logger.info(msg.format(processed_string, keyword))
-        keyword = processed_string
-    return keyword
+    return processed_string
