@@ -88,7 +88,7 @@ def test_apply_annotations_to_sql_joined_table():
         'LEFT OUTER JOIN "transaction_search" ON '
         '("award_search"."earliest_transaction_search_id" = "transaction_search"."transaction_id") '
         f'LEFT OUTER JOIN "transaction_search" {table_alias} '
-        'ON ("award_search"."latest_transaction_search_id" = T4."transaction_id") '
+        f'ON ("award_search"."latest_transaction_search_id" = {table_alias}."transaction_id") '
         "ORDER BY 1 ASC LIMIT 1"
     )
     assert result_query == expected_query
