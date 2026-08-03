@@ -57,7 +57,15 @@ SECRET_KEY = get_random_secret_key()
 DEBUG = os.environ.get("DJANGO_DEBUG", "").lower() in ["true", "1", "yes"]
 
 HOST = os.environ.get("HOST", "localhost:3000")
-ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "*").split(",")
+ALLOWED_HOSTS = [
+    # Standard hosts
+    "api.usaspending.gov",
+    "staging-api.usaspending.gov",
+    "qat-api.usaspending.gov",
+    "sandbox-api.usaspending.gov",
+    # Intended to allow the npc/fapc urls
+    ".usaspending.gov"
+]
 
 # Define local flag to affect location of downloads
 IS_LOCAL = os.environ.get("IS_LOCAL", "").lower() in ["true", "1", "yes"]
