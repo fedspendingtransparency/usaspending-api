@@ -71,11 +71,14 @@ def test_county_population_loader_create_tables(connection_mock):
         "county_name": "county_name",
         "population": "latest_population",
     }
-    test_data_cols = ["state_code", "test"]
+    test_data_cols = column_mapper.keys()
     logger = MagicMock()
     loader = CountyPopulationLoader(column_mapper, logger)
     loader.create_tables(test_data_cols)
-    cursor_mock.execute.assert_called_with(f"CREATE TABLE {GenericPopulationLoader.TEMP_TABLE_NAME} (state_code TEXT);")
+    cursor_mock.execute.assert_called_with(
+        f"CREATE TABLE {GenericPopulationLoader.TEMP_TABLE_NAME} " +
+        "(state_code TEXT,county_code TEXT,state_name TEXT,county_name TEXT,population TEXT);"
+    )
 
 
 @patch("usaspending_api.references.management.commands.population_data_loaders.loaders.connection")
@@ -99,11 +102,31 @@ def test_district_population_loader_create_tables(connection_mock):
         "congressional_district": "congressional_district",
         "population": "latest_population",
     }
-    test_data_cols = ["state_code", "test"]
+    test_data_cols = column_mapper.keys()
     logger = MagicMock()
     loader = DistrictPopulationLoader(column_mapper, logger)
     loader.create_tables(test_data_cols)
-    cursor_mock.execute.assert_called_with(f"CREATE TABLE {GenericPopulationLoader.TEMP_TABLE_NAME} (state_code TEXT);")
+    cursor_mock.execute.assert_called_with(
+        f"CREATE TABLE {GenericPopulationLoader.TEMP_TABLE_NAME}" +
+        "(state_code TEXT,state_name TEXT,state_abbreviation TEXT,congressional_district TEXT,population TEXT);"
+    )
+
+
+@patch("usaspending_api.references.management.commands.population_data_loaders.loaders.connection")
+def test_population_loader_create_tables_fail(connection_mock):
+    cursor_mock = connection_mock.cursor.return_value.__enter__.return_value
+    column_mapper = {
+        "state_code": "state_code",
+        "state_name": "state_name",
+        "state_abbreviation": "state_abbreviation",
+        "congressional_district": "congressional_district",
+        "population": "latest_population",
+    }
+    test_data_cols = ["test"]
+    logger = MagicMock()
+    loader = GenericPopulationLoader(column_mapper, logger)
+    loader.create_tables(test_data_cols)
+    assert cursor_mock.execute.call_count == 0
 
 
 @patch("usaspending_api.references.management.commands.population_data_loaders.loaders.connection")
