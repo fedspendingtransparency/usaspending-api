@@ -107,7 +107,7 @@ def test_district_population_loader_create_tables(connection_mock):
     loader = DistrictPopulationLoader(column_mapper, logger)
     loader.create_tables(test_data_cols)
     cursor_mock.execute.assert_called_with(
-        f"CREATE TABLE {GenericPopulationLoader.TEMP_TABLE_NAME}" +
+        f"CREATE TABLE {GenericPopulationLoader.TEMP_TABLE_NAME} " +
         "(state_code TEXT,state_name TEXT,state_abbreviation TEXT,congressional_district TEXT,population TEXT);"
     )
 
