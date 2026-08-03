@@ -75,7 +75,7 @@ class GenericPopulationLoader(Loader):
         # checks to see if the column is an expected value
         approved_cols = [c for c in columns if c in self._columns_mapper.keys()]
 
-        if len(approved_cols) > 0:
+        if len(approved_cols) == len(columns):
             with connection.cursor() as cursor:
                 cursor.execute(f"DROP TABLE IF EXISTS {self.TEMP_TABLE_NAME}")
                 cursor.execute(
