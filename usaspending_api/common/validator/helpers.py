@@ -45,7 +45,7 @@ def _check_min(rule: dict) -> None:
             raise UnprocessableEntityException(BELOW_MINIMUM_MSG.format(**rule) + " items")
 
 
-def _check_datetime_min_max(rule: dict, value: datetime.datetime, dt_format: str) -> None:
+def _check_datetime_min_max(rule: dict, value: datetime.datetime, dt_format: str) -> datetime.datetime:
 
     # DEV-4097 introduces new behavior whereby minimum/maximum date violations should raise an error.  To
     # implement this, we added a min/max_exception property to the rule.  If that property exists, we will
@@ -67,6 +67,8 @@ def _check_datetime_min_max(rule: dict, value: datetime.datetime, dt_format: str
                 raise UnprocessableEntityException(message)
             logger.info(ABOVE_MAXIMUM_MSG.format(**rule))
             value = max_cap
+
+    return value
 
 
 def _verify_int_value(value: str | int) -> int | None:
@@ -123,7 +125,7 @@ def validate_datetime(rule: dict) -> str:
         error_message = INVALID_TYPE_MSG.format(**rule) + ". Expected format: ({})".format(dt_format)
         raise InvalidParameterException(error_message) from err
 
-    _check_datetime_min_max(rule, value, dt_format)
+    value = _check_datetime_min_max(rule, value, dt_format)
 
     # Future TODO: change this to returning the appropriate object (Date or Datetime) instead of converting to string
     if rule["type"] == "date":
