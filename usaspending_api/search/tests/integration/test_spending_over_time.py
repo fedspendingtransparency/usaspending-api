@@ -4553,7 +4553,7 @@ def test_failure_with_invalid_group(client, monkeypatch, elasticsearch_transacti
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
     assert (
         resp.json().get("detail")
-        == "Field 'group' is outside valid values ['calendar_year', 'cy', 'quarter', 'q', 'fiscal_year', 'fy', 'month', 'm']"
+        == "Field 'group' is outside valid values ['calendar_year', 'cy', 'quarter', 'q', 'fiscal_year', 'fy', 'month', 'm']"  # noqa E501
     ), "Expected to fail with invalid group"
 
     # Fails with no group
