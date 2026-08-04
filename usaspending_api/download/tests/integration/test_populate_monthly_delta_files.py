@@ -9,7 +9,6 @@ from django.core.management import call_command
 from model_bakery import baker
 
 from usaspending_api.awards.models import TransactionDelta
-from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
 from usaspending_api.download.v2.download_column_historical_lookups import query_paths
 from usaspending_api.settings import HOST
 
@@ -94,7 +93,15 @@ def monthly_download_delta_data(db, monkeypatch):
     )
     TransactionDelta.objects.update_or_create_transaction(i)
 
-    monkeypatch.setenv("DOWNLOAD_DATABASE_URL", get_database_dsn_string())
+    from django.db import connection
+
+    db_settings = connection.settings_dict
+    test_db_url = (
+        f"postgresql://{db_settings['USER']}:{db_settings['PASSWORD']}"
+        f"@{db_settings['HOST']}:{db_settings['PORT']}/{db_settings['NAME']}"
+    )
+
+    monkeypatch.setenv("DOWNLOAD_DATABASE_URL", test_db_url)
 
 
 @pytest.mark.django_db(transaction=True)
