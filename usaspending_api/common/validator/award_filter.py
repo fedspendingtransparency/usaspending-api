@@ -5,6 +5,7 @@ from django.conf import settings
 
 from usaspending_api.awards.v2.lookups.lookups import award_type_mapping
 from usaspending_api.common.validator.helpers import TINY_SHIELD_SEPARATOR
+from usaspending_api.references.models.disaster_emergency_fund_code import DisasterEmergencyFundCode
 from usaspending_api.search.filters.elasticsearch.psc import PSCCodes
 from usaspending_api.search.filters.elasticsearch.tas import TasCodes, TreasuryAccounts
 
@@ -198,7 +199,12 @@ AWARD_FILTER = [
             STANDARD_FILTER_TREE_MODEL,
         ],
     },
-    {"name": "def_codes", "type": "array", "array_type": "text", "text_type": "search"},
+    {
+        "name": "def_codes",
+        "type": "array",
+        "array_type": "enum",
+        "enum_values": sorted(DisasterEmergencyFundCode.objects.values_list("code", flat=True)),
+    },
     {"name": "description", "type": "text", "text_type": "search"},
     {"name": "award_unique_id", "type": "text", "text_type": "search"},
 ]
