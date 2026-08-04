@@ -24,7 +24,7 @@ class LocationType(Enum):
     CONGRESSIONAL_DISTRICT = "congressional"
 
 
-def _combine_dicts_by_keys(dicts, keys, sum_key) -> List[Dict]:
+def _combine_dicts_by_keys(dicts: list[dict], keys: list[str], sum_key: str) -> List[Dict]:
     """Combine all dictionaries in a list that have the same values for the given field(s)
 
     Args:
@@ -186,7 +186,7 @@ class CountyViewSet(AbstractLocationViewSet):
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/search/spending_by_category/county.md"
 
     location_type = LocationType.COUNTY
-    category = Category(name="county", agg_key="pop_county_agg_key")
+    _category = Category(name="county", agg_key="pop_county_agg_key")
 
 
 class DistrictViewSet(AbstractLocationViewSet):
@@ -197,7 +197,7 @@ class DistrictViewSet(AbstractLocationViewSet):
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/search/spending_by_category/district.md"
 
     location_type = LocationType.CONGRESSIONAL_DISTRICT
-    category = Category(name="district", agg_key="pop_congressional_cur_agg_key")
+    _category = Category(name="district", agg_key="pop_congressional_cur_agg_key")
 
 
 class StateTerritoryViewSet(AbstractLocationViewSet):
@@ -208,7 +208,7 @@ class StateTerritoryViewSet(AbstractLocationViewSet):
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/search/spending_by_category/state_territory.md"
 
     location_type = LocationType.STATE_TERRITORY
-    category = Category(name="state_territory", agg_key="pop_state_agg_key")
+    _category = Category(name="state_territory", agg_key="pop_state_agg_key")
 
 
 class CountryViewSet(AbstractLocationViewSet):
@@ -219,4 +219,4 @@ class CountryViewSet(AbstractLocationViewSet):
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/search/spending_by_category/country.md"
 
     location_type = LocationType.COUNTRY
-    category = Category(name="country", agg_key="pop_country_agg_key")
+    _category = Category(name="country", agg_key="pop_country_agg_key")
