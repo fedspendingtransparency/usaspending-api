@@ -1415,16 +1415,16 @@ def spending_by_award_test_data():
     # DEF codes
     baker.make(
         "references.DisasterEmergencyFundCode",
-        code = "J",
-        public_law = "J law"
+        code="J",
+        public_law="J law"
     )
     baker.make(
         "references.DisasterEmergencyFundCode",
-        code = "L",
-        public_law = "L law"
+        code="L",
+        public_law="L law"
     )
     baker.make(
         "references.DisasterEmergencyFundCode",
-        code = "Q",
-        public_law = "Q law"
+        code="Q",
+        public_law="Q law"
     )
