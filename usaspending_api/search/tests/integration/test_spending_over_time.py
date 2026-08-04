@@ -4659,12 +4659,14 @@ def test_transactions_defc_date_filter(client, monkeypatch, elasticsearch_transa
     baker.make(
         "references.DisasterEmergencyFundCode",
         code="L",
+        public_law="L law",
         group_name="covid_19",
         earliest_public_law_enactment_date="2020-03-06",
     )
     baker.make(
         "references.DisasterEmergencyFundCode",
         code="A",
+        public_law="A law",
         group_name=None,
         earliest_public_law_enactment_date=None,
     )
