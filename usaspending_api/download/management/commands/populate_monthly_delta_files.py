@@ -1,8 +1,6 @@
 import logging
 import os
 import re
-import shutil
-import subprocess
 import tempfile
 from datetime import date, datetime
 
@@ -14,16 +12,11 @@ from django.core.management.base import BaseCommand
 from django.db.models import Case, CharField, F, Q, Value, When
 
 from usaspending_api.awards.v2.lookups.lookups import all_award_types_mappings as all_ats_mappings
-from usaspending_api.common.csv_helpers import count_rows_in_delimited_file
-from usaspending_api.common.helpers.orm_helpers import generate_raw_quoted_query
 from usaspending_api.common.helpers.s3_helpers import multipart_upload
 from usaspending_api.config import CONFIG
-from usaspending_api.download.filestreaming.download_generation import (
-    apply_annotations_to_sql,
-    split_and_zip_data_files,
-)
 from usaspending_api.download.filestreaming.download_source import DownloadSource
 from usaspending_api.download.helpers import pull_modified_agencies_cgacs
+from usaspending_api.download.helpers.psql_helpers import build_psql_env, run_psql_to_file
 from usaspending_api.download.lookups import VALUE_MAPPINGS
 from usaspending_api.references.models import SubtierAgency, ToptierAgency
 
@@ -85,7 +78,6 @@ class Command(BaseCommand):
         )
         source.query_paths.update({"correction_delete_ind": award_map["correction_delete_ind"]})
         if award_type == "Contracts":
-            # Add the agency_id column to the mappings
             source.query_paths.update({"agency_id": "transaction__contract_data__agency_id"})
             source.query_paths.move_to_end("agency_id", last=False)
         source.query_paths.move_to_end("correction_delete_ind", last=False)
@@ -120,12 +112,12 @@ class Command(BaseCommand):
 
         source.queryset = source.queryset.filter(Q(update_date_filter | Q(transaction__transactiondelta__isnull=False)))
 
-        # Generate file
+        # Generate file using helper functions
         file_path = self.create_local_file(award_type, source, agency_code, generate_since)
+
         if file_path is None:
             logger.info("No new, modified, or deleted data; discarding file")
         elif not settings.IS_LOCAL:
-            # Upload file to S3 and delete local version
             logger.info("Uploading file to S3 bucket and deleting local copy")
             multipart_upload(
                 CONFIG.MONTHLY_DOWNLOAD_S3_BUCKET_NAME,
@@ -140,9 +132,19 @@ class Command(BaseCommand):
         )
 
     def create_local_file(
-        self, award_type: str, source: pd.DataFrame, agency_code: str, generate_since: str | None
+            self, award_type: str, source: DownloadSource, agency_code: str, generate_since: str | None
     ) -> str | None:
         """Generate complete file from SQL query and S3 bucket deletion files, then zip it locally"""
+        import shutil
+        import subprocess
+
+        from usaspending_api.common.csv_helpers import count_rows_in_delimited_file
+        from usaspending_api.common.helpers.orm_helpers import generate_raw_quoted_query
+        from usaspending_api.download.filestreaming.download_generation import (
+            apply_annotations_to_sql,
+            split_and_zip_data_files,
+        )
+
         logger.info("Generating CSV file with creations and modifications")
 
         # Create file paths and working directory
@@ -155,8 +157,7 @@ class Command(BaseCommand):
         source_path = os.path.join(working_dir, "{}.csv".format(source_name))
 
         # Create a unique temporary file with the raw query
-        raw_quoted_query = generate_raw_quoted_query(source.row_emitter(None))  # None requests all headers
-
+        raw_quoted_query = generate_raw_quoted_query(source.row_emitter(None))
         csv_query_annotated = apply_annotations_to_sql(raw_quoted_query, source.human_names)
 
         (temp_sql_file, temp_sql_file_path) = tempfile.mkstemp(prefix="bd_sql_", dir="/tmp")
@@ -164,21 +165,47 @@ class Command(BaseCommand):
             file.write("\\copy ({}) To STDOUT with CSV HEADER".format(csv_query_annotated))
 
         logger.info("Generated temp SQL file {}".format(temp_sql_file_path))
-        # Generate the csv with \copy
-        cat_command = subprocess.Popen(["cat", temp_sql_file_path], stdout=subprocess.PIPE)
+
         try:
-            subprocess.check_output(
-                ["psql", "-o", source_path, os.environ["DOWNLOAD_DATABASE_URL"], "-v", "ON_ERROR_STOP=1"],
-                stdin=cat_command.stdout,
-                stderr=subprocess.STDOUT,
+            # Get database URL from settings or environment variable (for tests)
+            db_url = os.environ.get("DOWNLOAD_DATABASE_URL") or settings.DOWNLOAD_DATABASE_URL
+
+            if not db_url:
+                raise ValueError("DOWNLOAD_DATABASE_URL is not configured")
+
+            logger.info(f"Using database URL: {db_url[:20]}...")  # Log first 20 chars for debugging
+
+            # Build PostgreSQL environment using helper
+            psql_env = build_psql_env(
+                dsn=db_url,
+                statement_timeout_hours=settings.DOWNLOAD_DB_TIMEOUT_IN_HOURS,
+                work_mem_mb=settings.DOWNLOAD_DB_WORK_MEM_IN_MB
             )
+
+            logger.info(
+                f"Built psql environment with PGHOST={psql_env.get('PGHOST')}, PGDATABASE={psql_env.get('PGDATABASE')}")
+
+            # Execute psql using helper
+            run_psql_to_file(
+                sql_path=temp_sql_file_path,
+                output_path=source_path,
+                env=psql_env,
+                quiet=False,
+                on_error_stop=True
+            )
+
         except subprocess.CalledProcessError as e:
-            logger.exception(e.output)
+            logger.exception(e.output if hasattr(e, 'output') else str(e))
             raise e
+        finally:
+            # Always cleanup temp SQL file
+            os.close(temp_sql_file)
+            os.remove(temp_sql_file_path)
 
         # Append deleted rows to the end of the file
         if not self.debugging_skip_deleted:
             self.add_deletion_records(source_path, working_dir, award_type, agency_code, source, generate_since)
+
         if count_rows_in_delimited_file(source_path, has_header=True, safe=True) > 0:
             # Split the CSV into multiple files and zip it up
             zipfile_path = "{}{}.zip".format(settings.CSV_LOCAL_PATH, source_name)
@@ -188,8 +215,6 @@ class Command(BaseCommand):
         else:
             zipfile_path = None
 
-        os.close(temp_sql_file)
-        os.remove(temp_sql_file_path)
         shutil.rmtree(working_dir)
 
         return zipfile_path
