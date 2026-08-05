@@ -89,8 +89,8 @@ def _verify_float_value(value: str | int | float) -> float | None:
 
 
 def validate_array(rule: dict) -> list:
-    rule["min"] = rule["min"] if rule.get("min") else 1
-    rule["max"] = rule["max"] if rule.get("max") else MAX_ITEMS
+    rule["min"] = rule.get("min") or 1
+    rule["max"] = rule.get("max") or MAX_ITEMS
     value = rule["value"]
     if type(value) is not list:
         raise InvalidParameterException(INVALID_TYPE_MSG.format(**rule))
@@ -142,8 +142,8 @@ def validate_enum(rule: dict) -> Any:
 
 
 def validate_float(rule: dict) -> str:
-    rule["min"] = rule["min"] if rule.get("min") else MIN_FLOAT
-    rule["max"] = rule["max"] if rule.get("max") else MAX_FLOAT
+    rule["min"] = rule["min"] if rule.get("min") is not None else MIN_FLOAT
+    rule["max"] = rule["max"] if rule.get("max") is not None else MAX_FLOAT
     temp = _verify_float_value(rule["value"])
     if temp is None:
         raise InvalidParameterException(INVALID_TYPE_MSG.format(**rule))
@@ -154,8 +154,8 @@ def validate_float(rule: dict) -> str:
 
 
 def validate_integer(rule: dict) -> int:
-    rule["min"] = rule["min"] if rule.get("min") else MIN_INT
-    rule["max"] = rule["max"] if rule.get("max") else MAX_INT
+    rule["min"] = rule["min"] if rule.get("min") is not None else MIN_INT
+    rule["max"] = rule["max"] if rule.get("max") is not None else MAX_INT
     temp = _verify_int_value(rule["value"])
     if temp is None:
         raise InvalidParameterException(INVALID_TYPE_MSG.format(**rule))
@@ -189,8 +189,8 @@ def validate_object(rule: dict) -> dict:
 
 
 def validate_text(rule: dict) -> str:
-    rule["min"] = rule["min"] if rule.get("min") else 1
-    rule["max"] = rule["max"] if rule.get("max") else MAX_ITEMS
+    rule["min"] = rule["min"] if rule.get("min") is not None else 1
+    rule["max"] = rule["max"] if rule.get("max") is not None else MAX_ITEMS
     if type(rule["value"]) is not str:
         raise InvalidParameterException(INVALID_TYPE_MSG.format(**rule))
     _check_max(rule)
