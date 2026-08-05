@@ -57,7 +57,12 @@ SECRET_KEY = get_random_secret_key()
 DEBUG = os.environ.get("DJANGO_DEBUG", "").lower() in ["true", "1", "yes"]
 
 HOST = os.environ.get("HOST", "localhost:3000")
-ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "*").split(",")
+hosts = os.environ.get("ALLOWED_HOSTS")
+if hosts and hasattr(hosts, "split"):
+    hosts = hosts.split(",")
+else:
+    hosts = []
+ALLOWED_HOSTS = hosts
 
 # Define local flag to affect location of downloads
 IS_LOCAL = os.environ.get("IS_LOCAL", "").lower() in ["true", "1", "yes"]
