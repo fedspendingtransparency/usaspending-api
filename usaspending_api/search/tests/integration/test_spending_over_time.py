@@ -4656,6 +4656,10 @@ def test_transactions_defc_date_filter(client, monkeypatch, elasticsearch_transa
     """Test that the Transactions ES query does NOT return transactions with an
     `action_date` before the applicable `earliest_public_law_enactment_date`"""
 
+    # Clear the LRU cache for `_get_def_codes` before this test case runs
+    from usaspending_api.common.validator.award_filter import _get_def_codes
+    _get_def_codes.cache_clear()
+
     baker.make(
         "references.DisasterEmergencyFundCode",
         code="L",
