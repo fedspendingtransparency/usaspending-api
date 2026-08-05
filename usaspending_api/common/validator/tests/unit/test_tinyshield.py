@@ -1,19 +1,21 @@
 import copy
-from mock import patch
+
 import pytest
+from mock import patch
 
 from usaspending_api.common.exceptions import UnprocessableEntityException
 from usaspending_api.common.validator.award_filter import AWARD_FILTER
-from usaspending_api.common.validator.helpers import validate_array
-from usaspending_api.common.validator.helpers import validate_boolean
-from usaspending_api.common.validator.helpers import validate_datetime
-from usaspending_api.common.validator.helpers import validate_enum
-from usaspending_api.common.validator.helpers import validate_float
-from usaspending_api.common.validator.helpers import validate_integer
-from usaspending_api.common.validator.helpers import validate_object
-from usaspending_api.common.validator.helpers import validate_text
+from usaspending_api.common.validator.helpers import (
+    validate_array,
+    validate_boolean,
+    validate_datetime,
+    validate_enum,
+    validate_float,
+    validate_integer,
+    validate_object,
+    validate_text,
+)
 from usaspending_api.common.validator.tinyshield import TinyShield
-
 
 ARRAY_RULE = {
     "name": "test",
@@ -133,6 +135,62 @@ def test_validate_boolean():
 
 def test_validate_datetime():
     validate_datetime(DATETIME_RULE)
+
+
+def test_validate_datetime_less_than_min_returns_min():
+    """Test that a date less than min returns the min value"""
+    rule = {
+        "key": "test_date",
+        "type": "date",
+        "value": "2020-01-01",
+        "min": "2022-01-01",
+        "allow_nulls": False
+    }
+    result = validate_datetime(rule)
+    assert result == "2022-01-01"
+
+
+def test_validate_datetime_greater_than_max_returns_max():
+    """Test that a date greater than max returns the max value"""
+    rule = {
+        "key": "test_date",
+        "type": "date",
+        "value": "2025-12-31",
+        "max": "2024-12-31",
+        "allow_nulls": False
+    }
+    result = validate_datetime(rule)
+    assert result == "2024-12-31"
+
+
+def test_validate_datetime_less_than_min_raises_error():
+    """Test that a date less than min raises UnprocessableEntityException"""
+    rule = {
+        "key": "test_date",
+        "type": "date",
+        "value": "2020-01-01",
+        "min": "2022-01-01",
+        "allow_nulls": False,
+        "min_exception": "Date is below minimum"
+    }
+    with pytest.raises(UnprocessableEntityException) as exc_info:
+        validate_datetime(rule)
+    assert "minimum" in str(exc_info.value).lower()
+
+
+def test_validate_datetime_greater_than_max_raises_error():
+    """Test that a date greater than max raises UnprocessableEntityException"""
+    rule = {
+        "key": "test_date",
+        "type": "date",
+        "value": "2020-01-01",
+        "max": "2010-01-01",
+        "allow_nulls": False,
+        "max_exception": "Date is above maximum"
+    }
+    with pytest.raises(UnprocessableEntityException) as exc_info:
+        validate_datetime(rule)
+    assert "maximum" in str(exc_info.value).lower()
 
 
 def test_validate_enum():

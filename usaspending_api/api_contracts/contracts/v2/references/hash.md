@@ -9,6 +9,8 @@ Restores selected filter criteria, based on URL hash. Supports the advanced sear
 
 Restore Filters From URL Hash Data
 
+**Validation:** The `hash` field is required and must be a valid 32-character hexadecimal MD5 hash string.
+
 + Request (application/json)
     + Schema
 
@@ -19,7 +21,7 @@ Restore Filters From URL Hash Data
 
     + Attributes (object)
         + `hash` (required, string)
-            + Default: `5703c297b902ac3b76088c5c275b53f9` (retruns  default filters)
+            + Default: `5703c297b902ac3b76088c5c275b53f9` (returns default filters)
 
     + Body
 
@@ -87,4 +89,19 @@ Restore Filters From URL Hash Data
                     },
                     "version": "2017-11-21"
                 }
+            }
+
++ Response 400 (application/json)
+    + Body
+
+            {
+                "error": "Invalid request format",
+                "details": [
+                    {
+                        "type": "missing",
+                        "loc": ["hash"],
+                        "msg": "Field required",
+                        "input": {}
+                    }
+                ]
             }

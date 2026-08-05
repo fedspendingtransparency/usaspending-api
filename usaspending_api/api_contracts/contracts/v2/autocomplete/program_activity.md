@@ -19,7 +19,8 @@ This may be the 4-character program activity code or a name string.
             }
 
     + Attributes (object)
-        + `limit` (optional, number)
+        + `limit` (optional, number) - Number of results to return (min: 1, max: 500)
+          + Default: `10`
         + `search_text` (required, string)
     + Body
 
