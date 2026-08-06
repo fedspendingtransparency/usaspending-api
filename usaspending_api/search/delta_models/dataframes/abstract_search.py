@@ -50,6 +50,9 @@ class AbstractSearch(ABC):
             .withColumn("awarding_subtier_agency_name", sf.col("name"))
             .withColumn("awarding_subtier_agency_code", sf.col("subtier_code"))
         )
+        # TODO: This logic should be updated to match self.funding_agency_id below to account for
+        #       special case agencies such as FEMA that don't have a record with toptier_flag=true,
+        #       but are a toptier agency to many subtier agencies.
         self.awarding_agency_id = spark.table("global_temp.agency").withColumn(
             "awarding_toptier_agency_id", sf.col("id")
         )

@@ -918,7 +918,10 @@ class TransactionSearch(AbstractSearch):
                 "leftouter",
             )
             .join(
-                self.funding_agency_id,
+                # Without marking this dataframe as a broadcast join it will shuffle the partitions such that agencies
+                # are grouped together. This creates heavily skewed data across tasks which run into resource
+                # constraints.
+                sf.broadcast(self.funding_agency_id),
                 (
                     self.funding_agency_id.toptier_agency_id
                     == self.funding_toptier_agency.funding_toptier_agency_id

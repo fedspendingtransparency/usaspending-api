@@ -378,6 +378,8 @@ services:
         source: .
         target: /usaspending-api
         read_only: false
+      # Required to interact with host's docker daemon from within this running container and access the Broker DB
+      - /var/run/docker.sock:/var/run/docker.sock
   spark-worker:
     profiles:
       - spark  # must pass --profile spark to docker compose for this to come up
@@ -404,6 +406,8 @@ services:
         source: .
         target: /usaspending-api
         read_only: false
+      # Required to interact with host's docker daemon from within this running container and access the Broker DB
+      - /var/run/docker.sock:/var/run/docker.sock
   spark-history-server:
     profiles:
       - spark  # must pass --profile spark to docker compose for this to come up
@@ -490,6 +494,8 @@ services:
       - type: bind
         source: ${SOURCE_SPARK_SQL_WAREHOUSE_DIR}
         target: ${TARGET_SPARK_SQL_WAREHOUSE_DIR}
+      # Required to interact with host's docker daemon from within this running container and access the Broker DB
+      - /var/run/docker.sock:/var/run/docker.sock
   spark-shell:
     profiles:
       - spark  # must pass --profile spark to docker compose for this to come up

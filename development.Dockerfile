@@ -47,14 +47,10 @@ ENV UV_COMPILE_BYTECODE=1
 # Copy from the cache instead of linking since it's a mounted volume
 ENV UV_LINK_MODE=copy
 
-# Copy relevant parts of the project for package management
-COPY pyproject.toml uv.lock /usaspending-api/
-
 # Install Python and dev dependencies
 RUN --mount=type=cache,target=/root/.cache/uv \
-    --mount=type=bind,source=uv.lock,target=uv.lock \
-    --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
-    uv sync --extra dev --extra spark --locked --no-install-project --python ${PYTHON_VERSION}
+    --mount=type=bind,source=.,target=/usaspending-api \
+    uv sync --extra dev --extra spark --locked --python ${PYTHON_VERSION}
 
 # Make sure uv environment is active
 ENV PATH="/usr/local/.venv/bin:$PATH"
