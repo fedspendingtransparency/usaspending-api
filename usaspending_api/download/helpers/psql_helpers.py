@@ -69,14 +69,6 @@ def run_psql_to_file(
     if on_error_stop:
         psql_args.extend(["-v", "ON_ERROR_STOP=1"])
 
-    logger.info(f"psql command: {' '.join(psql_args)}")
-    logger.info(
-        f"Environment: PGHOST={env.get('PGHOST')}, "
-        f"PGPORT={env.get('PGPORT')}, "
-        f"PGUSER={env.get('PGUSER')}, "
-        f"PGDATABASE={env.get('PGDATABASE')}"
-    )
-
     # Test database connection first
     logger.info("Testing database connection...")
     test_process = subprocess.run(
