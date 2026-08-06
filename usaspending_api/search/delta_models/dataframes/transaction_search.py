@@ -23,11 +23,7 @@ class TransactionSearch(AbstractSearch):
     def recipient_hash_and_levels(self) -> DataFrame:
         return (
             self.recipient_profile.groupBy("recipient_hash", "uei")
-            .agg(
-                sf.sort_array(sf.collect_set("recipient_level")).alias(
-                    "recipient_levels"
-                )
-            )
+            .agg(sf.sort_array(sf.collect_set("recipient_level")).alias("recipient_levels"))
             .select(
                 sf.col("recipient_hash").alias("recipient_level_hash"),
                 sf.col("recipient_levels"),
@@ -39,20 +35,17 @@ class TransactionSearch(AbstractSearch):
         return (
             self.faba.join(
                 self.treasury_appropriation_account,
-                self.treasury_appropriation_account.treasury_account_identifier
-                == self.faba.treasury_account_id,
+                self.treasury_appropriation_account.treasury_account_identifier == self.faba.treasury_account_id,
                 "inner",
             )
             .join(
                 self.federal_account,
-                self.federal_account.id
-                == self.treasury_appropriation_account.federal_account_id,
+                self.federal_account.id == self.treasury_appropriation_account.federal_account_id,
                 "inner",
             )
             .join(
                 self.awarding_toptier_agency,
-                self.federal_account.parent_toptier_agency_id
-                == self.awarding_toptier_agency.toptier_agency_id,
+                self.federal_account.parent_toptier_agency_id == self.awarding_toptier_agency.toptier_agency_id,
                 "inner",
             )
             .join(
@@ -62,8 +55,7 @@ class TransactionSearch(AbstractSearch):
             )
             .join(
                 self.program_activity_park,
-                self.faba.program_activity_reporting_key
-                == self.program_activity_park.code,
+                self.faba.program_activity_reporting_key == self.program_activity_park.code,
                 "left",
             )
             .filter(self.faba["award_id"].isNotNull())
@@ -86,15 +78,11 @@ class TransactionSearch(AbstractSearch):
     def date_cols(self) -> list[Column]:
         return [
             sf.to_date(self.transaction_normalized.action_date).alias("action_date"),
-            sf.add_months(sf.to_date(self.transaction_normalized.action_date), 3).alias(
-                "fiscal_action_date"
-            ),
+            sf.add_months(sf.to_date(self.transaction_normalized.action_date), 3).alias("fiscal_action_date"),
             self.transaction_normalized.last_modified_date,
             self.transaction_normalized.fiscal_year,
             self.awards.certified_date.alias("award_certified_date"),
-            sf.year(sf.add_months(sf.to_date(self.awards.certified_date), 3)).alias(
-                "award_fiscal_year"
-            ),
+            sf.year(sf.add_months(sf.to_date(self.awards.certified_date), 3)).alias("award_fiscal_year"),
             self.transaction_normalized.create_date.cast(TimestampType()),
             self.transaction_normalized.update_date.cast(TimestampType()),
             self.awards.update_date.cast(TimestampType()).alias("award_update_date"),
@@ -103,12 +91,12 @@ class TransactionSearch(AbstractSearch):
                 sf.to_timestamp(self.transaction_normalized.update_date),
                 self.awards.update_date,
             ).alias("etl_update_date"),
-            sf.to_date(
-                self.transaction_normalized.period_of_performance_start_date
-            ).alias("period_of_performance_start_date"),
-            sf.to_date(
-                self.transaction_normalized.period_of_performance_current_end_date
-            ).alias("period_of_performance_current_end_date"),
+            sf.to_date(self.transaction_normalized.period_of_performance_start_date).alias(
+                "period_of_performance_start_date"
+            ),
+            sf.to_date(self.transaction_normalized.period_of_performance_current_end_date).alias(
+                "period_of_performance_current_end_date"
+            ),
             sf.coalesce(
                 self.transaction_fabs.created_at,
                 sf.to_timestamp(self.transaction_fpds.initial_report_date),
@@ -230,24 +218,16 @@ class TransactionSearch(AbstractSearch):
             )
             .cast(DecimalType(23, 2))
             .alias("generated_pragmatic_obligation"),
-            sf.coalesce(
-                self.transaction_normalized.federal_action_obligation, sf.lit(0)
-            )
+            sf.coalesce(self.transaction_normalized.federal_action_obligation, sf.lit(0))
             .cast(DecimalType(23, 2))
             .alias("federal_action_obligation"),
-            sf.coalesce(
-                self.transaction_normalized.original_loan_subsidy_cost, sf.lit(0)
-            )
+            sf.coalesce(self.transaction_normalized.original_loan_subsidy_cost, sf.lit(0))
             .cast(DecimalType(23, 2))
             .alias("original_loan_subsidy_cost"),
-            sf.coalesce(
-                self.transaction_normalized.face_value_loan_guarantee, sf.lit(0)
-            )
+            sf.coalesce(self.transaction_normalized.face_value_loan_guarantee, sf.lit(0))
             .cast(DecimalType(23, 2))
             .alias("face_value_loan_guarantee"),
-            self.transaction_normalized.indirect_federal_sharing.cast(
-                DecimalType(23, 2)
-            ),
+            self.transaction_normalized.indirect_federal_sharing.cast(DecimalType(23, 2)),
             self.transaction_normalized.funding_amount,
             sf.coalesce(self.transaction_fabs.total_funding_amount, sf.lit("0"))
             .cast(DecimalType(23, 2))
@@ -369,9 +349,7 @@ class TransactionSearch(AbstractSearch):
                 self.transaction_fpds.ultimate_parent_legal_enti,
                 self.transaction_fabs.ultimate_parent_legal_enti,
             ).alias("parent_recipient_name_raw"),
-            sf.upper(self.parent_recipient.parent_recipient_name).alias(
-                "parent_recipient_name"
-            ),
+            sf.upper(self.parent_recipient.parent_recipient_name).alias("parent_recipient_name"),
             sf.coalesce(
                 self.transaction_fpds.ultimate_parent_unique_ide,
                 self.transaction_fabs.ultimate_parent_unique_ide,
@@ -766,9 +744,7 @@ class TransactionSearch(AbstractSearch):
             self.transaction_fpds.price_evaluation_adjustmen,
             self.transaction_fpds.private_university_or_coll,
             self.transaction_fpds.product_or_service_code,
-            self.transaction_fpds.product_or_service_co_desc.alias(
-                "product_or_service_description"
-            ),
+            self.transaction_fpds.product_or_service_co_desc.alias("product_or_service_description"),
             self.transaction_fpds.program_acronym,
             self.transaction_fpds.program_system_or_equ_desc,
             self.transaction_fpds.program_system_or_equipmen,
@@ -857,8 +833,7 @@ class TransactionSearch(AbstractSearch):
             )
             .join(
                 self.references_cfda,
-                self.transaction_fabs.cfda_number
-                == self.references_cfda.program_number,
+                self.transaction_fabs.cfda_number == self.references_cfda.program_number,
                 "leftouter",
             )
             .join(
@@ -873,29 +848,23 @@ class TransactionSearch(AbstractSearch):
             )
             .join(
                 self.awarding_agency,
-                self.transaction_normalized.awarding_agency_id
-                == self.awarding_agency.id,
+                self.transaction_normalized.awarding_agency_id == self.awarding_agency.id,
                 "leftouter",
             )
             .join(
                 self.awarding_toptier_agency,
-                self.awarding_agency.toptier_agency_id
-                == self.awarding_toptier_agency.toptier_agency_id,
+                self.awarding_agency.toptier_agency_id == self.awarding_toptier_agency.toptier_agency_id,
                 "leftouter",
             )
             .join(
                 self.awarding_subtier_agency,
-                self.awarding_agency.subtier_agency_id
-                == self.awarding_subtier_agency.subtier_agency_id,
+                self.awarding_agency.subtier_agency_id == self.awarding_subtier_agency.subtier_agency_id,
                 "leftouter",
             )
             .join(
                 self.awarding_agency_id,
                 (
-                    (
-                        self.awarding_agency_id.toptier_agency_id
-                        == self.awarding_toptier_agency.toptier_agency_id
-                    )
+                    (self.awarding_agency_id.toptier_agency_id == self.awarding_toptier_agency.toptier_agency_id)
                     & self.awarding_agency_id.toptier_flag
                 ),
                 "leftouter",
@@ -907,14 +876,12 @@ class TransactionSearch(AbstractSearch):
             )
             .join(
                 self.funding_toptier_agency,
-                self.funding_agency.funding_toptier_agency_id
-                == self.funding_toptier_agency.toptier_agency_id,
+                self.funding_agency.funding_toptier_agency_id == self.funding_toptier_agency.toptier_agency_id,
                 "leftouter",
             )
             .join(
                 self.funding_subtier_agency,
-                self.funding_agency.funding_subtier_agency_id
-                == self.funding_subtier_agency.subtier_agency_id,
+                self.funding_agency.funding_subtier_agency_id == self.funding_subtier_agency.subtier_agency_id,
                 "leftouter",
             )
             .join(
@@ -922,17 +889,13 @@ class TransactionSearch(AbstractSearch):
                 # are grouped together. This creates heavily skewed data across tasks which run into resource
                 # constraints.
                 sf.broadcast(self.funding_agency_id),
-                (
-                    self.funding_agency_id.toptier_agency_id
-                    == self.funding_toptier_agency.funding_toptier_agency_id
-                )
+                (self.funding_agency_id.toptier_agency_id == self.funding_toptier_agency.funding_toptier_agency_id)
                 & (self.funding_agency_id.row_num == 1),
                 "leftouter",
             )
             .join(
                 self.parent_recipient,
-                self.parent_recipient.parent_recipient_hash
-                == self.generated_parent_recipient_hash,
+                self.parent_recipient.parent_recipient_hash == self.generated_parent_recipient_hash,
                 "leftouter",
             )
             .join(
@@ -990,9 +953,7 @@ class TransactionSearch(AbstractSearch):
         )
 
 
-def load_transaction_search(
-    spark: SparkSession, destination_database: str, destination_table_name: str
-) -> None:
+def load_transaction_search(spark: SparkSession, destination_database: str, destination_table_name: str) -> None:
     df = TransactionSearch(spark).dataframe
     df.write.saveAsTable(
         f"{destination_database}.{destination_table_name}",
@@ -1004,9 +965,7 @@ def load_transaction_search(
 def load_transaction_search_incremental(
     spark: SparkSession, destination_database: str, destination_table_name: str
 ) -> None:
-    target = DeltaTable.forName(
-        spark, f"{destination_database}.{destination_table_name}"
-    ).alias("t")
+    target = DeltaTable.forName(spark, f"{destination_database}.{destination_table_name}").alias("t")
     source = TransactionSearch(spark).dataframe.alias("s")
     (
         target.merge(

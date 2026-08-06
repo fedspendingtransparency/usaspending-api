@@ -19,7 +19,6 @@ def extract_numbers_as_string(col: Column, length: int = 2, pad: str = "0") -> C
 
 
 class AbstractSearch(ABC):
-
     def __init__(self, spark: SparkSession):
         # Base Tables
         self.transaction_normalized = spark.table("int.transaction_normalized")
