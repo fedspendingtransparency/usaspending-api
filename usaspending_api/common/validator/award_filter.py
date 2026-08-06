@@ -1,12 +1,24 @@
 import copy
+from functools import lru_cache
 from sys import maxsize
+from typing import Iterable
 
 from django.conf import settings
 
 from usaspending_api.awards.v2.lookups.lookups import award_type_mapping
 from usaspending_api.common.validator.helpers import TINY_SHIELD_SEPARATOR
+from usaspending_api.references.models.disaster_emergency_fund_code import DisasterEmergencyFundCode
 from usaspending_api.search.filters.elasticsearch.psc import PSCCodes
 from usaspending_api.search.filters.elasticsearch.tas import TasCodes, TreasuryAccounts
+
+
+@lru_cache(maxsize=1)
+def _get_def_codes() -> Iterable:
+    """This function is here to avoid issues where this file gets imported by management commands, but the database
+    is not available yet. For example the check_for_endpoint_documentation management command.
+    """
+    return sorted(DisasterEmergencyFundCode.objects.values_list("code", flat=True))
+
 
 TIME_PERIOD_MIN_MESSAGE = (
     "%s falls before the earliest available search date of {min}.  For data going back to %s, use either the "
@@ -198,7 +210,12 @@ AWARD_FILTER = [
             STANDARD_FILTER_TREE_MODEL,
         ],
     },
-    {"name": "def_codes", "type": "array", "array_type": "text", "text_type": "search"},
+    {
+        "name": "def_codes",
+        "type": "array",
+        "array_type": "enum",
+        "enum_values": _get_def_codes,
+    },
     {"name": "description", "type": "text", "text_type": "search"},
     {"name": "award_unique_id", "type": "text", "text_type": "search"},
 ]
