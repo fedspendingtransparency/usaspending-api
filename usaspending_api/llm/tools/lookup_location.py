@@ -175,7 +175,7 @@ class LocationLookupTool:
         """
         Transform OpenSearch result to SelectedLocation format.
 
-        Returns a dictionary with identifier, filter, and display objects.
+        Returns a dictionary with identifier, filter, display, and score properties.
         """
         try:
             location_data = json.loads(location_json) if location_json else {}
