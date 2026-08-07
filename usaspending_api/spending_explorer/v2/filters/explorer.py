@@ -10,10 +10,9 @@ class Explorer:
 
     file_b_calculations = FileBCalculations()
 
-    def __init__(self, alt_set: QuerySet, queryset: QuerySet, limit: int | None = None) -> None:
+    def __init__(self, alt_set: QuerySet, queryset: QuerySet) -> None:
         self.alt_set = alt_set
         self.queryset = queryset
-        self.limit = limit
 
     def budget_function(self) -> QuerySet:
         # Budget Function Queryset
@@ -28,9 +27,6 @@ class Explorer:
             .annotate(total=Sum(self.file_b_calculations.get_obligations()))
             .order_by("-total")
         )
-
-        if self.limit is not None:
-            queryset = queryset[:self.limit]
 
         return queryset
 
@@ -47,9 +43,6 @@ class Explorer:
             .annotate(total=Sum(self.file_b_calculations.get_obligations()))
             .order_by("-total")
         )
-
-        if self.limit is not None:
-            queryset = queryset[:self.limit]
 
         return queryset
 
@@ -68,9 +61,6 @@ class Explorer:
             .order_by("-total")
         )
 
-        if self.limit is not None:
-            queryset = queryset[:self.limit]
-
         return queryset
 
     def program_activity(self) -> QuerySet:
@@ -86,9 +76,6 @@ class Explorer:
             .annotate(total=Sum(self.file_b_calculations.get_obligations()))
             .order_by("-total")
         )
-
-        if self.limit is not None:
-            queryset = queryset[:self.limit]
 
         return queryset
 
@@ -106,9 +93,6 @@ class Explorer:
             .order_by("-total")
         )
 
-        if self.limit is not None:
-            queryset = queryset[:self.limit]
-
         return queryset
 
     def recipient(self) -> QuerySet:
@@ -125,9 +109,6 @@ class Explorer:
             .annotate(total=Sum("transaction_obligated_amount"))
             .order_by("-total")
         )
-
-        if self.limit is not None:
-            alt_set = alt_set[:self.limit]
 
         return alt_set
 
@@ -161,9 +142,6 @@ class Explorer:
             )
         )
 
-        if self.limit is not None:
-            queryset = queryset[:self.limit]
-
         return queryset
 
     def award_category(self) -> QuerySet:
@@ -179,9 +157,6 @@ class Explorer:
             .order_by("-total")
         )
 
-        if self.limit is not None:
-            alt_set = alt_set[:self.limit]
-
         return alt_set
 
     def award(self) -> QuerySet:
@@ -196,8 +171,5 @@ class Explorer:
             .annotate(total=Sum("transaction_obligated_amount"))
             .order_by("-total")
         )
-
-        if self.limit is not None:
-            alt_set = alt_set[:self.limit]
 
         return alt_set

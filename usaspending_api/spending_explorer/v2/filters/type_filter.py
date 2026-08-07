@@ -209,7 +209,7 @@ def _process_award_types(
         fiscal_date: date
 ) -> dict[str, Any]:
     """Process award, award_category, and recipient types."""
-    exp = Explorer(alt_set, queryset, limit=limit)
+    exp = Explorer(alt_set, queryset)
 
     if _type == "recipient":
         alt_set = exp.recipient()
@@ -217,6 +217,9 @@ def _process_award_types(
         alt_set = exp.award()
     elif _type == "award_category":
         alt_set = exp.award_category()
+
+    if limit is not None:
+        alt_set = alt_set[:limit]
 
     actual_total = 0
 
@@ -258,7 +261,7 @@ class NonAwardTypeParams:
 
 def _process_non_award_types(params: NonAwardTypeParams) -> dict[str, Any]:
     """Process non-award types (budget_function, agency, etc.)."""
-    exp = Explorer(params.alt_set, params.queryset, limit=params.limit)
+    exp = Explorer(params.alt_set, params.queryset)
 
     type_methods = {
         "budget_function": exp.budget_function,
@@ -270,7 +273,10 @@ def _process_non_award_types(params: NonAwardTypeParams) -> dict[str, Any]:
     }
 
     queryset = type_methods[params._type]()
-    actual_total = queryset.aggregate(total=Sum("amount"))["total"] or 0
+    if params.limit is not None:
+        queryset = queryset[:params.limit]
+
+    actual_total = queryset.aggregate(amount_sum=Sum("amount"))["amount_sum"] or 0
 
     unreported_params = UnreportedDataParams(
         queryset=queryset,
