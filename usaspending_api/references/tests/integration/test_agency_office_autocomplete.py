@@ -306,3 +306,70 @@ def test_funding_agency_office_autocomplete_success(client, agency_office_data):
 
     assert resp.data["results"]["office"][0]["subtier_agency"]["name"] == "Match all three"
     assert resp.data["results"]["office"][0]["subtier_agency"]["code"] == "hasdf"
+
+@pytest.mark.django_db
+def test_awarding_agency_office_autocomplete_subtier_only_match(client, agency_office_data):
+    """Test that subtier-only matches don't cause unhandled exceptions."""
+    resp = client.post(
+        "/api/v2/autocomplete/awarding_agency_office/",
+        content_type="application/json",
+        data={"search_text": "Blahblah"},
+    )
+    assert resp.status_code == status.HTTP_200_OK
+    assert len(resp.data["results"]["toptier_agency"]) == 0
+    assert len(resp.data["results"]["subtier_agency"]) == 1
+    assert len(resp.data["results"]["office"]) == 0
+    assert resp.data["results"]["subtier_agency"][0]["name"] == "Blahblah"
+    assert resp.data["results"]["subtier_agency"][0]["code"] == "32adsf"
+    assert resp.data["results"]["subtier_agency"][0]["toptier_agency"]["name"] == "Department of Defense"
+    assert resp.data["results"]["subtier_agency"][0]["toptier_agency"]["code"] == "ASDF"
+    assert len(resp.data["results"]["subtier_agency"][0]["offices"]) == 0
+
+
+@pytest.mark.django_db
+def test_funding_agency_office_autocomplete_subtier_only_match(client, agency_office_data):
+    """Test that subtier-only matches don't cause unhandled exceptions."""
+    resp = client.post(
+        "/api/v2/autocomplete/funding_agency_office/",
+        content_type="application/json",
+        data={"search_text": "Blahblah"},
+    )
+    assert resp.status_code == status.HTTP_200_OK
+    assert len(resp.data["results"]["toptier_agency"]) == 0
+    assert len(resp.data["results"]["subtier_agency"]) == 1
+    assert len(resp.data["results"]["office"]) == 0
+    assert resp.data["results"]["subtier_agency"][0]["name"] == "Blahblah"
+    assert resp.data["results"]["subtier_agency"][0]["code"] == "32adsf"
+    assert resp.data["results"]["subtier_agency"][0]["toptier_agency"]["name"] == "Department of Defense"
+    assert resp.data["results"]["subtier_agency"][0]["toptier_agency"]["code"] == "ASDF"
+    assert len(resp.data["results"]["subtier_agency"][0]["offices"]) == 0
+
+
+@pytest.mark.django_db
+def test_awarding_agency_office_autocomplete_subtier_no_toptier_match(client, agency_office_data):
+    """Test searching for text that matches subtier but not toptier."""
+    resp = client.post(
+        "/api/v2/autocomplete/awarding_agency_office/",
+        content_type="application/json",
+        data={"search_text": "abc"},
+    )
+    assert resp.status_code == status.HTTP_200_OK
+    assert len(resp.data["results"]["toptier_agency"]) == 0
+    assert len(resp.data["results"]["subtier_agency"]) == 1
+    assert resp.data["results"]["subtier_agency"][0]["abbreviation"] == "abc"
+    assert resp.data["results"]["subtier_agency"][0]["name"] == "ROATSSUIAR"
+
+
+@pytest.mark.django_db
+def test_funding_agency_office_autocomplete_subtier_no_toptier_match(client, agency_office_data):
+    """Test searching for text that matches subtier but not toptier."""
+    resp = client.post(
+        "/api/v2/autocomplete/funding_agency_office/",
+        content_type="application/json",
+        data={"search_text": "abc"},
+    )
+    assert resp.status_code == status.HTTP_200_OK
+    assert len(resp.data["results"]["toptier_agency"]) == 0
+    assert len(resp.data["results"]["subtier_agency"]) == 1
+    assert resp.data["results"]["subtier_agency"][0]["abbreviation"] == "abc"
+    assert resp.data["results"]["subtier_agency"][0]["name"] == "ROATSSUIAR"

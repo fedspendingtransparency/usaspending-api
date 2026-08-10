@@ -162,7 +162,7 @@ class BaseAutocompleteViewSet(APIView):
                 subtier_agency_tracker[key]["offices"] = []
             toptier_result = self._agency_office_toptier_agency_response_object(subtier_agency)
             subtier_agency_tracker[key]["toptier_agency"] = toptier_result
-            if toptier_agency["office_name"] is not None and toptier_agency["office_code"] is not None:
+            if subtier_agency["office_name"] is not None and subtier_agency["office_code"] is not None:
                 office_result = self._agency_office_office_response_object(subtier_agency)
                 subtier_agency_tracker[key]["offices"].append(office_result)
 
