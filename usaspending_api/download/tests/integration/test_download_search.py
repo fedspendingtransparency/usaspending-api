@@ -275,3 +275,41 @@ def test_download_search_single_spending_level_in_response(
     # Also verify download_types is correctly set to only subawards
     assert response_data["download_request"]["download_types"] == ["elasticsearch_sub_awards"]
     assert len(response_data["download_request"]["download_types"]) == 1
+
+
+@pytest.mark.django_db(databases=[settings.DOWNLOAD_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
+def test_download_search_duplicate_spending_level_deduplicated(
+        client, monkeypatch, download_test_data,
+        elasticsearch_award_index, elasticsearch_transaction_index, elasticsearch_subaward_index
+):
+    """Test that duplicate spending_level values are deduplicated to prevent resource amplification."""
+    setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
+    setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
+    setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
+    download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string(settings.DOWNLOAD_DB_ALIAS))
+
+    resp = client.post(
+        "/api/v2/download/search/",
+        content_type="application/json",
+        data=json.dumps(
+            {
+                "filters": {"award_type_codes": ["A"]},
+                "spending_level": ["awards", "awards", "transactions", "awards", "subawards", "transactions"]
+            }
+        ),
+    )
+
+    assert resp.status_code == status.HTTP_200_OK
+    response_data = resp.json()
+
+    # Verify duplicates are removed and order is preserved
+    assert response_data["download_request"]["spending_level"] == ["awards", "transactions", "subawards"]
+    assert len(response_data["download_request"]["spending_level"]) == 3
+
+    # Verify download_types has no duplicates
+    assert response_data["download_request"]["download_types"] == [
+        "elasticsearch_awards",
+        "elasticsearch_transactions",
+        "elasticsearch_sub_awards"
+    ]
+    assert len(response_data["download_request"]["download_types"]) == 3

@@ -820,6 +820,8 @@ class SearchDownloadValidator(DownloadValidatorBase):
         spending_level_to_process = original_spending_level if original_spending_level is not None else ["awards",
                                                                                                          "transactions",
                                                                                                          "subawards"]
+        # Deduplicate spending_level values.
+        spending_level_to_process = list(dict.fromkeys(spending_level_to_process))
 
         dltypes = []
         for dltype in spending_level_to_process:
