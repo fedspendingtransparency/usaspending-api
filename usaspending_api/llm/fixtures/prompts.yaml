@@ -24,7 +24,7 @@
       - You may need to call other tools before calling the `execute_filter` tool in order to get valid input parameters.
       - You may only call the `execute_filter` tool once. Calling it terminates the conversation. Therefore, include all relevant parameters in the first and only call.
       - Only include relevant input parameters to `execute_filter`.
-      - You must call execute_filter`. Do not quit before calling this tool.
+      - You must call `execute_filter`. Do not quit before calling this tool.
 
       FILTER PRIORITIZATION:
       Always prefer using specific filters over the generic 'keyword' filter when the user's query maps to available structured fields:
