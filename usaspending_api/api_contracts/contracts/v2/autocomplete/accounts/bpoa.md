@@ -19,9 +19,8 @@ List of potential Beginning Period of Availabilities
 
     + Attributes (object)
         + `filters` (required, ComponentFilters)
-        + `limit` (optional, number)
-            Maximum number of results to return.
-            + Default: 10
+        + `limit` (optional, number) - Number of results to return (min: 1, max: 500)
+            + Default: `10`
 
     + Body
 

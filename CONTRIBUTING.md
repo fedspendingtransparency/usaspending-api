@@ -115,7 +115,7 @@ This project is in the public domain within the United States, and copyright and
 All contributions to this project will be released under the [CC0 dedication](LICENSE). By submitting a pull request, you are agreeing to comply with this waiver of copyright interest.
 
 ## Additional Resources
-- [USAspending.gov Community](https://usaspending-help.zendesk.com/hc/en-us/community/topics)
+- [USAspending.gov Community](https://onevoicecrm.my.site.com/usaspending/s/)
 - [USAspending Release Notes](https://github.com/fedspendingtransparency/usaspending-website/wiki)
 - [About Federal Spending Transparency](http://fedspendingtransparency.github.io/)
 - [Our Amazing Frontend Repo](https://github.com/fedspendingtransparency/usaspending-website)
