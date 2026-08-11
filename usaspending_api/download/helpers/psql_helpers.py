@@ -11,14 +11,9 @@ def build_psql_env(
         base_env: Optional[dict] = None
 ) -> dict:
     """Build PostgreSQL environment variables from a database connection string."""
-    import logging
-
-    logger = logging.getLogger(__name__)
 
     if not dsn:
         raise ValueError("DSN cannot be empty")
-
-    logger.info(f"Parsing DSN: {dsn[:30]}...")
 
     db_url = urlparse(dsn)
 
@@ -30,9 +25,6 @@ def build_psql_env(
     env["PGUSER"] = db_url.username or "postgres"
     env["PGPASSWORD"] = db_url.password or ""
     env["PGDATABASE"] = db_url.path.lstrip('/') if db_url.path else "postgres"
-
-    logger.info(
-        f"Set PGHOST={env['PGHOST']}, PGPORT={env['PGPORT']}, PGUSER={env['PGUSER']}, PGDATABASE={env['PGDATABASE']}")
 
     # Set optional PostgreSQL options
     if statement_timeout_hours or work_mem_mb:
@@ -76,14 +68,6 @@ def run_psql_to_file(
 
     if on_error_stop:
         psql_args.extend(["-v", "ON_ERROR_STOP=1"])
-
-    logger.info(f"psql command: {' '.join(psql_args)}")
-    logger.info(
-        f"Environment: PGHOST={env.get('PGHOST')}, "
-        f"PGPORT={env.get('PGPORT')}, "
-        f"PGUSER={env.get('PGUSER')}, "
-        f"PGDATABASE={env.get('PGDATABASE')}"
-    )
 
     # Test database connection first
     logger.info("Testing database connection...")
