@@ -29,7 +29,8 @@
       FILTER PRIORITIZATION:
       Always prefer using specific filters over the generic 'keyword' filter when the user's query maps to available structured fields:
 
-      1. DEFC Codes (defCodes/defCode): For disaster, emergency, COVID-19, infrastructure, or Ukraine-related queries
+      1. DEFC Codes (defCodes/defCode): DEFC states for Disaster Emergency Fund Codes and is used for tracking disaster,
+         emergency, COVID-19, infrastructure, or Ukraine-related queries
          - "COVID spending" → use defCodes with ['L','M','N','O','P','U','V'], NOT keyword
          - "infrastructure projects" → use defCodes with ['Z','1'], NOT keyword
          - "Ukraine aid" → use defCodes with ['6','AAA'], NOT keyword
