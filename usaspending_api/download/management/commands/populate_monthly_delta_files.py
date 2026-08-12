@@ -173,17 +173,12 @@ class Command(BaseCommand):
             if not db_url:
                 raise ValueError("DOWNLOAD_DATABASE_URL is not configured")
 
-            logger.info(f"Using database URL: {db_url[:20]}...")  # Log first 20 chars for debugging
-
             # Build PostgreSQL environment using helper
             psql_env = build_psql_env(
                 dsn=db_url,
                 statement_timeout_hours=settings.DOWNLOAD_DB_TIMEOUT_IN_HOURS,
                 work_mem_mb=settings.DOWNLOAD_DB_WORK_MEM_IN_MB
             )
-
-            logger.info(
-                f"Built psql environment with PGHOST={psql_env.get('PGHOST')}, PGDATABASE={psql_env.get('PGDATABASE')}")
 
             # Execute psql using helper
             run_psql_to_file(
