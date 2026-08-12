@@ -865,6 +865,10 @@ TRANSACTION_SEARCH_COLUMNS = {
         "gold": True,
     },
     "program_activities": {"delta": "STRING", "postgres": "JSONB", "gold": False},
+    "award_amount_basis_code": {"delta": "STRING", "postgres": "TEXT"},
+    "award_amount_basis_name": {"delta": "STRING", "postgres": "TEXT"},
+    "award_recipient_basis_code": {"delta": "STRING", "postgres": "TEXT"},
+    "award_recipient_basis_name": {"delta": "STRING", "postgres": "TEXT"},
 }
 DELTA_ONLY_COLUMNS = {
     "merge_hash_key": "LONG",

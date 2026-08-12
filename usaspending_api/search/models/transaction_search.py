@@ -444,6 +444,10 @@ class TransactionSearch(models.Model):
     woman_owned_business = models.BooleanField(null=True)
     women_owned_small_business = models.BooleanField(null=True)
     program_activities = models.JSONField(null=True)
+    award_amount_basis_code = models.TextField(blank=True, null=True)
+    award_amount_basis_name = models.TextField(blank=True, null=True)
+    award_recipient_basis_code = models.TextField(blank=True, null=True)
+    award_recipient_basis_name = models.TextField(blank=True, null=True)
 
     class Meta:
         db_table = "transaction_search"

@@ -609,6 +609,10 @@ class TransactionSearch(AbstractSearch):
             self.transaction_fabs.record_type_description,
             self.transaction_fabs.sai_number,
             self.awards.uri,
+            self.transaction_fabs.award_amount_basis_code,
+            self.transaction_fabs.award_amount_basis_name,
+            self.transaction_fabs.award_recipient_basis_code,
+            self.transaction_fabs.award_recipient_basis_name,
         ]
 
     @property
