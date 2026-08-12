@@ -835,9 +835,9 @@ class SearchDownloadValidator(DownloadValidatorBase):
                 )
 
         self._json_request["download_types"] = dltypes
-        # Restore original spending_level in response
+        # Restore deduplicated spending_level in response
         if original_spending_level is not None:
-            self._json_request["spending_level"] = original_spending_level
+            self._json_request["spending_level"] = spending_level_to_process
 
 
 def _validate_award_id(award_id: Any) -> Any:
