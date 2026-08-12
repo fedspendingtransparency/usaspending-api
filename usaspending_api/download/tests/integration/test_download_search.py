@@ -124,8 +124,12 @@ def download_test_data():
 
 @pytest.mark.django_db(databases=[settings.DOWNLOAD_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
 def test_download_search_without_columns(
-    client, monkeypatch, download_test_data,
-    elasticsearch_award_index, elasticsearch_transaction_index, elasticsearch_subaward_index
+    client,
+    monkeypatch,
+    download_test_data,
+    elasticsearch_award_index,
+    elasticsearch_transaction_index,
+    elasticsearch_subaward_index,
 ):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
     setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
@@ -144,8 +148,12 @@ def test_download_search_without_columns(
 
 @pytest.mark.django_db(databases=[settings.DOWNLOAD_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
 def test_download_search_with_columns(
-    client, monkeypatch, download_test_data,
-    elasticsearch_award_index, elasticsearch_transaction_index, elasticsearch_subaward_index
+    client,
+    monkeypatch,
+    download_test_data,
+    elasticsearch_award_index,
+    elasticsearch_transaction_index,
+    elasticsearch_subaward_index,
 ):
     """
     Columns that don't exist in a given table just aren't fetched, so they dont error out
@@ -194,8 +202,12 @@ def test_download_search_bad_filter_type_raises(
 
 @pytest.mark.django_db(databases=[settings.DOWNLOAD_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
 def test_download_search_with_date_type(
-    client, monkeypatch, download_test_data,
-    elasticsearch_award_index, elasticsearch_transaction_index, elasticsearch_subaward_index
+    client,
+    monkeypatch,
+    download_test_data,
+    elasticsearch_award_index,
+    elasticsearch_transaction_index,
+    elasticsearch_subaward_index,
 ):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
     setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
@@ -220,8 +232,12 @@ def test_download_search_with_date_type(
 
 @pytest.mark.django_db(databases=[settings.DOWNLOAD_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
 def test_download_search_with_invalid_spending_level(
-    client, monkeypatch, download_test_data,
-    elasticsearch_award_index, elasticsearch_transaction_index, elasticsearch_subaward_index
+    client,
+    monkeypatch,
+    download_test_data,
+    elasticsearch_award_index,
+    elasticsearch_transaction_index,
+    elasticsearch_subaward_index,
 ):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
     setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
@@ -231,12 +247,7 @@ def test_download_search_with_invalid_spending_level(
     resp = client.post(
         "/api/v2/download/search/",
         content_type="application/json",
-        data=json.dumps(
-            {
-                "filters": {"award_type_codes": ["A"]},
-                "spending_level": ["sans"]
-            }
-        ),
+        data=json.dumps({"filters": {"award_type_codes": ["A"]}, "spending_level": ["sans"]}),
     )
 
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
@@ -245,8 +256,12 @@ def test_download_search_with_invalid_spending_level(
 
 @pytest.mark.django_db(databases=[settings.DOWNLOAD_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
 def test_download_search_single_spending_level_in_response(
-        client, monkeypatch, download_test_data,
-        elasticsearch_award_index, elasticsearch_transaction_index, elasticsearch_subaward_index
+    client,
+    monkeypatch,
+    download_test_data,
+    elasticsearch_award_index,
+    elasticsearch_transaction_index,
+    elasticsearch_subaward_index,
 ):
     """Test that response reflects the actual spending_level sent, not all three defaults"""
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
@@ -260,7 +275,7 @@ def test_download_search_single_spending_level_in_response(
         data=json.dumps(
             {
                 "filters": {"award_type_codes": ["A"]},
-                "spending_level": ["subawards"]  # Only one!
+                "spending_level": ["subawards"],  # Only one!
             }
         ),
     )
@@ -279,8 +294,12 @@ def test_download_search_single_spending_level_in_response(
 
 @pytest.mark.django_db(databases=[settings.DOWNLOAD_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
 def test_download_search_duplicate_spending_level_deduplicated(
-        client, monkeypatch, download_test_data,
-        elasticsearch_award_index, elasticsearch_transaction_index, elasticsearch_subaward_index
+    client,
+    monkeypatch,
+    download_test_data,
+    elasticsearch_award_index,
+    elasticsearch_transaction_index,
+    elasticsearch_subaward_index,
 ):
     """Test that duplicate spending_level values are deduplicated to prevent resource amplification."""
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
@@ -294,7 +313,7 @@ def test_download_search_duplicate_spending_level_deduplicated(
         data=json.dumps(
             {
                 "filters": {"award_type_codes": ["A"]},
-                "spending_level": ["awards", "awards", "transactions", "awards", "subawards", "transactions"]
+                "spending_level": ["awards", "awards", "transactions", "awards", "subawards", "transactions"],
             }
         ),
     )
@@ -310,6 +329,6 @@ def test_download_search_duplicate_spending_level_deduplicated(
     assert response_data["download_request"]["download_types"] == [
         "elasticsearch_awards",
         "elasticsearch_transactions",
-        "elasticsearch_sub_awards"
+        "elasticsearch_sub_awards",
     ]
     assert len(response_data["download_request"]["download_types"]) == 3
