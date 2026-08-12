@@ -307,6 +307,7 @@ def test_funding_agency_office_autocomplete_success(client, agency_office_data):
     assert resp.data["results"]["office"][0]["subtier_agency"]["name"] == "Match all three"
     assert resp.data["results"]["office"][0]["subtier_agency"]["code"] == "hasdf"
 
+
 @pytest.mark.django_db
 def test_awarding_agency_office_autocomplete_subtier_only_match(client, agency_office_data):
     """Test that subtier-only matches don't cause unhandled exceptions."""
