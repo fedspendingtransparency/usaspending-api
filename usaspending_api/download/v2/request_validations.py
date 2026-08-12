@@ -775,6 +775,10 @@ class SearchDownloadValidator(DownloadValidatorBase):
         self.set_filter_defaults({"award_type_codes": list(award_type_mapping.keys())})
 
         original_spending_level = self.request_data.get("spending_level")
+        # Deduplicate spending_level values to prevent resource amplification
+        if original_spending_level is not None:
+            deduplicated_spending_level = list(dict.fromkeys(original_spending_level))
+            self._json_request["spending_level"] = deduplicated_spending_level
 
         self.tinyshield_models.extend(
             [
@@ -816,12 +820,8 @@ class SearchDownloadValidator(DownloadValidatorBase):
         self._json_request["limit"] = self.request_data.get("limit", settings.MAX_DOWNLOAD_LIMIT)
         self._json_request = self.get_validated_request()
 
-        # Use original value for processing download_types
-        spending_level_to_process = original_spending_level if original_spending_level is not None else ["awards",
-                                                                                                         "transactions",
-                                                                                                         "subawards"]
-        # Deduplicate spending_level values.
-        spending_level_to_process = list(dict.fromkeys(spending_level_to_process))
+        # Use validated spending_level for processing download_types
+        spending_level_to_process = self._json_request.get("spending_level", ["awards", "transactions", "subawards"])
 
         dltypes = []
         for dltype in spending_level_to_process:
@@ -835,9 +835,6 @@ class SearchDownloadValidator(DownloadValidatorBase):
                 )
 
         self._json_request["download_types"] = dltypes
-        # Restore deduplicated spending_level in response
-        if original_spending_level is not None:
-            self._json_request["spending_level"] = spending_level_to_process
 
 
 def _validate_award_id(award_id: Any) -> Any:
