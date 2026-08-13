@@ -220,7 +220,9 @@ def _process_award_types(
 
     if _type == "award":
         # Cheap full-set total (single aggregate row) so response total matches prior behavior
-        actual_total = Explorer(alt_set, queryset, limit=None).award().aggregate(total=Sum("total"))["total"] or 0
+        actual_total = (
+            Explorer(alt_set, queryset, limit=None).award().aggregate(amount_sum=Sum("total"))["amount_sum"] or 0
+        )
         alt_set = Explorer(alt_set, queryset, limit=explorer_limit).award()
         for award in alt_set:
             _normalize_award_row(award, _type)
@@ -232,10 +234,9 @@ def _process_award_types(
         else:
             alt_set = exp.award_category()
         actual_total = 0
-
-    for award in alt_set:
-        _normalize_award_row(award, _type)
-        actual_total += award["total"] or 0
+        for award in alt_set:
+            _normalize_award_row(award, _type)
+            actual_total += award["total"] or 0
 
     result_set = list(alt_set)
     result_set.sort(key=lambda k: k["amount"], reverse=True)
