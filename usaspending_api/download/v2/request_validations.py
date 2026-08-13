@@ -802,16 +802,14 @@ class SearchDownloadValidator(DownloadValidatorBase):
         # Use validated spending_level for processing download_types
         spending_level_to_process = self._json_request.get("spending_level", ["awards", "transactions", "subawards"])
 
+        # Convert spending_level values to download_types
+        # Note: Invalid values are already validated by TinyShield enum validation
         dltypes = []
         for dltype in spending_level_to_process:
             if dltype.lower() == "subawards":
                 dltypes.append("elasticsearch_sub_awards")
-            elif dltype.lower() in ["awards", "transactions"]:
+            else:  # "awards" or "transactions"
                 dltypes.append("elasticsearch_" + dltype)
-            else:
-                raise InvalidParameterException(
-                    'Invalid parameter: spending_level must be "awards", "subawards", or "transactions"'
-                )
 
         self._json_request["download_types"] = dltypes
 

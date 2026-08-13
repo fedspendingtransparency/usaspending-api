@@ -251,7 +251,11 @@ def test_download_search_with_invalid_spending_level(
     )
 
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
-    assert resp.json()["detail"] == 'Invalid parameter: spending_level must be "awards", "subawards", or "transactions"'
+    # Updated error message format to match TinyShield's validation output.
+    assert (
+        resp.json()["detail"]
+        == "Field 'spending_level' is outside valid values ['awards', 'transactions', 'subawards']"
+    )
 
 
 @pytest.mark.django_db(databases=[settings.DOWNLOAD_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
