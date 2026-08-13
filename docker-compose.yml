@@ -56,7 +56,9 @@ services:
       - spark
       - test
       - usaspending
-    image: postgres:16-alpine
+    build:
+      context: .
+      dockerfile: db.Dockerfile
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U ${USASPENDING_DB_USER} -d ${USASPENDING_DB_NAME}" ]
       interval: 5s
