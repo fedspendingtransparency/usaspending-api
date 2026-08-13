@@ -75,7 +75,7 @@ def run_psql_to_file(
         ["psql", "-c", "SELECT 1;"],
         env=env,
         capture_output=True,
-        timeout=5
+        timeout=30
     )
     if test_process.returncode != 0:
         logger.error(f"Database connection test failed: {test_process.stderr.decode()}")
@@ -103,13 +103,15 @@ def run_psql_to_file(
 
     # Wait for both processes to complete with timeout
     try:
-        psql_output, psql_error = psql_process.communicate(timeout=30)  # 30 second timeout
-        cat_process.wait(timeout=5)
+        psql_output, psql_error = psql_process.communicate()
+        cat_process.wait(timeout=30)
     except subprocess.TimeoutExpired:
         logger.error("Process timed out! Killing processes...")
         psql_process.kill()
         cat_process.kill()
-        raise Exception("psql process timed out after 30 seconds") from None
+        raise Exception(
+            "psql process timed out by the server's process OR cat process timed out after 30 seconds"
+        ) from None
 
     logger.info(f"psql return code: {psql_process.returncode}")
     logger.info(f"psql stdout: {psql_output.decode() if psql_output else 'empty'}")
