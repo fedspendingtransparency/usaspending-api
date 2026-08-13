@@ -16,7 +16,6 @@ class SpendingExplorerViewSet(APIView):
 
     @cache_response()
     def post(self, request: Request) -> Response:
-
         json_request = request.data
         _type = json_request.get("type")
         filters = json_request.get("filters", None)
