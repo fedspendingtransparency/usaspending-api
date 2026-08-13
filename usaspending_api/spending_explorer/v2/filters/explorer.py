@@ -5,14 +5,28 @@ from usaspending_api.common.calculations.file_b import FileBCalculations
 from usaspending_api.references.models import Agency
 from usaspending_api.submissions.models import SubmissionAttributes
 
+# Default maximum records returned by spending explorer (also used by the view)
+SPENDING_EXPLORER_LIMIT = 1000
+
 
 class Explorer:
-
     file_b_calculations = FileBCalculations()
 
-    def __init__(self, alt_set: QuerySet, queryset: QuerySet) -> None:
+    def __init__(
+        self,
+        alt_set: QuerySet,
+        queryset: QuerySet,
+        limit: int | None = SPENDING_EXPLORER_LIMIT
+    ) -> None:
         self.alt_set = alt_set
         self.queryset = queryset
+        self.limit = limit
+
+    def _apply_limit(self, queryset: QuerySet) -> QuerySet:
+        """Apply the explorer limit to a queryset before it is evaluated"""
+        if self.limit is not None:
+            return queryset[: self.limit]
+        return queryset
 
     def budget_function(self) -> QuerySet:
         # Budget Function Queryset
@@ -28,7 +42,7 @@ class Explorer:
             .order_by("-total")
         )
 
-        return queryset
+        return self._apply_limit(queryset)
 
     def budget_subfunction(self) -> QuerySet:
         # Budget Sub Function Queryset
@@ -44,7 +58,7 @@ class Explorer:
             .order_by("-total")
         )
 
-        return queryset
+        return self._apply_limit(queryset)
 
     def federal_account(self) -> QuerySet:
         # Federal Account Queryset
@@ -61,7 +75,7 @@ class Explorer:
             .order_by("-total")
         )
 
-        return queryset
+        return self._apply_limit(queryset)
 
     def program_activity(self) -> QuerySet:
         # Program Activity Queryset
@@ -77,7 +91,7 @@ class Explorer:
             .order_by("-total")
         )
 
-        return queryset
+        return self._apply_limit(queryset)
 
     def object_class(self) -> QuerySet:
         # Object Classes Queryset
@@ -93,7 +107,7 @@ class Explorer:
             .order_by("-total")
         )
 
-        return queryset
+        return self._apply_limit(queryset)
 
     def recipient(self) -> QuerySet:
         # Recipients Queryset
@@ -110,7 +124,7 @@ class Explorer:
             .order_by("-total")
         )
 
-        return alt_set
+        return self._apply_limit(alt_set)
 
     def agency(self) -> QuerySet:
         # Funding Top Tier Agencies Querysets
@@ -142,7 +156,7 @@ class Explorer:
             )
         )
 
-        return queryset
+        return self._apply_limit(queryset)
 
     def award_category(self) -> QuerySet:
         # Award Category Queryset
@@ -157,7 +171,7 @@ class Explorer:
             .order_by("-total")
         )
 
-        return alt_set
+        return self._apply_limit(alt_set)
 
     def award(self) -> QuerySet:
         # Awards Queryset
@@ -172,4 +186,4 @@ class Explorer:
             .order_by("-total")
         )
 
-        return alt_set
+        return self._apply_limit(alt_set)
