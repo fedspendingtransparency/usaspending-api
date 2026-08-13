@@ -4,11 +4,12 @@ from django.db import models
 from django_cte import CTEManager
 
 from usaspending_api.common.helpers.date_helper import fy
+from usaspending_api.common.mixins import EmbeddingMixin
 from usaspending_api.common.models import DataSourceTrackedModel
 from usaspending_api.common.exceptions import UnprocessableEntityException
 
 
-class TreasuryAppropriationAccount(DataSourceTrackedModel):
+class TreasuryAppropriationAccount(EmbeddingMixin, DataSourceTrackedModel):
     """Represents a single Treasury Account Symbol (TAS)."""
 
     treasury_account_identifier = models.AutoField(primary_key=True)
@@ -177,3 +178,35 @@ class TreasuryAppropriationAccount(DataSourceTrackedModel):
 
     def __str__(self):
         return self.tas_rendering_label
+
+    def get_embedding_text(self) -> str | None:
+        parts = []
+
+        if self.tas_rendering_label:
+            parts.append(f"TAS {self.tas_rendering_label}")
+
+        if self.account_title:
+            parts.append(self.account_title.strip())
+
+        if self.reporting_agency_name:
+            parts.append(f"Agency: {self.reporting_agency_name.strip()}")
+
+        if self.budget_bureau_name:
+            parts.append(f"Bureau: {self.budget_bureau_name.strip()}")
+
+        if self.budget_function_title:
+            parts.append(f"Function: {self.budget_function_title.strip()}")
+
+        if self.budget_subfunction_title:
+            parts.append(f"Subfunction: {self.budget_subfunction_title.strip()}")
+
+        if self.fr_entity_description and self.fr_entity_description.strip() not in [
+            "Non - Reporting",
+            "Non-Reporting",
+        ]:
+            parts.append(f"Entity: {self.fr_entity_description.strip()}")
+
+        if self.availability_type_code_description:
+            parts.append(f"Type: {self.availability_type_code_description.strip()}")
+
+        return " | ".join(parts) if parts else None
