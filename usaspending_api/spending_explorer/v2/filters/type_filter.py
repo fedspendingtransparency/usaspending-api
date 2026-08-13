@@ -43,6 +43,7 @@ class UnreportedDataParams:
         fiscal_year: fiscal year from request
         fiscal_period: final fiscal period for fiscal quarter requested
     """
+
     queryset: QuerySet
     filters: dict[str, str | int]
     limit: int | None
@@ -52,9 +53,7 @@ class UnreportedDataParams:
     fiscal_period: int
 
 
-def get_unreported_data_obj(
-        params: UnreportedDataParams
-) -> tuple[list[dict[str, Any]], float | None]:
+def get_unreported_data_obj(params: UnreportedDataParams) -> tuple[list[dict[str, Any]], float | None]:
     """Returns the modified list of result objects including the object corresponding to the unreported amount, only
     if applicable. If the unreported amount does not fit within the limit of results provided, it will not be added.
 
@@ -66,7 +65,7 @@ def get_unreported_data_obj(
         expected_total: total calculated from GTAS
     """
 
-    queryset = params.queryset[:params.limit] if params.spending_type == "award" else params.queryset
+    queryset = params.queryset[: params.limit] if params.spending_type == "award" else params.queryset
 
     result_keys = ["id", "code", "type", "name", "amount"]
     if params.spending_type == "agency":
@@ -75,14 +74,11 @@ def get_unreported_data_obj(
         result_keys.append("account_number")
 
     result_set = [
-        {k: (v if k != "id" else str(v)) for k, v in entry.items()}
-        for entry in queryset.values(*result_keys)
+        {k: (v if k != "id" else str(v)) for k, v in entry.items()} for entry in queryset.values(*result_keys)
     ]
 
     gtas = (
-        GTASSF133Balances.objects.filter(
-            fiscal_year=params.fiscal_year,
-            fiscal_period=params.fiscal_period)
+        GTASSF133Balances.objects.filter(fiscal_year=params.fiscal_year, fiscal_period=params.fiscal_period)
         .values("fiscal_year", "fiscal_period")
         .annotate(Sum("obligations_incurred_total_cpe"))
         .values("obligations_incurred_total_cpe__sum")
@@ -90,16 +86,15 @@ def get_unreported_data_obj(
 
     expected_total = gtas[0]["obligations_incurred_total_cpe__sum"] if gtas else None
 
-    if (params.spending_type in VALID_UNREPORTED_DATA_TYPES
-            and set(params.filters.keys()).issubset(
-                set(VALID_UNREPORTED_FILTERS)
-            )):
+    if params.spending_type in VALID_UNREPORTED_DATA_TYPES and set(params.filters.keys()).issubset(
+        set(VALID_UNREPORTED_FILTERS)
+    ):
         unreported_obj = {
             "id": None,
             "code": None,
             "type": params.spending_type,
             "name": UNREPORTED_DATA_NAME,
-            "amount": None
+            "amount": None,
         }
 
         # if both values are actually available, then calculate the amount, otherwise leave it as the default of None
@@ -179,15 +174,13 @@ def _get_submission_window(fiscal_year: int, time_unit: str, fiscal_unit: int) -
 def _get_base_querysets(fiscal_year: int, fiscal_period: int) -> tuple[QuerySet, QuerySet]:
     """Get base querysets for alt_set and queryset."""
     alt_set = FinancialAccountsByAwards.objects.filter(
-        submission__reporting_fiscal_year=fiscal_year,
-        submission__reporting_fiscal_period__lte=fiscal_period
+        submission__reporting_fiscal_year=fiscal_year, submission__reporting_fiscal_period__lte=fiscal_period
     ).annotate(amount=Sum("transaction_obligated_amount"))
 
     # obligations_incurred_by_program_object_class_cpe is picked from the final period of the quarter.
     file_b_calculations = FileBCalculations()
     queryset = FinancialAccountsByProgramActivityObjectClass.objects.filter(
-        submission__reporting_fiscal_year=fiscal_year,
-        submission__reporting_fiscal_period=fiscal_period
+        submission__reporting_fiscal_year=fiscal_year, submission__reporting_fiscal_period=fiscal_period
     ).annotate(amount=Sum(file_b_calculations.get_obligations()))
 
     return alt_set, queryset
@@ -214,11 +207,7 @@ def _normalize_award_row(award: dict, _type: str) -> None:
 
 
 def _process_award_types(
-        _type: str,
-        alt_set: QuerySet,
-        queryset: QuerySet,
-        limit: int | None,
-        fiscal_date: date
+    _type: str, alt_set: QuerySet, queryset: QuerySet, limit: int | None, fiscal_date: date
 ) -> dict[str, Any]:
     """Process award, award_category, and recipient types.
 
@@ -294,17 +283,13 @@ def _process_non_award_types(params: NonAwardTypeParams) -> dict[str, Any]:
             spending_type=params._type,
             actual_total=actual_total,
             fiscal_year=params.fiscal_year,
-            fiscal_period=params.fiscal_period
+            fiscal_period=params.fiscal_period,
         )
     )
     return {"total": expected_total, "end_date": params.fiscal_date, "results": result_set}
 
 
-def type_filter(
-        _type: str | None,
-        filters: dict[str, str | int] | None,
-        limit: int | None = None
-) -> dict[str, Any]:
+def type_filter(_type: str | None, filters: dict[str, str | int] | None, limit: int | None = None) -> dict[str, Any]:
     _type, filters, fiscal_year, time_unit, fiscal_unit = _validate_request(_type, filters)
     submission_window = _get_submission_window(fiscal_year, time_unit, fiscal_unit)
     fiscal_date = submission_window.period_end_date
@@ -324,6 +309,6 @@ def type_filter(
             limit=limit,
             fiscal_year=fiscal_year,
             fiscal_period=fiscal_period,
-            fiscal_date=fiscal_date
+            fiscal_date=fiscal_date,
         )
     )

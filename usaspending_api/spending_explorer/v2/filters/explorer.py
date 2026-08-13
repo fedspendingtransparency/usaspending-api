@@ -12,12 +12,7 @@ SPENDING_EXPLORER_LIMIT = 1000
 class Explorer:
     file_b_calculations = FileBCalculations()
 
-    def __init__(
-        self,
-        alt_set: QuerySet,
-        queryset: QuerySet,
-        limit: int | None = SPENDING_EXPLORER_LIMIT
-    ) -> None:
+    def __init__(self, alt_set: QuerySet, queryset: QuerySet, limit: int | None = SPENDING_EXPLORER_LIMIT) -> None:
         self.alt_set = alt_set
         self.queryset = queryset
         self.limit = limit
