@@ -12,6 +12,7 @@ chunked_matviews/**
 csv_downloads/**
 data/**
 derby.log
+dredd-results.txt
 log/**
 logs/**
 matviews/**
