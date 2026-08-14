@@ -987,6 +987,8 @@ def test_incremental_load_table_to_delta_for_award_search(
         .table("award_search")
         .select(["award_id", "_change_type", "_commit_version"])
         .toPandas()
+        .sort_values(by=["award_id", "_change_type", "_commit_version"])
+        .reset_index(drop=True)
     )
 
     # With deletion vectors, the "true" delete process happens on table update
@@ -998,6 +1000,7 @@ def test_incremental_load_table_to_delta_for_award_search(
                 "insert",
                 "insert",
                 "insert",
+                "delete",
                 "insert",
                 "insert",
                 "delete",
@@ -1088,6 +1091,8 @@ def test_incremental_load_table_to_delta_for_transaction_search(
         .table("transaction_search")
         .select(["transaction_id", "_change_type", "_commit_version"])
         .toPandas()
+        .sort_values(by=["transaction_id", "_change_type", "_commit_version"])
+        .reset_index(drop=True)
     )
 
     # With deletion vectors, the "true" delete process happens on table update
@@ -1099,6 +1104,7 @@ def test_incremental_load_table_to_delta_for_transaction_search(
                 "insert",
                 "insert",
                 "insert",
+                "delete",
                 "insert",
                 "insert",
                 "insert",
@@ -1313,7 +1319,7 @@ def test_load_award_financial_download(
             "recipient_name": "FABS RECIPIENT 12345",
             "recipient_name_raw": "FABS RECIPIENT 12345",
             "recipient_parent_uei": "PARENTUEI12345",
-            "recipient_parent_duns": "PARENTUEI12345",
+            "recipient_parent_duns": "PARENTDUNS12345",
             "recipient_parent_name": "PARENT RECIPIENT 12345",
             "recipient_parent_name_raw": "PARENT RECIPIENT 12345",
             "recipient_country": "USA",

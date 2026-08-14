@@ -19,7 +19,8 @@ List of cities matching search criteria
 
     + Attributes (object)
         + `search_text` (required, string)
-        + `limit` (required, number)
+        + `limit` (required, number) - Number of results to return (min: 1, max: 500)
+          + Default: `10`
         + `filter` (optional, object)
             + `country_code` (required, string)
             + `scope` (required, enum[string])

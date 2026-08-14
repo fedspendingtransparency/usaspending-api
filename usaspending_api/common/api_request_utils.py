@@ -1,15 +1,17 @@
-import json
 import os
 from datetime import date, datetime, time
 from functools import wraps
+from inspect import signature
 from typing import Any, Dict, List, Optional, Union
 
 import boto3
 from botocore.exceptions import ClientError
 from django.contrib.postgres.search import SearchVector
+from django.core.exceptions import FieldDoesNotExist
 from django.db.models import Q
 from django.utils import timezone
 from rest_framework import status
+from rest_framework.request import Request as DRFRequest
 from rest_framework.response import Response
 
 from usaspending_api.common.exceptions import InvalidParameterException
@@ -116,6 +118,13 @@ class FilterGenerator:
         for key in parameters:
             if key in self.ignored_parameters:
                 continue
+
+            # Determine the actual field that will be used after mapping.
+            actual_field = self.filter_map.get(key, key)
+
+            # Validate the field path to prevent ORM injection.
+            self._resolve_field_path(actual_field)
+
             if key in self.filter_map:
                 return_arguments[self.filter_map[key]] = parameters[key]
             else:
@@ -258,9 +267,90 @@ class FilterGenerator:
         if "combine_method" in filt:
             self.validate_post_request(filt)
         elif "field" in filt and "operation" in filt and "value" in filt:
+            self._validate_filter_field(filt)
             self._validate_filter_operation(filt)
         else:
             raise InvalidParameterException("Malformed filter - missing field, operation, or value")
+
+    def _validate_filter_field(self, filt: Dict[str, Any]) -> None:
+        """Validate the field parameter to prevent ORM injection."""
+        field = filt["field"]
+
+        # Special cases: field arrays for range_intersect and search operations.
+        if isinstance(field, list):
+            operation = filt.get("operation", "")
+            if operation.replace("not_", "") in ["range_intersect", "search"]:
+                # Validate each field in the array.
+                for single_field in field:
+                    self._resolve_field_path(single_field)
+            else:
+                raise InvalidParameterException("Field arrays are only allowed for range_intersect and search ops.")
+        else:
+            # Standard case: validate single field.
+            self._resolve_field_path(field)
+
+    def _resolve_field_path(self, field_path: str) -> None:
+        """Validate field path against model schema, allowing FK traversal and known operations."""
+        segments = field_path.split("__")
+        current_model = self.model
+        resolved_field = None
+
+        for index, segment in enumerate(segments):
+            try:
+                resolved_field = current_model._meta.get_field(segment)
+            except FieldDoesNotExist:
+                # If this is the last segment, check if it's a known Django lookup/operation.
+                is_last = index == len(segments) - 1
+                if is_last and segment in self._get_allowed_lookups():
+                    # Valid lookup suffix, no need to continue validation.
+                    return
+                raise InvalidParameterException(f"Invalid field: {field_path}") from None
+
+            is_last = index == len(segments) - 1
+            if resolved_field.is_relation and not is_last:
+                current_model = resolved_field.related_model
+            elif not is_last:
+                # Non-relation field with more segments. Check if remaining segments are all valid lookups.
+                remaining_segments = segments[index + 1:]
+                allowed_lookups = self._get_allowed_lookups()
+                if all(seg in allowed_lookups for seg in remaining_segments):
+                    # All remaining segments are valid lookups, validation complete.
+                    return
+                raise InvalidParameterException(f"Invalid field: {field_path}")
+
+    def _get_allowed_lookups(self) -> set:
+        """Return set of allowed Django field lookups that can appear as a final segment."""
+        # Derive allowed lookups from operators dictionary to reduce duplication.
+        allowed = set()
+
+        for operation_value in self.operators.values():
+            if operation_value.startswith("__"):
+                # Extract lookup suffix: "__lt" → "lt", "__icontains" → "icontains".
+                lookup = operation_value[2:]
+
+                # Handle compound lookups like "__len__gt" → ["len", "gt"].
+                # These represent transform + lookup chains (e.g., field__len__gt).
+                if "__" in lookup:
+                    allowed.update(lookup.split("__"))
+                else:
+                    allowed.add(lookup)
+            elif operation_value == "":
+                # "equals" operation maps to "" which becomes "exact" lookup.
+                allowed.add("exact")
+
+        # Add additional safe Django lookups not covered by operators.
+        allowed.update({
+            "iexact", "startswith", "istartswith", "endswith", "iendswith",
+            "date", "year", "month", "day", "week", "week_day", "quarter",
+            "time", "hour", "minute", "second"
+        })
+
+        # Explicitly exclude dangerous lookups to prevent ReDoS attacks.
+        # NOTE: These must never be allowed even if accidentally added to operators dict.
+        allowed.discard("regex")
+        allowed.discard("iregex")
+
+        return allowed
 
     def _validate_filter_operation(self, filt: Dict[str, Any]) -> None:
         """Validate the operation and value for a filter"""
@@ -525,24 +615,47 @@ class LLMAPIKeyHandler:
             - UUID in the header doesn't match the AWS secret
 
         Example:
-            @LLMAPIKeyHandler.require_api_key
-            @cache_response()
-            @api_view(['GET', 'POST'])
-            def llm_endpoint(request):
-                return Response({"message": "LLM endpoint"})
+            class LLMEndpointView(APIView):
+                @LLMAPIKeyHandler.require_api_key
+                def post(self, request):
+                    return StreamingHttpResponse(...)
         """
+        # Capture the original function signature once when the decorator is applied.
+        function_signature = signature(function)
 
         @wraps(function)
-        def wrapper(*args: Any, **kwargs: Any) -> Response:
-            # Extract request from args
-            request = args[0] if args else kwargs.get('request')
+        def wrapper(*args: Any, **kwargs: Any) -> Any:
+            # Map args and kwargs to the parameter names (e.g., "self", "request").
+            error_response = None
+            try:
+                bound = function_signature.bind_partial(*args, **kwargs)
+            except TypeError:
+                error_response = LLMAPIKeyHandler._error_response(
+                    "Request object not found",
+                    status.HTTP_500_INTERNAL_SERVER_ERROR,
+                )
+            else:
+                # Retrieve values assigned to the "request" parameter.
+                # (Should prevent accidentally selecting the APIRequest instance)
+                # TODO: Add flexibility. This is rigidly tied to the parameter name "request"
+                request = bound.arguments.get("request")
 
-            # Validate request and authentication
-            error_response = LLMAPIKeyHandler._validate_llm_request(request)
-            if error_response:
+                # Require an actual DRF Request before attempting header validation.
+                if not isinstance(request, DRFRequest):
+                    error_response = LLMAPIKeyHandler._error_response(
+                        "Request object not found",
+                        status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    )
+                else:
+                    # Validate the API-key header, secrets config, and UUID.
+                    # Returns a Response when validation fails and None when successful.
+                    error_response = LLMAPIKeyHandler._validate_llm_request(request)
+            # Return the validation error without executing the protected view.
+            if error_response is not None:
                 return error_response
 
-            # UUID is valid, proceed with the view
+            # If authentication succeeds, execute original view method with the
+            # same args/kwargs that were passed to the wrapper.
             return function(*args, **kwargs)
 
         return wrapper
@@ -558,10 +671,10 @@ class LLMAPIKeyHandler:
         if isinstance(validation_result, Response):
             return validation_result
 
-        llm_api_key, secret_name = validation_result
+        llm_api_key = validation_result
 
         # Retrieve and validate secret from AWS
-        stored_uuid = LLMAPIKeyHandler._get_secret_uuid(secret_name)
+        stored_uuid = LLMAPIKeyHandler._get_secret_uuid()
         if isinstance(stored_uuid, Response):
             return stored_uuid
 
@@ -569,31 +682,24 @@ class LLMAPIKeyHandler:
         return LLMAPIKeyHandler._validate_uuid_match(llm_api_key, stored_uuid)
 
     @staticmethod
-    def _validate_request_components(request: Any) -> Union[tuple, Response]:
+    def _validate_request_components(request: Any) -> Union[str, Response]:
         """
-        Validate request, API key header, and secret name configuration.
-        Returns tuple of (api_key, secret_name) on success or error Response on failure.
+        Validate request, API key header configuration.
+        Returns the api_key on success or error Response on failure.
         """
         if not request:
             return LLMAPIKeyHandler._error_response(
-                "Request object not found",
-                status.HTTP_500_INTERNAL_SERVER_ERROR
+                "X-LLM-API-Key header is required for LLM API access",
+                status.HTTP_403_FORBIDDEN
             )
 
         llm_api_key = request.headers.get('X-LLM-API-Key')
-        secret_name = os.environ.get('LLM_API_SECRET_NAME')
 
-        # Validate both required components - prioritize API key error
-        error_detail = None
         if not llm_api_key:
             error_detail = "X-LLM-API-Key header is required for LLM API access"
-        elif not secret_name:
-            error_detail = "LLM API secret configuration is not set"
-
-        if error_detail:
             return LLMAPIKeyHandler._error_response(error_detail, status.HTTP_403_FORBIDDEN)
 
-        return llm_api_key, secret_name
+        return llm_api_key
 
     @staticmethod
     def _validate_uuid_match(llm_api_key: str, stored_uuid: str) -> Optional[Response]:
@@ -606,16 +712,15 @@ class LLMAPIKeyHandler:
         return None
 
     @staticmethod
-    def _get_secret_uuid(secret_name: str) -> Union[str, Response]:
+    def _get_secret_uuid() -> Union[str, Response]:
         """
         Retrieve UUID from AWS Secrets Manager.
         Returns UUID string on success or error Response on failure.
         """
+        secret_name = "llm_api_secret"
         try:
             secret_string = LLMAPIKeyHandler._fetch_aws_secret(secret_name)
-            if isinstance(secret_string, Response):
-                return secret_string
-            return LLMAPIKeyHandler._parse_secret_uuid(secret_string)
+            return secret_string
         except (ClientError, Exception) as e:
             return LLMAPIKeyHandler._handle_error(e, secret_name)
 
@@ -640,29 +745,6 @@ class LLMAPIKeyHandler:
             )
 
         return get_secret_value_response['SecretString']
-
-    @staticmethod
-    def _parse_secret_uuid(secret: str) -> Union[str, Response]:
-        """
-        Parse UUID from secret string (handles both JSON and plain text).
-        Returns UUID string or error Response.
-        """
-        try:
-            secret_dict = json.loads(secret)
-            stored_uuid = (
-                    secret_dict.get('uuid') or
-                    secret_dict.get('LLM_API_KEY') or
-                    secret_dict.get('api_key')
-            )
-            if not stored_uuid:
-                return LLMAPIKeyHandler._error_response(
-                    "LLM API secret does not contain a valid UUID key",
-                    status.HTTP_403_FORBIDDEN
-                )
-            return stored_uuid
-        except json.JSONDecodeError:
-            # Secret is a plain string UUID
-            return secret
 
     @staticmethod
     def _handle_error(error: Exception, secret_name: str) -> Response:

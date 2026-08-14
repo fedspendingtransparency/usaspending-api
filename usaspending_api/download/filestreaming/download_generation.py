@@ -3,7 +3,6 @@ import logging
 import multiprocessing
 import os
 import re
-import shutil
 import subprocess
 import tempfile
 import time
@@ -35,6 +34,8 @@ from usaspending_api.download.filestreaming.file_description import build_file_d
 from usaspending_api.download.filestreaming.zip_file import append_files_to_zip_file
 from usaspending_api.download.helpers import verify_requested_columns_available
 from usaspending_api.download.helpers import write_to_download_log as write_to_log
+from usaspending_api.download.helpers.cleanup_helpers import cleanup_download_files, cleanup_previous_download_attempt
+from usaspending_api.download.helpers.psql_helpers import build_psql_env, run_psql_to_file
 from usaspending_api.download.lookups import FILE_FORMATS, JOB_STATUS_DICT, VALUE_MAPPINGS
 from usaspending_api.download.models.download_job import DownloadJob
 from usaspending_api.download.models.download_job_lookup import DownloadJobLookup
@@ -53,21 +54,38 @@ logger = logging.getLogger(__name__)
 tracer = trace.get_tracer_provider().get_tracer(__name__)
 
 
-def generate_download(download_job: DownloadJob, origination: Optional[str] = None) -> str | None:  # noqa: PLR0912,PLR0915
+def generate_download(download_job: DownloadJob, origination: Optional[str] = None) -> str | None:
     """Create data archive files from the download job object"""
 
-    # Parse data from download_job
     json_request = json.loads(download_job.json_request)
-    columns = json_request.get("columns", None)
-    limit = json_request.get("limit", None)
-    piid = json_request.get("piid", None)
-    award_id = json_request.get("award_id")
-    assistance_id = json_request.get("assistance_id")
-    file_format = json_request.get("file_format")
-    request_type = json_request.get("request_type")
 
+    cleanup_previous_download_attempt(download_job, use_logger=False)
     file_name = start_download(download_job)
 
+    _log_download_start(download_job, file_name, json_request.get("request_type"))
+
+    working_dir = None
+    try:
+        working_dir = _validate_and_setup_download(download_job, json_request, file_name)
+        _process_download_sources(download_job, json_request, working_dir, file_name)
+        _add_supplemental_files(download_job, json_request, working_dir, settings.CSV_LOCAL_PATH + file_name)
+    except InvalidParameterException as e:
+        _handle_invalid_parameter_exception(download_job, e)
+        raise InvalidParameterException(e) from e
+    except Exception as e:
+        _handle_general_exception(download_job, e)
+        raise Exception(download_job.error_message) from e
+    finally:
+        _cleanup_working_directory(download_job, working_dir)
+
+    if not settings.IS_LOCAL:
+        _upload_to_s3(download_job, file_name)
+
+    return finish_download(download_job)
+
+
+def _log_download_start(download_job: DownloadJob, file_name: str, request_type: str) -> None:
+    """Log the start of download generation with tracing"""
     with SubprocessTrace(
         name=f"job.{JOB_TYPE}.generate_download_{request_type}",
         kind=SpanKind.INTERNAL,
@@ -79,15 +97,14 @@ def generate_download(download_job: DownloadJob, origination: Optional[str] = No
                 "span_type": "Internal",
                 "job_type": str(JOB_TYPE),
                 "message": "Creating data archive files from the download job object",
-                # download job details
                 "download_job_id": str(download_job.download_job_id),
                 "download_job_status": str(download_job.job_status.name),
                 "download_file_name": str(download_job.file_name),
                 "download_file_size": download_job.file_size if download_job.file_size is not None else 0,
                 "number_of_rows": download_job.number_of_rows if download_job.number_of_rows is not None else 0,
-                "number_of_columns": (
-                    download_job.number_of_columns if download_job.number_of_columns is not None else 0
-                ),
+                "number_of_columns": download_job.number_of_columns
+                if download_job.number_of_columns is not None
+                else 0,
                 "error_message": download_job.error_message if download_job.error_message else "",
                 "monthly_download": str(download_job.monthly_download),
                 "json_request": str(download_job.json_request) if download_job.json_request else "",
@@ -95,172 +112,200 @@ def generate_download(download_job: DownloadJob, origination: Optional[str] = No
             }
         )
 
-    working_dir = None
-    try:
-        if limit is not None and limit > MAX_DOWNLOAD_LIMIT:
-            msg = (
-                "Unable to process this download because it includes more than the current limit of"
-                f" {MAX_DOWNLOAD_LIMIT} records"
+
+def _validate_and_setup_download(download_job: DownloadJob, json_request: dict, file_name: str) -> str:
+    """Validate download limits and setup working directory"""
+    limit = json_request.get("limit", None)
+
+    if limit is not None and limit > MAX_DOWNLOAD_LIMIT:
+        msg = (
+            f"Unable to process this download because it includes more than the current limit of "
+            f"{MAX_DOWNLOAD_LIMIT} records"
+        )
+        with SubprocessTrace(
+            name=f"job.{JOB_TYPE}.generate_download_{json_request.get('request_type')}",
+            kind=SpanKind.INTERNAL,
+            service="bulk-download",
+        ) as limit_exceeded:
+            limit_exceeded.set_attributes({"message": msg, "limit": limit})
+        raise Exception(msg)
+
+    # Create temporary files and working directory
+    zip_file_path = settings.CSV_LOCAL_PATH + file_name
+    if not settings.IS_LOCAL and os.path.exists(zip_file_path):
+        os.remove(zip_file_path)
+
+    working_dir = os.path.splitext(zip_file_path)[0]
+    if not os.path.exists(working_dir):
+        os.mkdir(working_dir)
+
+    write_to_log(message=f"Generating {file_name}", download_job=download_job)
+
+    return working_dir
+
+
+def _process_download_sources(download_job: DownloadJob, json_request: dict, working_dir: str, file_name: str) -> None:
+    """Process all download sources and generate data files"""
+    columns = json_request.get("columns", None)
+    limit = json_request.get("limit", None)
+    piid = json_request.get("piid", None)
+    assistance_id = json_request.get("assistance_id")
+    file_format = json_request.get("file_format")
+    zip_file_path = settings.CSV_LOCAL_PATH + file_name
+
+    sources = get_download_sources(json_request, download_job, None)
+
+    for source in sources:
+        source_column_count = len(source.columns(columns))
+        if source_column_count == 0:
+            create_empty_data_file(source, download_job, working_dir, piid, assistance_id, zip_file_path, file_format)
+        else:
+            download_job.number_of_columns += source_column_count
+            parse_source(
+                source, columns, download_job, working_dir, piid, assistance_id, zip_file_path, limit, file_format
             )
+
+
+def _add_supplemental_files(
+    download_job: DownloadJob, json_request: dict, working_dir: str, zip_file_path: str
+) -> None:
+    """Add data dictionary and file description if requested"""
+    if json_request.get("include_data_dictionary"):
+        add_data_dictionary_to_zip(working_dir, zip_file_path)
+
+    include_file_description = json_request.get("include_file_description")
+    if include_file_description:
+        write_to_log(message="Adding file description to zip file")
+        sources = get_download_sources(json_request, download_job, None)
+        file_description = build_file_description(include_file_description["source"], sources)
+        file_description = file_description.replace("AWARD_ID", str(json_request.get("award_id")))
+        file_description_path = save_file_description(
+            working_dir, include_file_description["destination"], file_description
+        )
+        append_files_to_zip_file([file_description_path], zip_file_path)
+
+    download_job.file_size = os.stat(zip_file_path).st_size
+
+
+def _handle_invalid_parameter_exception(download_job: DownloadJob, e: InvalidParameterException) -> None:
+    """Handle InvalidParameterException with tracing"""
+    exc_msg = "InvalidParameterException was raised while attempting to process the DownloadJob"
+    with SubprocessTrace(
+        name=f"job.{JOB_TYPE}.generate_download",
+        kind=SpanKind.INTERNAL,
+        service="bulk-download",
+    ) as error_span:
+        error_span.set_attributes(
+            {
+                "service": "bulk-download",
+                "span_type": "Internal",
+                "message": exc_msg,
+                "error": str(e),
+            }
+        )
+    fail_download(download_job, e, exc_msg)
+
+
+def _handle_general_exception(download_job: DownloadJob, e: Exception) -> None:
+    """Handle general exceptions with tracing"""
+    exc_msg = "An exception was raised while attempting to process the DownloadJob"
+    with SubprocessTrace(
+        name=f"job.{JOB_TYPE}.process_download_job",
+        kind=SpanKind.INTERNAL,
+        service="bulk-download",
+    ) as error_span:
+        error_span.set_attributes(
+            {
+                "service": "bulk-download",
+                "span_type": "Internal",
+                "message": exc_msg,
+                "error": str(e),
+            }
+        )
+    fail_download(download_job, e, exc_msg)
+
+
+def _cleanup_working_directory(download_job: DownloadJob, working_dir: Optional[str]) -> None:
+    """Clean up working directory and spawned processes"""
+    files_to_cleanup = []
+
+    if working_dir and os.path.exists(working_dir):
+        files_to_cleanup.append(working_dir)
+
+    if files_to_cleanup:
+        cleanup_download_files(files_to_cleanup, use_logger=False, download_job=download_job)
+
+    _kill_spawned_processes(download_job)
+    DownloadJobLookup.objects.filter(download_job_id=download_job.download_job_id).delete()
+
+
+def _upload_to_s3(download_job: DownloadJob, file_name: str) -> None:
+    """Upload the generated zip file to S3"""
+    zip_file_path = settings.CSV_LOCAL_PATH + file_name
+
+    with SubprocessTrace(
+        name=f"job.{JOB_TYPE}.download.s3",
+        kind=SpanKind.INTERNAL,
+        service="bulk-download",
+    ) as span:
+        span.set_attributes(
+            {
+                "service": "bulk-download",
+                "span_type": "Internal",
+                "resource": f"s3://{CONFIG.BULK_DOWNLOAD_S3_BUCKET_NAME}",
+                "message": "Push file to S3 bucket, if not local",
+            }
+        )
+
+    with SubprocessTrace(
+        name=f"job.{JOB_TYPE}.s3.command",
+        kind=SpanKind.SERVER,
+        service="bulk-download",
+    ) as s3_span:
+        s3_span.set_attributes(
+            {
+                "service": "aws.s3",
+                "span_type": "WEB",
+                "resource": ".".join(
+                    [multipart_upload.__module__, (multipart_upload.__qualname__ or multipart_upload.__name__)]
+                ),
+            }
+        )
+
+        try:
+            bucket = CONFIG.BULK_DOWNLOAD_S3_BUCKET_NAME
+            region = CONFIG.AWS_REGION
+            s3_span.set_attributes({"bucket": bucket, "region": region, "file": zip_file_path})
+            start_uploading = time.perf_counter()
+            multipart_upload(bucket, region, zip_file_path, os.path.basename(zip_file_path))
+            write_to_log(
+                message=f"Uploading took {time.perf_counter() - start_uploading:.2f}s", download_job=download_job
+            )
+        except Exception as e:
+            exc_msg = "An exception was raised while attempting to upload the file"
             with SubprocessTrace(
-                name=f"job.{JOB_TYPE}.generate_download_{request_type}",
-                kind=SpanKind.INTERNAL,
+                name=f"job.{JOB_TYPE}.upload_file_to_aws",
+                kind=SpanKind.SERVER,
                 service="bulk-download",
-            ) as limit_exceeded:
-                limit_exceeded.set_attributes({"message": msg, "limit": limit})
-
-            raise Exception(msg)
-
-        # Create temporary files and working directory
-        zip_file_path = settings.CSV_LOCAL_PATH + file_name
-        if not settings.IS_LOCAL and os.path.exists(zip_file_path):
-            # Clean up a zip file that might exist from a prior attempt at this download
-            os.remove(zip_file_path)
-        working_dir = os.path.splitext(zip_file_path)[0]
-        if not os.path.exists(working_dir):
-            os.mkdir(working_dir)
-
-        write_to_log(message=f"Generating {file_name}", download_job=download_job)
-
-        # Generate sources from the JSON request object
-        sources = get_download_sources(json_request, download_job, origination)
-        for source in sources:
-            # Parse and write data to the file; if there are no matching columns for a source then add an empty file
-            source_column_count = len(source.columns(columns))
-            if source_column_count == 0:
-                create_empty_data_file(
-                    source, download_job, working_dir, piid, assistance_id, zip_file_path, file_format
+            ) as error_span:
+                error_span.set_attributes(
+                    {
+                        "service": "bulk-download",
+                        "span_type": "Internal",
+                        "message": exc_msg,
+                        "error": str(e),
+                    }
                 )
+            fail_download(download_job, e, exc_msg)
+            if isinstance(e, InvalidParameterException):
+                raise InvalidParameterException(e) from e
             else:
-                download_job.number_of_columns += source_column_count
-                parse_source(
-                    source, columns, download_job, working_dir, piid, assistance_id, zip_file_path, limit, file_format
-                )
-        include_data_dictionary = json_request.get("include_data_dictionary")
-        if include_data_dictionary:
-            add_data_dictionary_to_zip(working_dir, zip_file_path)
-        include_file_description = json_request.get("include_file_description")
-        if include_file_description:
-            write_to_log(message="Adding file description to zip file")
-            file_description = build_file_description(include_file_description["source"], sources)
-            file_description = file_description.replace("[AWARD_ID]", str(award_id))
-            file_description_path = save_file_description(
-                working_dir, include_file_description["destination"], file_description
-            )
-            append_files_to_zip_file([file_description_path], zip_file_path)
-        download_job.file_size = os.stat(zip_file_path).st_size
-    except InvalidParameterException as e:
-        exc_msg = "InvalidParameterException was raised while attempting to process the DownloadJob"
-        with SubprocessTrace(
-            name=f"job.{JOB_TYPE}.generate_download",
-            kind=SpanKind.INTERNAL,
-            service="bulk-download",
-        ) as error_span:
-            error_span.set_attributes(
-                {
-                    "service": "bulk-download",
-                    "span_type": "Internal",
-                    "message": exc_msg,
-                    "error": str(e),
-                }
-            )
-            fail_download(download_job, e, exc_msg)
-            raise InvalidParameterException(e) from e
-    except Exception as e:
-        # Set error message; job_status_id will be set in download_sqs_worker.handle()
-        exc_msg = "An exception was raised while attempting to process the DownloadJob"
-        with SubprocessTrace(
-            name=f"job.{JOB_TYPE}.process_download_job",
-            kind=SpanKind.INTERNAL,
-            service="bulk-download",
-        ) as error_span:
-            error_span.set_attributes(
-                {
-                    "service": "bulk-download",
-                    "span_type": "Internal",
-                    "message": exc_msg,
-                    "error": str(e),
-                }
-            )
-            fail_download(download_job, e, exc_msg)
-            raise Exception(download_job.error_message) from e
-    finally:
-        # Remove working directory
-        if working_dir and os.path.exists(working_dir):
-            shutil.rmtree(working_dir)
-        _kill_spawned_processes(download_job)
-        DownloadJobLookup.objects.filter(download_job_id=download_job.download_job_id).delete()
-
-    # push file to S3 bucket, if not local
-    if not settings.IS_LOCAL:
-        with SubprocessTrace(
-            name=f"job.{JOB_TYPE}.download.s3",
-            kind=SpanKind.INTERNAL,
-            service="bulk-download",
-        ) as span:
-            span.set_attributes(
-                {
-                    "service": "bulk-download",
-                    "span_type": "Internal",
-                    "resource": f"s3://{CONFIG.BULK_DOWNLOAD_S3_BUCKET_NAME}",
-                    "message": "Push file to S3 bucket, if not local",
-                }
-            )
-
-        with SubprocessTrace(
-            name=f"job.{JOB_TYPE}.s3.command",
-            kind=SpanKind.SERVER,
-            service="bulk-download",
-        ) as s3_span:
-            s3_span.set_attributes(
-                {
-                    "service": "aws.s3",
-                    "span_type": "WEB",
-                    "resource": ".".join(
-                        [multipart_upload.__module__, (multipart_upload.__qualname__ or multipart_upload.__name__)]
-                    ),
-                }
-            )
-
-            # NOTE: Traces still not auto-picking-up aws.s3 service upload activity
-            # Could be that the patches for boto and botocore don't cover the newer boto3 S3Transfer upload approach
-            try:
-                bucket = CONFIG.BULK_DOWNLOAD_S3_BUCKET_NAME
-                region = CONFIG.AWS_REGION
-                s3_span.set_attributes({"bucket": bucket, "region": region, "file": zip_file_path})
-                start_uploading = time.perf_counter()
-                multipart_upload(bucket, region, zip_file_path, os.path.basename(zip_file_path))
-                write_to_log(
-                    message=f"Uploading took {time.perf_counter() - start_uploading:.2f}s", download_job=download_job
-                )
-            except Exception as e:
-                exc_msg = "An exception was raised while attempting to upload the file"
-                with SubprocessTrace(
-                    name=f"job.{JOB_TYPE}.upload_file_to_aws",
-                    kind=SpanKind.SERVER,
-                    service="bulk-download",
-                ) as error_span:
-                    error_span.set_attributes(
-                        {
-                            "service": "bulk-download",
-                            "span_type": "Internal",
-                            "message": exc_msg,
-                            "error": str(e),
-                        }
-                    )
-                    # Set error message; job_status_id will be set in download_sqs_worker.handle()
-                    fail_download(download_job, e, exc_msg)
-                    if isinstance(e, InvalidParameterException):
-                        raise InvalidParameterException(e) from e
-                    else:
-                        raise Exception(download_job.error_message) from e
-            finally:
-                # Remove generated file
-                if os.path.exists(zip_file_path):
-                    os.remove(zip_file_path)
-                _kill_spawned_processes(download_job)
-
-    return finish_download(download_job)
+                raise Exception(download_job.error_message) from e
+        finally:
+            # Remove generated file after upload
+            if os.path.exists(zip_file_path):
+                cleanup_download_files([zip_file_path], use_logger=False, download_job=download_job)
+            _kill_spawned_processes(download_job)
 
 
 def get_download_sources(  # noqa: PLR0912,PLR0915
@@ -526,7 +571,7 @@ def parse_source(  # noqa: PLR0913
         wait_for_process(zip_process, start_time, download_job)
         download_job.save()
     except Exception as e:
-        raise e
+        raise e from Exception
     finally:
         # Remove temporary files
         os.close(temp_file)
@@ -707,22 +752,28 @@ def apply_annotations_to_sql(
 
     cte_sql, select_statements = _select_columns(raw_query)
 
-    DIRECT_SELECT_QUERY_REGEX = r'^[^ ]*\."[^"]*"$'  # Django is pretty consistent with how it prints out queries
+    # Django is pretty consistent with how it prints out queries
+    # !!! IMPORTANT: This can change when changing versions of Django !!!
+    DIRECT_SELECT_QUERY_REGEX = r'^("?[^"|\.]*"?\."[^"]*") AS "[^"]*"$'
     # Create a list from the non-derived values between SELECT and FROM
-    selects_list = [val for val in select_statements if re.search(DIRECT_SELECT_QUERY_REGEX, val)]
+    selects_list = [
+        re.fullmatch(DIRECT_SELECT_QUERY_REGEX, val).group(1)
+        for val in select_statements
+        if re.fullmatch(DIRECT_SELECT_QUERY_REGEX, val)
+    ]
 
     # Create a list from the derived values between SELECT and FROM
     aliased_list = [
         (idx + 1, val)
         for idx, val in enumerate(select_statements)
-        if not re.search(DIRECT_SELECT_QUERY_REGEX, val.strip())
+        if not re.fullmatch(DIRECT_SELECT_QUERY_REGEX, val.strip())
     ]
     deriv_dict = {}
 
     # In the upgrade to Django 4.2 it was found that the change from psycopg2 to 3 by Django resulted in some
     # breaking changes for they way we manage our downloads. In this particular change the GROUP BY was changed to
     # now reference annotated fields by their column position. The download logic handles repositioning columns
-    # into the order that is expected and thus breaks the use of positional reference by the GROUP BY. In order to
+    # into the order that is expected and thus breaks the use of positional reference used for GROUP BY. In order to
     # continue processing downloads in a similar way, the logic below was updated to replace the positional value with
     # the annotated value found in the column, allowing the SQL query to work as expected regardless of column order.
     group_by_to_replace = []
@@ -739,12 +790,21 @@ def apply_annotations_to_sql(
 
     if group_by_to_replace:
         first_half_query, second_half_query = _top_level_split(raw_query, " GROUP BY ")
-        # Fist we replace the position with a valid parameter we can use for formatting
+        # First we replace the position with a valid parameter we can use for formatting
         for idx, _ in group_by_to_replace:
             # It is assumed that all non-positional values in the GROUP BY are column names meaning the first number
             # matching the value of "idx" will be the position. However, this is not guaranteed in the rest of the
             # query, so we make sure to stop after the first match found.
-            second_half_query = second_half_query.replace(f" {idx}", f" {{idx_{idx}}}", 1)
+            # 1. check if number in second half followed by comma
+            # 2. if not found, check to see if last item is number
+            # 3. replace the number at the given index
+            idx_location = second_half_query.find(f" {idx},")
+            if idx_location != -1:
+                second_half_query = second_half_query.replace(f" {idx},", f" {{idx_{idx}}},", 1)
+            elif second_half_query.startswith(f"{idx},"):
+                second_half_query = second_half_query.replace(f"{idx},", f" {{idx_{idx}}},", 1)
+            elif second_half_query.endswith(f" {idx}"):
+                second_half_query = second_half_query[: -1 * len(f" {idx}")] + f" {{idx_{idx}}}"
         second_half_query = second_half_query.format(
             **{f"idx_{idx}": col_select for idx, col_select in group_by_to_replace}
         )
@@ -829,17 +889,15 @@ def _top_level_split(sql: str, splitter: str) -> str:
         if parens_depth == 0:
             if sql[index : index + len(splitter)] == splitter:
                 return [sql[:index], sql[index + len(splitter) :]]
-    raise Exception(f"SQL string ${sql} cannot be split on ${splitter}")
+    raise ValueError(f"SQL string ${sql} cannot be split on ${splitter}")
 
 
 def execute_psql(temp_sql_file_path: str, source_path: str, download_job: DownloadJob) -> None:
     """Executes a single PSQL command within its own Subprocess"""
     download_sql = Path(temp_sql_file_path).read_text()
     if download_sql.startswith("\\COPY"):
-        # Trace library parses the SQL, but cannot understand the psql-specific \COPY command. Use standard COPY here.
         download_sql = download_sql[1:]
 
-    # Stack 3 context managers: (1) psql code, (2) Download replica query, (3) (same) Postgres query
     subprocess_trace = SubprocessTrace(
         name=f"job.{JOB_TYPE}.download.psql",
         kind=SpanKind.INTERNAL,
@@ -847,44 +905,41 @@ def execute_psql(temp_sql_file_path: str, source_path: str, download_job: Downlo
     )
 
     with subprocess_trace as span:
-        span.set_attributes(
-            {
-                "service": "bulk-download",
-                "resource": str(download_sql),
-                "span_type": "Internal",
-                "source_path": str(source_path),
-                # download job details
-                "download_job_id": str(download_job.download_job_id),
-                "download_job_status": str(download_job.job_status.name),
-                "download_file_name": str(download_job.file_name),
-                "download_file_size": download_job.file_size if download_job.file_size is not None else 0,
-                "number_of_rows": download_job.number_of_rows if download_job.number_of_rows is not None else 0,
-                "number_of_columns": (
-                    download_job.number_of_columns if download_job.number_of_columns is not None else 0
-                ),
-                "error_message": download_job.error_message if download_job.error_message else "",
-                "monthly_download": str(download_job.monthly_download),
-                "json_request": str(download_job.json_request) if download_job.json_request else "",
-            }
-        )
+        span.set_attributes({
+            "service": "bulk-download",
+            "resource": str(download_sql),
+            "span_type": "Internal",
+            "source_path": str(source_path),
+            "download_job_id": str(download_job.download_job_id),
+            "download_job_status": str(download_job.job_status.name),
+            "download_file_name": str(download_job.file_name),
+            "download_file_size": download_job.file_size if download_job.file_size is not None else 0,
+            "number_of_rows": download_job.number_of_rows if download_job.number_of_rows is not None else 0,
+            "number_of_columns": download_job.number_of_columns if download_job.number_of_columns is not None else 0,
+            "error_message": download_job.error_message if download_job.error_message else "",
+            "monthly_download": str(download_job.monthly_download),
+            "json_request": str(download_job.json_request) if download_job.json_request else "",
+        })
 
         try:
             log_time = time.perf_counter()
-            temp_env = os.environ.copy()
-            if download_job and not download_job.monthly_download:
-                # Since terminating the process isn't guaranteed to end the DB statement,
-                # add timeout to client connection
-                temp_env["PGOPTIONS"] = (
-                    f"--statement-timeout={settings.DOWNLOAD_DB_TIMEOUT_IN_HOURS}h "
-                    f"--work-mem={settings.DOWNLOAD_DB_WORK_MEM_IN_MB}MB"
-                )
 
-            cat_command = subprocess.Popen(["cat", temp_sql_file_path], stdout=subprocess.PIPE)
-            subprocess.check_output(
-                ["psql", "-q", "-o", source_path, retrieve_db_string(), "-v", "ON_ERROR_STOP=1"],
-                stdin=cat_command.stdout,
-                stderr=subprocess.STDOUT,
-                env=temp_env,
+            # Build PostgreSQL environment using helper
+            psql_env = build_psql_env(
+                dsn=retrieve_db_string(),
+                statement_timeout_hours=settings.DOWNLOAD_DB_TIMEOUT_IN_HOURS if (
+                            download_job and not download_job.monthly_download) else None,
+                work_mem_mb=settings.DOWNLOAD_DB_WORK_MEM_IN_MB if (
+                            download_job and not download_job.monthly_download) else None
+            )
+
+            # Execute psql using helper
+            run_psql_to_file(
+                sql_path=temp_sql_file_path,
+                output_path=source_path,
+                env=psql_env,
+                quiet=True,
+                on_error_stop=True
             )
 
             duration = time.perf_counter() - log_time
@@ -897,7 +952,6 @@ def execute_psql(temp_sql_file_path: str, source_path: str, download_job: Downlo
             raise e
         except Exception as e:
             if not settings.IS_LOCAL:
-                # Not logging the command as it can contain the database connection string
                 e.cmd = "[redacted psql command]"
             write_to_log(message=e, is_error=True, download_job=download_job)
             sql = subprocess.check_output(["cat", temp_sql_file_path]).decode()
