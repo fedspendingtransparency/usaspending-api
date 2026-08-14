@@ -11,7 +11,6 @@ logger = logging.getLogger(__name__)
 
 
 class FilterSearchAssistant:
-
     MAX_TOOL_ITERATIONS = 15
     COMPLETION_TOOL_NAME = "execute_filter"
 
@@ -21,7 +20,7 @@ class FilterSearchAssistant:
         tools: list[AITool],
         session: Session,
         system_message: str = (
-            "You are USASpending search assistant. " "Help the user select filters to search for federal spending"
+            "You are USASpending search assistant. Help the user select filters to search for federal spending"
         ),
     ) -> None:
         self.model = model
@@ -95,8 +94,29 @@ class FilterSearchAssistant:
         specs = [tool.description.model_dump() for tool in self.tools]
         return {"tools": [{"toolSpec": {"inputSchema": {"json": spec.pop("input_schema")}, **spec}} for spec in specs]}
 
-    def search(self, query: str) -> Generator[dict[str, str], None, None]:
+    @cached_property
+    def inference_config(self) -> dict:
+        """
+        Controls LLM response behavior.
 
+        Uses model's inference_config if available, otherwise falls back to defaults.
+        Defaults are optimized for deterministic responses.
+
+        Returns:
+            Dictionary with inference parameters (temperature, topP, maxTokens, stopSequences).
+        """
+        if self.model.inference_config:
+            return self.model.inference_config
+
+        # Default configuration for deterministic output.
+        return {
+            "temperature": 0.0,
+            "topP": 1.0,
+            "maxTokens": 2048,
+            "stopSequences": [],
+        }
+
+    def search(self, query: str) -> Generator[dict[str, str], None, None]:
         yield {"search_id": str(self.session.id), "type": "search_start", "message": "Thinking..."}
 
         Message.objects.create(session=self.session, role="user", message=query, order=self.message_order)
@@ -107,6 +127,7 @@ class FilterSearchAssistant:
             messages=self.messages,
             toolConfig=self.tool_config,
             system=[{"text": self.system_message}],
+            inferenceConfig=self.inference_config,
         )
         m = self._create_message_from_response(response)
         stop_reason = response["stopReason"]
@@ -128,6 +149,7 @@ class FilterSearchAssistant:
                 messages=self.messages,
                 toolConfig=self.tool_config,
                 system=[{"text": self.system_message}],
+                inferenceConfig=self.inference_config,
             )
             m = self._create_message_from_response(response)
             stop_reason = response["stopReason"]
