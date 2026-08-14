@@ -18,6 +18,7 @@ class TestInferenceConfig:
                 "temperature": 0.8,
                 "topP": 0.9,
                 "maxTokens": 512,
+                "stopSequences": [],
             },
         )
 
@@ -30,6 +31,7 @@ class TestInferenceConfig:
             "temperature": 0.8,
             "topP": 0.9,
             "maxTokens": 512,
+            "stopSequences": [],
         }
 
     def test_assistant_uses_defaults_when_no_config(self):
@@ -45,6 +47,7 @@ class TestInferenceConfig:
             "temperature": 0.0,
             "topP": 1.0,
             "maxTokens": 2048,
+            "stopSequences": [],
         }
 
     def test_assistant_uses_defaults_when_empty_config(self):
@@ -60,6 +63,7 @@ class TestInferenceConfig:
             "temperature": 0.0,
             "topP": 1.0,
             "maxTokens": 2048,
+            "stopSequences": [],
         }
 
     def test_different_models_different_configs(self):
