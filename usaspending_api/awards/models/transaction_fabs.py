@@ -112,6 +112,10 @@ class TransactionFABS(models.Model):
     officer_4_amount = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
     officer_5_name = models.TextField(null=True, blank=True)
     officer_5_amount = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
+    award_amount_basis_code = models.TextField(blank=True, null=True)
+    award_amount_basis_name = models.TextField(blank=True, null=True)
+    award_recipient_basis_code = models.TextField(blank=True, null=True)
+    award_recipient_basis_name = models.TextField(blank=True, null=True)
 
     @property
     def cfda_objectives(self):
