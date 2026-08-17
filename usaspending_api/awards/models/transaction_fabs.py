@@ -118,7 +118,7 @@ class TransactionFABS(models.Model):
     award_recipient_basis_name = models.TextField(blank=True, null=True)
 
     @property
-    def cfda_objectives(self):
+    def cfda_objectives(self) -> str | None:
         cfda = Cfda.objects.filter(program_number=self.cfda_number).first()
         if cfda:
             return cfda.objectives
@@ -185,9 +185,14 @@ FABS_TO_TRANSACTION_SEARCH_COL_MAP = {
 vw_transaction_fabs_sql = f"""
     CREATE OR REPLACE VIEW rpt.vw_transaction_fabs AS
         SELECT
-            {(','+os.linesep+' '*12).join([
-                (v+(f'::{FABS_CASTED_COL_MAP[k]}' if k in FABS_CASTED_COL_MAP else '')).ljust(62)+' AS '+k.ljust(48)
-                for k, v in FABS_TO_TRANSACTION_SEARCH_COL_MAP.items()])}
+            {
+    ("," + os.linesep + " " * 12).join(
+        [
+            (v + (f"::{FABS_CASTED_COL_MAP[k]}" if k in FABS_CASTED_COL_MAP else "")).ljust(62) + " AS " + k.ljust(48)
+            for k, v in FABS_TO_TRANSACTION_SEARCH_COL_MAP.items()
+        ]
+    )
+}
         FROM
             rpt.transaction_search
         WHERE
