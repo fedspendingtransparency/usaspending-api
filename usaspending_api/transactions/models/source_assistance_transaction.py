@@ -132,9 +132,9 @@ class SourceAssistanceTransaction(models.Model):
         indexes = [models.Index(fields=["awarding_office_code", "funding_office_code"])]
 
     @property
-    def table_name(self):
+    def table_name(self) -> str:
         return self._meta.db_table
 
     @property
-    def broker_source_table(self):
+    def broker_source_table(self) -> str:
         return "published_fabs"
