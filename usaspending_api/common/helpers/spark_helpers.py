@@ -69,13 +69,7 @@ def is_spark_context_stopped() -> bool:
         # Check the Singleton instance populated if there's an active SparkContext
         if SparkContext._active_spark_context is not None:
             sc = SparkContext._active_spark_context
-            is_stopped = not (
-                sc._jvm
-                and not sc._jvm.SparkSession.getDefaultSession()
-                .get()
-                .sparkContext()
-                .isStopped()
-            )
+            is_stopped = not (sc._jvm and not sc._jvm.SparkSession.getDefaultSession().get().sparkContext().isStopped())
     return is_stopped
 
 
@@ -89,10 +83,7 @@ def stop_spark_context() -> bool:
                 sc._jvm
                 and hasattr(sc._jvm, "SparkSession")
                 and sc._jvm.SparkSession
-                and not sc._jvm.SparkSession.getDefaultSession()
-                .get()
-                .sparkContext()
-                .isStopped()
+                and not sc._jvm.SparkSession.getDefaultSession().get().sparkContext().isStopped()
             ):
                 try:
                     sc.stop()
@@ -157,15 +148,9 @@ def configure_spark_session(  # noqa: C901,PLR0912,PLR0913,PLR0915
             property, otherwise an error will be thrown.
     """
     if spark_context and (
-        not spark_context._jvm
-        or spark_context._jvm.SparkSession.getDefaultSession()
-        .get()
-        .sparkContext()
-        .isStopped()
+        not spark_context._jvm or spark_context._jvm.SparkSession.getDefaultSession().get().sparkContext().isStopped()
     ):
-        raise ValueError(
-            "The provided spark_context arg is a stopped SparkContext. It must be active."
-        )
+        raise ValueError("The provided spark_context arg is a stopped SparkContext. It must be active.")
     if spark_context and java_gateway:
         raise Exception(
             "Cannot provide BOTH spark_context and java_gateway args. The active spark_context supplies its own gateway"
@@ -187,6 +172,9 @@ def configure_spark_session(  # noqa: C901,PLR0912,PLR0913,PLR0915
     # Assume that random errors are rare, and jobs have long runtimes, so fail fast, fix and retry manually.
     conf.set("spark.yarn.maxAppAttempts", "1")
     conf.set("spark.hadoop.fs.s3a.endpoint", CONFIG.AWS_S3_ENDPOINT)
+    # We work with a lot of larger tables and Delta wants to try and materialize the "source" data in a merge statement
+    # into memory which can spill onto disk and cause problems.
+    conf.set("spark.databricks.delta.merge.materializeSource", "none")
 
     if not CONFIG.USE_AWS:  # i.e. running in a "local" [development] environment
         # Set configs to allow the S3AFileSystem to work against a local MinIO object storage proxy
@@ -271,9 +259,7 @@ def configure_spark_session(  # noqa: C901,PLR0912,PLR0913,PLR0915
     if spark_context:
         built_conf = spark.conf
         provided_conf_keys = [item[0] for item in conf.getAll()]
-        non_modifiable_conf = [
-            k for k in provided_conf_keys if not built_conf.isModifiable(k)
-        ]
+        non_modifiable_conf = [k for k in provided_conf_keys if not built_conf.isModifiable(k)]
         if non_modifiable_conf:
             raise ValueError(
                 "An active SparkContext was given along with NEW spark config values. The following "
@@ -298,7 +284,8 @@ def configure_spark_session(  # noqa: C901,PLR0912,PLR0913,PLR0915
 @       Found SPARK_HOME: {_find_spark_home()}
 @       Python Version: {sys.version}
 @       Spark Version: {spark.version}
-@       Hadoop Version: {spark.sparkContext._gateway.jvm.org.apache.hadoop.util.VersionInfo.getVersion()}
+@       Hadoop Version: {spark.sparkContext._jvm.org.apache.hadoop.util.VersionInfo.getVersion()}
+@       Hive Version: {spark.sparkContext._jvm.org.apache.hive.common.util.HiveVersionInfo.getVersion()}
     """
     )
     es_config = get_es_config()
@@ -388,9 +375,7 @@ def attach_java_gateway(
     return gateway
 
 
-def get_jdbc_connection_properties(
-    fix_strings: bool = True, truncate: bool = False
-) -> dict:
+def get_jdbc_connection_properties(fix_strings: bool = True, truncate: bool = False) -> dict:
     jdbc_props = {
         "driver": "org.postgresql.Driver",
         "fetchsize": str(CONFIG.SPARK_PARTITION_ROWS),
@@ -410,9 +395,7 @@ def get_jdbc_url_from_pg_uri(pg_uri: str) -> str:
     """Converts the passed-in Postgres DB connection URI to a JDBC-compliant Postgres DB connection string"""
     url_parts, user, password = parse_pg_uri(pg_uri)
     if user is None or password is None:
-        raise ValueError(
-            "pg_uri provided must have username and password with host or in query string"
-        )
+        raise ValueError("pg_uri provided must have username and password with host or in query string")
     # JDBC URLs only support postgresql://
     pg_uri = f"postgresql://{url_parts.hostname}:{url_parts.port}{url_parts.path}?user={user}&password={password}"
 
@@ -472,9 +455,7 @@ def get_es_config() -> dict[str, Any]:  # pragma: no cover -- will be used event
         "es.net.ssl": str(ssl).lower(),  # default false
         "es.net.ssl.cert.allow.self.signed": "true",  # default false
         "es.batch.size.entries": str(CONFIG.ES_BATCH_ENTRIES),  # default 1000
-        "es.batch.size.bytes": str(
-            CONFIG.ES_MAX_BATCH_BYTES
-        ),  # default 1024*1024 (1mb)
+        "es.batch.size.bytes": str(CONFIG.ES_MAX_BATCH_BYTES),  # default 1024*1024 (1mb)
         "es.batch.write.refresh": "false",  # default true, to refresh after configured batch size completes
     }
 
@@ -527,12 +508,8 @@ def configure_s3_credentials(
             "org.apache.hadoop.fs.s3a.TemporaryAWSCredentialsProvider",
         )
         conf.set("spark.hadoop.fs.s3a.session.token", aws_creds.token)
-        conf.set(
-            "spark.hadoop.fs.s3a.assumed.role.sts.endpoint", CONFIG.AWS_STS_ENDPOINT
-        )
-        conf.set(
-            "spark.hadoop.fs.s3a.assumed.role.sts.endpoint.region", CONFIG.AWS_REGION
-        )
+        conf.set("spark.hadoop.fs.s3a.assumed.role.sts.endpoint", CONFIG.AWS_STS_ENDPOINT)
+        conf.set("spark.hadoop.fs.s3a.assumed.role.sts.endpoint.region", CONFIG.AWS_REGION)
 
 
 def log_spark_config(spark: SparkSession, config_key_contains: str = "") -> None:
@@ -551,9 +528,7 @@ def log_hadoop_config(spark: SparkSession, config_key_contains: str = "") -> Non
     conf = spark.sparkContext._jsc.hadoopConfiguration()
     [
         logger.info(f"{k}={v}")
-        for (k, v) in {
-            str(_).split("=")[0]: str(_).split("=")[1] for _ in conf.iterator()
-        }.items()
+        for (k, v) in {str(_).split("=")[0]: str(_).split("=")[1] for _ in conf.iterator()}.items()
         if config_key_contains in k
     ]
 
@@ -582,16 +557,10 @@ def load_dict_to_delta_table(  # noqa: PLR0912
     table_to_col_names_dict = {}
     table_to_col_names_dict["transaction_fabs"] = TRANSACTION_FABS_COLUMNS
     table_to_col_names_dict["transaction_fpds"] = TRANSACTION_FPDS_COLUMNS
-    table_to_col_names_dict["transaction_normalized"] = list(
-        TRANSACTION_NORMALIZED_COLUMNS
-    )
+    table_to_col_names_dict["transaction_normalized"] = list(TRANSACTION_NORMALIZED_COLUMNS)
     table_to_col_names_dict["awards"] = list(AWARDS_COLUMNS)
-    table_to_col_names_dict["financial_accounts_by_awards"] = list(
-        FINANCIAL_ACCOUNTS_BY_AWARDS_COLUMNS
-    )
-    table_to_col_names_dict["detached_award_procurement"] = list(
-        DETACHED_AWARD_PROCUREMENT_DELTA_COLUMNS
-    )
+    table_to_col_names_dict["financial_accounts_by_awards"] = list(FINANCIAL_ACCOUNTS_BY_AWARDS_COLUMNS)
+    table_to_col_names_dict["detached_award_procurement"] = list(DETACHED_AWARD_PROCUREMENT_DELTA_COLUMNS)
     table_to_col_names_dict["published_fabs"] = list(PUBLISHED_FABS_COLUMNS)
 
     table_to_col_info_dict = {}
@@ -686,9 +655,7 @@ def clean_postgres_sql_for_spark_sql(
     # Treat these type casts as string in Spark SQL
     # NOTE: If replacing a ::JSON cast, be sure that the string data coming from delta is treated as needed (e.g. as
     # JSON or converted to JSON or a dict) on the receiving side, and not just left as a string
-    spark_sql = re.sub(
-        r"::text|::json", r"::string", spark_sql, flags=re.IGNORECASE | re.MULTILINE
-    )
+    spark_sql = re.sub(r"::text|::json", r"::string", spark_sql, flags=re.IGNORECASE | re.MULTILINE)
 
     if global_temp_view_proxies:
         for vw in global_temp_view_proxies:

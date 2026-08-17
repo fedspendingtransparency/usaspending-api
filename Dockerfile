@@ -10,7 +10,7 @@ FROM python:3.10.12-slim-bullseye
 
 COPY --from=ghcr.io/astral-sh/uv:0.7.19 /uv /uvx /bin/
 
-WORKDIR /dockermount
+WORKDIR /usaspending-api
 
 RUN apt update && apt install -y \
     ca-certificates \
@@ -41,7 +41,7 @@ RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --extra server --extra ansible --extra awscli --extra spark --locked --no-install-project --no-dev
 
 # Copy the project into the image
-COPY . /dockermount
+COPY . /usaspending-api
 
 # Sync the project
 RUN --mount=type=cache,target=/root/.cache/uv \

@@ -12,8 +12,7 @@ class NAICSCodeObject(BaseModel):
         if self.require is None and self.exclude is None:
             raise PydanticCustomError(
                 "missing_required_field",
-                'At least one of "require" or "exclude" must be provided',
-                {"expected_type": "array, object"},
+                'At least one of "require" or "exclude" must be provided'
             )
         return self
 
@@ -27,8 +26,7 @@ class PSCCodeObject(BaseModel):
         if self.require is None and self.exclude is None:
             raise PydanticCustomError(
                 "missing_required_field",
-                'At least one of "require" or "exclude" must be provided',
-                {"expected_type": "array, object"},
+                'At least one of "require" or "exclude" must be provided'
             )
         return self
 
@@ -42,8 +40,7 @@ class TASCodeObject(BaseModel):
         if self.require is None and self.exclude is None:
             raise PydanticCustomError(
                 "missing_required_field",
-                'At least one of "require" or "exclude" must be provided',
-                {"expected_type": "array, object"}
+                'At least one of "require" or "exclude" must be provided'
             )
         return self
 

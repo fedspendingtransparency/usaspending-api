@@ -4553,7 +4553,7 @@ def test_failure_with_invalid_group(client, monkeypatch, elasticsearch_transacti
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
     assert (
         resp.json().get("detail")
-        == "Field 'group' is outside valid values ['calendar_year', 'cy', 'quarter', 'q', 'fiscal_year', 'fy', 'month', 'm']"
+        == "Field 'group' is outside valid values ['calendar_year', 'cy', 'quarter', 'q', 'fiscal_year', 'fy', 'month', 'm']"  # noqa E501
     ), "Expected to fail with invalid group"
 
     # Fails with no group
@@ -4656,15 +4656,21 @@ def test_transactions_defc_date_filter(client, monkeypatch, elasticsearch_transa
     """Test that the Transactions ES query does NOT return transactions with an
     `action_date` before the applicable `earliest_public_law_enactment_date`"""
 
+    # Clear the LRU cache for `_get_def_codes` before this test case runs
+    from usaspending_api.common.validator.award_filter import _get_def_codes
+    _get_def_codes.cache_clear()
+
     baker.make(
         "references.DisasterEmergencyFundCode",
         code="L",
+        public_law="L law",
         group_name="covid_19",
         earliest_public_law_enactment_date="2020-03-06",
     )
     baker.make(
         "references.DisasterEmergencyFundCode",
         code="A",
+        public_law="A law",
         group_name=None,
         earliest_public_law_enactment_date=None,
     )
