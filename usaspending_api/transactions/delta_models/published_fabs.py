@@ -110,7 +110,7 @@ PUBLISHED_FABS_POSTGRES_COLUMNS = {k: v["postgres"] for k, v in PUBLISHED_FABS_C
 
 published_fabs_create_sql_string = rf"""
     CREATE OR REPLACE TABLE {{DESTINATION_TABLE}} (
-        {", ".join([f'{key} {val}' for key, val in PUBLISHED_FABS_DELTA_COLUMNS.items()])}
+        {", ".join([f"{key} {val}" for key, val in PUBLISHED_FABS_DELTA_COLUMNS.items()])}
     )
     USING DELTA
     LOCATION 's3a://{{SPARK_S3_BUCKET}}/{{DELTA_LAKE_S3_PATH}}/{{DESTINATION_DATABASE}}/{{DESTINATION_TABLE}}'

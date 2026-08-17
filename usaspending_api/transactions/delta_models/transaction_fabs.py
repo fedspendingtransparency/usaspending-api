@@ -159,7 +159,7 @@ TRANSACTION_FABS_VIEW_COLUMNS = [
 
 transaction_fabs_sql_string = rf"""
     CREATE OR REPLACE TABLE {{DESTINATION_TABLE}} (
-        {", ".join([f'{col.dest_name} {col.delta_type}' for col in TRANSACTION_FABS_COLUMN_INFO])}
+        {", ".join([f"{col.dest_name} {col.delta_type}" for col in TRANSACTION_FABS_COLUMN_INFO])}
     )
     USING DELTA
     LOCATION 's3a://{{SPARK_S3_BUCKET}}/{{DELTA_LAKE_S3_PATH}}/{{DESTINATION_DATABASE}}/{{DESTINATION_TABLE}}'

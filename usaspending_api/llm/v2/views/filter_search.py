@@ -35,7 +35,6 @@ class FilterSearchViewSet(LLMBase):
 
     @LLMAPIKeyHandler.require_api_key
     def post(self, request: Request) -> StreamingHttpResponse:
-
         # Accept a string sanitized as search input.
         models = [
             {"name": "filter_search", "key": "query", "type": "text", "text_type": "search", "min": 1, "max": 1000}

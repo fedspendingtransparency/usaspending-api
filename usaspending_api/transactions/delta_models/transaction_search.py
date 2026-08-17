@@ -877,12 +877,8 @@ TRANSACTION_SEARCH_DELTA_COLUMNS = {
     **{k: v["delta"] for k, v in TRANSACTION_SEARCH_COLUMNS.items()},
     **DELTA_ONLY_COLUMNS,
 }
-TRANSACTION_SEARCH_POSTGRES_COLUMNS = {
-    k: v["postgres"] for k, v in TRANSACTION_SEARCH_COLUMNS.items() if not v["gold"]
-}
-TRANSACTION_SEARCH_POSTGRES_GOLD_COLUMNS = {
-    k: v["postgres"] for k, v in TRANSACTION_SEARCH_COLUMNS.items()
-}
+TRANSACTION_SEARCH_POSTGRES_COLUMNS = {k: v["postgres"] for k, v in TRANSACTION_SEARCH_COLUMNS.items() if not v["gold"]}
+TRANSACTION_SEARCH_POSTGRES_GOLD_COLUMNS = {k: v["postgres"] for k, v in TRANSACTION_SEARCH_COLUMNS.items()}
 
 ALL_AWARD_TYPES = list(award_type_mapping.keys())
 
