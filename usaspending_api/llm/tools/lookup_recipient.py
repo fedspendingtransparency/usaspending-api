@@ -39,13 +39,42 @@ class RecipientLookupTool:
         top_k = max(1, min(top_k, 100))
         query_upper = es_sanitize(query).strip().upper()
 
+        logger.info(
+            f"Starting recipient lookup: query='{query}', top_k={top_k}",
+            extra={"query": query, "top_k": top_k},
+        )
+
         try:
             search = self._build_search(query_upper, top_k)
+            logger.debug(f"Executing OpenSearch query for recipient: query='{query}'")
             response = search.handle_execute()
+            logger.info(
+                f"OpenSearch query successful: query='{query}', hits={len(response.hits)}",
+                extra={"query": query, "hits_count": len(response.hits)},
+            )
         except Exception as exception:
             logger.error(f"OpenSearch query failed for query='{query}': {str(exception)}", exc_info=True)
             return []
-        return self._extract_recipient_names(response)
+
+        result = self._extract_recipient_names(response)
+        recipient_count = len(result.get("recipient_names", []))
+
+        # Log zero results as a warning for quality monitoring.
+        if recipient_count == 0:
+            logger.warning(
+                f"Zero results returned for recipient lookup: query='{query}'",
+                extra={
+                    "query": query,
+                    "hits_count": len(response.hits),
+                    "zero_results": True,
+                },
+            )
+
+        logger.info(
+            f"Recipient lookup completed: query='{query}', recipient_names_count={recipient_count}",
+            extra={"query": query, "recipient_names_count": recipient_count},
+        )
+        return result
 
     def _build_search(self, query_upper: str, top_k: int) -> RecipientSearch:
         should_queries = []
