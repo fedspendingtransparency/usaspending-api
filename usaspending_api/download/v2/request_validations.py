@@ -159,11 +159,7 @@ class AwardDownloadValidator(DownloadValidatorBase):
                         "name": {"type": "text", "text_type": "search", "optional": False},
                     },
                 },
-                {
-                    "name": "agency",
-                    "key": "filters|agency",
-                    "type": "integer"
-                 },
+                {"name": "agency", "key": "filters|agency", "type": "integer"},
                 {
                     "name": "date_range",
                     "key": "filters|date_range",
@@ -315,8 +311,9 @@ class AwardDownloadValidator(DownloadValidatorBase):
             ]
 
         if "agency" in custom_award_filters or "agencies" in custom_award_filters:
-            final_award_filters["agencies"] = self._update_custom_award_agencies(custom_award_filters,
-                                                                                filter_all_agencies)
+            final_award_filters["agencies"] = self._update_custom_award_agencies(
+                custom_award_filters, filter_all_agencies
+            )
 
         self._json_request["filters"] = final_award_filters
 
@@ -349,9 +346,7 @@ class AwardDownloadValidator(DownloadValidatorBase):
                 agency_output.append({"type": "awarding", "tier": "toptier", "name": toptier_name})
 
         if "agencies" in custom_award_filters:
-            agency_output = [
-                val for val in custom_award_filters["agencies"] if val.get("name", "").lower() != "all"
-            ]
+            agency_output = [val for val in custom_award_filters["agencies"] if val.get("name", "").lower() != "all"]
 
         return agency_output
 
@@ -644,13 +639,7 @@ class AccountDownloadValidator(DownloadValidatorBase):
                     "array_type": "enum",
                     "enum_values": VALID_ACCOUNT_SUBMISSION_TYPES,
                 },
-                {
-                    "name": "agency",
-                    "key": "filters|agency",
-                    "type": "text",
-                    "text_type": "search",
-                    "default": "all"
-                },
+                {"name": "agency", "key": "filters|agency", "type": "text", "text_type": "search", "default": "all"},
                 {
                     "name": "def_codes",
                     "key": "filters|def_codes",
@@ -691,10 +680,7 @@ class AccountDownloadValidator(DownloadValidatorBase):
 
         agency_filter = self._json_request["filters"].get("agency")
         has_agency_filter = agency_filter and agency_filter.lower() != "all"
-        is_valid_id = (
-            agency_filter.isdigit()
-            and ToptierAgency.objects.filter(toptier_agency_id=agency_filter).exists()
-        )
+        is_valid_id = agency_filter.isdigit() and ToptierAgency.objects.filter(toptier_agency_id=agency_filter).exists()
         is_valid_abbr = ToptierAgency.objects.filter(abbreviation=agency_filter).exists()
         if has_agency_filter and not (is_valid_id or is_valid_abbr):
             raise NotFound(
@@ -800,10 +786,7 @@ class SearchDownloadValidator(DownloadValidatorBase):
                     "key": "spending_level",
                     "type": "array",
                     "array_type": "enum",
-                    "enum_values": [
-                        "awards",
-                        "transactions",
-                        "subawards"],
+                    "enum_values": ["awards", "transactions", "subawards"],
                     "optional": True,
                     "default": ["awards", "transactions", "subawards"],
                 },
@@ -821,11 +804,7 @@ class SearchDownloadValidator(DownloadValidatorBase):
                     "key": "download_types",
                     "type": "array",
                     "array_type": "enum",
-                    "enum_values": [
-                        "elasticsearch_awards",
-                        "elasticsearch_sub_awards",
-                        "elasticsearch_transactions"
-                    ],
+                    "enum_values": ["elasticsearch_awards", "elasticsearch_sub_awards", "elasticsearch_transactions"],
                 },
             ]
         )
@@ -834,9 +813,9 @@ class SearchDownloadValidator(DownloadValidatorBase):
         self._json_request = self.get_validated_request()
 
         # Use original value for processing download_types
-        spending_level_to_process = original_spending_level if original_spending_level is not None else ["awards",
-                                                                                                         "transactions",
-                                                                                                         "subawards"]
+        spending_level_to_process = (
+            original_spending_level if original_spending_level is not None else ["awards", "transactions", "subawards"]
+        )
 
         dltypes = []
         for dltype in spending_level_to_process:
