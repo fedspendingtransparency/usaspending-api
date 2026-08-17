@@ -169,7 +169,7 @@ def test_download_transactions_bad_limit(client, monkeypatch, elasticsearch_tran
         content_type="application/json",
         data=json.dumps({"limit": "wombats", "filters": {"award_type_codes": ["A"]}, "columns": []}),
     )
-    assert resp.status_code == status.HTTP_400_BAD_REQUEST
+    assert resp.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
 
 @pytest.mark.django_db(databases=[settings.DOWNLOAD_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
