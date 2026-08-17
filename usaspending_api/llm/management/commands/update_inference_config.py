@@ -1,9 +1,12 @@
 import json
+import logging
 from argparse import ArgumentParser
 
 from django.core.management.base import BaseCommand, CommandError
 
 from usaspending_api.llm.models.db_models import AIModel
+
+logger = logging.getLogger("script")
 
 
 class Command(BaseCommand):
@@ -96,7 +99,7 @@ class Command(BaseCommand):
         """Clear inference config for a model."""
         model.inference_config = {}
         model.save()
-        self.stdout.write(self.style.SUCCESS(f"Cleared inference config for {model.name}."))
+        logger.info(f"Cleared inference config for {model.name}.")
 
     def _update_config_from_json(self, model: AIModel, config_json: str) -> None:
         """Update inference config from JSON string."""
@@ -106,9 +109,7 @@ class Command(BaseCommand):
             self._validate_config(config)
             model.inference_config = config
             model.save()
-            self.stdout.write(
-                self.style.SUCCESS(f"Updated inference config for {model.name}:\n{json.dumps(config, indent=2)}")
-            )
+            logger.info(f"Updated inference config for {model.name}:\n{json.dumps(config, indent=2)}")
         except json.JSONDecodeError as e:
             raise CommandError(f"Invalid JSON: {e}") from e
 
@@ -139,9 +140,7 @@ class Command(BaseCommand):
         model.inference_config = config
         model.save()
 
-        self.stdout.write(
-            self.style.SUCCESS(f"Updated inference config for {model.name}:\n{json.dumps(config, indent=2)}")
-        )
+        logger.info(f"Updated inference config for {model.name}:\n{json.dumps(config, indent=2)}")
 
     def _validate_temperature(self, value: float) -> None:
         """Validate temperature is between 0.0 and 1.0."""
@@ -203,18 +202,18 @@ class Command(BaseCommand):
         models = AIModel.objects.all()
 
         if not models:
-            self.stdout.write(self.style.WARNING("No models found."))
+            logger.warning("No models found.")
             return
 
-        self.stdout.write(self.style.SUCCESS("\nAI Models and Inference Configs:\n"))
+        logger.info("\nAI Models and Inference Configs:\n")
 
         for model in models:
-            self.stdout.write(f"\n{self.style.HTTP_INFO(model.name)} ({model.model_id})")
-            self.stdout.write(f"  Provider: {model.provider}")
+            logger.info(f"\n{model.name} ({model.model_id})")
+            logger.info(f"  Provider: {model.provider}")
 
             if model.inference_config:
-                self.stdout.write("  Inference Config:")
+                logger.info("  Inference Config:")
                 for key, value in model.inference_config.items():
-                    self.stdout.write(f"    {key}: {value}")
+                    logger.info(f"    {key}: {value}")
             else:
-                self.stdout.write(f"  Inference Config: {self.style.WARNING('(empty - will use defaults)')}")
+                logger.info("  Inference Config: (empty - will use defaults)")
