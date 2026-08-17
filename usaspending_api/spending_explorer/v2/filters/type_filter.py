@@ -211,7 +211,6 @@ def _process_award_types(
 ) -> dict[str, Any]:
     """Process award, award_category, and recipient types.
 
-    Mythos - apply early limit - 8/2026
     - Historically only 'award' applied 'limit' after materializing the full result set. Limit is now applied
     on the Explorer queryset (SQL LIMIT) before evaluation for 'award' only.
     'total' remains the sum of all matching rows
