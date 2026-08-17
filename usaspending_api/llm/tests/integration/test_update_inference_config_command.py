@@ -1,5 +1,5 @@
 import json
-from io import StringIO
+from unittest.mock import patch
 
 import pytest
 from django.core.management import call_command
@@ -289,13 +289,16 @@ class TestCommandOperations:
         )
         AIModel.objects.create(name="model 2", model_id="model-2", provider="test")
 
-        out = StringIO()
-        call_command("update_inference_config", "--list", stdout=out)
-        output = out.getvalue()
+        with patch("usaspending_api.llm.management.commands.update_inference_config.logger") as mock_logger:
+            call_command("update_inference_config", "--list")
 
-        assert "model 1" in output
-        assert "model 2" in output
-        assert "temperature: 0.5" in output
+            # Check that logger.info was called with expected content
+            call_args = [str(call) for call in mock_logger.info.call_args_list]
+            output = " ".join(call_args)
+
+            assert "model 1" in output
+            assert "model 2" in output
+            assert "temperature" in output and "0.5" in output
 
     def test_clear_command(self):
         """Test clear command removes inference config."""
