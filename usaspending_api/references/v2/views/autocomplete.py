@@ -108,9 +108,9 @@ class BaseAutocompleteViewSet(APIView):
             # This key is created so that we can treat multiple records with the same
             # toptier values as a single result
             key = (
-                f'{toptier_agency["toptier_abbreviation"]}'
-                f'{toptier_agency["toptier_code"]}'
-                f'{toptier_agency["toptier_name"]}'
+                f"{toptier_agency['toptier_abbreviation']}"
+                f"{toptier_agency['toptier_code']}"
+                f"{toptier_agency['toptier_name']}"
             )
             if key not in toptier_agency_tracker:
                 toptier_agency_tracker[key] = {}
@@ -150,9 +150,9 @@ class BaseAutocompleteViewSet(APIView):
             # This key is created so that we can treat multiple records with the same
             # subtier values as a single result
             key = (
-                f'{subtier_agency["subtier_abbreviation"]}'
-                f'{subtier_agency["subtier_code"]}'
-                f'{subtier_agency["subtier_name"]}'
+                f"{subtier_agency['subtier_abbreviation']}"
+                f"{subtier_agency['subtier_code']}"
+                f"{subtier_agency['subtier_name']}"
             )
             if key not in subtier_agency_tracker:
                 subtier_agency_tracker[key] = {}
@@ -162,7 +162,7 @@ class BaseAutocompleteViewSet(APIView):
                 subtier_agency_tracker[key]["offices"] = []
             toptier_result = self._agency_office_toptier_agency_response_object(subtier_agency)
             subtier_agency_tracker[key]["toptier_agency"] = toptier_result
-            if toptier_agency["office_name"] is not None and toptier_agency["office_code"] is not None:
+            if subtier_agency["office_name"] is not None and subtier_agency["office_code"] is not None:
                 office_result = self._agency_office_office_response_object(subtier_agency)
                 subtier_agency_tracker[key]["offices"].append(office_result)
 
@@ -312,7 +312,7 @@ class CFDAAutocompleteViewSet(BaseAutocompleteViewSet):
         # allow 2 digits, or 2 digits with a dot followed by 1-3 digits or letters
         # INCLUDE 2, 25, 25., 25.G, 25.HI, 25.HIJ
         # EXCLUDE 25.HIJK, 256, 256.J, 256.JK, 2567, 25HIJK
-        pattern = r'^\d{2}\.?[a-zA-Z0-9]{0,3}$'
+        pattern = r"^\d{2}\.?[a-zA-Z0-9]{0,3}$"
         if re.match(pattern, search_text):
             # Program numbers are 10.483, 98.271, 93.HDN, etc... 1-3 Alpha or numeric characters following dot
             queryset = queryset.filter(program_number__icontains=search_text)
