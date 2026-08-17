@@ -18,7 +18,7 @@ from usaspending_api.awards.v2.lookups.lookups import (
     loan_type_mapping,
     other_type_mapping,
 )
-from usaspending_api.common.exceptions import InvalidParameterException
+from usaspending_api.common.exceptions import InvalidParameterException, UnprocessableEntityException
 from usaspending_api.common.validator.award_filter import AWARD_FILTER_NO_RECIPIENT_ID
 from usaspending_api.common.validator.tinyshield import TinyShield
 from usaspending_api.download.helpers import get_date_range_length
@@ -58,6 +58,8 @@ class DownloadValidatorBase:
         if request_data.get("columns"):
             self._json_request["columns"] = request_data.get("columns")
 
+        self.validate_limit_field(request_data)
+
         self.tinyshield_models = []
 
     def get_validated_request(self) -> dict:
@@ -69,6 +71,21 @@ class DownloadValidatorBase:
     def set_filter_defaults(self, defaults: dict) -> None:
         for key, val in defaults.items():
             self._json_request["filters"].setdefault(key, val)
+
+    def validate_limit_field(self, request_data: dict) -> None:
+        """
+        Validate that the limit field (if present) is an acceptable value.
+
+        A limit value is acceptable when less than or equal to the max (500k),
+        while being greater than or equal to 1.
+        """
+
+        limit = request_data.get("limit")
+
+        if limit is not None:
+            if not isinstance(limit, int) or limit <= 0 or limit > settings.MAX_DOWNLOAD_LIMIT:
+                msg = f"Limit must be a positive integer no larger than {settings.MAX_DOWNLOAD_LIMIT}"
+                raise UnprocessableEntityException(msg)
 
     @property
     def json_request(self) -> dict:
