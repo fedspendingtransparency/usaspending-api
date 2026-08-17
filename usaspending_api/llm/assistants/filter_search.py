@@ -20,7 +20,7 @@ class FilterSearchAssistant:
         tools: list[AITool],
         session: Session,
         system_message: str = (
-            "You are USASpending search assistant. Help the user select filters to search for federal spending"
+            "You are USAspending search assistant. Help the user select filters to search for federal spending"
         ),
     ) -> None:
         self.model = model
