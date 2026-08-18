@@ -190,18 +190,14 @@ def test_download_transactions_excessive_limit(
 
 
 @pytest.mark.django_db(databases=[settings.DOWNLOAD_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
-def test_download_transactions_zero_limit(
-    client, monkeypatch, download_test_data, elasticsearch_transaction_index
-):
+def test_download_transactions_zero_limit(client, monkeypatch, download_test_data, elasticsearch_transaction_index):
     setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
     download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string(settings.DOWNLOAD_DB_ALIAS))
 
     resp = client.post(
         "/api/v2/download/transactions/",
         content_type="application/json",
-        data=json.dumps(
-            {"limit": 0, "filters": {"award_type_codes": ["A"]}, "columns": []}
-        ),
+        data=json.dumps({"limit": 0, "filters": {"award_type_codes": ["A"]}, "columns": []}),
     )
     assert resp.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
