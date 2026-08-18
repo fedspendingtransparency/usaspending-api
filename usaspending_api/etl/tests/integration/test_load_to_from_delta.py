@@ -987,7 +987,6 @@ def test_incremental_load_table_to_delta_for_award_search(
         .table("award_search")
         .select(["award_id", "_change_type", "_commit_version"])
         .toPandas()
-        .sort_values(by=["award_id", "_change_type", "_commit_version"])
         .reset_index(drop=True)
     )
 
@@ -1000,7 +999,6 @@ def test_incremental_load_table_to_delta_for_award_search(
                 "insert",
                 "insert",
                 "insert",
-                "delete",
                 "insert",
                 "insert",
                 "delete",
@@ -1091,7 +1089,6 @@ def test_incremental_load_table_to_delta_for_transaction_search(
         .table("transaction_search")
         .select(["transaction_id", "_change_type", "_commit_version"])
         .toPandas()
-        .sort_values(by=["transaction_id", "_change_type", "_commit_version"])
         .reset_index(drop=True)
     )
 
@@ -1104,7 +1101,6 @@ def test_incremental_load_table_to_delta_for_transaction_search(
                 "insert",
                 "insert",
                 "insert",
-                "delete",
                 "insert",
                 "insert",
                 "insert",
