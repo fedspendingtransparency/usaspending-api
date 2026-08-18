@@ -10,14 +10,12 @@ logger = logging.getLogger(__name__)
 
 
 class EmbeddingGenerator:
-
     def __init__(
         self,
         model: AIModel | None = None,
         dimensions: int = 256,  # Titan supports vectors sizes of 256, 512, and 1024
         normalize: bool = True,
     ):
-
         self.model = model if model else AIModel.objects.get(name="titan")
         self.dimensions = dimensions
         self.normalize = normalize

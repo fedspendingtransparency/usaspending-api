@@ -148,8 +148,7 @@ class AggregateQuerysetMixin(object):
         # make sure the field we're aggregating exists in the model
         if hasattr(model, agg_field) is False:
             raise InvalidParameterException(
-                "Field {} not found in model {}. "
-                "Please specify a valid field in the request.".format(agg_field, model)
+                "Field {} not found in model {}. Please specify a valid field in the request.".format(agg_field, model)
             )
 
         # make sure the field we're aggregating on is numeric
@@ -238,8 +237,9 @@ class FilterQuerysetMixin(object):
         if len(filters) > 0:
             subwhere = Q(
                 **{
-                    queryset.model._meta.pk.name
-                    + "__in": queryset.filter(filters).values_list(queryset.model._meta.pk.name, flat=True)
+                    queryset.model._meta.pk.name + "__in": queryset.filter(filters).values_list(
+                        queryset.model._meta.pk.name, flat=True
+                    )
                 }
             )
 
@@ -293,7 +293,6 @@ class AutocompleteResponseMixin(object):
 
 
 class EmbeddingMixin(models.Model):
-
     embedding_dimensions: int = 256
     embedding: VectorField = VectorField(dimensions=embedding_dimensions, null=True, blank=True)
     embedding_generated_at: models.DateTimeField = models.DateTimeField(null=True, blank=True)
@@ -302,9 +301,7 @@ class EmbeddingMixin(models.Model):
         abstract = True
 
     def get_embedding_text(self) -> str | None:
-        raise NotImplementedError(
-            f"{self.__class__.__name__} must implement get_embedding_text()"
-        )
+        raise NotImplementedError(f"{self.__class__.__name__} must implement get_embedding_text()")
 
     def get_embedding_generator(self) -> EmbeddingGenerator:
         return EmbeddingGenerator(dimensions=self.embedding_dimensions)
@@ -340,7 +337,7 @@ class EmbeddingMixin(models.Model):
         force_generate_embedding: bool = False,
         verbose: bool = False,
         *args,
-        **kwargs
+        **kwargs,
     ) -> None:
         if auto_generate_embedding and not self.has_embedding or force_generate_embedding:
             try:

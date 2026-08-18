@@ -6,7 +6,6 @@ from usaspending_api.common.models import DataSourceTrackedModel
 
 
 class Cfda(EmbeddingMixin, DataSourceTrackedModel):
-
     embedding_dimensions = 512
 
     program_number = models.TextField(null=False, unique=True, db_index=True)

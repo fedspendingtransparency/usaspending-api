@@ -105,7 +105,6 @@ def test_generate_embedding_integration(mock_generator_class, model_class, facto
 # CFDA-specific tests
 @pytest.mark.django_db
 class TestCFDAEmbeddings:
-
     @pytest.mark.parametrize(
         "program_title,objectives,expected_in_text",
         [
@@ -174,7 +173,6 @@ class TestCFDAEmbeddings:
 # PSC-specific tests
 @pytest.mark.django_db
 class TestPSCEmbeddings:
-
     @pytest.mark.parametrize(
         "description,full_name,expected_format",
         [
@@ -227,7 +225,6 @@ class TestPSCEmbeddings:
 # ToptierAgency-specific tests
 @pytest.mark.django_db
 class TestToptierAgencyEmbeddings:
-
     @pytest.mark.parametrize(
         "name,abbreviation,mission,about,expected_parts",
         [
@@ -271,7 +268,6 @@ class TestToptierAgencyEmbeddings:
 # TreasuryAppropriationAccount-specific tests
 @pytest.mark.django_db
 class TestTreasuryAppropriationAccountEmbeddings:
-
     @pytest.mark.parametrize(
         "tas_label,account_title,agency_name,expected_in_text",
         [
