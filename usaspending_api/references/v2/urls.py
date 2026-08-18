@@ -8,11 +8,12 @@ from usaspending_api.references.v2.views import (
     def_codes,
     filter_hash,
     glossary,
+    states,
     submission_periods,
     toptier_agencies,
     total_budgetary_resources,
 )
-from usaspending_api.references.v2.views.filter_tree import naics, tas, psc, assistance_listing
+from usaspending_api.references.v2.views.filter_tree import assistance_listing, naics, psc, tas
 
 urlpatterns = [
     re_path(r"^agency/(?P<pk>[0-9]+)/$", agency.AgencyViewSet.as_view()),
@@ -36,6 +37,7 @@ urlpatterns = [
     re_path(r"^hash/$", filter_hash.HashEndpoint.as_view()),
     re_path(r"^naics/$", naics.NAICSViewSet.as_view()),
     re_path(r"^naics/(?P<requested_naics>[0-9]+)/$", naics.NAICSViewSet.as_view()),
+    re_path(r"^states/$", states.StatesViewSet.as_view()),
     re_path(r"^submission_periods/", submission_periods.SubmissionPeriodsViewSet.as_view()),
     re_path(r"^toptier_agencies/$", toptier_agencies.ToptierAgenciesViewSet.as_view()),
     re_path(r"^total_budgetary_resources/$", total_budgetary_resources.TotalBudgetaryResources.as_view()),
