@@ -188,6 +188,24 @@ def test_download_transactions_excessive_limit(
     )
     assert resp.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
+    resp = client.post(
+            "/api/v2/download/transactions/",
+            content_type="application/json",
+            data=json.dumps(
+                {"limit": 0, "filters": {"award_type_codes": ["A"]}, "columns": []}
+            ),
+        )
+    assert resp.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+
+    resp = client.post(
+            "/api/v2/download/transactions/",
+            content_type="application/json",
+            data=json.dumps(
+                {"limit": -1, "filters": {"award_type_codes": ["A"]}, "columns": []}
+            ),
+        )
+    assert resp.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+
 
 @pytest.mark.django_db(databases=[settings.DOWNLOAD_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
 def test_download_transactions_bad_column_list_raises(
