@@ -7,58 +7,59 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('references', '0074_alter_gtass_sf133_balances_unique_together'),
+        ("llm", "0002_create_pgvector"),
+        ("references", "0074_alter_gtass_sf133_balances_unique_together"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='cfda',
-            name='embedding',
+            model_name="cfda",
+            name="embedding",
             field=pgvector.django.vector.VectorField(blank=True, dimensions=512, null=True),
         ),
         migrations.AddField(
-            model_name='cfda',
-            name='embedding_generated_at',
+            model_name="cfda",
+            name="embedding_generated_at",
             field=models.DateTimeField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='naics',
-            name='embedding',
+            model_name="naics",
+            name="embedding",
             field=pgvector.django.vector.VectorField(blank=True, dimensions=256, null=True),
         ),
         migrations.AddField(
-            model_name='naics',
-            name='embedding_generated_at',
+            model_name="naics",
+            name="embedding_generated_at",
             field=models.DateTimeField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='psc',
-            name='embedding',
+            model_name="psc",
+            name="embedding",
             field=pgvector.django.vector.VectorField(blank=True, dimensions=256, null=True),
         ),
         migrations.AddField(
-            model_name='psc',
-            name='embedding_generated_at',
+            model_name="psc",
+            name="embedding_generated_at",
             field=models.DateTimeField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='subtieragency',
-            name='embedding',
+            model_name="subtieragency",
+            name="embedding",
             field=pgvector.django.vector.VectorField(blank=True, dimensions=256, null=True),
         ),
         migrations.AddField(
-            model_name='subtieragency',
-            name='embedding_generated_at',
+            model_name="subtieragency",
+            name="embedding_generated_at",
             field=models.DateTimeField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='toptieragency',
-            name='embedding',
+            model_name="toptieragency",
+            name="embedding",
             field=pgvector.django.vector.VectorField(blank=True, dimensions=256, null=True),
         ),
         migrations.AddField(
-            model_name='toptieragency',
-            name='embedding_generated_at',
+            model_name="toptieragency",
+            name="embedding_generated_at",
             field=models.DateTimeField(blank=True, null=True),
         ),
     ]

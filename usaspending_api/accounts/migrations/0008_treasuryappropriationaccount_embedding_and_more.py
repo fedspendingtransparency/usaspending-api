@@ -7,18 +7,19 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('accounts', '0007_alter_treasuryappropriationaccount_data_source'),
+        ("llm", "0002_create_pgvector"),
+        ("accounts", "0007_alter_treasuryappropriationaccount_data_source"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='treasuryappropriationaccount',
-            name='embedding',
+            model_name="treasuryappropriationaccount",
+            name="embedding",
             field=pgvector.django.vector.VectorField(blank=True, dimensions=256, null=True),
         ),
         migrations.AddField(
-            model_name='treasuryappropriationaccount',
-            name='embedding_generated_at',
+            model_name="treasuryappropriationaccount",
+            name="embedding_generated_at",
             field=models.DateTimeField(blank=True, null=True),
         ),
     ]

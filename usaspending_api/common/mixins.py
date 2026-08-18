@@ -309,7 +309,7 @@ class EmbeddingMixin(models.Model):
     def get_embedding_generator(self) -> EmbeddingGenerator:
         return EmbeddingGenerator(dimensions=self.embedding_dimensions)
 
-    def generate_embedding(self, force: bool = False) -> bool:
+    def generate_embedding(self, force: bool = False, verbose: bool = False) -> bool:
         if self.embedding is not None and not force:
             logger.debug(f"Embedding already exists for: {self.__class__.__name__} {self.pk}")
             return False
@@ -324,7 +324,8 @@ class EmbeddingMixin(models.Model):
             generator = self.get_embedding_generator()
             self.embedding = generator.generate_embedding(text)
             self.embedding_generated_at = timezone.now()
-            logger.info(f"Generated embedding for {self.__class__.__name__} {self.pk}")
+            if verbose:
+                logger.info(f"Generated embedding for {self.__class__.__name__} {self.pk}")
             return True
         except Exception as e:
             logger.error(f"Failed to generate embedding for {self.__class__.__name__} {self.pk}: {e}")
@@ -334,11 +335,17 @@ class EmbeddingMixin(models.Model):
     def has_embedding(self) -> bool:
         return self.embedding is not None
 
-    def save(self, *args, **kwargs) -> None:
-        auto_generate = kwargs.get("auto_generate_embedding", True)
-        if auto_generate and not self.has_embedding:
+    def save(
+        self,
+        auto_generate_embedding: bool = True,
+        force_generate_embedding: bool = False,
+        verbose: bool = False,
+        *args,
+        **kwargs
+    ) -> None:
+        if auto_generate_embedding and not self.has_embedding or force_generate_embedding:
             try:
-                self.generate_embedding()
+                self.generate_embedding(verbose=verbose, force=force_generate_embedding)
             except Exception as e:
                 logger.error(
                     f"Failed to auto-generate embedding during save for {self.__class__.__name__} {self.pk}: {e}"

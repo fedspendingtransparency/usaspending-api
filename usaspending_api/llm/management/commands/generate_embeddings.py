@@ -159,11 +159,13 @@ class Command(BaseCommand):
                         continue
 
                     # Generate embedding
-                    if instance.generate_embedding(force=force):
-                        instance.save(update_fields=["embedding", "embedding_generated_at"])
+                    if not instance.has_embedding or force:
+                        instance.save(
+                            verbose=verbose,
+                            force_generate_embedding=force,
+                            update_fields=["embedding", "embedding_generated_at"],
+                        )
                         processed += 1
-                        if verbose:
-                            self.stdout.write(f"  Generated {identifier}")
                     else:
                         if verbose:
                             self.stdout.write(f"  Skipped {identifier}: Already exists")
