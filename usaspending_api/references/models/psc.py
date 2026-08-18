@@ -23,9 +23,6 @@ class PSC(EmbeddingMixin, models.Model):
     def get_embedding_text(self) -> str | None:
         parts = []
 
-        if self.code:
-            parts.append(f"PSC {self.code}")
-
         if self.description:
             parts.append(self.description.strip())
 
