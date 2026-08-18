@@ -1,12 +1,13 @@
 from collections import defaultdict
 from decimal import Decimal
+
 from django.db import models
 from django_cte import CTEManager
 
+from usaspending_api.common.exceptions import UnprocessableEntityException
 from usaspending_api.common.helpers.date_helper import fy
 from usaspending_api.common.mixins import EmbeddingMixin
 from usaspending_api.common.models import DataSourceTrackedModel
-from usaspending_api.common.exceptions import UnprocessableEntityException
 
 
 class TreasuryAppropriationAccount(EmbeddingMixin, DataSourceTrackedModel):
@@ -61,7 +62,9 @@ class TreasuryAppropriationAccount(EmbeddingMixin, DataSourceTrackedModel):
     internal_end_date = models.DateField(blank=True, null=True)
 
     @staticmethod
-    def generate_tas_rendering_label(ata, aid, typecode, bpoa, epoa, mac, sub):
+    def generate_tas_rendering_label(  # noqa: PLR0913
+        ata: str, aid: str, typecode: str, bpoa: str, epoa: str, mac: str, sub: str
+    ) -> None:
         tas_rendering_label = "-".join(filter(None, (ata, aid)))
 
         if typecode is not None and typecode != "":
@@ -75,7 +78,7 @@ class TreasuryAppropriationAccount(EmbeddingMixin, DataSourceTrackedModel):
         return tas_rendering_label
 
     @staticmethod
-    def tas_rendering_label_to_component_dictionary(tas_rendering_label) -> dict:
+    def tas_rendering_label_to_component_dictionary(tas_rendering_label: str) -> dict:
         try:
             components = tas_rendering_label.split("-")
             if len(components) < 4 or len(components) > 5:
@@ -102,19 +105,20 @@ class TreasuryAppropriationAccount(EmbeddingMixin, DataSourceTrackedModel):
             return retval
         except Exception:
             raise UnprocessableEntityException(
-                f"Cannot parse provided TAS: {tas_rendering_label}. Valid examples: 000-2010/2010-0400-000, 009-X-1701-000, 019-011-X-1071-000"
-            )
+                f"Cannot parse provided TAS: {tas_rendering_label}. "
+                "Valid examples: 000-2010/2010-0400-000, 009-X-1701-000, 019-011-X-1071-000"
+            ) from None
 
     @property
-    def program_activities(self):
+    def program_activities(self) -> list:
         return [pb.program_activity for pb in self.program_balances.distinct("program_activity")]
 
     @property
-    def object_classes(self):
+    def object_classes(self) -> list:
         return [pb.object_class for pb in self.program_balances.distinct("object_class")]
 
     @property
-    def totals_object_class(self):
+    def totals_object_class(self) -> list:
         results = []
         for object_class in self.object_classes:
             obligations = defaultdict(Decimal)
@@ -134,7 +138,7 @@ class TreasuryAppropriationAccount(EmbeddingMixin, DataSourceTrackedModel):
         return results
 
     @property
-    def totals_program_activity(self):
+    def totals_program_activity(self) -> list:
         results = []
         for pa in self.program_activities:
             obligations = defaultdict(Decimal)
@@ -155,7 +159,7 @@ class TreasuryAppropriationAccount(EmbeddingMixin, DataSourceTrackedModel):
         return results
 
     @property
-    def totals(self):
+    def totals(self) -> dict:
         outlays = defaultdict(Decimal)
         obligations = defaultdict(Decimal)
         budget_authority = defaultdict(Decimal)

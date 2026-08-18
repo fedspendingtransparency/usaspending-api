@@ -1,5 +1,5 @@
 from django.db import models
-from django.db.models import Exists, OuterRef
+from django.db.models import Exists, OuterRef, QuerySet
 from django_cte import CTEManager
 
 from usaspending_api.common.mixins import EmbeddingMixin
@@ -7,7 +7,7 @@ from usaspending_api.references.models.agency import Agency
 
 
 class ToptierAgencyManager(CTEManager):
-    def award_agencies(self):
+    def award_agencies(self) -> QuerySet:
         """
         Returns only those toptier agencies that have a subtier and their user_selectable flag set.  This
         is used primarily to filter agencies for award related agency drop down lists.  Think File D (Awards,

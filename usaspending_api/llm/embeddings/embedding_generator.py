@@ -1,7 +1,9 @@
 import json
 import logging
+
 import boto3
 from botocore.config import Config
+
 from usaspending_api.llm.models.db_models import AIModel
 
 logger = logging.getLogger(__name__)

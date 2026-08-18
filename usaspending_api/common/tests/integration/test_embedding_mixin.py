@@ -1,8 +1,8 @@
-import pytest
 from datetime import datetime, timezone
-from unittest.mock import patch, MagicMock, call
-from django.db import connection, models
+from unittest.mock import MagicMock, call, patch
 
+import pytest
+from django.db import connection, models
 from pgvector.django import VectorField
 
 from usaspending_api.common.mixins import EmbeddingMixin
@@ -89,7 +89,7 @@ class TestEmbeddingMixinGetEmbeddingGenerator:
         """Should create generator with default 256 dimensions"""
         instance = TestModel(name="Test")
 
-        generator = instance.get_embedding_generator()
+        instance.get_embedding_generator()
 
         mock_generator_class.assert_called_once_with(dimensions=256)
 
@@ -98,7 +98,7 @@ class TestEmbeddingMixinGetEmbeddingGenerator:
         """Should create generator with custom dimensions"""
         instance = TestModelWithCustomDimensions(name="Test")
 
-        generator = instance.get_embedding_generator()
+        instance.get_embedding_generator()
 
         mock_generator_class.assert_called_once_with(dimensions=512)
 

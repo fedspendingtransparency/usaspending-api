@@ -310,26 +310,25 @@ class EmbeddingMixin(models.Model):
         return EmbeddingGenerator(dimensions=self.embedding_dimensions)
 
     def generate_embedding(self, force: bool = False, verbose: bool = False) -> bool:
+        did_generate = False
         if self.embedding is not None and not force:
             logger.debug(f"Embedding already exists for: {self.__class__.__name__} {self.pk}")
-            return False
+        else:
+            text = self.get_embedding_text()
 
-        text = self.get_embedding_text()
-
-        if not text or not text.strip():
-            logger.warning(f"Embedding text is empty for: {self.__class__.__name__} {self.pk}")
-            return False
-
-        try:
-            generator = self.get_embedding_generator()
-            self.embedding = generator.generate_embedding(text)
-            self.embedding_generated_at = timezone.now()
-            if verbose:
-                logger.info(f"Generated embedding for {self.__class__.__name__} {self.pk}")
-            return True
-        except Exception as e:
-            logger.error(f"Failed to generate embedding for {self.__class__.__name__} {self.pk}: {e}")
-            return False
+            if not text or not text.strip():
+                logger.warning(f"Embedding text is empty for: {self.__class__.__name__} {self.pk}")
+            else:
+                try:
+                    generator = self.get_embedding_generator()
+                    self.embedding = generator.generate_embedding(text)
+                    self.embedding_generated_at = timezone.now()
+                    if verbose:
+                        logger.info(f"Generated embedding for {self.__class__.__name__} {self.pk}")
+                    did_generate = True
+                except Exception as e:
+                    logger.error(f"Failed to generate embedding for {self.__class__.__name__} {self.pk}: {e}")
+        return did_generate
 
     @property
     def has_embedding(self) -> bool:

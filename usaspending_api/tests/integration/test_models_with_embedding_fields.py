@@ -1,8 +1,9 @@
-import pytest
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
-from usaspending_api.references.models import Cfda, NAICS, PSC, SubtierAgency, ToptierAgency
+import pytest
+
 from usaspending_api.accounts.models import TreasuryAppropriationAccount
+from usaspending_api.references.models import NAICS, PSC, Cfda, SubtierAgency, ToptierAgency
 
 
 @pytest.mark.parametrize(

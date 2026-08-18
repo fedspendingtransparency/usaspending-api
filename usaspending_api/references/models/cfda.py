@@ -62,7 +62,6 @@ class Cfda(EmbeddingMixin, DataSourceTrackedModel):
     def get_embedding_text(self) -> str | None:
         parts = []
 
-        # Core identity (always include)
         if self.program_title:
             parts.append(self.program_title.strip())
 
