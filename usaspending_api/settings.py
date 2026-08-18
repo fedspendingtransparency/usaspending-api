@@ -57,12 +57,21 @@ SECRET_KEY = get_random_secret_key()
 DEBUG = os.environ.get("DJANGO_DEBUG", "").lower() in ["true", "1", "yes"]
 
 HOST = os.environ.get("HOST", "localhost:3000")
+
 hosts = os.environ.get("ALLOWED_HOSTS")
 if hosts and hasattr(hosts, "split"):
     hosts = hosts.split(",")
 else:
     hosts = []
 ALLOWED_HOSTS = hosts
+
+# Needed to support health checks
+cidr_hosts = os.environ.get("ALLOWED_CIDR_NETS")
+if cidr_hosts and hasattr(cidr_hosts, "split"):
+    cidr_hosts = cidr_hosts.split(",")
+else:
+    cidr_hosts = []
+ALLOWED_CIDR_NETS = cidr_hosts
 
 # Define local flag to affect location of downloads
 IS_LOCAL = os.environ.get("IS_LOCAL", "").lower() in ["true", "1", "yes"]
@@ -74,9 +83,7 @@ TRACE_ENV = os.environ.get("TRACE_ENV", "unspecified")
 # How to handle downloads locally
 # True: process it right away by the API;
 # False: leave the message in the local file-backed queue to be picked up and processed by the bulk-download container
-RUN_LOCAL_DOWNLOAD_IN_PROCESS = os.environ.get(
-    "RUN_LOCAL_DOWNLOAD_IN_PROCESS", ""
-).lower() not in ["false", "0", "no"]
+RUN_LOCAL_DOWNLOAD_IN_PROCESS = os.environ.get("RUN_LOCAL_DOWNLOAD_IN_PROCESS", "").lower() not in ["false", "0", "no"]
 
 # AWS Region for USAspending Infrastructure
 # TODO: Remove and update CONFIG.AWS_REGION use use ENV approach; update usages to use CONFIG.AWS_REGION
@@ -92,9 +99,7 @@ BULK_DOWNLOAD_LOCAL_PATH = str(REPO_DIR / "bulk_downloads") + "/"
 DATABASE_DOWNLOAD_S3_BUCKET_NAME = CONFIG.DATABASE_DOWNLOAD_S3_BUCKET_NAME
 BULK_DOWNLOAD_S3_REDIRECT_DIR = "generated_downloads"
 BULK_DOWNLOAD_SQS_QUEUE_NAME = os.environ.get("BULK_DOWNLOAD_SQS_QUEUE_NAME", "")
-PRIORITY_DOWNLOAD_SQS_QUEUE_NAME = os.environ.get(
-    "PRIORITY_DOWNLOAD_SQS_QUEUE_NAME", ""
-)
+PRIORITY_DOWNLOAD_SQS_QUEUE_NAME = os.environ.get("PRIORITY_DOWNLOAD_SQS_QUEUE_NAME", "")
 BULK_DOWNLOAD_SPARK_JOB_NAME_PREFIX = "api_download"
 DATABASE_DOWNLOAD_S3_REDIRECT_DIR = "database_download"
 MONTHLY_DOWNLOAD_S3_REDIRECT_DIR = "award_data_archive"
@@ -128,14 +133,10 @@ DELETED_TRANSACTION_JOURNAL_FILES = ""
 if not FPDS_BUCKET_NAME:
     FPDS_BUCKET_NAME = os.environ.get("FPDS_BUCKET_NAME")
 if not DELETED_TRANSACTIONS_S3_BUCKET_NAME:
-    DELETED_TRANSACTIONS_S3_BUCKET_NAME = os.environ.get(
-        "DELETED_TRANSACTIONS_S3_BUCKET_NAME"
-    )
+    DELETED_TRANSACTIONS_S3_BUCKET_NAME = os.environ.get("DELETED_TRANSACTIONS_S3_BUCKET_NAME")
 if not DELETED_TRANSACTION_JOURNAL_FILES:
     DELETED_TRANSACTION_JOURNAL_FILES = (
-        os.environ.get("DELETED_TRANSACTION_JOURNAL_FILES")
-        or FPDS_BUCKET_NAME
-        or DELETED_TRANSACTIONS_S3_BUCKET_NAME
+        os.environ.get("DELETED_TRANSACTION_JOURNAL_FILES") or FPDS_BUCKET_NAME or DELETED_TRANSACTIONS_S3_BUCKET_NAME
     )
 
 ############################################################
@@ -167,9 +168,7 @@ if not FILES_SERVER_BASE_URL:
 DATA_DICTIONARY_FILE_NAME = "Data_Dictionary_Crosswalk.xlsx"
 
 AGENCY_DOWNLOAD_URL = f"{FILES_SERVER_BASE_URL}/reference_data/agency_codes.csv"
-DATA_DICTIONARY_DOWNLOAD_URL = (
-    f"{FILES_SERVER_BASE_URL}/docs/{DATA_DICTIONARY_FILE_NAME}"
-)
+DATA_DICTIONARY_DOWNLOAD_URL = f"{FILES_SERVER_BASE_URL}/docs/{DATA_DICTIONARY_FILE_NAME}"
 
 # S3 Bucket and Key to retrieve the Data Dictionary
 DATA_DICTIONARY_S3_BUCKET_NAME = os.environ.get(
@@ -183,18 +182,10 @@ DATA_DICTIONARY_S3_KEY = os.environ.get(
 
 # Local download files
 IDV_DOWNLOAD_README_FILE_PATH = str(APP_DIR / "data" / "idv_download_readme.txt")
-ASSISTANCE_DOWNLOAD_README_FILE_PATH = str(
-    APP_DIR / "data" / "AssistanceSummary_download_readme.txt"
-)
-CONTRACT_DOWNLOAD_README_FILE_PATH = str(
-    APP_DIR / "data" / "ContractSummary_download_readme.txt"
-)
-COVID19_DOWNLOAD_README_FILE_PATH = str(
-    APP_DIR / "data" / "COVID-19_download_readme.txt"
-)
-UNLINKED_AWARDS_DOWNLOAD_README_FILE_PATH = str(
-    APP_DIR / "data" / "unlinked_awards_instructions_readme.txt"
-)
+ASSISTANCE_DOWNLOAD_README_FILE_PATH = str(APP_DIR / "data" / "AssistanceSummary_download_readme.txt")
+CONTRACT_DOWNLOAD_README_FILE_PATH = str(APP_DIR / "data" / "ContractSummary_download_readme.txt")
+COVID19_DOWNLOAD_README_FILE_PATH = str(APP_DIR / "data" / "COVID-19_download_readme.txt")
+UNLINKED_AWARDS_DOWNLOAD_README_FILE_PATH = str(APP_DIR / "data" / "unlinked_awards_instructions_readme.txt")
 COVID19_DOWNLOAD_FILENAME_PREFIX = "COVID-19_Profile"
 
 # Elasticsearch
@@ -249,6 +240,7 @@ INSTALLED_APPS = [
     "django.contrib.postgres",
     "django.contrib.staticfiles",
     # Third-party
+    "allow_cidr",
     "corsheaders",
     "debug_toolbar",
     "django_extensions",
@@ -282,6 +274,7 @@ INTERNAL_IPS = ()
 DEBUG_TOOLBAR_CONFIG = {"SHOW_TOOLBAR_CALLBACK": lambda request: DEBUG}
 
 MIDDLEWARE = [
+    "allow_cidr.middleware.AllowCIDRMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "debug_toolbar.middleware.DebugToolbarMiddleware",
     "django.middleware.security.SecurityMiddleware",
@@ -324,9 +317,7 @@ CORS_ORIGIN_ALLOW_ALL = True  # Temporary while in development
 # see https://github.com/kennethreitz/dj-database-url for more info
 
 
-def _configure_database_connection(
-    environment_variable: str, test_options: dict | None = None
-) -> dict:
+def _configure_database_connection(environment_variable: str, test_options: dict | None = None) -> dict:
     """
     Configure a Django database connection... configuration.  environment_variable is the name of
     the operating system environment variable that contains the database connection string or DSN
@@ -341,14 +332,8 @@ def _configure_database_connection(
 
     if test_options is None:
         test_options = {}
-    default_options = {
-        "options": "-c statement_timeout={0}".format(
-            DEFAULT_DB_TIMEOUT_IN_SECONDS * 1000
-        )
-    }
-    config = dj_database_url.parse(
-        connection_string, conn_max_age=CONNECTION_MAX_SECONDS
-    )
+    default_options = {"options": "-c statement_timeout={0}".format(DEFAULT_DB_TIMEOUT_IN_SECONDS * 1000)}
+    config = dj_database_url.parse(connection_string, conn_max_age=CONNECTION_MAX_SECONDS)
     config["OPTIONS"] = {**config.setdefault("OPTIONS", {}), **default_options}
     config["TEST"] = {**test_options, "SERIALIZE": False}
     return config
@@ -374,9 +359,7 @@ elif os.environ.get(dj_database_url.DEFAULT_ENV):
     DATABASE_ROUTERS = ["usaspending_api.routers.replicas.DefaultOnlyRouter"]
 else:
     raise EnvironmentError(
-        "Either {} or DB_SOURCE/DB_R1 environment variable must be defined".format(
-            dj_database_url.DEFAULT_ENV
-        )
+        "Either {} or DB_SOURCE/DB_R1 environment variable must be defined".format(dj_database_url.DEFAULT_ENV)
     )
 
 # Initializing download DB as connection string (DOWNLOAD_DATABASE_URL) for PSQL command and
@@ -400,9 +383,7 @@ BROKER_DBLINK_NAME = "broker_server"
 # https://docs.djangoproject.com/en/3.2/ref/settings/#auth-password-validators
 
 AUTH_PASSWORD_VALIDATORS = [
-    {
-        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"
-    },
+    {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
     {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},
     {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
     {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
@@ -580,18 +561,12 @@ CACHE_ENVIRONMENTS = {
     # Elasticache settings are changed during deployment, or can be set manually
     "elasticache": {
         "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": os.environ.get(
-            "ELASTICACHE_CONNECTION_STRING", "ELASTICACHE-CONNECTION-STRING"
-        ),
-        "TIMEOUT": os.environ.get(
-            "ELASTICACHE_TIMEOUT_IN_SECONDS", "TIMEOUT-IN-SECONDS"
-        ),
+        "LOCATION": os.environ.get("ELASTICACHE_CONNECTION_STRING", "ELASTICACHE-CONNECTION-STRING"),
+        "TIMEOUT": os.environ.get("ELASTICACHE_TIMEOUT_IN_SECONDS", "TIMEOUT-IN-SECONDS"),
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
             # Note: ELASTICACHE-MASTER-STRING is currently only used by Prod and will be removed in other environments.
-            "MASTER_CACHE": os.environ.get(
-                "ELASTICACHE_MASTER_STRING", "ELASTICACHE-MASTER-STRING"
-            ),
+            "MASTER_CACHE": os.environ.get("ELASTICACHE_MASTER_STRING", "ELASTICACHE-MASTER-STRING"),
         },
     },
     "local": {
