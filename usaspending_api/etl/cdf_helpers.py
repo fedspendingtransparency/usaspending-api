@@ -57,12 +57,53 @@ def arrow_to_pg_csv_buffer(table: pa.Table, column_order: list[str]) -> io.Strin
     table = table.select(column_order)
 
     list_columns = [
-        field.name for field in table.schema if pa.table.is_list(field.type) or pa.types.is_large_list(field.type)
+        field.name for field in table.schema if pa.types.is_list(field.type) or pa.types.is_large_list(field.type)
     ]
 
-    df = table.to_pandas()
     for col in list_columns:
-        df[col] = df[col].map(lambda x: _format_pg_array_literal(x) if x is not None else None)
+        col_array = table.column(col).to_pylist()
+        formatted_array = [
+            _format_pg_array_literal(item) if item is not None else None for item in col_array
+        ]
+        table = table.set_column(
+            table.schema.get_field_index(col),
+            col,
+            pa.array(formatted_array, type=pa.string())
+        )
+
+    integer_columns = []
+
+    for field in table.schema:
+        if pa.types.is_integer(field.type):
+            integer_columns.append(field.name)
+
+        if pa.types.is_timestamp(field.type) or pa.types.is_date(field.type):
+            col = table.column(field.name)
+            string_values = []
+
+            for chunk in col.chunks:
+                for i in range(len(chunk)):
+                    scalar = chunk[i]
+                    if not scalar.is_valid:
+                        string_values.append(None)
+                    else:
+                        try:
+                            val = scalar.as_py()
+                            string_values.append(str(val))
+                        except (OverflowError, ValueError):
+                            string_values.append(None)
+
+            table = table.set_column(
+                table.schema.get_field_index(field.name),
+                field.name,
+                pa.array(string_values, type=pa.string())
+            )
+
+    df = table.to_pandas()
+
+    for col_name in integer_columns:
+        if col_name in df.columns:
+            df[col_name] = df[col_name].astype('Int64')
 
     buffer = io.StringIO()
     df.to_csv(buffer, header=False, index=False, na_rep="", quoting=csv.QUOTE_MINIMAL)
@@ -126,11 +167,16 @@ def _get_storage_options() -> dict | None:
     if CONFIG.USE_AWS:
         return None
 
+    if IS_LOCAL and not CONFIG.AWS_S3_ENDPOINT.startswith("http://"):
+        aws_s3_endpoint = f"http://{CONFIG.AWS_S3_ENDPOINT}"
+    else:
+        aws_s3_endpoint = CONFIG.AWS_S3_ENDPOINT
+
     return {
         "AWS_ACCESS_KEY_ID": CONFIG.AWS_ACCESS_KEY.get_secret_value(),
         "AWS_SECRET_ACCESS_KEY": CONFIG.AWS_SECRET_KEY.get_secret_value(),
         "AWS_REGION": CONFIG.AWS_REGION,
-        "AWS_ENDPOINT_URL": CONFIG.AWS_S3_ENDPOINT,
+        "AWS_ENDPOINT_URL": aws_s3_endpoint,
         "AWS_ALLOW_HTTP": "true" if IS_LOCAL else "false"
     }
 
@@ -140,8 +186,13 @@ def read_cdf_changes(delta_table_uri: str, starting_version: int) -> CDFChangeSe
         commits to process or if the CDF is empty.
     """
 
+    # Debug
+    logger.info(f"Delta table URI: {delta_table_uri}")
+    logger.info(f"Starting version: {starting_version}")
+
     dt = DeltaTable(delta_table_uri, storage_options=_get_storage_options())
     latest_version = dt.version()
+    logger.info(f"Latest Delta table version: {latest_version}")
 
     if starting_version >= latest_version:
         logger.info(
@@ -155,8 +206,8 @@ def read_cdf_changes(delta_table_uri: str, starting_version: int) -> CDFChangeSe
     if cdf.num_rows == 0:
         return None
 
-    max_timestamp = pc.max(cdf.column("_commit_timestamp")).as_py()
-    logger.info(f"Loaded {cdf.num_rows} CDF rows. latest_version={latest_version}")
+    max_timestamp = pc.max(pa.chunked_array(cdf.column("_commit_timestamp"))).as_py()
+    logger.info(f"Loaded {cdf.num_rows:,} CDF rows. latest_version={latest_version}")
 
     return CDFChangeSet(cdf=cdf, latest_version=latest_version, latest_commit_timestamp=max_timestamp)
 
@@ -173,16 +224,29 @@ def split_cdf_by_change_type(cdf: pa.Table, pk_column: str) -> tuple[list, pa.Ta
         a row. CDF metadata columns are stripped from the returned Arrow table.
     """
 
-    deleted_ids = pc.unique(cdf.column(pk_column)).to_pylist()
+    # Cast all `string_view` columns to `string`
+    new_schema = pa.schema([
+        pa.field(field.name, pa.string() if pa.types.is_string_view(field.type) else field.type)
+        for field in cdf.schema
+    ])
+    cdf = cdf.cast(new_schema)
+
+    deleted_ids = pc.unique(pa.chunked_array(cdf.column(pk_column))).to_pylist()
     non_preimage = cdf.filter(pc.not_equal(cdf.column("_change_type"), "update_preimage"))
 
     if non_preimage.num_rows == 0:
         upsert_rows = non_preimage
     else:
-        df = non_preimage.to_pandas()
-        df = df.sort_values("_commit_version").drop_duplicates(subset=[pk_column], keep="last")
-        df = df[df["_change_type"].isin(UPSERT_CHANGE_TYPES)]
-        upsert_rows = pa.Table.from_pandas(df, preserve_index=False)
+        sorted_table = non_preimage.sort_by([(pk_column, "ascending"), ("_commit_version", "ascending")])
+        pk_array = sorted_table.column(pk_column).combine_chunks()
+        pk_current = pk_array[:-1]
+        pk_next = pk_array[1:]
+        changes = pc.not_equal(pk_current, pk_next)
+        keep_mask = pa.concat_arrays([changes, pa.array([True])])
+        deduplicated = sorted_table.filter(keep_mask)
+        upsert_rows = deduplicated.filter(
+            pc.is_in(deduplicated.column("_change_type"), value_set=pa.array(UPSERT_CHANGE_TYPES))
+        )
 
     cols_to_drop = [c for c in CDF_METADATA_COLUMNS if c in upsert_rows.column_names]
     if cols_to_drop:

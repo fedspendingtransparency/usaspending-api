@@ -15,6 +15,7 @@ from django.db import transaction
 from django.db.backends.utils import CursorWrapper
 from django.db.models import Model
 from pyarrow import Table as PyArrowTable
+from pyarrow import table
 from pyspark.sql import DataFrame, SparkSession
 
 from usaspending_api.common.csv_stream_s3_to_pg import copy_csvs_from_s3_to_pg
@@ -28,6 +29,7 @@ from usaspending_api.common.helpers.spark_helpers import (
 from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
 from usaspending_api.config import CONFIG
 from usaspending_api.etl.cdf_helpers import (
+    CDFChangeSet,
     arrow_to_pg_csv_buffer,
     build_delta_table_s3_uri,
     get_last_processed_version,
@@ -715,18 +717,14 @@ class Command(BaseCommand):
         if deleted_ids:
             logger.info(f'Staging {len(deleted_ids)} PK(s) to {deletes_staging} via COPY.')
             buffer = ids_to_csv_buffer(deleted_ids)
-            cursor.copy_expert(
-                sql=f"COPY {deletes_staging} ({pk_column}) FROM STDIN (FORMAT CSV)",
-                file=buffer
-            )
+            with cursor.copy(f"COPY {deletes_staging} ({pk_column}) FROM STDIN (FORMAT CSV)") as copy:
+                copy.write(buffer.read())
 
         if upsert_rows.num_rows > 0:
             logger.info(f"Staging {upsert_rows.num_rows} row(s) to {upserts_staging} via COPY.")
             buffer = arrow_to_pg_csv_buffer(upsert_rows, column_names)
-            cursor.copy_expert(
-                sql=f"COPY {upserts_staging} ({','.join(column_names)}) FROM STDIN (FORMAT CSV)",
-                file=buffer
-            )
+            with cursor.copy(f"COPY {upserts_staging} ({','.join(column_names)}) FROM STDIN (FORMAT CSV)") as copy:
+                copy.write(buffer.read())
 
     def _apply_cdf_deletes(
         self: Self,
@@ -785,12 +783,12 @@ class Command(BaseCommand):
             return
 
         delta_uri = build_delta_table_s3_uri(delta_lake_schema, delta_lake_table)
-        change_set = read_cdf_changes(delta_uri, starting_version=last_version)
+        change_set: CDFChangeSet = read_cdf_changes(delta_uri, starting_version=last_version)
         if change_set is None:
             logger.info(f"Nothing to apply for {delta_table!r}.")
             return
 
-        deleted_ids, upsert_rows = split_cdf_by_change_type(change_set.cdf, pk_column)
+        deleted_ids, upsert_rows = split_cdf_by_change_type(table(change_set.cdf), pk_column)
         logger.info(
             f"Planned: {len(deleted_ids)} PK(s) to delete, {upsert_rows.num_rows} row(s) top upsert. Target "
             f"version: {change_set.latest_version} ({change_set.latest_commit_timestamp})"
@@ -804,12 +802,17 @@ class Command(BaseCommand):
                     cursor, deletes_staging, upserts_staging, pk_column, column_names, deleted_ids, upsert_rows
                 )
                 rows_deleted = self._apply_cdf_deletes(cursor, live_table, deletes_staging, pk_column)
-                rows_inserted = self._apply_cdf_upserts(cursor, live_table, upserts_staging, pk_column)
-            update_last_processed_version(delta_table, change_set.latest_version, change_set.latest_commit_timestamp)
+                rows_inserted = self._apply_cdf_upserts(cursor, live_table, upserts_staging, column_names)
+            update_last_processed_version(
+                delta_lake_schema,
+                delta_table,
+                change_set.latest_version,
+                change_set.latest_commit_timestamp
+            )
 
         logger.info(
-            f"Applied: {rows_deleted} row(s) deleted, {rows_inserted} row(s) inserted. "
-            f"Tracking updated to version {change_set.latest_version}."
+            f"Applied: {rows_deleted:,} row(s) deleted, {rows_inserted:,} row(s) inserted. "
+            f"Tracking updated to version {change_set.latest_version:,}."
         )
 
         if options["cleanup_staging"]:
