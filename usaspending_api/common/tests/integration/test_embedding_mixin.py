@@ -243,7 +243,7 @@ class TestEmbeddingMixinGenerateEmbedding:
         assert not result
         assert instance.embedding is None
 
-        assert mock_logger.error.call_args == call(
+        assert mock_logger.exception.call_args == call(
             f"Failed to generate embedding for TestModel {instance.pk}: API Error"
         )
 
@@ -293,7 +293,7 @@ class TestEmbeddingMixinGenerateEmbedding:
         result = instance.generate_embedding()
 
         assert not result
-        assert mock_logger.error.call_args == call(
+        assert mock_logger.exception.call_args == call(
             f"Failed to generate embedding for TestModel {instance.pk}: Invalid input"
         )
 
@@ -360,13 +360,13 @@ class TestEmbeddingMixinSave:
         mock_generator_class.return_value = mock_generator
 
         instance = TestModel(name="Test")
-        instance.save()  # Should not raise exception
+        instance.save()
 
         # Instance should be saved despite embedding failure
         assert instance.pk is not None
         assert instance.embedding is None
-        mock_logger.error.assert_called()
-        assert "Failed to generate embedding for" in mock_logger.error.call_args[0][0]
+        mock_logger.exception.assert_called()
+        assert "Failed to generate embedding for" in mock_logger.exception.call_args[0][0]
 
     @patch("usaspending_api.common.mixins.EmbeddingGenerator")
     def test_save_does_not_regenerate_existing(self, mock_generator_class):
