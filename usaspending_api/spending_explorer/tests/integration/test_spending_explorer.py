@@ -1,17 +1,18 @@
 import copy
 import json
-import pytest
-
 from datetime import datetime, timezone
+from unittest.mock import patch
+
+import pytest
 from model_bakery import baker
 from rest_framework import status
 
+from usaspending_api.accounts.models import FederalAccount, TreasuryAppropriationAccount
 from usaspending_api.awards.models import FinancialAccountsByAwards
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
-from usaspending_api.accounts.models import FederalAccount, TreasuryAppropriationAccount
-from usaspending_api.references.models import Agency, GTASSF133Balances, ToptierAgency, ObjectClass
+from usaspending_api.references.models import Agency, GTASSF133Balances, ObjectClass, ToptierAgency
+from usaspending_api.search.models import AwardSearch, TransactionSearch
 from usaspending_api.submissions.models import DABSSubmissionWindowSchedule, SubmissionAttributes
-from usaspending_api.search.models import TransactionSearch, AwardSearch
 
 ENDPOINT_URL = "/api/v2/spending/"
 CONTENT_TYPE = "application/json"
@@ -187,7 +188,6 @@ def setup_only_dabs_window():
 
 @pytest.mark.django_db
 def test_unreported_data_actual_value_file_b(client):
-
     models = copy.deepcopy(GLOBAL_MOCK_DICT)
     for entry in models:
         baker.make(entry.pop("model"), **entry)
@@ -408,7 +408,6 @@ def test_federal_account_linkage(client):
 
 @pytest.mark.django_db
 def test_budget_function_filter_success(setup_only_dabs_window, client):
-
     # Test for Budget Function Results
     resp = client.post(
         "/api/v2/spending/",
@@ -747,7 +746,6 @@ def test_agency_failure(client):
 
 @pytest.mark.django_db
 def test_object_budget_match(client):
-
     models = copy.deepcopy(GLOBAL_MOCK_DICT)
     for entry in models:
         baker.make(entry.pop("model"), **entry)
@@ -779,7 +777,6 @@ def test_object_budget_match(client):
 
 @pytest.mark.django_db
 def test_period(setup_only_dabs_window, client):
-
     # Test for Object Class Results
     resp = client.post(
         "/api/v2/spending/",
@@ -1198,3 +1195,193 @@ def test_unreported_file_c(client):
     assert response["total"] != response2["total"]
     assert response["total"] == -12
     assert response2["total"] == -15
+
+
+@pytest.mark.django_db
+def test_award_type_respects_limit(client):
+    """Test that the award type endpoint respects the SPENDING_EXPLORER_LIMIT when patched to a lower value."""
+
+    # Setup test data
+    baker.make(
+        DABSSubmissionWindowSchedule,
+        submission_fiscal_year=2020,
+        submission_fiscal_quarter=1,
+        submission_fiscal_month=3,
+        is_quarter=True,
+        submission_reveal_date=datetime(2020, 1, 15, tzinfo=timezone.utc),
+        period_end_date=datetime(2019, 12, 31, tzinfo=timezone.utc),
+    )
+
+    submission = baker.make(
+        SubmissionAttributes,
+        reporting_fiscal_year=2020,
+        reporting_fiscal_period=3,
+        reporting_fiscal_quarter=1,
+    )
+
+    toptier = baker.make(ToptierAgency, toptier_code="001", name="Test Agency")
+    baker.make(Agency, toptier_agency=toptier, toptier_flag=True)
+    treasury_account = baker.make(
+        TreasuryAppropriationAccount,
+        funding_toptier_agency=toptier,
+    )
+
+    # Create 5 awards (more than our test limit of 2)
+    awards = []
+    for i in range(5):
+        award = baker.make(
+            AwardSearch,
+            award_id=i + 1,
+            piid=f"PIID-{i + 1}",
+            recipient_name=f"Recipient {i + 1}",
+        )
+        awards.append(award)
+
+        baker.make(
+            FinancialAccountsByAwards,
+            submission=submission,
+            award=award,
+            treasury_account=treasury_account,
+            transaction_obligated_amount=-(i + 1) * 1000,  # Different amounts for sorting
+        )
+
+    # Patch the limit to 2
+    with patch("usaspending_api.spending_explorer.v2.views.spending_explorer.SPENDING_EXPLORER_LIMIT", 2):
+        json_request = {"type": "award", "filters": {"fy": "2020", "quarter": "1"}}
+
+        response = client.post(path=ENDPOINT_URL, content_type=CONTENT_TYPE, data=json.dumps(json_request))
+
+    assert response.status_code == status.HTTP_200_OK
+
+    json_response = response.json()
+
+    # Validate that exactly 2 results are returned
+    assert len(json_response["results"]) == 2, f"Expected 2 results due to limit, got {len(json_response['results'])}"
+
+    # Validate that the total still reflects all matching records (not just the limited results)
+    # This ensures the limit only affects the results array, not the total calculation
+    assert json_response["total"] < 0, "Total should be negative (sum of all obligations)"
+
+    # Validate that results are sorted by amount (descending)
+    amounts = [result["amount"] for result in json_response["results"]]
+    assert amounts == sorted(amounts, reverse=True), "Results should be sorted by amount descending"
+
+
+@pytest.mark.django_db
+def test_non_award_type_ignores_limit(client):
+    """Test that non-award types (e.g., agency) do NOT apply the limit."""
+
+    # Setup test data
+    baker.make(
+        DABSSubmissionWindowSchedule,
+        submission_fiscal_year=2020,
+        submission_fiscal_quarter=1,
+        submission_fiscal_month=3,
+        is_quarter=True,
+        submission_reveal_date=datetime(2020, 1, 15, tzinfo=timezone.utc),
+        period_end_date=datetime(2019, 12, 31, tzinfo=timezone.utc),
+    )
+
+    submission = baker.make(
+        SubmissionAttributes,
+        reporting_fiscal_year=2020,
+        reporting_fiscal_period=3,
+        reporting_fiscal_quarter=1,
+    )
+
+    # Create 5 agencies
+    for i in range(5):
+        toptier = baker.make(ToptierAgency, toptier_code=f"00{i}", name=f"Agency {i + 1}")
+        baker.make(Agency, toptier_agency=toptier, toptier_flag=True)
+
+        treasury_account = baker.make(
+            TreasuryAppropriationAccount,
+            funding_toptier_agency=toptier,
+        )
+
+        # Create some financial data for each agency
+        from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
+
+        baker.make(
+            FinancialAccountsByProgramActivityObjectClass,
+            submission=submission,
+            treasury_account=treasury_account,
+            obligations_incurred_by_program_object_class_cpe=-(i + 1) * 1000,
+        )
+
+    # Patch the limit to 2
+    with patch("usaspending_api.spending_explorer.v2.views.spending_explorer.SPENDING_EXPLORER_LIMIT", 2):
+        json_request = {"type": "agency", "filters": {"fy": "2020", "quarter": "1"}}
+
+        response = client.post(path=ENDPOINT_URL, content_type=CONTENT_TYPE, data=json.dumps(json_request))
+
+    assert response.status_code == status.HTTP_200_OK
+
+    json_response = response.json()
+
+    # Validate that ALL results are returned (limit not applied for non-award types)
+    assert len(json_response["results"]) == 5, (
+        f"Expected 5 results (no limit for agency type), got {len(json_response['results'])}"
+    )
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize("award_type", ["award", "award_category", "recipient"])
+def test_award_types_with_limit(client, award_type):
+    """Test that all award-related types handle the limit appropriately."""
+
+    # Setup minimal test data
+    baker.make(
+        DABSSubmissionWindowSchedule,
+        submission_fiscal_year=2020,
+        submission_fiscal_quarter=1,
+        submission_fiscal_month=3,
+        is_quarter=True,
+        submission_reveal_date=datetime(2020, 1, 15, tzinfo=timezone.utc),
+        period_end_date=datetime(2019, 12, 31, tzinfo=timezone.utc),
+    )
+
+    submission = baker.make(
+        SubmissionAttributes,
+        reporting_fiscal_year=2020,
+        reporting_fiscal_period=3,
+    )
+
+    toptier = baker.make(ToptierAgency, toptier_code="001")
+    baker.make(Agency, toptier_agency=toptier, toptier_flag=True)
+    treasury_account = baker.make(TreasuryAppropriationAccount, funding_toptier_agency=toptier)
+
+    # Create 3 awards
+    for i in range(3):
+        award = baker.make(
+            AwardSearch,
+            award_id=i + 1,
+            piid=f"PIID-{i + 1}",
+            recipient_name=f"Recipient {i + 1}",
+            category="contract",
+        )
+
+        baker.make(
+            FinancialAccountsByAwards,
+            submission=submission,
+            award=award,
+            treasury_account=treasury_account,
+            transaction_obligated_amount=-1000 * (i + 1),
+        )
+
+    with patch("usaspending_api.spending_explorer.v2.views.spending_explorer.SPENDING_EXPLORER_LIMIT", 2):
+        json_request = {"type": award_type, "filters": {"fy": "2020", "quarter": "1"}}
+
+        response = client.post(path=ENDPOINT_URL, content_type=CONTENT_TYPE, data=json.dumps(json_request))
+
+    assert response.status_code == status.HTTP_200_OK
+    json_response = response.json()
+
+    # Only "award" type applies limit
+    if award_type == "award":
+        assert len(json_response["results"]) == 2, (
+            f"Award type should respect limit of 2, got {len(json_response['results'])}"
+        )
+    else:
+        # award_category and recipient don't apply limit
+        assert len(json_response["results"]) >= 2, f"{award_type} type should not apply limit"
