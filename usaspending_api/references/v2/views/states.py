@@ -15,17 +15,24 @@ class StatesViewSet(APIView):
 
     @cache_response()
     def get(self, request: Request) -> Response:
-        # state_data stores one row per FIPS/year. DISTINCT ON flips with year DESC keeps the latest row.
-        rows = StateData.objects.order_by("fips", "-year").distinct("fips").values("fips", "code", "name")
-        results = sorted(
-            (
-                {
-                    "fips": row["fips"],
-                    "code": (row["code"] or "").upper(),
-                    "name": (row["name"] or "").upper(),
-                }
-                for row in rows
-            ),
-            key=lambda row: row["code"],
+        # state_data stores one row per FIPS/year. DISTINCT ON with year DESC keeps the latest row.
+        from django.db.models.functions import Upper
+
+        rows = (
+            StateData.objects.order_by("fips", "-year")
+            .distinct("fips")
+            .annotate(code_upper=Upper("code"), name_upper=Upper("name"))
+            .order_by("code_upper")
+            .values("fips", "code_upper", "name_upper")
         )
+
+        results = [
+            {
+                "fips": row["fips"],
+                "code": row["code_upper"] or "",
+                "name": row["name_upper"] or "",
+            }
+            for row in rows
+        ]
+
         return Response({"results": results})
