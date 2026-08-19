@@ -8,6 +8,7 @@ import os
 from pathlib import Path
 
 import dj_database_url
+from corsheaders.defaults import default_headers
 from django.core.management.utils import get_random_secret_key
 from django.db import DEFAULT_DB_ALIAS
 
@@ -309,6 +310,11 @@ WSGI_APPLICATION = "usaspending_api.wsgi.application"
 
 # CORS Settings
 CORS_ORIGIN_ALLOW_ALL = True  # Temporary while in development
+
+CORS_ALLOW_HEADERS = (
+    *default_headers,
+    "x-llm-api-key",
+)
 
 # Database
 # https://docs.djangoproject.com/en/3.2/ref/settings/#databases
