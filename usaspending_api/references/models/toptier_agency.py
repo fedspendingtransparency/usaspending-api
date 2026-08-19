@@ -28,7 +28,6 @@ class ToptierAgencyManager(CTEManager):
 
 
 class ToptierAgency(EmbeddingMixin, models.Model):
-
     toptier_agency_id = models.AutoField(primary_key=True)
     create_date = models.DateTimeField(auto_now_add=True)
     update_date = models.DateTimeField(auto_now=True)
