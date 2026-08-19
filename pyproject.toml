@@ -28,6 +28,7 @@ dependencies = [
     "databricks-sdk==0.44.1",
     "dataclasses-json==0.6.*",
     "dj-database-url==2.1.0",
+    "django-allow-cidr==0.8.0",
     "django-cors-headers==4.3.*",
     "django-debug-toolbar==4.3.*",
     "django-extensions==3.2.*",
