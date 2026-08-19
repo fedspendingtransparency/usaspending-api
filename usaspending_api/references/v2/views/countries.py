@@ -16,16 +16,15 @@ class CountriesViewSet(APIView):
     @cache_response()
     def get(self, request: Request) -> Response:
         # ref_country_code stores country codes and names
-from django.db.models import CharField, Value
-from django.db.models.functions import Coalesce, Upper
+        from django.db.models import CharField, Value
+        from django.db.models.functions import Coalesce, Upper
 
-results = list(
-    RefCountryCode.objects
-    .annotate(
-        code=Upper(Coalesce("country_code", Value(""), output_field=CharField())),
-        name=Upper(Coalesce("country_name", Value(""), output_field=CharField()))
-    )
-    .values("code", "name")
-    .order_by("code")
-)
+        results = list(
+            RefCountryCode.objects.annotate(
+                code=Upper(Coalesce("country_code", Value(""), output_field=CharField())),
+                name=Upper(Coalesce("country_name", Value(""), output_field=CharField())),
+            )
+            .values("code", "name")
+            .order_by("code")
+        )
         return Response({"results": results})
