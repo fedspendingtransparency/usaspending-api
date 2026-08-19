@@ -570,13 +570,4 @@ SESSION_COOKIE_SECURE = True
 
 CSRF_COOKIE_SECURE = True
 
-
-# Model Bakery does not natively support the vector type.
-# See https://model-bakery.readthedocs.io/en/latest/how_bakery_behaves.html#custom-fields
-def gen_vector_field() -> list[float]:
-    return [0.1] * 256  # if a model requires a different number of dimensions overwrite in the test file
-
-
-BAKER_CUSTOM_FIELDS_GEN = {
-    "pgvector.django.VectorField": "usaspending_api.settings.gen_vector_field",
-}
+BAKER_CUSTOM_CLASS = "usaspending_api.tests.custom_model_baker.CustomBaker"
