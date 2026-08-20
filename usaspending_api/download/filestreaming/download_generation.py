@@ -116,12 +116,17 @@ def _log_download_start(download_job: DownloadJob, file_name: str, request_type:
 def _validate_and_setup_download(download_job: DownloadJob, json_request: dict, file_name: str) -> str:
     """Validate download limits and setup working directory"""
     limit = json_request.get("limit", None)
+    msg = None
 
-    if limit is not None and limit > MAX_DOWNLOAD_LIMIT:
-        msg = (
-            f"Unable to process this download because it includes more than the current limit of "
-            f"{MAX_DOWNLOAD_LIMIT} records"
-        )
+    if limit is not None:
+        if limit > MAX_DOWNLOAD_LIMIT:
+            msg = (
+                f"Unable to process this download because it includes more than the current limit of "
+                f"{MAX_DOWNLOAD_LIMIT} records"
+            )
+        if limit <= 0:
+            msg = "Unable to process this download because it has a limit of 0 or less records"
+    if msg is not None:
         with SubprocessTrace(
             name=f"job.{JOB_TYPE}.generate_download_{json_request.get('request_type')}",
             kind=SpanKind.INTERNAL,
@@ -905,21 +910,25 @@ def execute_psql(temp_sql_file_path: str, source_path: str, download_job: Downlo
     )
 
     with subprocess_trace as span:
-        span.set_attributes({
-            "service": "bulk-download",
-            "resource": str(download_sql),
-            "span_type": "Internal",
-            "source_path": str(source_path),
-            "download_job_id": str(download_job.download_job_id),
-            "download_job_status": str(download_job.job_status.name),
-            "download_file_name": str(download_job.file_name),
-            "download_file_size": download_job.file_size if download_job.file_size is not None else 0,
-            "number_of_rows": download_job.number_of_rows if download_job.number_of_rows is not None else 0,
-            "number_of_columns": download_job.number_of_columns if download_job.number_of_columns is not None else 0,
-            "error_message": download_job.error_message if download_job.error_message else "",
-            "monthly_download": str(download_job.monthly_download),
-            "json_request": str(download_job.json_request) if download_job.json_request else "",
-        })
+        span.set_attributes(
+            {
+                "service": "bulk-download",
+                "resource": str(download_sql),
+                "span_type": "Internal",
+                "source_path": str(source_path),
+                "download_job_id": str(download_job.download_job_id),
+                "download_job_status": str(download_job.job_status.name),
+                "download_file_name": str(download_job.file_name),
+                "download_file_size": download_job.file_size if download_job.file_size is not None else 0,
+                "number_of_rows": download_job.number_of_rows if download_job.number_of_rows is not None else 0,
+                "number_of_columns": download_job.number_of_columns
+                if download_job.number_of_columns is not None
+                else 0,
+                "error_message": download_job.error_message if download_job.error_message else "",
+                "monthly_download": str(download_job.monthly_download),
+                "json_request": str(download_job.json_request) if download_job.json_request else "",
+            }
+        )
 
         try:
             log_time = time.perf_counter()
@@ -927,19 +936,17 @@ def execute_psql(temp_sql_file_path: str, source_path: str, download_job: Downlo
             # Build PostgreSQL environment using helper
             psql_env = build_psql_env(
                 dsn=retrieve_db_string(),
-                statement_timeout_hours=settings.DOWNLOAD_DB_TIMEOUT_IN_HOURS if (
-                            download_job and not download_job.monthly_download) else None,
-                work_mem_mb=settings.DOWNLOAD_DB_WORK_MEM_IN_MB if (
-                            download_job and not download_job.monthly_download) else None
+                statement_timeout_hours=settings.DOWNLOAD_DB_TIMEOUT_IN_HOURS
+                if (download_job and not download_job.monthly_download)
+                else None,
+                work_mem_mb=settings.DOWNLOAD_DB_WORK_MEM_IN_MB
+                if (download_job and not download_job.monthly_download)
+                else None,
             )
 
             # Execute psql using helper
             run_psql_to_file(
-                sql_path=temp_sql_file_path,
-                output_path=source_path,
-                env=psql_env,
-                quiet=True,
-                on_error_stop=True
+                sql_path=temp_sql_file_path, output_path=source_path, env=psql_env, quiet=True, on_error_stop=True
             )
 
             duration = time.perf_counter() - log_time
