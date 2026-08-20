@@ -7,8 +7,12 @@ TRANSACTION_FABS_COLUMN_INFO = [
     TransactionColumn("afa_generated_unique", "afa_generated_unique", "STRING"),
     TransactionColumn("assistance_type", "assistance_type", "STRING"),
     TransactionColumn("assistance_type_desc", "assistance_type_desc", "STRING"),
+    TransactionColumn("award_amount_basis_code", "award_amount_basis_code", "STRING"),
+    TransactionColumn("award_amount_basis_name", "award_amount_basis_name", "STRING"),
     TransactionColumn("award_description", "award_description", "STRING"),
     TransactionColumn("award_modification_amendme", "award_modification_amendme", "STRING"),
+    TransactionColumn("award_recipient_basis_code", "award_recipient_basis_code", "STRING"),
+    TransactionColumn("award_recipient_basis_name", "award_recipient_basis_name", "STRING"),
     TransactionColumn("awardee_or_recipient_legal", "awardee_or_recipient_legal", "STRING"),
     TransactionColumn("awardee_or_recipient_uniqu", "awardee_or_recipient_uniqu", "STRING"),
     TransactionColumn("awarding_agency_code", "awarding_agency_code", "STRING"),
@@ -155,7 +159,7 @@ TRANSACTION_FABS_VIEW_COLUMNS = [
 
 transaction_fabs_sql_string = rf"""
     CREATE OR REPLACE TABLE {{DESTINATION_TABLE}} (
-        {", ".join([f'{col.dest_name} {col.delta_type}' for col in TRANSACTION_FABS_COLUMN_INFO])}
+        {", ".join([f"{col.dest_name} {col.delta_type}" for col in TRANSACTION_FABS_COLUMN_INFO])}
     )
     USING DELTA
     LOCATION 's3a://{{SPARK_S3_BUCKET}}/{{DELTA_LAKE_S3_PATH}}/{{DESTINATION_DATABASE}}/{{DESTINATION_TABLE}}'

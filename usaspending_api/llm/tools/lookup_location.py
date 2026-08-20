@@ -358,14 +358,14 @@ lookup_location_tool = AITool(
                 "query": {
                     "type": "string",
                     "description": (
-                        "Location search term (name, code, zip, or district). " "Supports fuzzy matching for typos."
+                        "Location search term (name, code, zip, or district). Supports fuzzy matching for typos."
                     ),
                 },
                 "location_type": {
                     "type": "string",
                     "enum": ["country", "state", "city", "county", "zip_code", "current_cd", "original_cd"],
                     "description": (
-                        "Optional: Filter results by specific location type " "to narrow down ambiguous queries"
+                        "Optional: Filter results by specific location type to narrow down ambiguous queries"
                     ),
                 },
                 "top_k": {
