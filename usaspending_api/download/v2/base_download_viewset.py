@@ -61,6 +61,14 @@ class BaseDownloadViewSet(APIView):
         if "columns" in json_request:
             sorted_json_request["columns"] = json_request["columns"]
 
+        # Keeps spending_level in the same order (deduplicated but not sorted)
+        if "spending_level" in json_request:
+            sorted_json_request["spending_level"] = json_request["spending_level"]
+
+        # Keeps download_types in the same order (derived from spending_level order)
+        if "download_types" in json_request:
+            sorted_json_request["download_types"] = json_request["download_types"]
+
         # Check if download is pre-generated
         pre_generated_download = sorted_json_request.pop("pre_generated_download", None)
         if pre_generated_download:

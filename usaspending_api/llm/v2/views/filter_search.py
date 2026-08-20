@@ -53,7 +53,7 @@ class FilterSearchViewSet(LLMBase):
             # Retrieve system prompt from database (fall back to Assistant's default if not found).
             system_prompt = None
             try:
-                system_prompt = Prompts.objects.get(name="initial")
+                system_prompt = Prompts.objects.get(name="filter-preference")
             except Prompts.DoesNotExist:
                 logger.warning("System prompt not found in database, using Assistant's default.")
 
