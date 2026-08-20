@@ -18,21 +18,25 @@ class StatesViewSet(APIView):
         # state_data stores one row per FIPS/year. DISTINCT ON with year DESC keeps the latest row.
         from django.db.models.functions import Upper
 
+        # First: Get distinct rows with uppercase annotations
         rows = (
             StateData.objects.order_by("fips", "-year")
             .distinct("fips")
             .annotate(code_upper=Upper("code"), name_upper=Upper("name"))
-            .order_by("code_upper")
             .values("fips", "code_upper", "name_upper")
         )
 
-        results = [
-            {
-                "fips": row["fips"],
-                "code": row["code_upper"] or "",
-                "name": row["name_upper"] or "",
-            }
-            for row in rows
-        ]
+        # Second: Sort in Python (since we can't re-order after DISTINCT ON in same query)
+        results = sorted(
+            [
+                {
+                    "fips": row["fips"],
+                    "code": row["code_upper"] or "",
+                    "name": row["name_upper"] or "",
+                }
+                for row in rows
+            ],
+            key=lambda row: row["code"],
+        )
 
         return Response({"results": results})
