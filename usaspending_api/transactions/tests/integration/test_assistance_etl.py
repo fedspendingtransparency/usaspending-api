@@ -262,6 +262,10 @@ def test_data_transfer_from_broker(load_broker_data):
             "funding-opportunity-goals",
             "funding-opportunity-number",
             123456,
+            None,
+            None,
+            None,
+            None
         )
 
 
@@ -425,6 +429,10 @@ VALUES
             "funding-opportunity-goals",
             "funding-opportunity-number",
             123456,
+            None,
+            None,
+            None,
+            None,
         )
 
 
