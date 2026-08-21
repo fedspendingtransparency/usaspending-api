@@ -29,7 +29,7 @@ Note:
 
 import logging
 
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, CommandParser
 from django.db import connection
 from pyspark.sql import SparkSession
 
@@ -45,12 +45,13 @@ class Command(BaseCommand):
 
     # Reusable CASE statements for action type mapping
     ACTION_TYPE_MAPPING = """
-        CASE 
+        CASE
             WHEN action_type IN ('0', '') OR action_type IS NULL THEN 'A1'
             WHEN action_type = 'A' THEN 'A1'
             WHEN action_type = 'B' THEN 'B1'
-            WHEN action_type = 'C' AND (COALESCE(federal_action_obligation, 0) = 0 
-                                        OR COALESCE(original_loan_subsidy_cost, 0) = 0) THEN 'EX'
+            WHEN action_type = 'C' AND (
+                COALESCE(federal_action_obligation, 0) = 0 OR COALESCE(original_loan_subsidy_cost, 0) = 0
+            ) THEN 'EX'
             WHEN action_type = 'C' THEN 'FX'
             WHEN action_type = 'D' THEN 'FX'
             WHEN action_type = 'E' THEN 'G1'
@@ -59,13 +60,13 @@ class Command(BaseCommand):
     """
 
     ACTION_TYPE_DESCRIPTION_MAPPING = """
-        CASE 
+        CASE
             WHEN action_type IN ('0', '') OR action_type IS NULL THEN 'New Award'
             WHEN action_type = 'A' THEN 'New Award'
             WHEN action_type = 'B' THEN 'Continuation'
-            WHEN action_type = 'C' AND (COALESCE(federal_action_obligation, 0) = 0 
-                                        OR COALESCE(original_loan_subsidy_cost, 0) = 0) 
-                THEN 'Other Action, Non-Financial'
+            WHEN action_type = 'C' AND (
+            COALESCE(federal_action_obligation, 0) = 0 OR COALESCE(original_loan_subsidy_cost, 0) = 0
+            ) THEN 'Other Action, Non-Financial'
             WHEN action_type = 'C' THEN 'Other Action, Financial'
             WHEN action_type = 'D' THEN 'Other Action, Financial'
             WHEN action_type = 'E' THEN 'Mixed Aggregate'
@@ -75,7 +76,9 @@ class Command(BaseCommand):
             WHEN action_type = 'C1' THEN 'Termination Initiated: Material Failure to Comply'
             WHEN action_type = 'C2' THEN 'Termination Initiated: Mutual Consent'
             WHEN action_type = 'C3' THEN 'Termination Initiated: Recipient-Initiated'
-            WHEN action_type = 'C4' THEN 'Termination Initiated: No Longer Effectuates Program Goals or Agency Priorities'
+            WHEN action_type = 'C4' THEN (
+                'Termination Initiated: No Longer Effectuates Program Goals or Agency Priorities'
+            )
             WHEN action_type = 'D1' THEN 'Closeout'
             WHEN action_type = 'E1' THEN 'Recipient Change'
             WHEN action_type = 'EX' THEN 'Other Action, Non-Financial'
@@ -91,7 +94,7 @@ class Command(BaseCommand):
         OR action_type IS NULL
     """
 
-    def add_arguments(self, parser):
+    def add_arguments(self, parser: CommandParser) -> None:
         parser.add_argument(
             "--dry-run",
             action="store_true",
@@ -105,7 +108,10 @@ class Command(BaseCommand):
         parser.add_argument(
             "--delta-only",
             action="store_true",
-            help="Only update Delta tables (raw.published_fabs, int.transaction_fabs, int.transaction_normalized, rpt.transaction_search)",
+            help="""
+                Only update Delta tables (raw.published_fabs, int.transaction_fabs, 
+                int.transaction_normalized, rpt.transaction_search)
+            """,
         )
         parser.add_argument(
             "--spark-master",
@@ -114,7 +120,7 @@ class Command(BaseCommand):
             help="Spark master URL (e.g., spark://spark-master:7077). If not provided, uses local mode.",
         )
 
-    def handle(self, *args, **options):
+    def handle(self, *args, **options) -> None:
         dry_run = options["dry_run"]
         postgres_only = options["postgres_only"]
         delta_only = options["delta_only"]
@@ -184,7 +190,7 @@ class Command(BaseCommand):
             WHERE {where_clause}
         """
 
-    def update_postgres_tables(self, dry_run: bool):
+    def update_postgres_tables(self, dry_run: bool) -> None:
         """Update action_type and action_type_description in Postgres tables.
 
         Note: In modern setups, FABS data primarily lives in Delta Lake. This method
@@ -225,7 +231,7 @@ class Command(BaseCommand):
                 cursor.execute(self._generate_update_sql("source_assistance_transaction"))
                 logger.info(f"Updated {cursor.rowcount} records in source_assistance_transaction")
 
-    def update_delta_tables(self, dry_run: bool, spark_master: str = None):
+    def update_delta_tables(self, dry_run: bool, spark_master: str = None) -> None:
         """Update action_type and action_type_description in Delta tables.
 
         Args:
@@ -276,7 +282,7 @@ class Command(BaseCommand):
             "Note: OpenSearch index should be reindexed using elasticsearch_indexer command after this backfill"
         )
 
-    def _update_published_fabs(self, dry_run: bool):
+    def _update_published_fabs(self, dry_run: bool) -> None:
         """Update raw.published_fabs Delta table."""
         table_name = "raw.published_fabs"
 
@@ -287,7 +293,7 @@ class Command(BaseCommand):
             self.spark.sql(self._generate_update_sql(table_name))
             logger.info(f"Updated {table_name}")
 
-    def _update_transaction_fabs_delta(self, dry_run: bool):
+    def _update_transaction_fabs_delta(self, dry_run: bool) -> None:
         """Update int.transaction_fabs Delta table."""
         table_name = "int.transaction_fabs"
 
@@ -298,7 +304,7 @@ class Command(BaseCommand):
             self.spark.sql(self._generate_update_sql(table_name))
             logger.info(f"Updated {table_name}")
 
-    def _update_transaction_normalized_delta(self, dry_run: bool):
+    def _update_transaction_normalized_delta(self, dry_run: bool) -> None:
         """Update int.transaction_normalized Delta table for FABS records."""
         table_name = "int.transaction_normalized"
         additional_where = "is_fpds = FALSE"
@@ -310,7 +316,7 @@ class Command(BaseCommand):
             self.spark.sql(self._generate_update_sql(table_name, additional_where))
             logger.info(f"Updated {table_name}")
 
-    def _update_transaction_search_delta(self, dry_run: bool):
+    def _update_transaction_search_delta(self, dry_run: bool) -> None:
         """Update transaction_search Delta table for FABS records.
 
         Note: Unlike the core transaction tables (raw.published_fabs, int.transaction_fabs,
