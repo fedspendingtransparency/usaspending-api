@@ -28,18 +28,21 @@ _MAPPING_CASES = [
     (4, "C", 100, 100, "FX", "Other Action, Financial"),
     (5, "D", 100, None, "FX", "Other Action, Financial"),
     (6, "E", 100, None, "G1", "Mixed Aggregate"),
-    (7, "0", 100, None, "A1", "New Award"),
-    (8, None, 100, None, "A1", "New Award"),
+    (7, "0", 100, None, "0", "Unmapped Description"),
+    (8, None, 100, None, None, "Unmapped Description"),
     # New (post-GSDM 1.2) code that doesn't match any historic mapping should pass through unchanged.
     (9, "C1", 100, None, "C1", "Termination Initiated: Material Failure to Comply"),
 ]
 
+_HISTORIC_MAPPED_CODES = ("A", "B", "C", "D", "E")
+
 
 def _initial_description(action_type, expected_desc):
-    # Codes that aren't part of the historic mapping (e.g. "C1") arrive from Broker already
-    # carrying their correct (new) description. Historic codes are seeded with
-    # a deliberately "wrong" (old) description to prove the backfill actually rewrites them.
-    return expected_desc if action_type not in (None, "A", "B", "C", "D", "E", "0") else "Old Description"
+    # Codes that are actually part of the historic mapping (A, B, C, D, E) are seeded with a
+    # deliberately "wrong" (old) description to prove the backfill actually rewrites them.
+    # Everything else (blank/'0'/NULL, or new post-GSDM-1.2 codes like "C1") arrives already
+    # carrying its final description, since the backfill should leave it untouched.
+    return "Old Description" if action_type in _HISTORIC_MAPPED_CODES else expected_desc
 
 
 def _make_source_assistance_transactions():

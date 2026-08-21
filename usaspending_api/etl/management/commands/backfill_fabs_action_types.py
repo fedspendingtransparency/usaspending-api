@@ -1,11 +1,11 @@
 """
 One-time command to backfill historical FABS action types to new GSDM 1.2 codes.
 
-This command maps old action type codes (A, B, C, D, E, 0, NULL) to new action type codes
+This command maps old action type codes (A, B, C, D, E) to new action type codes
 (A1, A2, B1, C1-C4, D1, E1, EX, FX, G1) based on the GSDM 1.2 changes.
 
 The mapping is as follows:
-- A, 0, NULL → A1 (New Award)
+- A → A1 (New Award)
 - B → B1 (Continuation)
 - C → EX (Non-Financial) if federal_action_obligation = 0 OR original_loan_subsidy_cost = 0
 - C → FX (Financial) otherwise
@@ -46,7 +46,6 @@ class Command(BaseCommand):
     # Reusable CASE statements for action type mapping
     ACTION_TYPE_MAPPING = """
         CASE
-            WHEN action_type IN ('0', '') OR action_type IS NULL THEN 'A1'
             WHEN action_type = 'A' THEN 'A1'
             WHEN action_type = 'B' THEN 'B1'
             WHEN action_type = 'C' AND (
@@ -61,7 +60,6 @@ class Command(BaseCommand):
 
     ACTION_TYPE_DESCRIPTION_MAPPING = """
         CASE
-            WHEN action_type IN ('0', '') OR action_type IS NULL THEN 'New Award'
             WHEN action_type = 'A' THEN 'New Award'
             WHEN action_type = 'B' THEN 'Continuation'
             WHEN action_type = 'C' AND (
@@ -88,10 +86,8 @@ class Command(BaseCommand):
         END
     """
 
-    # WHERE clause for identifying records to update
     OLD_ACTION_TYPE_WHERE = """
-        action_type IN ('A', 'B', 'C', 'D', 'E', '0', '')
-        OR action_type IS NULL
+        action_type IN ('A', 'B', 'C', 'D', 'E')
     """
 
     def add_arguments(self, parser: CommandParser) -> None:

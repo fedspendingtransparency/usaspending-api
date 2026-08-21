@@ -7,7 +7,6 @@ TRANSACTION_FABS_COLUMN_INFO = [
         "action_type",
         "STRING",
         scalar_transformation="""CASE
-            WHEN {input} IN ('0', '') OR {input} IS NULL THEN 'A1'
             WHEN {input} = 'A' THEN 'A1'
             WHEN {input} = 'B' THEN 'B1'
             WHEN {input} = 'C' AND (
@@ -24,7 +23,6 @@ TRANSACTION_FABS_COLUMN_INFO = [
         "action_type_description",
         "STRING",
         scalar_transformation="""CASE
-            WHEN {input} IN ('0', '') OR {input} IS NULL THEN 'New Award'
             WHEN ucase(trim(action_type)) = 'A' THEN 'New Award'
             WHEN ucase(trim(action_type)) = 'B' THEN 'Continuation'
             WHEN ucase(trim(action_type)) = 'C' AND (
@@ -216,7 +214,6 @@ FABS_TO_NORMALIZED_COLUMN_INFO = [
         "action_type",
         "STRING",
         scalar_transformation="""CASE
-            WHEN {input} IN ('0', '') OR {input} IS NULL THEN 'A1'
             WHEN {input} = 'A' THEN 'A1'
             WHEN {input} = 'B' THEN 'B1'
             WHEN {input} = 'C' AND (
@@ -233,7 +230,6 @@ FABS_TO_NORMALIZED_COLUMN_INFO = [
         "action_type_description",
         "STRING",
         scalar_transformation="""CASE
-            WHEN {input} IN ('0', '') OR {input} IS NULL THEN 'New Award'
             WHEN ucase(trim(action_type)) = 'A' THEN 'New Award'
             WHEN ucase(trim(action_type)) = 'B' THEN 'Continuation'
             WHEN ucase(trim(action_type)) = 'C' AND (
