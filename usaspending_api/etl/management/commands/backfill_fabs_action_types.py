@@ -21,8 +21,8 @@ This updates:
 6. rpt.transaction_search (Delta, if exists) - Gold layer reporting table
 7. transaction OpenSearch Index (via reindexing after backfill)
 
-Note: 
-- The vw_transaction_fabs view is derived from transaction_search, so updating 
+Note:
+- The vw_transaction_fabs view is derived from transaction_search, so updating
   transaction_search automatically updates the view.
 - rpt.transaction_search is optional and may not exist in all environments.
 """
@@ -42,7 +42,7 @@ class Command(BaseCommand):
     help = "Backfill historical FABS action types to new GSDM 1.2 codes"
 
     spark: SparkSession
-    
+
     # Reusable CASE statements for action type mapping
     ACTION_TYPE_MAPPING = """
         CASE 
@@ -57,7 +57,7 @@ class Command(BaseCommand):
             ELSE action_type
         END
     """
-    
+
     ACTION_TYPE_DESCRIPTION_MAPPING = """
         CASE 
             WHEN action_type IN ('0', '') OR action_type IS NULL THEN 'New Award'
@@ -84,7 +84,7 @@ class Command(BaseCommand):
             ELSE action_type_description
         END
     """
-    
+
     # WHERE clause for identifying records to update
     OLD_ACTION_TYPE_WHERE = """
         action_type IN ('A', 'B', 'C', 'D', 'E', '0', '')
@@ -144,18 +144,18 @@ class Command(BaseCommand):
 
     def _generate_update_sql(self, table_name: str, additional_where: str = "") -> str:
         """Generate UPDATE SQL for action type mapping.
-        
+
         Args:
             table_name: Name of the table to update
             additional_where: Additional WHERE clause conditions (optional)
-            
+
         Returns:
             Complete UPDATE SQL statement
         """
         where_clause = self.OLD_ACTION_TYPE_WHERE
         if additional_where:
             where_clause = f"{additional_where} AND ({where_clause})"
-            
+
         return f"""
             UPDATE {table_name}
             SET 
@@ -163,30 +163,30 @@ class Command(BaseCommand):
                 action_type_description = {self.ACTION_TYPE_DESCRIPTION_MAPPING}
             WHERE {where_clause}
         """
-    
+
     def _generate_count_sql(self, table_name: str, additional_where: str = "") -> str:
         """Generate COUNT SQL for records that will be updated.
-        
+
         Args:
             table_name: Name of the table to count
             additional_where: Additional WHERE clause conditions (optional)
-            
+
         Returns:
             Complete COUNT SQL statement
         """
         where_clause = self.OLD_ACTION_TYPE_WHERE
         if additional_where:
             where_clause = f"{additional_where} AND ({where_clause})"
-            
+
         return f"""
             SELECT COUNT(*) 
             FROM {table_name} 
             WHERE {where_clause}
         """
-    
+
     def update_postgres_tables(self, dry_run: bool):
         """Update action_type and action_type_description in Postgres tables.
-        
+
         Note: In modern setups, FABS data primarily lives in Delta Lake. This method
         updates the Postgres transaction_search table for FABS records (is_fpds = FALSE).
         The vw_transaction_fabs view is derived from transaction_search, so changes will
@@ -199,8 +199,7 @@ class Command(BaseCommand):
 
         # Update transaction_search directly for FABS records
         update_transaction_search_sql = self._generate_update_sql(
-            "transaction_search", 
-            additional_where="is_fpds = FALSE"
+            "transaction_search", additional_where="is_fpds = FALSE"
         )
 
         with connection.cursor() as cursor:
@@ -228,7 +227,7 @@ class Command(BaseCommand):
 
     def update_delta_tables(self, dry_run: bool, spark_master: str = None):
         """Update action_type and action_type_description in Delta tables.
-        
+
         Args:
             dry_run: If True, only count records without making changes
             spark_master: Spark master URL (e.g., spark://spark-master:7077).
@@ -280,7 +279,7 @@ class Command(BaseCommand):
     def _update_published_fabs(self, dry_run: bool):
         """Update raw.published_fabs Delta table."""
         table_name = "raw.published_fabs"
-        
+
         if dry_run:
             count = self.spark.sql(self._generate_count_sql(table_name)).collect()[0][0]
             logger.info(f"[DRY RUN] Would update {count} records in {table_name}")
@@ -291,7 +290,7 @@ class Command(BaseCommand):
     def _update_transaction_fabs_delta(self, dry_run: bool):
         """Update int.transaction_fabs Delta table."""
         table_name = "int.transaction_fabs"
-        
+
         if dry_run:
             count = self.spark.sql(self._generate_count_sql(table_name)).collect()[0][0]
             logger.info(f"[DRY RUN] Would update {count} records in {table_name}")
@@ -303,7 +302,7 @@ class Command(BaseCommand):
         """Update int.transaction_normalized Delta table for FABS records."""
         table_name = "int.transaction_normalized"
         additional_where = "is_fpds = FALSE"
-        
+
         if dry_run:
             count = self.spark.sql(self._generate_count_sql(table_name, additional_where)).collect()[0][0]
             logger.info(f"[DRY RUN] Would update {count} records in {table_name}")
@@ -313,13 +312,13 @@ class Command(BaseCommand):
 
     def _update_transaction_search_delta(self, dry_run: bool):
         """Update transaction_search Delta table for FABS records.
-        
-        Note: Unlike the core transaction tables (raw.published_fabs, int.transaction_fabs, 
-        int.transaction_normalized), which are created by the 'load_transactions_in_delta' 
-        command, rpt.transaction_search is a reporting table created by the separate 
-        'load_query_to_delta' command. It may not exist in development or test environments 
-        that only run the transaction pipeline. This check ensures graceful handling of such 
-        environments - the core data will still be backfilled and reporting tables can be 
+
+        Note: Unlike the core transaction tables (raw.published_fabs, int.transaction_fabs,
+        int.transaction_normalized), which are created by the 'load_transactions_in_delta'
+        command, rpt.transaction_search is a reporting table created by the separate
+        'load_query_to_delta' command. It may not exist in development or test environments
+        that only run the transaction pipeline. This check ensures graceful handling of such
+        environments - the core data will still be backfilled and reporting tables can be
         rebuilt later from the updated source data.
         """
         # Check if table exists in Delta (it's in the rpt schema, not int).

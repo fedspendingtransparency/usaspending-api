@@ -128,8 +128,9 @@ def test_backfill_updates_published_fabs_in_delta(spark, s3_unittest_data_bucket
 
     rows = {
         row["published_fabs_id"]: row
-        for row in spark.sql("SELECT published_fabs_id, action_type, action_type_description FROM raw.published_fabs")
-        .collect()
+        for row in spark.sql(
+            "SELECT published_fabs_id, action_type, action_type_description FROM raw.published_fabs"
+        ).collect()
     }
     for published_fabs_id, _, _, _, expected_type, expected_desc in _MAPPING_CASES:
         row = rows[published_fabs_id]
