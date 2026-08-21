@@ -319,10 +319,14 @@ class EmbeddingMixin(models.Model):
                 try:
                     generator = self.get_embedding_generator()
                     self.embedding = generator.generate_embedding(text)
-                    self.embedding_generated_at = timezone.now()
-                    if verbose:
-                        logger.info(f"Generated embedding for {self.__class__.__name__} {self.pk}")
-                    did_generate = True
+                    if self.embedding is not None:
+                        self.embedding_generated_at = timezone.now()
+                        did_generate = True
+                        if verbose:
+                            logger.info(f"Generated embedding for {self.__class__.__name__} {self.pk}")
+                    else:
+                        did_generate = False
+
                 except Exception as e:
                     logger.exception(f"Failed to generate embedding for {self.__class__.__name__} {self.pk}: {e}")
         return did_generate
@@ -339,7 +343,7 @@ class EmbeddingMixin(models.Model):
         *args,
         **kwargs,
     ) -> None:
-        if auto_generate_embedding and not self.has_embedding or force_generate_embedding:
+        if (auto_generate_embedding and not self.has_embedding) or force_generate_embedding:
             try:
                 self.generate_embedding(verbose=verbose, force=force_generate_embedding)
             except Exception as e:
