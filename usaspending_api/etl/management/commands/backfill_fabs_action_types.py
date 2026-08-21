@@ -105,7 +105,7 @@ class Command(BaseCommand):
             "--delta-only",
             action="store_true",
             help="""
-                Only update Delta tables (raw.published_fabs, int.transaction_fabs, 
+                Only update Delta tables (raw.published_fabs, int.transaction_fabs,
                 int.transaction_normalized, rpt.transaction_search)
             """,
         )
@@ -160,7 +160,7 @@ class Command(BaseCommand):
 
         return f"""
             UPDATE {table_name}
-            SET 
+            SET
                 action_type = {self.ACTION_TYPE_MAPPING},
                 action_type_description = {self.ACTION_TYPE_DESCRIPTION_MAPPING}
             WHERE {where_clause}
@@ -181,8 +181,8 @@ class Command(BaseCommand):
             where_clause = f"{additional_where} AND ({where_clause})"
 
         return f"""
-            SELECT COUNT(*) 
-            FROM {table_name} 
+            SELECT COUNT(*)
+            FROM {table_name}
             WHERE {where_clause}
         """
 
