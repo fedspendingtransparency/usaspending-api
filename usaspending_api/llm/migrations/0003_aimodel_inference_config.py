@@ -5,7 +5,7 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("llm", "0001_initial"),
+        ("llm", "0002_create_pgvector"),
     ]
 
     operations = [
