@@ -101,7 +101,7 @@ class Command(BaseCommand):
         batch_size: int,
         force: bool,
         dry_run: bool,
-        limit: int = None,
+        limit: int | None = None,
         verbose: bool = False,
     ) -> tuple[int, int]:
         """Process a single model"""
