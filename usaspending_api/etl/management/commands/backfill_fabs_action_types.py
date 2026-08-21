@@ -1,30 +1,5 @@
 """
 One-time command to backfill historical FABS action types to new GSDM 1.2 codes.
-
-This command maps old action type codes (A, B, C, D, E) to new action type codes
-(A1, A2, B1, C1-C4, D1, E1, EX, FX, G1) based on the GSDM 1.2 changes.
-
-The mapping is as follows:
-- A → A1 (New Award)
-- B → B1 (Continuation)
-- C → EX (Non-Financial) if federal_action_obligation = 0 OR original_loan_subsidy_cost = 0
-- C → FX (Financial) otherwise
-- D → FX (Other Action, Financial)
-- E → G1 (Mixed Aggregate)
-
-This updates:
-1. transaction_search (Postgres) - Search/API table (FABS records where is_fpds = FALSE)
-2. source_assistance_transaction (Postgres) - Raw copy of Broker's published_fabs
-3. raw.published_fabs (Delta) - Bronze layer source data
-4. int.transaction_fabs (Delta) - Silver layer FABS transactions
-5. int.transaction_normalized (Delta) - Silver layer unified transactions
-6. rpt.transaction_search (Delta, if exists) - Gold layer reporting table
-7. transaction OpenSearch Index (via reindexing after backfill)
-
-Note:
-- The vw_transaction_fabs view is derived from transaction_search, so updating
-  transaction_search automatically updates the view.
-- rpt.transaction_search is optional and may not exist in all environments.
 """
 
 import logging
