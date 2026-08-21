@@ -110,13 +110,12 @@ class Command(BaseCommand):
         self.stdout.write(f"Processing: {model_name} (dimensions: {dimensions})")
 
         queryset = self._build_queryset(model_class, force, limit)
-        total = queryset.count()
+        pks_to_process = list(queryset.values_list("pk", flat=True))
+        total = len(pks_to_process)
 
         if total == 0:
             self.stdout.write(self.style.SUCCESS(f"No {model_name} records need embeddings"))
             return 0, 0
-
-        pks_to_process = list(queryset.values_list("pk", flat=True))
         self.stdout.write(f"Found {len(pks_to_process):,} records to process")
 
         if dry_run:
