@@ -339,7 +339,7 @@ class EmbeddingMixin(models.Model):
         *args,
         **kwargs,
     ) -> None:
-        if auto_generate_embedding and not self.has_embedding or force_generate_embedding:
+        if (auto_generate_embedding and not self.has_embedding) or force_generate_embedding:
             try:
                 self.generate_embedding(verbose=verbose, force=force_generate_embedding)
             except Exception as e:
