@@ -131,6 +131,7 @@ class FilterSearchAssistant:
                 "stop_reason": stop_reason,
                 "iteration": 0,
                 "message_id": m.id,
+                "message_text": m.message,
             },
         )
         while stop_reason == "tool_use" and not search_complete and self.tool_iterations < self.MAX_TOOL_ITERATIONS:
@@ -166,6 +167,7 @@ class FilterSearchAssistant:
                     "stop_reason": stop_reason,
                     "iteration": self.tool_iterations,
                     "message_id": m.id,
+                    "message_text": m.message,
                 },
             )
 
@@ -225,6 +227,8 @@ class FilterSearchAssistant:
                         "session_id": self.session.id,
                         "has_error": "error" in result,
                         "tool_use_id": t.id,
+                        "tool_input": t.tool_input,
+                        "tool_result": t.result,
                     },
                 )
 
@@ -246,6 +250,8 @@ class FilterSearchAssistant:
                         "session_id": self.session.id,
                         "error": str(e),
                         "tool_use_id": t.id,
+                        "tool_input": t.tool_input,
+                        "tool_result": t.result,
                     },
                     exc_info=True,
                 )
