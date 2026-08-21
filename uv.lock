@@ -359,6 +359,18 @@ wheels = [
 ]
 
 [[package]]
+name = "django-allow-cidr"
+version = "0.8.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "django" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/12/e0/d811149809b1e4cb2daf357b44b71f240feea0718549b0a2ab2af3c4f63f/django_allow_cidr-0.8.0.tar.gz", hash = "sha256:d6f80230621dd5b19ec1665b85abf8218b02556ff7cf0ddda41e2607267a3277", size = 6982, upload-time = "2025-04-08T08:52:14.456Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/99/2a/10ebaba1950c113efae2b38dc5e1ec38a86e1141e97b7e729f2fb4bbb87b/django_allow_cidr-0.8.0-py2.py3-none-any.whl", hash = "sha256:724ce76b7b4a25c641ddcd33777e2e95da622dd2c11937f0d76d0cd3d54b1622", size = 4975, upload-time = "2025-04-08T08:52:13.198Z" },
+]
+
+[[package]]
 name = "django-cors-headers"
 version = "4.3.1"
 source = { registry = "https://pypi.org/simple" }
@@ -1344,6 +1356,15 @@ wheels = [
 ]
 
 [[package]]
+name = "pgvector"
+version = "0.5.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/a7/ec/6eb80aebc728200f95229219882994c1b0585b956ca47da5edb9d062627a/pgvector-0.5.0.tar.gz", hash = "sha256:07a9dcf735696879406983afc6eba9a787cef7c0cf6c367ca1a5779f036dee74", size = 35170, upload-time = "2026-07-06T18:27:27.767Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/5c/e4/a5573f2c579ca9ad133293bfb624148ba0893674ca4a6eeec85ced9a6a09/pgvector-0.5.0-py3-none-any.whl", hash = "sha256:fedc9800894e6da2be51358d7b7c574bf34f247ca741a5a09513622135f5964f", size = 30958, upload-time = "2026-07-06T18:27:26.797Z" },
+]
+
+[[package]]
 name = "pip"
 version = "23.2.1"
 source = { registry = "https://pypi.org/simple" }
@@ -1911,6 +1932,7 @@ dependencies = [
     { name = "dataclasses-json" },
     { name = "dj-database-url" },
     { name = "django" },
+    { name = "django-allow-cidr" },
     { name = "django-cors-headers" },
     { name = "django-cte" },
     { name = "django-debug-toolbar" },
@@ -1965,6 +1987,7 @@ dependencies = [
     { name = "opentelemetry-semantic-conventions" },
     { name = "opentelemetry-util-http" },
     { name = "pandas" },
+    { name = "pgvector" },
     { name = "psutil" },
     { name = "psycopg" },
     { name = "py-gfm" },
@@ -2029,6 +2052,7 @@ requires-dist = [
     { name = "delta-spark", marker = "extra == 'spark'", specifier = "==3.3.2" },
     { name = "dj-database-url", specifier = "==2.1.0" },
     { name = "django", specifier = "==5.2.*" },
+    { name = "django-allow-cidr", specifier = "==0.8.0" },
     { name = "django-cors-headers", specifier = "==4.3.*" },
     { name = "django-cte", specifier = "==1.3.*" },
     { name = "django-debug-toolbar", specifier = "==4.3.*" },
@@ -2090,6 +2114,7 @@ requires-dist = [
     { name = "opentelemetry-util-http", specifier = "==0.49b2" },
     { name = "packaging", marker = "extra == 'server'", specifier = "==22.0" },
     { name = "pandas", specifier = "==2.2.*" },
+    { name = "pgvector", specifier = ">=0.5.0" },
     { name = "pip", marker = "extra == 'dev'", specifier = "==23.2.*" },
     { name = "pre-commit", marker = "extra == 'dev'", specifier = "==3.6.2" },
     { name = "psutil", specifier = "==5.9.*" },
