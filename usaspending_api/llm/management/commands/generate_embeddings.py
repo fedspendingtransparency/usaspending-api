@@ -12,6 +12,9 @@ logger = logging.getLogger(__name__)
 
 
 class Command(BaseCommand):
+
+    help = "Generate text embeddings for selected model(s)"
+
     def add_arguments(self, parser: ArgumentParser) -> None:
         parser.add_argument(
             "model", type=str, help='Model name (e.g., "naics", "psc", "cfda", "toptieragency") or "all"'
