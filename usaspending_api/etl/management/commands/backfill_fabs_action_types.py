@@ -38,7 +38,7 @@ class Command(BaseCommand):
             WHEN action_type = 'A' THEN 'New Award'
             WHEN action_type = 'B' THEN 'Continuation'
             WHEN action_type = 'C' AND (
-            COALESCE(federal_action_obligation, 0) = 0 OR COALESCE(original_loan_subsidy_cost, 0) = 0
+                COALESCE(federal_action_obligation, 0) = 0 OR COALESCE(original_loan_subsidy_cost, 0) = 0
             ) THEN 'Other Action, Non-Financial'
             WHEN action_type = 'C' THEN 'Other Action, Financial'
             WHEN action_type = 'D' THEN 'Other Action, Financial'
@@ -162,17 +162,7 @@ class Command(BaseCommand):
         """
 
     def update_postgres_tables(self, dry_run: bool) -> None:
-        """Update action_type and action_type_description in Postgres tables.
-
-        Note: In modern setups, FABS data primarily lives in Delta Lake. This method
-        updates the Postgres transaction_search table for FABS records (is_fpds = FALSE).
-        The vw_transaction_fabs view is derived from transaction_search, so changes will
-        automatically be visible through the view.
-
-        Also updates source_assistance_transaction, which is a 100% duplicate copy of
-        published_fabs records pulled from Broker, and is the Postgres source table that
-        raw.published_fabs (Delta) is loaded from.
-        """
+        """Update action_type and action_type_description in Postgres tables."""
 
         # Update transaction_search directly for FABS records
         update_transaction_search_sql = self._generate_update_sql(
@@ -217,10 +207,10 @@ class Command(BaseCommand):
         if not self.spark:
             spark_created_by_command = True
             extra_conf = {
-                # Config for Delta Lake tables and SQL. Need these to keep Delta table metadata in the metastore
+                # Config for Delta Lake tables and SQL. Need these to keep Delta table metadata in the metastore.
                 "spark.sql.extensions": "io.delta.sql.DeltaSparkSessionExtension",
                 "spark.sql.catalog.spark_catalog": "org.apache.spark.sql.delta.catalog.DeltaCatalog",
-                # See comment below about old date and time values cannot be parsed without these
+                # Old date and time values cannot be parsed without these.
                 "spark.sql.parquet.datetimeRebaseModeInWrite": "LEGACY",  # for dates at/before 1900
                 "spark.sql.parquet.int96RebaseModeInWrite": "LEGACY",  # for timestamps at/before 1900
                 "spark.sql.jsonGenerator.ignoreNullFields": "false",  # keep nulls in our json
@@ -288,16 +278,7 @@ class Command(BaseCommand):
             logger.info(f"Updated {table_name}")
 
     def _update_transaction_search_delta(self, dry_run: bool) -> None:
-        """Update transaction_search Delta table for FABS records.
-
-        Note: Unlike the core transaction tables (raw.published_fabs, int.transaction_fabs,
-        int.transaction_normalized), which are created by the 'load_transactions_in_delta'
-        command, rpt.transaction_search is a reporting table created by the separate
-        'load_query_to_delta' command. It may not exist in development or test environments
-        that only run the transaction pipeline. This check ensures graceful handling of such
-        environments - the core data will still be backfilled and reporting tables can be
-        rebuilt later from the updated source data.
-        """
+        """Update transaction_search Delta table for FABS records."""
         # Check if table exists in Delta (it's in the rpt schema, not int).
         try:
             self.spark.sql("DESCRIBE TABLE rpt.transaction_search")
