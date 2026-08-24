@@ -990,6 +990,8 @@ def test_incremental_load_table_to_delta_for_award_search(
         .sort_values(by=["award_id", "_change_type", "_commit_version"])
         .reset_index(drop=True)
     )
+
+    # The test results come back somewhat random, so we sort before check
     expected = pd.DataFrame(
         {
             "award_id": [1, 2, 3, 4, 4, 4],
@@ -1090,6 +1092,8 @@ def test_incremental_load_table_to_delta_for_transaction_search(
         .sort_values(by=["transaction_id", "_change_type", "_commit_version"])
         .reset_index(drop=True)
     )
+
+    # The test results come back somewhat random, so we sort before check
     expected = pd.DataFrame(
         {
             "transaction_id": [1, 2, 3, 4, 4, 4, 5, 434],

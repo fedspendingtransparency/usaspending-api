@@ -612,3 +612,5 @@ SPAGHETTI_SAUCE = {
 SESSION_COOKIE_SECURE = True
 
 CSRF_COOKIE_SECURE = True
+
+BAKER_CUSTOM_CLASS = "usaspending_api.tests.custom_model_baker.CustomBaker"
