@@ -8,6 +8,7 @@ import os
 from pathlib import Path
 
 import dj_database_url
+from corsheaders.defaults import default_headers
 from django.core.management.utils import get_random_secret_key
 from django.db import DEFAULT_DB_ALIAS
 
@@ -57,12 +58,21 @@ SECRET_KEY = get_random_secret_key()
 DEBUG = os.environ.get("DJANGO_DEBUG", "").lower() in ["true", "1", "yes"]
 
 HOST = os.environ.get("HOST", "localhost:3000")
+
 hosts = os.environ.get("ALLOWED_HOSTS")
 if hosts and hasattr(hosts, "split"):
     hosts = hosts.split(",")
 else:
     hosts = []
 ALLOWED_HOSTS = hosts
+
+# Needed to support health checks
+cidr_hosts = os.environ.get("ALLOWED_CIDR_NETS")
+if cidr_hosts and hasattr(cidr_hosts, "split"):
+    cidr_hosts = cidr_hosts.split(",")
+else:
+    cidr_hosts = []
+ALLOWED_CIDR_NETS = cidr_hosts
 
 # Define local flag to affect location of downloads
 IS_LOCAL = os.environ.get("IS_LOCAL", "").lower() in ["true", "1", "yes"]
@@ -225,6 +235,7 @@ INSTALLED_APPS = [
     "django.contrib.postgres",
     "django.contrib.staticfiles",
     # Third-party
+    "allow_cidr",
     "corsheaders",
     "debug_toolbar",
     "django_extensions",
@@ -258,6 +269,7 @@ INTERNAL_IPS = ()
 DEBUG_TOOLBAR_CONFIG = {"SHOW_TOOLBAR_CALLBACK": lambda request: DEBUG}
 
 MIDDLEWARE = [
+    "allow_cidr.middleware.AllowCIDRMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "debug_toolbar.middleware.DebugToolbarMiddleware",
     "django.middleware.security.SecurityMiddleware",
@@ -292,6 +304,11 @@ WSGI_APPLICATION = "usaspending_api.wsgi.application"
 
 # CORS Settings
 CORS_ORIGIN_ALLOW_ALL = True  # Temporary while in development
+
+CORS_ALLOW_HEADERS = (
+    *default_headers,
+    "x-llm-api-key",
+)
 
 # Database
 # https://docs.djangoproject.com/en/3.2/ref/settings/#databases
