@@ -53,3 +53,14 @@
       topP: 1.0
       maxTokens: 5000
       stopSequences: []
+- model: llm.aimodel
+  pk: 6
+  fields:
+    name: titan
+    model_id: amazon.titan-embed-text-v2:0
+    provider: amazon
+    inference_config:
+      temperature: 0.0
+      topP: 1.0
+      maxTokens: 5000
+      stopSequences: []
