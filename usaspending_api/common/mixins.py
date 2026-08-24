@@ -1,13 +1,20 @@
+import logging
 from typing import Any
 
 from django.core.exceptions import FieldDoesNotExist
+from django.db import models
 from django.db.models import Avg, Count, ExpressionWrapper, F, Func, IntegerField, Max, Min, Model, Q, QuerySet, Sum
 from django.db.models.fields import Field
 from django.db.models.functions import ExtractDay, ExtractMonth, ExtractYear
+from django.utils import timezone
+from pgvector.django import VectorField
 from rest_framework.request import Request
 
 from usaspending_api.common.api_request_utils import AutoCompleteHandler, FilterGenerator
 from usaspending_api.common.exceptions import InvalidParameterException
+from usaspending_api.llm.embeddings.embedding_generator import EmbeddingGenerator
+
+logger = logging.getLogger(__name__)
 
 
 class AggregateQuerysetMixin(object):
@@ -141,8 +148,7 @@ class AggregateQuerysetMixin(object):
         # make sure the field we're aggregating exists in the model
         if hasattr(model, agg_field) is False:
             raise InvalidParameterException(
-                "Field {} not found in model {}. "
-                "Please specify a valid field in the request.".format(agg_field, model)
+                "Field {} not found in model {}. Please specify a valid field in the request.".format(agg_field, model)
             )
 
         # make sure the field we're aggregating on is numeric
@@ -231,8 +237,9 @@ class FilterQuerysetMixin(object):
         if len(filters) > 0:
             subwhere = Q(
                 **{
-                    queryset.model._meta.pk.name
-                    + "__in": queryset.filter(filters).values_list(queryset.model._meta.pk.name, flat=True)
+                    queryset.model._meta.pk.name + "__in": queryset.filter(filters).values_list(
+                        queryset.model._meta.pk.name, flat=True
+                    )
                 }
             )
 
@@ -283,3 +290,64 @@ class AutocompleteResponseMixin(object):
         params.update(request.data.copy())
 
         return AutoCompleteHandler.handle(queryset, params, serializer)
+
+
+class EmbeddingMixin(models.Model):
+    embedding_dimensions: int = 256
+    embedding: VectorField = VectorField(dimensions=embedding_dimensions, null=True, blank=True)
+    embedding_generated_at: models.DateTimeField = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        abstract = True
+
+    def get_embedding_text(self) -> str | None:
+        raise NotImplementedError(f"{self.__class__.__name__} must implement get_embedding_text()")
+
+    def get_embedding_generator(self) -> EmbeddingGenerator:
+        return EmbeddingGenerator(dimensions=self.embedding_dimensions)
+
+    def generate_embedding(self, force: bool = False, verbose: bool = False) -> bool:
+        did_generate = False
+        if self.embedding is not None and not force:
+            logger.debug(f"Embedding already exists for: {self.__class__.__name__} {self.pk}")
+        else:
+            text = self.get_embedding_text()
+
+            if not text or not text.strip():
+                logger.warning(f"Embedding text is empty for: {self.__class__.__name__} {self.pk}")
+            else:
+                try:
+                    generator = self.get_embedding_generator()
+                    self.embedding = generator.generate_embedding(text)
+                    if self.embedding is not None:
+                        self.embedding_generated_at = timezone.now()
+                        did_generate = True
+                        if verbose:
+                            logger.info(f"Generated embedding for {self.__class__.__name__} {self.pk}")
+                    else:
+                        did_generate = False
+
+                except Exception as e:
+                    logger.error(f"Failed to generate embedding for {self.__class__.__name__} {self.pk}: {e}")
+        return did_generate
+
+    @property
+    def has_embedding(self) -> bool:
+        return self.embedding is not None
+
+    def save(
+        self,
+        auto_generate_embedding: bool = True,
+        force_generate_embedding: bool = False,
+        verbose: bool = False,
+        *args,
+        **kwargs,
+    ) -> None:
+        if (auto_generate_embedding and not self.has_embedding) or force_generate_embedding:
+            try:
+                self.generate_embedding(verbose=verbose, force=force_generate_embedding)
+            except Exception as e:
+                logger.error(
+                    f"Failed to auto-generate embedding during save for {self.__class__.__name__} {self.pk}: {e}"
+                )
+        super().save(*args, **kwargs)
