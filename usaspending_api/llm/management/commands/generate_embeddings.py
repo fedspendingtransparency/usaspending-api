@@ -12,7 +12,6 @@ logger = logging.getLogger(__name__)
 
 
 class Command(BaseCommand):
-
     help = "Generate text embeddings for selected model(s)"
 
     def add_arguments(self, parser: ArgumentParser) -> None:
