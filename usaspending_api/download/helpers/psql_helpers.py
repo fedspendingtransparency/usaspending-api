@@ -5,10 +5,10 @@ from urllib.parse import urlparse
 
 
 def build_psql_env(
-        dsn: str,
-        statement_timeout_hours: Optional[int] = None,
-        work_mem_mb: Optional[int] = None,
-        base_env: Optional[dict] = None
+    dsn: str,
+    statement_timeout_hours: Optional[int] = None,
+    work_mem_mb: Optional[int] = None,
+    base_env: Optional[dict] = None,
 ) -> dict:
     """Build PostgreSQL environment variables from a database connection string."""
 
@@ -24,7 +24,7 @@ def build_psql_env(
     env["PGPORT"] = str(db_url.port or 5432)
     env["PGUSER"] = db_url.username or "postgres"
     env["PGPASSWORD"] = db_url.password or ""
-    env["PGDATABASE"] = db_url.path.lstrip('/') if db_url.path else "postgres"
+    env["PGDATABASE"] = db_url.path.lstrip("/") if db_url.path else "postgres"
 
     # Set optional PostgreSQL options
     if statement_timeout_hours or work_mem_mb:
@@ -38,22 +38,19 @@ def build_psql_env(
     return env
 
 
-def run_psql_to_file(
-        sql_path: str,
-        output_path: str,
-        env: dict,
-        quiet: bool = True,
-        on_error_stop: bool = True
+def run_psql_to_file(  # noqa: PLR0915
+    sql_path: str, output_path: str, env: dict, quiet: bool = True, on_error_stop: bool = True
 ) -> None:
     """
     Execute a psql command that reads SQL from a file and writes output to another file.
     """
     import logging
+
     logger = logging.getLogger(__name__)
 
     # Log the SQL file contents for debugging
     try:
-        with open(sql_path, 'r') as f:
+        with open(sql_path, "r") as f:
             sql_content = f.read()
             logger.info(f"SQL file contents (first 500 chars): {sql_content[:500]}")
     except Exception as e:
@@ -70,17 +67,16 @@ def run_psql_to_file(
         psql_args.extend(["-v", "ON_ERROR_STOP=1"])
 
     # Test database connection first
-    logger.info("Testing database connection...")
-    test_process = subprocess.run(
-        ["psql", "-c", "SELECT 1;"],
-        env=env,
-        capture_output=True,
-        timeout=5
-    )
-    if test_process.returncode != 0:
-        logger.error(f"Database connection test failed: {test_process.stderr.decode()}")
-        raise Exception(f"Cannot connect to database: {test_process.stderr.decode()}")
-    logger.info("Database connection test successful")
+    try:
+        logger.info("Testing database connection...")
+        test_process = subprocess.run(["psql", "-c", "SELECT 1;"], env=env, capture_output=True, timeout=5)
+        if test_process.returncode != 0:
+            logger.error(f"Database connection test failed: {test_process.stderr.decode()}")
+            raise Exception(f"Cannot connect to database: {test_process.stderr.decode()}")
+        logger.info("Database connection test successful")
+    except subprocess.TimeoutExpired:
+        logger.error("Test Connection Process timed out! Killing processes...")
+        raise Exception("psql process timed out after 30 seconds") from None
 
     logger.info("Starting cat and psql processes...")
 
@@ -119,11 +115,8 @@ def run_psql_to_file(
     if psql_process.returncode != 0:
         error_msg = psql_error.decode() if psql_error else psql_output.decode() if psql_output else "Unknown error"
         logger.error(f"psql failed: {error_msg}")
-        raise subprocess.CalledProcessError(
-            psql_process.returncode,
-            psql_args,
-            output=psql_output,
-            stderr=psql_error
-        )
+        psql_process.kill()
+        cat_process.kill()
+        raise subprocess.CalledProcessError(psql_process.returncode, psql_args, output=psql_output, stderr=psql_error)
 
     logger.info("psql completed successfully")

@@ -951,11 +951,6 @@ def execute_psql(temp_sql_file_path: str, source_path: str, download_job: Downlo
                 download_job=download_job,
             )
         except subprocess.CalledProcessError as e:
-            message = e.output.decode()
-            if PIPELINE_ERROR_STR in message:
-                span.set_attribute("raised_exception", message)
-                if download_job:
-                    fail_download(download_job, e, message)
             write_to_log(message=f"PSQL Error: {e.output.decode()}", is_error=True, download_job=download_job)
             raise e
         except Exception as e:
