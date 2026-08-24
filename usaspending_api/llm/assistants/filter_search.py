@@ -1,4 +1,5 @@
 import logging
+import time
 from functools import cached_property
 from typing import Any, Generator
 
@@ -119,6 +120,15 @@ class FilterSearchAssistant:
     def search(self, query: str) -> Generator[dict[str, str], None, None]:
         yield {"search_id": str(self.session.id), "type": "search_start", "message": "Thinking..."}
 
+        logger.info(
+            f"Starting filter search: session={self.session.id}, query_length={len(query)}",
+            extra={
+                "session_id": self.session.id,
+                "model_id": self.model.model_id,
+                "query_length": len(query),
+            },
+        )
+
         Message.objects.create(session=self.session, role="user", message=query, order=self.message_order)
         self.message_order += 1
         self.messages.append({"role": "user", "content": [{"text": query}]})
@@ -132,6 +142,21 @@ class FilterSearchAssistant:
         m = self._create_message_from_response(response)
         stop_reason = response["stopReason"]
         search_complete = False
+
+        logger.info(
+            f"Initial filter search response received: session={self.session.id}, stop_reason={stop_reason}",
+            extra={
+                "session_id": self.session.id,
+                "model_id": self.model.model_id,
+                "input_tokens": response["usage"]["inputTokens"],
+                "output_tokens": response["usage"]["outputTokens"],
+                "latency_ms": response["metrics"]["latencyMs"],
+                "stop_reason": stop_reason,
+                "iteration": 0,
+                "message_id": m.id,
+                "message_text": m.message,
+            },
+        )
         while stop_reason == "tool_use" and not search_complete and self.tool_iterations < self.MAX_TOOL_ITERATIONS:
             self.tool_iterations += 1
             tool_requests = [request for request in response["output"]["message"]["content"] if "toolUse" in request]
@@ -154,6 +179,22 @@ class FilterSearchAssistant:
             m = self._create_message_from_response(response)
             stop_reason = response["stopReason"]
 
+            logger.info(
+                f"Filter search response received (iteration {self.tool_iterations}): "
+                f"session={self.session.id}, stop_reason={stop_reason}",
+                extra={
+                    "session_id": self.session.id,
+                    "model_id": self.model.model_id,
+                    "input_tokens": response["usage"]["inputTokens"],
+                    "output_tokens": response["usage"]["outputTokens"],
+                    "latency_ms": response["metrics"]["latencyMs"],
+                    "stop_reason": stop_reason,
+                    "iteration": self.tool_iterations,
+                    "message_id": m.id,
+                    "message_text": m.message,
+                },
+            )
+
         # Communicate if tool iteration limit reached.
         if self.tool_iterations >= self.MAX_TOOL_ITERATIONS and not search_complete:
             yield {
@@ -162,6 +203,11 @@ class FilterSearchAssistant:
                 "message": f"Maximum tool iterations ({self.MAX_TOOL_ITERATIONS}) reached without completing search.",
             }
 
+        # Calculate total token usage for this search.
+        total_input_tokens = sum(msg.input_tokens for msg in self.session.messages.all())
+        total_output_tokens = sum(msg.output_tokens for msg in self.session.messages.all())
+        total_tokens = total_input_tokens + total_output_tokens
+
         # Log each search.
         logger.info(
             f"Search completed for session {self.session.id}",
@@ -169,6 +215,9 @@ class FilterSearchAssistant:
                 "session_id": self.session.id,
                 "tool_iterations": self.tool_iterations,
                 "search_complete": search_complete,
+                "total_input_tokens": total_input_tokens,
+                "total_output_tokens": total_output_tokens,
+                "total_tokens": total_tokens,
             },
         )
 
@@ -186,18 +235,51 @@ class FilterSearchAssistant:
                 "message": tool.logging(tool_use["input"]) + "\n",
             }
 
+            tool_start_time = time.time()
             try:
                 result = tool.function(**tool_use["input"])
+                execution_time_ms = (time.time() - tool_start_time) * 1000
                 t.result = result
                 t.save()
+
+                logger.info(
+                    f"Filter search tool execution successful: tool={tool.description.name}, "
+                    f"execution_time_ms={execution_time_ms:.3f}",
+                    extra={
+                        "tool_name": tool.description.name,
+                        "execution_time_ms": execution_time_ms,
+                        "session_id": self.session.id,
+                        "has_error": "error" in result,
+                        "tool_use_id": t.id,
+                        "tool_input": t.tool_input,
+                        "tool_result": t.result,
+                    },
+                )
 
                 yield {"search_id": str(self.session.id), "type": "tool_complete", "tool_use_id": t.id}
                 tool_result = {"toolUseId": tool_use["toolUseId"], "content": [{"json": result}]}
                 tool_result_message["content"].append({"toolResult": tool_result})
             except Exception as e:
+                execution_time_ms = (time.time() - tool_start_time) * 1000
                 error_result = {"error": str(e)}
                 t.result = error_result
                 t.save()
+
+                logger.error(
+                    f"Filter search tool execution failed: tool={tool.description.name}, "
+                    f"execution_time_ms={execution_time_ms:.3f}, error={str(e)}",
+                    extra={
+                        "tool_name": tool.description.name,
+                        "execution_time_ms": execution_time_ms,
+                        "session_id": self.session.id,
+                        "error": str(e),
+                        "tool_use_id": t.id,
+                        "tool_input": t.tool_input,
+                        "tool_result": t.result,
+                    },
+                    exc_info=True,
+                )
+
                 yield {
                     "search_id": str(self.session.id),
                     "type": "tool_error",
