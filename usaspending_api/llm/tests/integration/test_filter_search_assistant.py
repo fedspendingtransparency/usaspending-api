@@ -11,6 +11,29 @@ from usaspending_api.llm.models.py_models import AITool
 def mock_session():
     session = Mock(spec=Session)
     session.id = "123"
+
+    # Track messages created during the test.
+    session._test_messages = []
+
+    # Mock messages manager to return tracked messages.
+    mock_messages_manager = Mock()
+
+    def get_all_messages():
+        # Return messages with default token values if they don't have them.
+        for msg in session._test_messages:
+            if not hasattr(msg, "input_tokens"):
+                msg.input_tokens = 10
+            if not hasattr(msg, "output_tokens"):
+                msg.output_tokens = 20
+            if not hasattr(msg, "tool_uses"):
+                msg.tool_uses = Mock()
+                msg.tool_uses.count.return_value = 0
+        return session._test_messages
+
+    mock_messages_manager.all = get_all_messages
+    mock_messages_manager.count.return_value = len(session._test_messages)
+    session.messages = mock_messages_manager
+
     return session
 
 
@@ -69,12 +92,21 @@ def assistant(mock_model, mock_tool, mock_search_tool, mock_session):
 
 
 class TestFilterSearchAssistant:
-
     @patch("usaspending_api.llm.models.db_models.Message.objects.create")
     def test_search_simple_response(self, mock_message_create, assistant):
         """Test search with a simple text response (no tool use)."""
-        mock_message = Mock()
-        mock_message_create.return_value = mock_message
+
+        def create_message(**kwargs):
+            mock_message = Mock()
+            mock_message.input_tokens = kwargs.get("input_tokens", 10)
+            mock_message.output_tokens = kwargs.get("output_tokens", 20)
+            mock_message.id = len(assistant.session._test_messages) + 1
+            mock_message.tool_uses = Mock()
+            mock_message.tool_uses.count.return_value = 0
+            assistant.session._test_messages.append(mock_message)
+            return mock_message
+
+        mock_message_create.side_effect = create_message
 
         assistant.client.converse.return_value = {
             "output": {"message": {"role": "assistant", "content": [{"text": "Here's your answer"}]}},
@@ -94,8 +126,19 @@ class TestFilterSearchAssistant:
     @patch("usaspending_api.llm.models.db_models.Message.objects.create")
     def test_search_with_tool_use(self, mock_message_create, mock_tool_use_create, assistant):
         """Test search that requires tool use."""
-        mock_message = Mock()
-        mock_message_create.return_value = mock_message
+
+        def create_message(**kwargs):
+            mock_message = Mock()
+            mock_message.input_tokens = kwargs.get("input_tokens", 10)
+            mock_message.output_tokens = kwargs.get("output_tokens", 20)
+            mock_message.id = len(assistant.session._test_messages) + 1
+            mock_message.tool_uses = Mock()
+            mock_message.tool_uses.count.return_value = 0
+            assistant.session._test_messages.append(mock_message)
+            return mock_message
+
+        mock_message_create.side_effect = create_message
+
         mock_tool_use = Mock()
         mock_tool_use.id = "tool-use-123"
         mock_tool_use_create.return_value = mock_tool_use
@@ -154,8 +197,18 @@ class TestFilterSearchAssistant:
             assistant = FilterSearchAssistant(model=mock_model, tools=[mock_search_tool], session=mock_session)
             assistant.client = Mock()
 
-        mock_message = Mock()
-        mock_message_create.return_value = mock_message
+        def create_message(**kwargs):
+            mock_message = Mock()
+            mock_message.input_tokens = kwargs.get("input_tokens", 10)
+            mock_message.output_tokens = kwargs.get("output_tokens", 20)
+            mock_message.id = len(assistant.session._test_messages) + 1
+            mock_message.tool_uses = Mock()
+            mock_message.tool_uses.count.return_value = 0
+            assistant.session._test_messages.append(mock_message)
+            return mock_message
+
+        mock_message_create.side_effect = create_message
+
         mock_tool_use = Mock()
         mock_tool_use.id = "tool-use-123"
         mock_tool_use_create.return_value = mock_tool_use
@@ -190,8 +243,18 @@ class TestFilterSearchAssistant:
     @patch("usaspending_api.llm.models.db_models.Message.objects.create")
     def test_max_tool_iterations(self, mock_message_create, assistant):
         """Test that tool iterations are limited to MAX_TOOL_ITERATIONS."""
-        mock_message = Mock()
-        mock_message_create.return_value = mock_message
+
+        def create_message(**kwargs):
+            mock_message = Mock()
+            mock_message.input_tokens = kwargs.get("input_tokens", 10)
+            mock_message.output_tokens = kwargs.get("output_tokens", 20)
+            mock_message.id = len(assistant.session._test_messages) + 1
+            mock_message.tool_uses = Mock()
+            mock_message.tool_uses.count.return_value = 0
+            assistant.session._test_messages.append(mock_message)
+            return mock_message
+
+        mock_message_create.side_effect = create_message
 
         response = {
             "output": {
@@ -230,8 +293,18 @@ class TestFilterSearchAssistant:
     @patch("usaspending_api.llm.models.db_models.Message.objects.create")
     def test_message_ordering(self, mock_message_create, assistant):
         """Test that messages are created with correct ordering."""
-        mock_message = Mock()
-        mock_message_create.return_value = mock_message
+
+        def create_message(**kwargs):
+            mock_message = Mock()
+            mock_message.input_tokens = kwargs.get("input_tokens", 10)
+            mock_message.output_tokens = kwargs.get("output_tokens", 20)
+            mock_message.id = len(assistant.session._test_messages) + 1
+            mock_message.tool_uses = Mock()
+            mock_message.tool_uses.count.return_value = 0
+            assistant.session._test_messages.append(mock_message)
+            return mock_message
+
+        mock_message_create.side_effect = create_message
 
         assistant.client.converse.return_value = {
             "output": {"message": {"role": "assistant", "content": [{"text": "Response"}]}},
@@ -256,8 +329,18 @@ class TestFilterSearchAssistant:
             assistant = FilterSearchAssistant(model=mock_model, tools=[mock_search_tool], session=mock_session)
             assistant.client = Mock()
 
-        mock_message = Mock()
-        mock_message_create.return_value = mock_message
+        def create_message(**kwargs):
+            mock_message = Mock()
+            mock_message.input_tokens = kwargs.get("input_tokens", 10)
+            mock_message.output_tokens = kwargs.get("output_tokens", 20)
+            mock_message.id = len(assistant.session._test_messages) + 1
+            mock_message.tool_uses = Mock()
+            mock_message.tool_uses.count.return_value = 0
+            assistant.session._test_messages.append(mock_message)
+            return mock_message
+
+        mock_message_create.side_effect = create_message
+
         mock_tool_use = Mock()
         mock_tool_use.id = "tool-use-123"
         mock_tool_use_create.return_value = mock_tool_use
