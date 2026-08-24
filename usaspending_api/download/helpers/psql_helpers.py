@@ -105,6 +105,9 @@ def run_psql_to_file(  # noqa: PLR0915
         logger.error("Process timed out! Killing processes...")
         psql_process.kill()
         cat_process.kill()
+
+        # communicate statement to finish handling data pipes
+        psql_process.communicate()
         raise Exception("psql process timed out after 30 seconds") from None
 
     logger.info(f"psql return code: {psql_process.returncode}")
