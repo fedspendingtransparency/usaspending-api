@@ -145,6 +145,10 @@ _fabs_specific_schema = StructType(
         StructField("sai_number", StringType()),
         StructField("type", StringType()),
         StructField("type_description", StringType()),
+        StructField("award_amount_basis_code", StringType()),
+        StructField("award_amount_basis_name", StringType()),
+        StructField("award_recipient_basis_code", StringType()),
+        StructField("award_recipient_basis_name", StringType()),
     ]
 )
 
