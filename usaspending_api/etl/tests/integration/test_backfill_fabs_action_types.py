@@ -9,8 +9,6 @@ from django.core.management import call_command
 from model_bakery import baker
 from pytest import mark
 
-from usaspending_api.etl.tests.integration.test_load_to_from_delta import load_delta_table_from_postgres
-
 _ACTION_DATE = datetime(2022, 10, 31, tzinfo=timezone.utc)
 
 # Each tuple is: (
