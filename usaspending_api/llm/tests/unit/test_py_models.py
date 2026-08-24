@@ -1,4 +1,5 @@
 """Unit tests for recipient-related fields in py_models"""
+
 import pytest
 from pydantic import ValidationError
 
