@@ -117,12 +117,17 @@ def _log_download_start(download_job: DownloadJob, file_name: str, request_type:
 def _validate_and_setup_download(download_job: DownloadJob, json_request: dict, file_name: str) -> str:
     """Validate download limits and setup working directory"""
     limit = json_request.get("limit", None)
+    msg = None
 
-    if limit is not None and limit > MAX_DOWNLOAD_LIMIT:
-        msg = (
-            f"Unable to process this download because it includes more than the current limit of "
-            f"{MAX_DOWNLOAD_LIMIT} records"
-        )
+    if limit is not None:
+        if limit > MAX_DOWNLOAD_LIMIT:
+            msg = (
+                f"Unable to process this download because it includes more than the current limit of "
+                f"{MAX_DOWNLOAD_LIMIT} records"
+            )
+        if limit <= 0:
+            msg = "Unable to process this download because it has a limit of 0 or less records"
+    if msg is not None:
         with SubprocessTrace(
             name=f"job.{JOB_TYPE}.generate_download_{json_request.get('request_type')}",
             kind=SpanKind.INTERNAL,
