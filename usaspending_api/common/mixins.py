@@ -328,7 +328,7 @@ class EmbeddingMixin(models.Model):
                         did_generate = False
 
                 except Exception as e:
-                    logger.error(f"Failed to generate embedding for {self.__class__.__name__} {self.pk}: {e}")
+                    logger.exception(f"Failed to generate embedding for {self.__class__.__name__} {self.pk}: {e}")
         return did_generate
 
     @property
