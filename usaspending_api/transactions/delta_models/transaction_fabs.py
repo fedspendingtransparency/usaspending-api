@@ -31,20 +31,6 @@ TRANSACTION_FABS_COLUMN_INFO = [
             WHEN ucase(trim(action_type)) = 'C' THEN 'Other Action, Financial'
             WHEN ucase(trim(action_type)) = 'D' THEN 'Other Action, Financial'
             WHEN ucase(trim(action_type)) = 'E' THEN 'Mixed Aggregate'
-            WHEN ucase(trim(action_type)) = 'A1' THEN 'New Award'
-            WHEN ucase(trim(action_type)) = 'A2' THEN 'Renewal Award'
-            WHEN ucase(trim(action_type)) = 'B1' THEN 'Continuation'
-            WHEN ucase(trim(action_type)) = 'C1' THEN 'Termination Initiated: Material Failure to Comply'
-            WHEN ucase(trim(action_type)) = 'C2' THEN 'Termination Initiated: Mutual Consent'
-            WHEN ucase(trim(action_type)) = 'C3' THEN 'Termination Initiated: Recipient-Initiated'
-            WHEN ucase(trim(action_type)) = 'C4' THEN (
-                'Termination Initiated: No Longer Effectuates Program Goals or Agency Priorities'
-            )
-            WHEN ucase(trim(action_type)) = 'D1' THEN 'Closeout'
-            WHEN ucase(trim(action_type)) = 'E1' THEN 'Recipient Change'
-            WHEN ucase(trim(action_type)) = 'EX' THEN 'Other Action, Non-Financial'
-            WHEN ucase(trim(action_type)) = 'FX' THEN 'Other Action, Financial'
-            WHEN ucase(trim(action_type)) = 'G1' THEN 'Mixed Aggregate'
             ELSE {input}
         END""",
     ),
@@ -238,20 +224,6 @@ FABS_TO_NORMALIZED_COLUMN_INFO = [
             WHEN ucase(trim(action_type)) = 'C' THEN 'Other Action, Financial'
             WHEN ucase(trim(action_type)) = 'D' THEN 'Other Action, Financial'
             WHEN ucase(trim(action_type)) = 'E' THEN 'Mixed Aggregate'
-            WHEN ucase(trim(action_type)) = 'A1' THEN 'New Award'
-            WHEN ucase(trim(action_type)) = 'A2' THEN 'Renewal Award'
-            WHEN ucase(trim(action_type)) = 'B1' THEN 'Continuation'
-            WHEN ucase(trim(action_type)) = 'C1' THEN 'Termination Initiated: Material Failure to Comply'
-            WHEN ucase(trim(action_type)) = 'C2' THEN 'Termination Initiated: Mutual Consent'
-            WHEN ucase(trim(action_type)) = 'C3' THEN 'Termination Initiated: Recipient-Initiated'
-            WHEN ucase(trim(action_type)) = 'C4' THEN (
-                'Termination Initiated: No Longer Effectuates Program Goals or Agency Priorities'
-            )
-            WHEN ucase(trim(action_type)) = 'D1' THEN 'Closeout'
-            WHEN ucase(trim(action_type)) = 'E1' THEN 'Recipient Change'
-            WHEN ucase(trim(action_type)) = 'EX' THEN 'Other Action, Non-Financial'
-            WHEN ucase(trim(action_type)) = 'FX' THEN 'Other Action, Financial'
-            WHEN ucase(trim(action_type)) = 'G1' THEN 'Mixed Aggregate'
             ELSE {input}
         END""",
     ),

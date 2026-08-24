@@ -43,20 +43,6 @@ class Command(BaseCommand):
             WHEN action_type = 'C' THEN 'Other Action, Financial'
             WHEN action_type = 'D' THEN 'Other Action, Financial'
             WHEN action_type = 'E' THEN 'Mixed Aggregate'
-            WHEN action_type = 'A1' THEN 'New Award'
-            WHEN action_type = 'A2' THEN 'Renewal Award'
-            WHEN action_type = 'B1' THEN 'Continuation'
-            WHEN action_type = 'C1' THEN 'Termination Initiated: Material Failure to Comply'
-            WHEN action_type = 'C2' THEN 'Termination Initiated: Mutual Consent'
-            WHEN action_type = 'C3' THEN 'Termination Initiated: Recipient-Initiated'
-            WHEN action_type = 'C4' THEN (
-                'Termination Initiated: No Longer Effectuates Program Goals or Agency Priorities'
-            )
-            WHEN action_type = 'D1' THEN 'Closeout'
-            WHEN action_type = 'E1' THEN 'Recipient Change'
-            WHEN action_type = 'EX' THEN 'Other Action, Non-Financial'
-            WHEN action_type = 'FX' THEN 'Other Action, Financial'
-            WHEN action_type = 'G1' THEN 'Mixed Aggregate'
             ELSE action_type_description
         END
     """
@@ -84,18 +70,11 @@ class Command(BaseCommand):
                 int.transaction_normalized, rpt.transaction_search)
             """,
         )
-        parser.add_argument(
-            "--spark-master",
-            type=str,
-            default=None,
-            help="Spark master URL (e.g., spark://spark-master:7077). If not provided, uses local mode.",
-        )
 
     def handle(self, *args, **options) -> None:
         dry_run = options["dry_run"]
         postgres_only = options["postgres_only"]
         delta_only = options["delta_only"]
-        spark_master = options.get("spark_master")
 
         if postgres_only and delta_only:
             raise ValueError("Cannot specify both --postgres-only and --delta-only")
@@ -113,9 +92,7 @@ class Command(BaseCommand):
         # Update Delta tables.
         if not postgres_only:
             logger.info("Updating Delta tables...")
-            if spark_master:
-                logger.info(f"Connecting to Spark cluster at: {spark_master}")
-            self.update_delta_tables(dry_run, spark_master=spark_master)
+            self.update_delta_tables(dry_run)
 
         logger.info("FABS action type backfill complete!")
 
@@ -192,13 +169,11 @@ class Command(BaseCommand):
                 cursor.execute(self._generate_update_sql("source_assistance_transaction"))
                 logger.info(f"Updated {cursor.rowcount} records in source_assistance_transaction")
 
-    def update_delta_tables(self, dry_run: bool, spark_master: str = None) -> None:
+    def update_delta_tables(self, dry_run: bool) -> None:
         """Update action_type and action_type_description in Delta tables.
 
         Args:
-            dry_run: If True, only count records without making changes
-            spark_master: Spark master URL (e.g., spark://spark-master:7077).
-                         If None, runs in local mode (requires Java).
+            dry_run: If True, only count records without making changes.
         """
 
         # Initialize Spark session.
@@ -216,7 +191,7 @@ class Command(BaseCommand):
                 "spark.sql.jsonGenerator.ignoreNullFields": "false",  # keep nulls in our json
             }
             # Pass master parameter to configure_spark_session
-            self.spark = configure_spark_session(**extra_conf, master=spark_master, spark_context=self.spark)
+            self.spark = configure_spark_session(**extra_conf, spark_context=self.spark)
 
         try:
             # Update raw.published_fabs.

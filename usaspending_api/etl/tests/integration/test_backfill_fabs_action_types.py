@@ -108,34 +108,3 @@ def test_backfill_postgres_dry_run_makes_no_changes():
     for published_fabs_id, action_type, _, _, _, _ in _MAPPING_CASES:
         sat = SourceAssistanceTransaction.objects.get(published_fabs_id=published_fabs_id)
         assert sat.action_type == action_type
-
-
-@mark.django_db(transaction=True)
-def test_backfill_updates_published_fabs_in_delta(spark, s3_unittest_data_bucket, hive_unittest_metastore_db):
-    _make_source_assistance_transactions()
-
-    # Load raw.published_fabs (Delta) from the seeded source_assistance_transaction (Postgres), mirroring the
-    # real bronze-layer load pipeline.
-    load_delta_table_from_postgres("published_fabs", s3_unittest_data_bucket)
-
-    call_command(
-        "create_delta_table", f"--spark-s3-bucket={s3_unittest_data_bucket}", "--destination-table=transaction_fabs"
-    )
-    call_command(
-        "create_delta_table",
-        f"--spark-s3-bucket={s3_unittest_data_bucket}",
-        "--destination-table=transaction_normalized",
-    )
-
-    call_command("backfill_fabs_action_types", "--delta-only")
-
-    rows = {
-        row["published_fabs_id"]: row
-        for row in spark.sql(
-            "SELECT published_fabs_id, action_type, action_type_description FROM raw.published_fabs"
-        ).collect()
-    }
-    for published_fabs_id, _, _, _, expected_type, expected_desc in _MAPPING_CASES:
-        row = rows[published_fabs_id]
-        assert row["action_type"] == expected_type
-        assert row["action_type_description"] == expected_desc
