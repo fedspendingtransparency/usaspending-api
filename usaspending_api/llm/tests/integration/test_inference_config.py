@@ -46,7 +46,7 @@ class TestInferenceConfig:
         assert assistant.inference_config == {
             "temperature": 0.0,
             "topP": 1.0,
-            "maxTokens": 2048,
+            "maxTokens": 5000,
             "stopSequences": [],
         }
 
@@ -62,7 +62,7 @@ class TestInferenceConfig:
         assert assistant.inference_config == {
             "temperature": 0.0,
             "topP": 1.0,
-            "maxTokens": 2048,
+            "maxTokens": 5000,
             "stopSequences": [],
         }
 

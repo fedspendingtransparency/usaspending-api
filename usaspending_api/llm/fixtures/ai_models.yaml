@@ -7,7 +7,7 @@
     inference_config:
       temperature: 0.0
       topP: 1.0
-      maxTokens: 2048
+      maxTokens: 8192
       stopSequences: []
 - model: llm.aimodel
   pk: 2
@@ -18,7 +18,7 @@
     inference_config:
       temperature: 0.0
       topP: 1.0
-      maxTokens: 2048
+      maxTokens: 8192
       stopSequences: []
 - model: llm.aimodel
   pk: 3
@@ -29,7 +29,7 @@
     inference_config:
       temperature: 0.0
       topP: 1.0
-      maxTokens: 2048
+      maxTokens: 5000
       stopSequences: []
 - model: llm.aimodel
   pk: 4
@@ -40,7 +40,7 @@
     inference_config:
       temperature: 0.0
       topP: 1.0
-      maxTokens: 2048
+      maxTokens: 5000
       stopSequences: []
 - model: llm.aimodel
   pk: 5
@@ -51,5 +51,5 @@
     inference_config:
       temperature: 0.0
       topP: 1.0
-      maxTokens: 2048
+      maxTokens: 5000
       stopSequences: []

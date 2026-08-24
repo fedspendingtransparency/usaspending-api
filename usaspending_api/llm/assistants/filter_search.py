@@ -112,7 +112,7 @@ class FilterSearchAssistant:
         return {
             "temperature": 0.0,
             "topP": 1.0,
-            "maxTokens": 2048,
+            "maxTokens": 5000,
             "stopSequences": [],
         }
 
