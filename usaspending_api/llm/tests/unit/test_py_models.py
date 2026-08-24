@@ -2,7 +2,117 @@
 import pytest
 from pydantic import ValidationError
 
-from usaspending_api.llm.models.py_models import Filters
+from usaspending_api.llm.models.py_models import Filters, InferenceConfig
+
+
+class TestInferenceConfig:
+    """Tests for InferenceConfig Pydantic model"""
+
+    def test_inference_config_with_defaults(self):
+        """Test InferenceConfig with default values"""
+        config = InferenceConfig()
+
+        assert config.temperature == 0.0
+        assert config.topP == 1.0
+        assert config.maxTokens == 5000
+        assert config.stopSequences == []
+
+    def test_inference_config_with_custom_values(self):
+        """Test InferenceConfig with custom values"""
+        config = InferenceConfig(temperature=0.7, topP=0.9, maxTokens=8192, stopSequences=["Human:", "User:"])
+
+        assert config.temperature == 0.7
+        assert config.topP == 0.9
+        assert config.maxTokens == 8192
+        assert config.stopSequences == ["Human:", "User:"]
+
+    def test_inference_config_temperature_validation_min(self):
+        """Test that temperature must be >= 0.0"""
+        with pytest.raises(ValidationError) as exc_info:
+            InferenceConfig(temperature=-0.1)
+
+        assert "temperature" in str(exc_info.value)
+
+    def test_inference_config_temperature_validation_max(self):
+        """Test that temperature must be <= 1.0"""
+        with pytest.raises(ValidationError) as exc_info:
+            InferenceConfig(temperature=1.1)
+
+        assert "temperature" in str(exc_info.value)
+
+    def test_inference_config_temperature_boundary_values(self):
+        """Test temperature boundary values (0.0 and 1.0)"""
+        config_min = InferenceConfig(temperature=0.0)
+        config_max = InferenceConfig(temperature=1.0)
+
+        assert config_min.temperature == 0.0
+        assert config_max.temperature == 1.0
+
+    def test_inference_config_top_p_validation_min(self):
+        """Test that topP must be >= 0.0"""
+        with pytest.raises(ValidationError) as exc_info:
+            InferenceConfig(topP=-0.1)
+
+        assert "topP" in str(exc_info.value)
+
+    def test_inference_config_top_p_validation_max(self):
+        """Test that topP must be <= 1.0"""
+        with pytest.raises(ValidationError) as exc_info:
+            InferenceConfig(topP=1.1)
+
+        assert "topP" in str(exc_info.value)
+
+    def test_inference_config_top_p_boundary_values(self):
+        """Test topP boundary values (0.0 and 1.0)"""
+        config_min = InferenceConfig(topP=0.0)
+        config_max = InferenceConfig(topP=1.0)
+
+        assert config_min.topP == 0.0
+        assert config_max.topP == 1.0
+
+    def test_inference_config_max_tokens_validation(self):
+        """Test that maxTokens must be positive"""
+        with pytest.raises(ValidationError) as exc_info:
+            InferenceConfig(maxTokens=0)
+
+        assert "maxTokens" in str(exc_info.value)
+
+        with pytest.raises(ValidationError) as exc_info:
+            InferenceConfig(maxTokens=-100)
+
+        assert "maxTokens" in str(exc_info.value)
+
+    def test_inference_config_max_tokens_positive_value(self):
+        """Test that maxTokens accepts positive values"""
+        config = InferenceConfig(maxTokens=1)
+        assert config.maxTokens == 1
+
+        config = InferenceConfig(maxTokens=10000)
+        assert config.maxTokens == 10000
+
+    def test_inference_config_stop_sequences_empty_list(self):
+        """Test stopSequences with empty list"""
+        config = InferenceConfig(stopSequences=[])
+        assert config.stopSequences == []
+
+    def test_inference_config_stop_sequences_with_values(self):
+        """Test stopSequences with multiple values"""
+        sequences = ["Human:", "User:", "Assistant:", "\n\n"]
+        config = InferenceConfig(stopSequences=sequences)
+
+        assert config.stopSequences == sequences
+        assert len(config.stopSequences) == 4
+
+    def test_inference_config_from_dict(self):
+        """Test creating InferenceConfig from dict"""
+        config_dict = {"temperature": 0.3, "topP": 0.95, "maxTokens": 2048, "stopSequences": ["END"]}
+
+        config = InferenceConfig(**config_dict)
+
+        assert config.temperature == 0.3
+        assert config.topP == 0.95
+        assert config.maxTokens == 2048
+        assert config.stopSequences == ["END"]
 
 
 class TestRecipientFields:
