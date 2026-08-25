@@ -7,7 +7,7 @@ logger = logging.getLogger("script")
 
 
 class Command(BaseCommand):
-    help = "Load LLM fixture data for AI models and prompts"
+    help = "Load LLM fixture data for AI models, prompts, and assistants."
 
     def handle(self, *args, **options) -> None:
         logger.info("Loading AI models...")
@@ -15,5 +15,8 @@ class Command(BaseCommand):
 
         logger.info("Loading prompts...")
         call_command("loaddata", "usaspending_api/llm/fixtures/prompts.yaml")
+
+        logger.info("Loading assistants...")
+        call_command("loaddata", "usaspending_api/llm/fixtures/assistants.yaml")
 
         logger.info("Successfully loaded LLM fixtures")

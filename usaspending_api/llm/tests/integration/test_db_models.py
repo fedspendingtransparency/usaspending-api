@@ -2,7 +2,7 @@ import pytest
 from django.db import IntegrityError
 from django.utils import timezone
 
-from usaspending_api.llm.models.db_models import AIModel, Message, Prompts, Session, ToolUse
+from usaspending_api.llm.models.db_models import AIModel, Assistant, Message, Prompts, Session, ToolUse
 
 
 @pytest.mark.django_db
@@ -392,3 +392,75 @@ class TestModelRelationships:
             tool_input={"query": "Texas"},
             result={"identifier": "USA_TX"},
         )
+
+
+@pytest.mark.django_db
+class TestAssistant:
+    def test_create_assistant(self):
+        """Test creating an Assistant instance."""
+        ai_model = AIModel.objects.create(name="test model", model_id="test-id", provider="test-provider")
+        prompt = Prompts.objects.create(name="test_prompt", description="Test", text="You are a helpful assistant")
+
+        assistant = Assistant.objects.create(
+            name="test-assistant",
+            ai_model=ai_model,
+            system_prompt=prompt,
+            inference_config={"temperature": 0.5, "topP": 0.9, "maxTokens": 4096, "stopSequences": []},
+        )
+
+        assert assistant.id is not None
+        assert assistant.name == "test-assistant"
+        assert assistant.ai_model == ai_model
+        assert assistant.system_prompt == prompt
+        assert assistant.inference_config["temperature"] == 0.5
+
+    def test_assistant_without_ai_model(self):
+        """Test creating an assistant without an AI model."""
+        assistant = Assistant.objects.create(name="test-assistant")
+        assert assistant.ai_model is None
+
+    def test_assistant_without_system_prompt(self):
+        """Test creating an assistant without a system prompt."""
+        assistant = Assistant.objects.create(name="test-assistant")
+        assert assistant.system_prompt is None
+
+    def test_assistant_inference_config_default_value(self):
+        """Test that inference_config defaults to empty dict."""
+        assistant = Assistant.objects.create(name="test-assistant")
+        assert assistant.inference_config == {}
+
+    def test_assistant_with_inference_config(self):
+        """Test creating an Assistant with custom inference config."""
+        assistant = Assistant.objects.create(
+            name="test-assistant",
+            inference_config={
+                "temperature": 0.7,
+                "topP": 0.8,
+                "maxTokens": 8192,
+                "stopSequences": ["Human:", "User:"],
+            },
+        )
+
+        assert assistant.inference_config["temperature"] == 0.7
+        assert assistant.inference_config["topP"] == 0.8
+        assert assistant.inference_config["maxTokens"] == 8192
+        assert assistant.inference_config["stopSequences"] == ["Human:", "User:"]
+
+    def test_assistant_update_inference_config(self):
+        """Test updating inference_config on existing assistant."""
+        assistant = Assistant.objects.create(
+            name="test-assistant", inference_config={"temperature": 0.0, "maxTokens": 1000}
+        )
+
+        assistant.inference_config = {
+            "temperature": 0.9,
+            "topP": 0.95,
+            "maxTokens": 5000,
+            "stopSequences": [],
+        }
+        assistant.save()
+        assistant.refresh_from_db()
+
+        assert assistant.inference_config["temperature"] == 0.9
+        assert assistant.inference_config["topP"] == 0.95
+        assert assistant.inference_config["maxTokens"] == 5000
