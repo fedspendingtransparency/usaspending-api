@@ -1,8 +1,7 @@
 import json
-import pytest
-
 from unittest.mock import Mock
 
+import pytest
 from django.conf import settings
 from model_bakery import baker
 from rest_framework import status
@@ -345,7 +344,7 @@ def test_download_awards_with_all_award_types(client, monkeypatch, _award_downlo
 
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()["total_rows"] == 9
-    assert resp.json()["total_columns"] == 640
+    assert resp.json()["total_columns"] == 644
 
 
 @pytest.mark.django_db(databases=[settings.DOWNLOAD_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
@@ -368,7 +367,7 @@ def test_download_awards_with_all_prime_awards(client, _award_download_data):
 
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()["total_rows"] == 6
-    assert resp.json()["total_columns"] == 409
+    assert resp.json()["total_columns"] == 413
 
 
 @pytest.mark.django_db(databases=[settings.DOWNLOAD_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
@@ -466,7 +465,7 @@ def test_download_awards_with_domestic_scope(client, monkeypatch, _award_downloa
 
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()["total_rows"] == 4
-    assert resp.json()["total_columns"] == 640
+    assert resp.json()["total_columns"] == 644
 
     # Place of Performance Scope
     download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
@@ -489,7 +488,7 @@ def test_download_awards_with_domestic_scope(client, monkeypatch, _award_downloa
 
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()["total_rows"] == 4
-    assert resp.json()["total_columns"] == 640
+    assert resp.json()["total_columns"] == 644
 
 
 @pytest.mark.django_db(databases=[settings.DOWNLOAD_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
@@ -516,7 +515,7 @@ def test_download_awards_with_foreign_scope(client, monkeypatch, _award_download
 
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()["total_rows"] == 5
-    assert resp.json()["total_columns"] == 640
+    assert resp.json()["total_columns"] == 644
 
     # Place of Performance Scope
     download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
@@ -539,7 +538,7 @@ def test_download_awards_with_foreign_scope(client, monkeypatch, _award_download
 
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()["total_rows"] == 5
-    assert resp.json()["total_columns"] == 640
+    assert resp.json()["total_columns"] == 644
 
 
 @pytest.mark.django_db
@@ -597,6 +596,6 @@ def test_empty_array_filter_fail(client, _award_download_data):
     )
 
     assert resp.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
-    assert (
-        "Field 'filters|sub_award_types' value '[]' is below min '1' items" in resp.json()["detail"]
-    ), "Incorrect error message"
+    assert "Field 'filters|sub_award_types' value '[]' is below min '1' items" in resp.json()["detail"], (
+        "Incorrect error message"
+    )

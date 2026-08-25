@@ -361,10 +361,10 @@ class TransactionDownload:
             self.transaction_search.sai_number,
             self.transaction_search.type,
             self.transaction_search.type_description,
-            self.award_amount_basis_code,
-            self.award_amount_basis_name,
-            self.award_recipient_basis_code,
-            self.award_recipient_basis_name,
+            self.transaction_search.award_amount_basis_code,
+            self.transaction_search.award_amount_basis_name,
+            self.transaction_search.award_recipient_basis_code,
+            self.transaction_search.award_recipient_basis_name,
         ]
 
     @property
