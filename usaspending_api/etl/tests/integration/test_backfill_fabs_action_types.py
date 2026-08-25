@@ -81,7 +81,6 @@ def test_backfill_updates_postgres_tables():
 
     call_command("backfill_fabs_action_types", "--postgres-only")
 
-    from usaspending_api.search.models import TransactionSearch
     from usaspending_api.transactions.models.source_assistance_transaction import SourceAssistanceTransaction
 
     for published_fabs_id, _, _, _, expected_type, expected_desc in _MAPPING_CASES:
