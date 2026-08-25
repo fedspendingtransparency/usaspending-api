@@ -690,6 +690,18 @@ def wait_for_process(process: multiprocessing.Process, start_time: float, downlo
             write_to_log(
                 message=f"Attempting to terminate process (pid {process.pid})", download_job=download_job, is_error=True
             )
+            job = ps.Process(process.pid)
+            for spawn_of_job in job.children(recursive=True):
+                write_to_log(
+                    message=f"Attempting to terminate grandchild process with PID [{spawn_of_job.pid}] and name "
+                    f"[{spawn_of_job.name}]",
+                    download_job=download_job,
+                    is_error=True,
+                )
+                try:
+                    spawn_of_job.kill()
+                except ps.NoSuchProcess:
+                    pass
             process.terminate()
             e = TimeoutError(
                 f"DownloadJob {download_job.download_job_id} lasted longer than {MAX_VISIBILITY_TIMEOUT / 3600} hours"
