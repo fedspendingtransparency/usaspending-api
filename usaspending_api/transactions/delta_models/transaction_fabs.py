@@ -2,8 +2,38 @@ from usaspending_api.common.data_classes import TransactionColumn
 
 TRANSACTION_FABS_COLUMN_INFO = [
     TransactionColumn("action_date", "action_date", "STRING", "string_datetime_remove_timestamp"),
-    TransactionColumn("action_type", "action_type", "STRING"),
-    TransactionColumn("action_type_description", "action_type_description", "STRING"),
+    TransactionColumn(
+        "action_type",
+        "action_type",
+        "STRING",
+        scalar_transformation="""CASE
+            WHEN {input} = 'A' THEN 'A1'
+            WHEN {input} = 'B' THEN 'B1'
+            WHEN {input} = 'C' AND (
+                COALESCE(federal_action_obligation, 0) = 0 OR COALESCE(original_loan_subsidy_cost, 0) = 0
+            ) THEN 'EX'
+            WHEN {input} = 'C' THEN 'FX'
+            WHEN {input} = 'D' THEN 'FX'
+            WHEN {input} = 'E' THEN 'G1'
+            ELSE {input}
+        END""",
+    ),
+    TransactionColumn(
+        "action_type_description",
+        "action_type_description",
+        "STRING",
+        scalar_transformation="""CASE
+            WHEN ucase(trim(action_type)) = 'A' THEN 'New Award'
+            WHEN ucase(trim(action_type)) = 'B' THEN 'Continuation'
+            WHEN ucase(trim(action_type)) = 'C' AND (
+                COALESCE(federal_action_obligation, 0) = 0 OR COALESCE(original_loan_subsidy_cost, 0) = 0
+            ) THEN 'Other Action, Non-Financial'
+            WHEN ucase(trim(action_type)) = 'C' THEN 'Other Action, Financial'
+            WHEN ucase(trim(action_type)) = 'D' THEN 'Other Action, Financial'
+            WHEN ucase(trim(action_type)) = 'E' THEN 'Mixed Aggregate'
+            ELSE {input}
+        END""",
+    ),
     TransactionColumn("afa_generated_unique", "afa_generated_unique", "STRING"),
     TransactionColumn("assistance_type", "assistance_type", "STRING"),
     TransactionColumn("assistance_type_desc", "assistance_type_desc", "STRING"),
@@ -169,8 +199,38 @@ transaction_fabs_sql_string = rf"""
 FABS_TO_NORMALIZED_COLUMN_INFO = [
     # action_date seen as: mm/dd/YYYY, YYYYmmdd, YYYY-mm-dd, so need special parsing
     TransactionColumn("action_date", "action_date", "DATE", "parse_string_datetime_to_date"),
-    TransactionColumn("action_type", "action_type", "STRING"),
-    TransactionColumn("action_type_description", "action_type_description", "STRING"),
+    TransactionColumn(
+        "action_type",
+        "action_type",
+        "STRING",
+        scalar_transformation="""CASE
+            WHEN {input} = 'A' THEN 'A1'
+            WHEN {input} = 'B' THEN 'B1'
+            WHEN {input} = 'C' AND (
+                COALESCE(federal_action_obligation, 0) = 0 OR COALESCE(original_loan_subsidy_cost, 0) = 0
+            ) THEN 'EX'
+            WHEN {input} = 'C' THEN 'FX'
+            WHEN {input} = 'D' THEN 'FX'
+            WHEN {input} = 'E' THEN 'G1'
+            ELSE {input}
+        END""",
+    ),
+    TransactionColumn(
+        "action_type_description",
+        "action_type_description",
+        "STRING",
+        scalar_transformation="""CASE
+            WHEN ucase(trim(action_type)) = 'A' THEN 'New Award'
+            WHEN ucase(trim(action_type)) = 'B' THEN 'Continuation'
+            WHEN ucase(trim(action_type)) = 'C' AND (
+                COALESCE(federal_action_obligation, 0) = 0 OR COALESCE(original_loan_subsidy_cost, 0) = 0
+            ) THEN 'Other Action, Non-Financial'
+            WHEN ucase(trim(action_type)) = 'C' THEN 'Other Action, Financial'
+            WHEN ucase(trim(action_type)) = 'D' THEN 'Other Action, Financial'
+            WHEN ucase(trim(action_type)) = 'E' THEN 'Mixed Aggregate'
+            ELSE {input}
+        END""",
+    ),
     TransactionColumn("certified_date", "NULL", "DATE", "literal"),
     TransactionColumn("description", "award_description", "STRING"),
     TransactionColumn("face_value_loan_guarantee", "face_value_loan_guarantee", "NUMERIC(23,2)"),

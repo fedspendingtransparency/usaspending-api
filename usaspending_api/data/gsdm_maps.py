@@ -56,10 +56,25 @@ gsdm_maps = {
         # When we are financial assistance
         "case_1": {"assistance_data__isnull": False, "contract_data__isnull": True},
         "case_1_map": {
+            # Old action type codes (mapped to new codes in FABS pipeline).
             "A": "New Assistance Award",
             "B": "Continuation",
             "C": "Revision",
             "D": "Funding adjustment to completed project",
+            "E": "Mixed Aggregate",
+            # New GSDM 1.2 action type codes.
+            "A1": "New Award",
+            "A2": "Renewal Award",
+            "B1": "Continuation",
+            "C1": "Termination Initiated: Material Failure to Comply",
+            "C2": "Termination Initiated: Mutual Consent",
+            "C3": "Termination Initiated: Recipient-Initiated",
+            "C4": "Termination Initiated: No Longer Effectuates Program Goals or Agency Priorities",
+            "D1": "Closeout",
+            "E1": "Recipient Change",
+            "EX": "Other Action, Non-Financial",
+            "FX": "Other Action, Financial",
+            "G1": "Mixed Aggregate",
         },
         # When we are a contract
         "case_2": {"assistance_data__isnull": True, "contract_data__isnull": False},
