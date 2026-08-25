@@ -133,6 +133,10 @@ class AssistanceMixin:
             self.sf.col("funding_opportunity_goals").alias("funding_opportunity_goals_text"),
             self.sf.col("type").alias("assistance_type_code"),
             self.sf.col("type_description").alias("assistance_type_description"),
+            self.sf.col("award_amount_basis_code").alias("award_amount_basis_code"),
+            self.sf.col("award_amount_basis_name").alias("award_amount_basis_name"),
+            self.sf.col("award_recipient_basis_code").alias("award_recipient_basis_code"),
+            self.sf.col("award_recipient_basis_name").alias("award_recipient_basis_name"),
             self.sf.col("transaction_description"),
             self.sf.col("award_description").alias("prime_award_base_transaction_description"),
             self.sf.col("business_funds_indicator").alias("business_funds_indicator_code"),
@@ -162,13 +166,11 @@ class AssistanceMixin:
         # For DELTA downloads, prepend the correction_delete_indicator column
         # For assistance, we use the existing field or mark as correction if in transaction_delta
         if self.monthly_type == MonthlyType.DELTA:
-            correction_indicator = self.sf.when(
-                self.sf.col("transaction_delta_id").isNotNull(),
-                self.sf.lit("C")
-            ).when(
-                self.sf.col("correction_delete_indicatr").isNotNull(),
-                self.sf.col("correction_delete_indicatr")
-            ).otherwise(self.sf.lit(""))
+            correction_indicator = (
+                self.sf.when(self.sf.col("transaction_delta_id").isNotNull(), self.sf.lit("C"))
+                .when(self.sf.col("correction_delete_indicatr").isNotNull(), self.sf.col("correction_delete_indicatr"))
+                .otherwise(self.sf.lit(""))
+            )
 
             return [correction_indicator.alias("correction_delete_indicator")] + cols
 

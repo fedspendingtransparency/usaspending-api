@@ -240,3 +240,7 @@ pycodestyle.max-line-length = 120
 "**/disaster/management/sql/spark/**.py" = [
     "E501", # Line too long
 ]
+
+[tool.hatch.build.targets.wheel]
+packages = ["usaspending_api"]
+
