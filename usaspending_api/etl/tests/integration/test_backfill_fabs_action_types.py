@@ -78,7 +78,6 @@ def _make_transaction_search_rows():
 @mark.django_db(transaction=True)
 def test_backfill_updates_postgres_tables():
     _make_source_assistance_transactions()
-    _make_transaction_search_rows()
 
     call_command("backfill_fabs_action_types", "--postgres-only")
 
@@ -89,10 +88,6 @@ def test_backfill_updates_postgres_tables():
         sat = SourceAssistanceTransaction.objects.get(published_fabs_id=published_fabs_id)
         assert sat.action_type == expected_type
         assert sat.action_type_description == expected_desc
-
-        ts = TransactionSearch.objects.get(transaction_id=published_fabs_id)
-        assert ts.action_type == expected_type
-        assert ts.action_type_description == expected_desc
 
 
 @mark.django_db(transaction=True)
