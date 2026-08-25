@@ -141,23 +141,7 @@ class Command(BaseCommand):
     def update_postgres_tables(self, dry_run: bool) -> None:
         """Update action_type and action_type_description in Postgres tables."""
 
-        # Update transaction_search directly for FABS records
-        update_transaction_search_sql = self._generate_update_sql(
-            "transaction_search", additional_where="is_fpds = FALSE"
-        )
-
         with connection.cursor() as cursor:
-            # Update transaction_search for FABS records (is_fpds = FALSE).
-            logger.info("Updating transaction_search (Postgres FABS records)...")
-            if dry_run:
-                count_sql = self._generate_count_sql("transaction_search", additional_where="is_fpds = FALSE")
-                cursor.execute(count_sql)
-                count = cursor.fetchone()[0]
-                logger.info(f"[DRY RUN] Would update {count} records in transaction_search")
-            else:
-                cursor.execute(update_transaction_search_sql)
-                logger.info(f"Updated {cursor.rowcount} records in transaction_search")
-
             # Update source_assistance_transaction (the raw Broker-sourced copy of published_fabs).
             logger.info("Updating source_assistance_transaction (Postgres)...")
             if dry_run:
