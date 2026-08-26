@@ -3,6 +3,15 @@ from typing import Annotated, Any, Callable, Literal
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
+class InferenceConfig(BaseModel):
+    """Model for AI inference configuration parameters."""
+
+    temperature: float = Field(default=0.0, ge=0.0, le=1.0, description="Temperature for response randomness (0.0-1.0)")
+    topP: float = Field(default=1.0, ge=0.0, le=1.0, description="Top P sampling parameter (0.0-1.0)")
+    maxTokens: int = Field(default=5000, gt=0, description="Maximum tokens to generate")
+    stopSequences: list[str] = Field(default_factory=list, description="List of stop sequences")
+
+
 class AIToolDescription(BaseModel):
     name: str
     description: str
