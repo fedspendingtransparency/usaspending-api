@@ -120,8 +120,10 @@ def run_psql_to_file(  # noqa: PLR0915
     if psql_process.returncode != 0:
         error_msg = psql_error.decode() if psql_error else psql_output.decode() if psql_output else "Unknown error"
         logger.error(f"psql failed: {error_msg}")
-        psql_process.kill()
-        cat_process.kill()
+        if psql_process.poll() is None:
+            psql_process.kill()
+        if cat_process.poll() is None:
+            cat_process.kill()
         raise subprocess.CalledProcessError(psql_process.returncode, psql_args, output=psql_output, stderr=psql_error)
 
     logger.info("psql completed successfully")
