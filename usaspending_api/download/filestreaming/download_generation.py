@@ -47,7 +47,6 @@ MAX_VISIBILITY_TIMEOUT = 60 * 60 * settings.DOWNLOAD_DB_TIMEOUT_IN_HOURS
 EXCEL_ROW_LIMIT = 1_000_000
 WAIT_FOR_PROCESS_SLEEP = 5
 JOB_TYPE = "USAspendingDownloader"
-PIPELINE_ERROR_STR = "Canceling statement due to conflict with recovery"
 
 logger = logging.getLogger(__name__)
 
@@ -690,18 +689,7 @@ def wait_for_process(process: multiprocessing.Process, start_time: float, downlo
             write_to_log(
                 message=f"Attempting to terminate process (pid {process.pid})", download_job=download_job, is_error=True
             )
-            job = ps.Process(process.pid)
-            for spawn_of_job in job.children(recursive=True):
-                write_to_log(
-                    message=f"Attempting to terminate grandchild process with PID [{spawn_of_job.pid}] and name "
-                    f"[{spawn_of_job.name}]",
-                    download_job=download_job,
-                    is_error=True,
-                )
-                try:
-                    spawn_of_job.kill()
-                except ps.NoSuchProcess:
-                    pass
+            _kill_process_children(download_job, process.pid)
             process.terminate()
             e = TimeoutError(
                 f"DownloadJob {download_job.download_job_id} lasted longer than {MAX_VISIBILITY_TIMEOUT / 3600} hours"
@@ -1012,10 +1000,20 @@ def add_data_dictionary_to_zip(working_dir: str, zip_file_path: str) -> None:
 
 def _kill_spawned_processes(download_job: DownloadJob | None = None) -> None:
     """Cleanup (kill) any spawned child processes during this job run"""
-    job = ps.Process(os.getpid())
-    for spawn_of_job in job.children(recursive=True):
+    write_to_log(
+        message=f"Looking for children of process with PID [{os.getpid()}]",
+        download_job=download_job,
+        is_error=True,
+    )
+    _kill_process_children(download_job,os.getpid())
+
+
+
+def _kill_process_children(download_job: DownloadJob, parent_process_id: int) -> None:
+    parent = ps.Process(parent_process_id)
+    for spawn_of_job in parent.children(recursive=True):
         write_to_log(
-            message=f"Attempting to terminate child process with PID [{spawn_of_job.pid}] and name "
+            message=f"Attempting to terminate chil of process [{parent.name}] with PID [{spawn_of_job.pid}] and name "
             f"[{spawn_of_job.name}]",
             download_job=download_job,
             is_error=True,
