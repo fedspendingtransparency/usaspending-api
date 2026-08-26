@@ -1005,8 +1005,7 @@ def _kill_spawned_processes(download_job: DownloadJob | None = None) -> None:
         download_job=download_job,
         is_error=True,
     )
-    _kill_process_children(download_job,os.getpid())
-
+    _kill_process_children(download_job, os.getpid())
 
 
 def _kill_process_children(download_job: DownloadJob, parent_process_id: int) -> None:
