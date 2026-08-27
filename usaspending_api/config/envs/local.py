@@ -51,18 +51,20 @@ class LocalConfig(DefaultConfig):
     USASPENDING_DB_PORT: str = "5432"
 
     # ==== [Postgres Broker] ====
-    BROKER_DB_USER: str | None = "admin"
-    BROKER_DB_PASSWORD: SecretStr | None = "root"
+    # These values match the USAspending values above because the test suite will create a new Broker DB on the same
+    # container as the USAspending DB
+    BROKER_DB_USER: str | None = "usaspending"
+    BROKER_DB_PASSWORD: SecretStr | None = "usaspender"
 
     # Change to host.docker.internal if you are running a local Postgres. Otherwise leave as-is, so
     # Docker will use the Postgres created by Compose.
-    BROKER_DB_HOST: str | None = "dataact-broker-db"
+    BROKER_DB_HOST: str | None = "usaspending-db"
     BROKER_DB_PORT: str | None = "5432"
 
     # ==== [Elasticsearch] ====
     # Where to connect to elasticsearch.
     ES_SCHEME: str = "http"
-    ES_HOST: str = "localhost"
+    ES_HOST: str = "usaspending-es"
     ES_PORT: str = "9200"
 
     # ==== [Spark] ====
@@ -71,7 +73,7 @@ class LocalConfig(DefaultConfig):
     HIVE_METASTORE_DERBY_DB_DIR: str = str(_PROJECT_ROOT_DIR / "spark-warehouse" / "metastore_db")
 
     # ==== [MinIO] ====
-    MINIO_HOST: str = "localhost"
+    MINIO_HOST: str = "minio"
     # Changing MinIO ports from defaults. Known to have port conflicts with proxies on developer laptops
     MINIO_PORT: str = "10001"
     MINIO_CONSOLE_PORT: str = "10002"

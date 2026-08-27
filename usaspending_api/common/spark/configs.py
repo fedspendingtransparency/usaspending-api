@@ -1,25 +1,5 @@
 from usaspending_api.config import CONFIG
 
-# The versions below are determined by the current version of Databricks in use
-_SCALA_VERSION = "2.12"
-_HADOOP_VERSION = "3.3.4"
-_SPARK_VERSION = "3.5.0"
-_DELTA_VERSION = "3.1.0"
-
-# List of Maven coordinates for required JAR files used by running code, which can be added to the driver and
-# executor class paths
-SPARK_SESSION_JARS = [
-    # "com.amazonaws:aws-java-sdk:1.12.31",
-    # hadoop-aws is an add-on to hadoop with Classes that allow hadoop to interface with an S3A (AWS S3) FileSystem
-    # NOTE That in order to work, the version number should be the same as the Hadoop version used by your Spark runtime
-    # It SHOULD pull in (via Ivy package manager from maven repo) the version of com.amazonaws:aws-java-sdk that is
-    # COMPATIBLE with it (so that should not  be set as a dependent package by us)
-    f"org.apache.hadoop:hadoop-aws:{_HADOOP_VERSION}",
-    "org.postgresql:postgresql:42.2.23",
-    f"io.delta:delta-spark_{_SCALA_VERSION}:{_DELTA_VERSION}",
-]
-OPTIONAL_SPARK_HIVE_JAR = f"org.apache.spark:spark-hive_{_SCALA_VERSION}:{_SPARK_VERSION}"
-
 # TODO: This should be used more widely across our different commands
 DEFAULT_EXTRA_CONF = {
     # Config for Delta Lake tables and SQL. Need these to keep Dela table metadata in the metastore
@@ -45,7 +25,6 @@ LOCAL_BASIC_EXTRA_CONF = {
     "spark.driver.memory": "1g",
     "spark.executor.memory": "1g",
     "spark.ui.enabled": "false",  # Does the same as setting SPARK_TESTING=true env var
-    "spark.jars.packages": ",".join(SPARK_SESSION_JARS),
 }
 
 
