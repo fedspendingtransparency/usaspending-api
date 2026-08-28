@@ -92,7 +92,7 @@ class RecipientLookupTool:
                     ),
                     ES_Q("match", **{field: {"query": query_upper, "boost": 8.0}}),
                     ES_Q("match", **{field: {"query": query_upper, "fuzziness": "AUTO", "boost": 5.0}}),
-                    ES_Q("match", **{f"{field}__contains": {"query": query_upper, "boost": 3.0}}),
+                    ES_Q("match_phrase_prefix", **{f"{field}__contains": {"query": query_upper, "boost": 3.0}}),
                     ES_Q("wildcard", **{f"{field}__keyword": {"value": f"{query_upper}*", "boost": 2.0}}),
                 ]
             )

@@ -1,9 +1,6 @@
 """Integration tests for recipient_retrieval module"""
 
 import pytest
-from django.conf import settings
-from elasticsearch import Elasticsearch
-from elasticsearch_dsl import Index, connections
 
 from usaspending_api.common.elasticsearch.search_wrappers import RecipientSearch
 from usaspending_api.llm.tests.helper import (
@@ -17,38 +14,11 @@ from usaspending_api.llm.tests.helper import (
 # ============================================================================
 
 
-@pytest.fixture(scope="module")
-def elasticsearch_connection():
-    """
-    Fixture to provide Elasticsearch connection
-    """
-    es = Elasticsearch(
-        hosts=[settings.ES_HOSTNAME],
-        timeout=30,
-    )
-
-    connections.add_connection("default", es)
-
-    yield es
-
-    connections.remove_connection("default")
-    es.close()
-
-
 @pytest.fixture
-def elasticsearch_recipient_index(monkeypatch, elasticsearch_connection):
+def setup_test_recipients(elasticsearch_recipient_index):
     """
-    Fixture to set up recipient index with test data
+    Convenience fixture that just ensures recipient index is set up
     """
-    index_name = "test-recipients"
-    monkeypatch.setattr("usaspending_api.common.elasticsearch.search_wrappers.RecipientSearch._index_name", index_name)
-
-    # Create index
-    index = Index(index_name)
-    if index.exists(using="default"):
-        index.delete(using="default")
-    index.create(using="default")
-
     # Add test data
     test_recipients = [
         {
@@ -83,26 +53,14 @@ def elasticsearch_recipient_index(monkeypatch, elasticsearch_connection):
 
     # Index test documents
     for recipient in test_recipients:
-        elasticsearch_connection.index(
-            index=index_name,
+        elasticsearch_recipient_index.client.index(
+            index=elasticsearch_recipient_index.index_name,
             body=recipient,
         )
 
     # Refresh index to make documents searchable
-    elasticsearch_connection.indices.refresh(index=index_name)
+    elasticsearch_recipient_index.client.indices.refresh(index=elasticsearch_recipient_index.index_name)
 
-    yield index_name
-
-    # Cleanup
-    if index.exists(using="default"):
-        index.delete(using="default")
-
-
-@pytest.fixture
-def setup_test_recipients(elasticsearch_recipient_index):
-    """
-    Convenience fixture that just ensures recipient index is set up
-    """
     return elasticsearch_recipient_index
 
 
@@ -115,13 +73,13 @@ def setup_test_recipients(elasticsearch_recipient_index):
 class TestBuildFuzzyRecipientQueryIntegration:
     """Integration tests for build_fuzzy_recipient_query"""
 
-    def test_returns_recipient_search_instance(self):
+    def test_returns_recipient_search_instance(self, setup_test_recipients):
         """Test that function returns a RecipientSearch instance"""
         result = build_fuzzy_recipient_query("ACME Corporation")
 
         assert isinstance(result, RecipientSearch)
 
-    def test_query_structure_contains_fuzzy_match(self):
+    def test_query_structure_contains_fuzzy_match(self, setup_test_recipients):
         """Test that generated query contains fuzzy matching logic"""
         search = build_fuzzy_recipient_query("ACME")
         query_dict = search.to_dict()
@@ -131,20 +89,20 @@ class TestBuildFuzzyRecipientQueryIntegration:
         # Verify it's configured for fuzzy matching
         assert query_dict.get("size") == 10
 
-    def test_sanitizes_special_characters(self):
+    def test_sanitizes_special_characters(self, setup_test_recipients):
         """Test that special characters are properly sanitized"""
         # Should not raise exception with special characters
         search = build_fuzzy_recipient_query("ACME & Co. (2024)")
 
         assert isinstance(search, RecipientSearch)
 
-    def test_handles_empty_string(self):
+    def test_handles_empty_string(self, setup_test_recipients):
         """Test handling of empty search string"""
         search = build_fuzzy_recipient_query("")
 
         assert isinstance(search, RecipientSearch)
 
-    def test_handles_whitespace_only(self):
+    def test_handles_whitespace_only(self, setup_test_recipients):
         """Test handling of whitespace-only string"""
         search = build_fuzzy_recipient_query("   ")
 
@@ -162,7 +120,7 @@ class TestFuzzySearchRecipientsIntegration:
 
         assert isinstance(result, list)
 
-    def test_returns_empty_list_for_no_matches(self):
+    def test_returns_empty_list_for_no_matches(self, setup_test_recipients):
         """Test that empty list is returned when no matches found"""
         result = fuzzy_search_recipients("NONEXISTENT_COMPANY_XYZ_12345")
 
@@ -218,7 +176,7 @@ class TestFuzzySearchRecipientsIntegration:
         # Should find results containing "ACM" (like ACME)
         assert isinstance(result, list)
 
-    def test_handles_special_characters_in_search(self):
+    def test_handles_special_characters_in_search(self, setup_test_recipients):
         """Test that special characters don't cause errors"""
         # Should not raise exception
         result = fuzzy_search_recipients("ACME & Co. (2024)")
@@ -279,7 +237,7 @@ class TestRetrieveRecipientNamesIntegration:
         # Should return same results
         assert len(result_lower["recipient_names"]) == len(result_upper["recipient_names"])
 
-    def test_handles_special_characters(self):
+    def test_handles_special_characters(self, setup_test_recipients):
         """Test that special characters are handled properly"""
         # Should not raise exception
         result = retrieve_recipient_names("ACME & Co. (2024)")
@@ -405,7 +363,7 @@ class TestRecipientRetrievalEndToEnd:
             result = retrieve_recipient_names(query, limit=10)
             assert isinstance(result, dict)
 
-    def test_empty_results_handled_consistently(self):
+    def test_empty_results_handled_consistently(self, setup_test_recipients):
         """Test that empty results are handled consistently across functions"""
         nonexistent = "NONEXISTENT_XYZ_12345"
 
@@ -416,7 +374,7 @@ class TestRecipientRetrievalEndToEnd:
         assert fuzzy_results == []
         assert names["recipient_names"] == []
 
-    def test_special_characters_handled_consistently(self):
+    def test_special_characters_handled_consistently(self, setup_test_recipients):
         """Test that special characters are handled consistently"""
         special_query = "ACME & Co. (2024)"
 
