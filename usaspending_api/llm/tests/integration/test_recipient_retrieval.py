@@ -8,6 +8,7 @@ from usaspending_api.llm.tests.helper import (
     fuzzy_search_recipients,
     retrieve_recipient_names,
 )
+from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
 
 # ============================================================================
 # FIXTURES
@@ -15,10 +16,12 @@ from usaspending_api.llm.tests.helper import (
 
 
 @pytest.fixture
-def setup_test_recipients(elasticsearch_recipient_index):
+def setup_test_recipients(monkeypatch, elasticsearch_recipient_index):
     """
     Convenience fixture that just ensures recipient index is set up
     """
+    setup_elasticsearch_test(monkeypatch, elasticsearch_recipient_index)
+
     # Add test data
     test_recipients = [
         {
@@ -201,7 +204,7 @@ class TestRetrieveRecipientNamesIntegration:
             for item in v:
                 assert isinstance(item, str)
 
-    def test_handles_no_matches(self):
+    def test_handles_no_matches(self, setup_test_recipients):
         """Test behavior when no matches are found"""
         result = retrieve_recipient_names("NONEXISTENT_XYZ_12345")
 
@@ -268,7 +271,7 @@ class TestRetrieveRecipientNamesIntegration:
         # Should find results containing "ACM" (like ACME)
         assert isinstance(result, dict)
 
-    def test_handles_whitespace_in_query(self):
+    def test_handles_whitespace_in_query(self, setup_test_recipients):
         """Test that whitespace in query is handled correctly"""
         result = retrieve_recipient_names("  ACME  ")
 
