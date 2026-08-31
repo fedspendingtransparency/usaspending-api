@@ -7,13 +7,12 @@ from usaspending_api.llm.models.db_models import AIModel, Assistant, Prompts
 
 @pytest.mark.django_db
 class TestListAssistants:
-    def test_list_assistants_empty(self, capsys):
+    def test_list_assistants_empty(self, caplog):
         """Test listing assistants when none exist."""
         call_command("update_assistant", "--list")
-        captured = capsys.readouterr()
-        assert "No AI Assistants found" in captured.out
+        assert "No AI Assistants found" in caplog.text
 
-    def test_list_assistants_basic(self, capsys):
+    def test_list_assistants_basic(self, caplog):
         """Test listing assistants with basic format."""
         model = AIModel.objects.create(name="test model", model_id="test-id", provider="test")
         prompt = Prompts.objects.create(name="test prompt", description="Test", text="You are helpful")
@@ -25,11 +24,10 @@ class TestListAssistants:
         )
 
         call_command("update_assistant", "--list")
-        captured = capsys.readouterr()
-        assert "test-assistant" in captured.out
-        assert "test model" in captured.out
+        assert "test-assistant" in caplog.text
+        assert "test model" in caplog.text
 
-    def test_list_assistants_with_prompts(self, capsys):
+    def test_list_assistants_with_prompts(self, caplog):
         """Test listing assistants with full prompt text (longer than 50 chars)."""
         model = AIModel.objects.create(name="test model", model_id="test-id", provider="test")
         long_prompt_text = (
@@ -46,15 +44,15 @@ class TestListAssistants:
         )
 
         # Test that --list truncates the prompt
+        caplog.clear()
         call_command("update_assistant", "--list")
-        captured = capsys.readouterr()
-        assert "..." in captured.out  # Should show truncation
-        assert "intentionally longer than 50 characters" not in captured.out  # End of prompt should be truncated
+        assert "..." in caplog.text  # Should show truncation
+        assert "intentionally longer than 50 characters" not in caplog.text  # End of prompt should be truncated
 
         # Test that --list-with-prompts shows full prompt
+        caplog.clear()
         call_command("update_assistant", "--list-with-prompts")
-        captured = capsys.readouterr()
-        assert long_prompt_text in captured.out  # Full prompt should be visible
+        assert long_prompt_text in caplog.text  # Full prompt should be visible
 
 
 @pytest.mark.django_db
@@ -522,7 +520,7 @@ class TestUpdateSystemPrompt:
                 "You are precise",
             )
 
-    def test_update_prompt_same_as_current(self, capsys):
+    def test_update_prompt_same_as_current(self, caplog):
         """Test that specifying the same prompt as current logs info message."""
         model = AIModel.objects.create(name="test model", model_id="test-id", provider="test")
         prompt1 = Prompts.objects.create(name="prompt 1", description="Test", text="You are helpful")
@@ -530,8 +528,7 @@ class TestUpdateSystemPrompt:
 
         call_command("update_assistant", "--name", "test-assistant", "--system-prompt-id", str(prompt1.pk))
 
-        captured = capsys.readouterr()
-        assert "same as the one currently in use" in captured.out
+        assert "same as the one currently in use" in caplog.text
 
     def test_clear_system_prompt(self):
         """Test clearing system prompt."""
