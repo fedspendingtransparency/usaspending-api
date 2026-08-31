@@ -249,8 +249,11 @@ class Command(BaseCommand):
         # If prompts ARE being combined:
         else:
             # Get the text of the prompt currently in use.
-            current_prompt = Prompts.objects.get(pk=current_prompt_pk)
-            current_prompt_text = current_prompt.text if current_prompt else ""
+            if current_prompt_pk and current_prompt_pk > 0:
+                current_prompt = Prompts.objects.get(pk=current_prompt_pk)
+                current_prompt_text = current_prompt.text
+            else:
+                current_prompt_text = ""
             # Get the text of the new prompt.
             new_prompt_text = new_prompt if new_prompt else ""
             # Combine the prompts.
@@ -276,12 +279,14 @@ class Command(BaseCommand):
         """
         # Iterate the pk on the Prompts table to generate a unique name.
         next_pk = (Prompts.objects.aggregate(max_pk=models.Max('pk'))['max_pk'] or 0) + 1
+        # Filter out empty strings to avoid extra newlines.
+        filtered_text = [t for t in text if t]
         # Craft the new Prompt to be created in the DB.
         Prompts.objects.create(
             name=f"Custom Prompt #{next_pk}",
             pk=next_pk,
             description="Custom prompt created by 'update_assistant' management command",
-            text="\n".join(text)
+            text="\n".join(filtered_text)
         )
         return next_pk
 

@@ -5,11 +5,6 @@ class AIModel(models.Model):
     name = models.CharField(max_length=100)
     model_id = models.CharField(max_length=100)
     provider = models.CharField(max_length=100)
-    inference_config = models.JSONField(
-        default=dict,
-        blank=True,
-        help_text="Inference configuration (e.g., temperature, topP, maxTokens)",
-    )
 
     def __str__(self):
         return f"{self.name} - {self.model_id} ({self.provider})"

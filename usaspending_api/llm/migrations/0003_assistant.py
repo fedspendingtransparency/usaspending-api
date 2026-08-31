@@ -6,7 +6,7 @@ import django.db.models.deletion
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("llm", "0003_aimodel_inference_config"),
+        ("llm", "0002_create_pgvector"),
     ]
 
     operations = [
