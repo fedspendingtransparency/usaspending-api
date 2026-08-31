@@ -9,11 +9,15 @@ from usaspending_api.llm.models.db_models import AIModel, Assistant, Prompts
 class TestListAssistants:
     def test_list_assistants_empty(self, caplog):
         """Test listing assistants when none exist."""
+        import logging
+        caplog.set_level(logging.INFO)
         call_command("update_assistant", "--list")
         assert "No AI Assistants found" in caplog.text
 
     def test_list_assistants_basic(self, caplog):
         """Test listing assistants with basic format."""
+        import logging
+        caplog.set_level(logging.INFO)
         model = AIModel.objects.create(name="test model", model_id="test-id", provider="test")
         prompt = Prompts.objects.create(name="test prompt", description="Test", text="You are helpful")
         Assistant.objects.create(
@@ -29,6 +33,8 @@ class TestListAssistants:
 
     def test_list_assistants_with_prompts(self, caplog):
         """Test listing assistants with full prompt text (longer than 50 chars)."""
+        import logging
+        caplog.set_level(logging.INFO)
         model = AIModel.objects.create(name="test model", model_id="test-id", provider="test")
         long_prompt_text = (
             "You are a helpful assistant that provides detailed and accurate information. "
@@ -522,6 +528,8 @@ class TestUpdateSystemPrompt:
 
     def test_update_prompt_same_as_current(self, caplog):
         """Test that specifying the same prompt as current logs info message."""
+        import logging
+        caplog.set_level(logging.INFO)
         model = AIModel.objects.create(name="test model", model_id="test-id", provider="test")
         prompt1 = Prompts.objects.create(name="prompt 1", description="Test", text="You are helpful")
         assistant = Assistant.objects.create(name="test-assistant", ai_model=model, system_prompt=prompt1)
