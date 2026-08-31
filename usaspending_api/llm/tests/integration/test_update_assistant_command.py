@@ -9,15 +9,12 @@ from usaspending_api.llm.models.db_models import AIModel, Assistant, Prompts
 class TestListAssistants:
     def test_list_assistants_empty(self, caplog):
         """Test listing assistants when none exist."""
-        import logging
-        caplog.set_level(logging.INFO)
-        call_command("update_assistant", "--list")
+        with caplog.at_level("INFO"):
+            call_command("update_assistant", "--list")
         assert "No AI Assistants found" in caplog.text
 
     def test_list_assistants_basic(self, caplog):
         """Test listing assistants with basic format."""
-        import logging
-        caplog.set_level(logging.INFO)
         model = AIModel.objects.create(name="test model", model_id="test-id", provider="test")
         prompt = Prompts.objects.create(name="test prompt", description="Test", text="You are helpful")
         Assistant.objects.create(
@@ -27,14 +24,13 @@ class TestListAssistants:
             inference_config={"temperature": 0.5, "topP": 0.9, "maxTokens": 1000, "stopSequences": []},
         )
 
-        call_command("update_assistant", "--list")
+        with caplog.at_level("INFO"):
+            call_command("update_assistant", "--list")
         assert "test-assistant" in caplog.text
         assert "test model" in caplog.text
 
     def test_list_assistants_with_prompts(self, caplog):
         """Test listing assistants with full prompt text (longer than 50 chars)."""
-        import logging
-        caplog.set_level(logging.INFO)
         model = AIModel.objects.create(name="test model", model_id="test-id", provider="test")
         long_prompt_text = (
             "You are a helpful assistant that provides detailed and accurate information. "
@@ -51,13 +47,15 @@ class TestListAssistants:
 
         # Test that --list truncates the prompt
         caplog.clear()
-        call_command("update_assistant", "--list")
+        with caplog.at_level("INFO"):
+            call_command("update_assistant", "--list")
         assert "..." in caplog.text  # Should show truncation
         assert "intentionally longer than 50 characters" not in caplog.text  # End of prompt should be truncated
 
         # Test that --list-with-prompts shows full prompt
         caplog.clear()
-        call_command("update_assistant", "--list-with-prompts")
+        with caplog.at_level("INFO"):
+            call_command("update_assistant", "--list-with-prompts")
         assert long_prompt_text in caplog.text  # Full prompt should be visible
 
 
@@ -528,13 +526,12 @@ class TestUpdateSystemPrompt:
 
     def test_update_prompt_same_as_current(self, caplog):
         """Test that specifying the same prompt as current logs info message."""
-        import logging
-        caplog.set_level(logging.INFO)
         model = AIModel.objects.create(name="test model", model_id="test-id", provider="test")
         prompt1 = Prompts.objects.create(name="prompt 1", description="Test", text="You are helpful")
         assistant = Assistant.objects.create(name="test-assistant", ai_model=model, system_prompt=prompt1)
 
-        call_command("update_assistant", "--name", "test-assistant", "--system-prompt-id", str(prompt1.pk))
+        with caplog.at_level("INFO"):
+            call_command("update_assistant", "--name", "test-assistant", "--system-prompt-id", str(prompt1.pk))
 
         assert "same as the one currently in use" in caplog.text
 
