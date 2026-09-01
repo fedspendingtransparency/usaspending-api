@@ -8,4 +8,6 @@ repos:
     rev: v0.14.14
     hooks:
         - id: ruff-check
+          args: [ --fix ]
           types_or: [ python, pyi ]  # avoid linting other python file types like Jupyter notebooks
+        - id: ruff-format

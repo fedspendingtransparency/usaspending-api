@@ -5,6 +5,11 @@ class AIModel(models.Model):
     name = models.CharField(max_length=100)
     model_id = models.CharField(max_length=100)
     provider = models.CharField(max_length=100)
+    inference_config = models.JSONField(
+        default=dict,
+        blank=True,
+        help_text="Inference configuration (e.g., temperature, topP, maxTokens)",
+    )
 
     def __str__(self):
         return f"{self.name} - {self.model_id} ({self.provider})"
@@ -37,8 +42,8 @@ class Session(models.Model):
     feedback = models.BooleanField(default=None, null=True, blank=True, help_text="positive=True, negative=False")
 
     def __str__(self):
-        model_name = self.ai_model.name if self.ai_model else 'No Model'
-        timestamp = self.started_at.strftime('%Y-%m-%d %H:%M')
+        model_name = self.ai_model.name if self.ai_model else "No Model"
+        timestamp = self.started_at.strftime("%Y-%m-%d %H:%M")
         return f"Session {self.id} - {model_name} ({timestamp})"
 
     class Meta:
@@ -90,4 +95,36 @@ class ToolUse(models.Model):
         indexes = [
             models.Index(fields=["name"]),
             models.Index(fields=["created_at"]),
+        ]
+
+
+class Assistant(models.Model):
+    name = models.TextField()
+    ai_model = models.ForeignKey(AIModel, on_delete=models.SET_NULL, null=True, related_name="assistants")
+    system_prompt = models.ForeignKey(Prompts, on_delete=models.SET_NULL, null=True, related_name="assistants")
+    inference_config = models.JSONField(
+        default=dict,
+        blank=True,
+        help_text="Inference configuration (e.g., temperature, topP, maxTokens)",
+    )
+
+    def __str__(self):
+        model_name = self.ai_model.name if self.ai_model else "No Model Selected"
+        if self.system_prompt:
+            prompt_preview = (
+                # Truncate output if longer than 50 characters.
+                self.system_prompt.text[:50] + "..." if len(self.system_prompt.text) > 50 else self.system_prompt.text
+            )
+        else:
+            prompt_preview = "No Prompt Selected"
+        return (
+            f"Assistant: {self.name} | Model: {model_name} | "
+            f"Prompt Preview: {prompt_preview} | Config: {self.inference_config}"
+        )
+
+    class Meta:
+        db_table = "assistant"
+        ordering = ["-id"]
+        indexes = [
+            models.Index(fields=["name"]),
         ]
