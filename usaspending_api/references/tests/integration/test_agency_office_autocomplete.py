@@ -21,6 +21,7 @@ def agency_office_data(db):
         toptier_agency_id=1,
         name="Really Old Agency That Shouldn't Show Up In Any Results",
         toptier_code="ROATSSUIAR",
+        abbreviation="ROATSSUIAR",
         _fill_optional=True,
     )
 
@@ -65,6 +66,7 @@ def agency_office_data(db):
         toptier_agency_id=2,
         name="Department of Defense",
         toptier_code="ASDF",
+        abbreviation="DOD",
         _fill_optional=True,
     )
 
