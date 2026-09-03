@@ -38,7 +38,7 @@ def build_psql_env(
     return env
 
 
-def run_psql_to_file(
+def run_psql_to_file(  # noqa: PLR0915
     sql_path: str, output_path: str, env: dict, quiet: bool = True, on_error_stop: bool = True
 ) -> None:
     """
@@ -67,12 +67,16 @@ def run_psql_to_file(
         psql_args.extend(["-v", "ON_ERROR_STOP=1"])
 
     # Test database connection first
-    logger.info("Testing database connection...")
-    test_process = subprocess.run(["psql", "-c", "SELECT 1;"], env=env, capture_output=True, timeout=30)
-    if test_process.returncode != 0:
-        logger.error(f"Database connection test failed: {test_process.stderr.decode()}")
-        raise Exception(f"Cannot connect to database: {test_process.stderr.decode()}")
-    logger.info("Database connection test successful")
+    try:
+        logger.info("Testing database connection...")
+        test_process = subprocess.run(["psql", "-c", "SELECT 1;"], env=env, capture_output=True, timeout=5)
+        if test_process.returncode != 0:
+            logger.error(f"Database connection test failed: {test_process.stderr.decode()}")
+            raise Exception(f"Cannot connect to database: {test_process.stderr.decode()}")
+        logger.info("Database connection test successful")
+    except subprocess.TimeoutExpired:
+        logger.error("Test Connection Process timed out! Killing processes...")
+        raise Exception("psql process timed out after 30 seconds") from None
 
     logger.info("Starting cat and psql processes...")
 
@@ -101,6 +105,9 @@ def run_psql_to_file(
         logger.error("Process timed out! Killing processes...")
         psql_process.kill()
         cat_process.kill()
+
+        # communicate statement to finish handling data pipes
+        psql_process.communicate()
         raise Exception(
             "psql process timed out by the server's process OR cat process timed out after 30 seconds"
         ) from None
@@ -113,6 +120,10 @@ def run_psql_to_file(
     if psql_process.returncode != 0:
         error_msg = psql_error.decode() if psql_error else psql_output.decode() if psql_output else "Unknown error"
         logger.error(f"psql failed: {error_msg}")
+        if psql_process.poll() is None:
+            psql_process.kill()
+        if cat_process.poll() is None:
+            cat_process.kill()
         raise subprocess.CalledProcessError(psql_process.returncode, psql_args, output=psql_output, stderr=psql_error)
 
     logger.info("psql completed successfully")
