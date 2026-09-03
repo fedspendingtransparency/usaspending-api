@@ -55,6 +55,8 @@ Edit `usaspending_api/llm/fixtures/assistants.yaml`:
       topP: 1.0
       maxTokens: 5000
       stopSequences: []
+    is_active: true # Whether the Assistant is the one currently in use. Set as `false` to deactivate.
+    description: "Placeholder description"
 ```
 
 Then load fixtures:
@@ -64,38 +66,38 @@ python manage.py load_llm_fixtures
 
 ### 2. Via Management Command (Recommended for Updates)
 
-The `update_assistant` command provides comprehensive Assistant management.
+The `manage_llm_assistant` command provides comprehensive Assistant management.
 
 #### List all Assistants and their configs:
 ```bash
 # Short format (truncated system prompt)
-python manage.py update_assistant --list
+python manage.py manage_llm_assistant --list
 
 # Full format (complete system prompt)
-python manage.py update_assistant --list-with-prompts
+python manage.py manage_llm_assistant --list-with-prompts
 ```
 
 #### Update inference parameters:
 ```bash
 # Update temperature
-python manage.py update_assistant --name "filter-search" --temperature 0.5
+python manage.py manage_llm_assistant --name "filter-search" --temperature 0.5
 
 # Update multiple parameters
-python manage.py update_assistant \
+python manage.py manage_llm_assistant \
   --name "filter-search" \
   --temperature 0.7 \
   --top-p 0.9 \
   --max-tokens 4096
 
 # Update stop sequences
-python manage.py update_assistant \
+python manage.py manage_llm_assistant \
   --name "filter-search" \
   --stop-sequences "Human:,User:,\\n\\n"
 ```
 
 #### Update with full JSON config:
 ```bash
-python manage.py update_assistant \
+python manage.py manage_llm_assistant \
   --name "filter-search" \
   --inference-config-json '{"temperature": 0.8, "topP": 0.95, "maxTokens": 8192, "stopSequences": ["Human:", "User:"]}'
 ```
@@ -103,30 +105,30 @@ python manage.py update_assistant \
 #### Use model defaults for specific parameters:
 ```bash
 # Let the model use its own default for maxTokens, but control temperature
-python manage.py update_assistant \
+python manage.py manage_llm_assistant \
   --name "filter-search" \
   --inference-config-json '{"temperature": 0.5, "topP": 0.9, "maxTokens": null, "stopSequences": []}'
 
 # Let the model use all its defaults except temperature
-python manage.py update_assistant \
+python manage.py manage_llm_assistant \
   --name "filter-search" \
   --inference-config-json '{"temperature": 0.0, "topP": null, "maxTokens": null, "stopSequences": null}'
 ```
 
-#### Clear inference config (revert to defaults):
+#### Clear inference config (revert to defaults set in the Assistant's code where instantiated):
 ```bash
-python manage.py update_assistant --name "filter-search" --clear-inference-config
+python manage.py manage_llm_assistant --name "filter-search" --clear-inference-config
 ```
 
 #### Update AI Model:
 ```bash
 # By model ID
-python manage.py update_assistant \
+python manage.py manage_llm_assistant \
   --name "filter-search" \
   --model-id "anthropic.claude-sonnet-4-5-20250929-v1:0"
 
 # By model name
-python manage.py update_assistant \
+python manage.py manage_llm_assistant \
   --name "filter-search" \
   --model-name "claude 4.5"
 ```
@@ -134,24 +136,26 @@ python manage.py update_assistant \
 #### Update System Prompt:
 ```bash
 # Use an existing prompt by ID
-python manage.py update_assistant \
+python manage.py manage_llm_assistant \
   --name "filter-search" \
   --system-prompt-id 2
 
 # Create a new prompt
-python manage.py update_assistant \
+python manage.py manage_llm_assistant \
   --name "filter-search" \
-  --new-system-prompt "You are a helpful assistant..."
+  --new-system-prompt "You are a helpful assistant..." \
+  --new-prompt-name "Helpful prompt"
 
 # Combine multiple prompts
-python manage.py update_assistant \
+python manage.py manage_llm_assistant \
   --name "filter-search" \
   --system-prompt-id 2 \
   --new-system-prompt "Additional instructions..." \
-  --combine-prompts
+  --combine-prompts \
+  --new-prompt-name "Combined system prompt with additional instructions"
 
 # Clear system prompt
-python manage.py update_assistant \
+python manage.py manage_llm_assistant \
   --name "filter-search" \
   --clear-system-prompt
 ```
@@ -159,12 +163,24 @@ python manage.py update_assistant \
 #### Combined updates:
 ```bash
 # Update model, prompt, and inference config together
-python manage.py update_assistant \
+python manage.py manage_llm_assistant \
   --name "filter-search" \
   --model-name "claude 4.5" \
   --temperature 0.5 \
   --max-tokens 5000 \
   --system-prompt-id 3
+```
+
+#### Create a new AI Assistant:
+```bash
+python manage.py manage_llm_assistant \
+  --create-new \
+  --name "filter-search" \
+  --model-name "titan" \
+  --inference-config-json '{"temperature": null, "topP": null, "maxTokens": null, "stopSequences": null}' \
+  --system-prompt-id 2 \
+  --is-active \
+  --description "AI Assistant that uses Amazon Titan with its own default inference configs."
 ```
 
 ### 3. Via Django Shell
@@ -182,7 +198,7 @@ assistant.inference_config = {
     "maxTokens": 4096,
     "stopSequences": ["Human:", "\n\nUser:"],
 }
-assistant.save()
+assistant.save(update_fields=["inference_config"])
 
 # Use model defaults for some parameters (set to None)
 assistant.inference_config = {
@@ -191,17 +207,17 @@ assistant.inference_config = {
     "maxTokens": None,  # Use model's default
     "stopSequences": [],
 }
-assistant.save()
+assistant.save(update_fields=["inference_config"])
 
 # Update AI model
 model = AIModel.objects.get(name="claude 4.5")
 assistant.ai_model = model
-assistant.save()
+assistant.save(update_fields=["ai_model"])
 
 # Update system prompt
 prompt = Prompts.objects.get(name="filter-search-prompt")
 assistant.system_prompt = prompt
-assistant.save()
+assistant.save(update_fields=["system_prompt"])
 
 # View current config
 print(f"Model: {assistant.ai_model.name}")
@@ -236,7 +252,9 @@ def test_custom_assistant_inference():
             "topP": 0.9,
             "maxTokens": 512,
             "stopSequences": [],
-        }
+        },
+        is_active=True,
+        description="Test Assistant"
     )
     
     assert assistant.inference_config["temperature"] == 0.8
@@ -254,6 +272,8 @@ def test_with_mock_assistant():
         "maxTokens": 1024,
         "stopSequences": ["Human:"],
     }
+    mock_assistant.is_active = True
+    mock_assistant.description = "Mock Assistant"
     
     assert mock_assistant.inference_config["temperature"] == 0.3
 ```
@@ -292,7 +312,7 @@ When using `--inference-config-json`, the command validates:
 ## Troubleshooting
 
 ### Config not being used
-1. Check that the Assistant has config: `python manage.py update_assistant --list`
+1. Check that the Assistant has config: `python manage.py manage_llm_assistant --list`
 2. Verify the correct Assistant is being used in your code
 3. Ensure migration has been applied: `python manage.py migrate llm`
 4. Create a new Request context to see config changes
@@ -309,7 +329,7 @@ The command will reject invalid values before saving to the database:
 - This allows fine-grained control: you can specify some parameters explicitly while letting others use model defaults
 
 ### Assistant not found
-- List all Assistants: `python manage.py update_assistant --list`
+- List all Assistants: `python manage.py manage_llm_assistant --list`
 - Check the Assistant name matches exactly (case-sensitive)
 - Ensure fixtures have been loaded: `python manage.py load_llm_fixtures`
 
@@ -317,7 +337,9 @@ The command will reject invalid values before saving to the database:
 
 ### Assistant Model
 The `Assistant` model combines:
-- **name**: Unique identifier for the Assistant
-- **ai_model**: Foreign key to `AIModel` (which model to use)
-- **system_prompt**: Foreign key to `Prompts` (instructions for the model)
-- **inference_config**: JSONField with inference parameters
+- **name**: Identifier for the collection of Assistants used for the same purpose.
+- **ai_model**: Foreign key to `AIModel` (which model to use).
+- **system_prompt**: Foreign key to `Prompts` (instructions for the model).
+- **inference_config**: JSONField with inference parameters.
+- **is_active**: The active/inactive state of the Assistant. Only one `name/is_active=True` combo can exist per name (Unique Constraint).
+- **description**: Custom text describing the setup/purpose of the Assistant.
