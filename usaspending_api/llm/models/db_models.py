@@ -95,13 +95,15 @@ class ToolUse(models.Model):
 
 class Assistant(models.Model):
     name = models.TextField()
-    ai_model = models.ForeignKey(AIModel, on_delete=models.SET_NULL, null=True, related_name="assistants")
+    ai_model = models.ForeignKey(AIModel, on_delete=models.SET_NULL, related_name="assistants")
     system_prompt = models.ForeignKey(Prompts, on_delete=models.SET_NULL, null=True, related_name="assistants")
     inference_config = models.JSONField(
         default=dict,
         blank=True,
         help_text="Inference configuration (e.g., temperature, topP, maxTokens)",
     )
+    is_active = models.BooleanField(default=False, help_text="Active/Inactive state for the assistant")
+    description = models.TextField()
 
     def __str__(self):
         model_name = self.ai_model.name if self.ai_model else "No Model Selected"
@@ -113,13 +115,20 @@ class Assistant(models.Model):
         else:
             prompt_preview = "No Prompt Selected"
         return (
-            f"Assistant: {self.name} | Model: {model_name} | "
-            f"Prompt Preview: {prompt_preview} | Config: {self.inference_config}"
+            f"Assistant: {self.name} (PK: {self.pk}) | Model: {model_name} | Active: {self.is_active} "
+            f"Prompt Preview: {prompt_preview} | Config: {self.inference_config} | Description: {self.description}"
         )
 
     class Meta:
         db_table = "assistant"
         ordering = ["-id"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["name", "is_active"],
+                condition=models.Q(is_active=True),
+                name="only_one_active_assistant_per_name",
+            )
+        ]
         indexes = [
             models.Index(fields=["name"]),
         ]
