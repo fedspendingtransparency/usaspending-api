@@ -81,15 +81,42 @@ class LocationLookupTool:
         top_k = max(1, min(top_k, 100))
         query_upper = query.strip().upper()
 
+        logger.info(
+            f"Starting location lookup: query='{query}', location_type={location_type}, top_k={top_k}",
+            extra={"query": query, "location_type": location_type, "top_k": top_k},
+        )
+
         try:
             search = self._build_search(query_upper, location_type, top_k)
+            logger.debug(f"Executing OpenSearch query with filters: location_type={location_type}")
             response = search.execute()
+            logger.info(
+                f"OpenSearch query successful: query='{query}', hits={len(response.hits)}",
+                extra={"query": query, "hits_count": len(response.hits), "took_ms": response.took},
+            )
         except Exception as e:
             logger.error(f"OpenSearch query failed for query='{query}': {str(e)}", exc_info=True)
             return {"error": f"OpenSearch query failed: {str(e)}", "results": []}
 
         # Transform results
         results = self._transform_results(response)
+
+        # Log zero results as a warning for quality monitoring.
+        if len(results) == 0:
+            logger.warning(
+                f"Zero results returned for location lookup: query='{query}', location_type={location_type}",
+                extra={
+                    "query": query,
+                    "location_type": location_type,
+                    "hits_count": len(response.hits),
+                    "zero_results": True,
+                },
+            )
+
+        logger.info(
+            f"Location lookup completed: query='{query}', results_count={len(results)}",
+            extra={"query": query, "results_count": len(results), "location_type": location_type},
+        )
 
         return {"results": results, "count": len(results), "query": query, "location_type": location_type}
 

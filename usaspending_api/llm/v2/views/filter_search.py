@@ -63,6 +63,19 @@ class FilterSearchViewSet(LLMBase):
                 system_prompt=system_prompt,
             )
 
+            logger.info(
+                f"Filter search session initialized: session_id={session.id}, model={ai_model.name}",
+                extra={
+                    "session_id": session.id,
+                    "model_id": ai_model.model_id,
+                    "model_name": ai_model.name,
+                    "provider": ai_model.provider,
+                    "tools": [tool.description.name for tool in tools],
+                    "system_prompt_name": system_prompt.name if system_prompt else None,
+                    "query_length": len(query),
+                },
+            )
+
             # Create assistant with appropriate arguments.
             assistant_kwargs = {
                 "model": ai_model,
@@ -91,6 +104,24 @@ class FilterSearchViewSet(LLMBase):
                     # Update session end time when stream completes (success or error).
                     session.ended_at = timezone.now()
                     session.save(update_fields=["ended_at"])
+
+                    # Calculate session metrics
+                    duration_seconds = (session.ended_at - session.started_at).total_seconds()
+                    message_count = session.messages.count()
+                    tool_use_count = sum(m.tool_uses.count() for m in session.messages.all())
+                    total_tokens = sum(m.input_tokens + m.output_tokens for m in session.messages.all())
+
+                    logger.info(
+                        f"Filter search session completed: session_id={session.id}, duration={duration_seconds:.3f}s",
+                        extra={
+                            "session_id": session.id,
+                            "duration_seconds": duration_seconds,
+                            "message_count": message_count,
+                            "tool_use_count": tool_use_count,
+                            "total_tokens": total_tokens,
+                            "model_id": ai_model.model_id,
+                        },
+                    )
 
             # Craft Response stream.
             response = StreamingHttpResponse(event_stream(), content_type="application/x-ndjson")
