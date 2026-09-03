@@ -144,7 +144,7 @@ class LocationLookupTool:
             # Fuzzy match for typo tolerance (AUTO: 0 edits for 1-2 chars, 1 edit for 3-5, 2 edits for >5)
             Q("match", location={"query": query_upper, "fuzziness": "AUTO", "boost": 5.0}),
             # Contains match for partial matches
-            Q("match", location__contains={"query": query_upper, "boost": 3.0}),
+            Q("match_phrase_prefix", location__contains={"query": query_upper, "boost": 3.0}),
             # Wildcard for prefix matching
             Q("wildcard", location__keyword={"value": f"{query_upper}*", "boost": 2.0}),
         ]

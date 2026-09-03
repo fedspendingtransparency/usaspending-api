@@ -1,4 +1,5 @@
 import os
+import uuid
 from builtins import Exception
 from pathlib import Path
 from string import Template
@@ -10,7 +11,6 @@ from opensearchpy import OpenSearch
 from pytest import Session
 
 from usaspending_api.common.helpers.sql_helpers import ordered_dictionary_fetcher
-from usaspending_api.common.helpers.text_helpers import generate_random_string
 from usaspending_api.common.sqs.sqs_handler import (
     UNITTEST_FAKE_DEAD_LETTER_QUEUE_NAME,
     UNITTEST_FAKE_QUEUE_NAME,
@@ -93,10 +93,7 @@ class TestElasticSearchIndex:
         self.index_name = self._generate_index_name()
         self.alias_prefix = self.index_name
 
-        self.client = OpenSearch(
-            hosts=[settings.ES_HOSTNAME],
-            timeout=settings.ES_TIMEOUT
-        )
+        self.client = OpenSearch(hosts=[settings.ES_HOSTNAME], timeout=settings.ES_TIMEOUT)
 
         self.etl_config = {
             "load_type": self.index_type,
@@ -238,10 +235,7 @@ class TestElasticSearchIndex:
             required_suffix = "-" + settings.ES_SUBAWARD_NAME_SUFFIX
         elif self.index_type == "recipient":
             required_suffix = "-" + settings.ES_RECIPIENTS_NAME_SUFFIX
-        return (
-            f"test-{generate_random_string()}"
-            f"{required_suffix}"
-        )
+        return f"test-{uuid.uuid4()}{required_suffix}"
 
 
 def ensure_broker_server_dblink_exists():
