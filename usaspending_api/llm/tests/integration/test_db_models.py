@@ -18,6 +18,12 @@ class TestAIModel:
         assert ai_model.model_id == "anthropic.claude-3-5-sonnet"
         assert ai_model.provider == "anthropic"
 
+    def test_model_id_is_unique(self):
+        AIModel.objects.create(name="model 1", model_id="duplicate-id", provider="provider1")
+
+        with pytest.raises(IntegrityError):
+            AIModel.objects.create(name="model 2", model_id="duplicate-id", provider="provider2")
+
     def test_ai_model_str_representation(self):
         """Test __str__ method of AIModel"""
         ai_model = AIModel.objects.create(
@@ -414,25 +420,29 @@ class TestAssistant:
         assert assistant.system_prompt == prompt
         assert assistant.inference_config["temperature"] == 0.5
 
-    def test_assistant_without_ai_model(self):
-        """Test creating an assistant without an AI model."""
-        assistant = Assistant.objects.create(name="test-assistant")
-        assert assistant.ai_model is None
+    def test_assistant_requires_ai_model(self):
+        """Test that creating an assistant without an AI model fails."""
+        with pytest.raises(IntegrityError):
+            Assistant.objects.create(name="test-assistant")
 
     def test_assistant_without_system_prompt(self):
         """Test creating an assistant without a system prompt."""
-        assistant = Assistant.objects.create(name="test-assistant")
+        model = AIModel.objects.create(name="test model", model_id="test-id", provider="test-provider")
+        assistant = Assistant.objects.create(name="test-assistant", ai_model=model)
         assert assistant.system_prompt is None
 
     def test_assistant_inference_config_default_value(self):
         """Test that inference_config defaults to empty dict."""
-        assistant = Assistant.objects.create(name="test-assistant")
+        model = AIModel.objects.create(name="test model", model_id="test-id", provider="test-provider")
+        assistant = Assistant.objects.create(name="test-assistant", ai_model=model)
         assert assistant.inference_config == {}
 
     def test_assistant_with_inference_config(self):
         """Test creating an Assistant with custom inference config."""
+        model = AIModel.objects.create(name="test model", model_id="test-id", provider="test-provider")
         assistant = Assistant.objects.create(
             name="test-assistant",
+            ai_model=model,
             inference_config={
                 "temperature": 0.7,
                 "topP": 0.8,
@@ -448,8 +458,9 @@ class TestAssistant:
 
     def test_assistant_update_inference_config(self):
         """Test updating inference_config on existing assistant."""
+        model = AIModel.objects.create(name="test model", model_id="test-id", provider="test-provider")
         assistant = Assistant.objects.create(
-            name="test-assistant", inference_config={"temperature": 0.0, "maxTokens": 1000}
+            name="test-assistant", ai_model=model, inference_config={"temperature": 0.0, "maxTokens": 1000}
         )
 
         assistant.inference_config = {
