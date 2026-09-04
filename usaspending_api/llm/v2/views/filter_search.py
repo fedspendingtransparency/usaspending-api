@@ -44,7 +44,10 @@ class FilterSearchViewSet(LLMBase):
             # Validate request and retrieve the active filter-search Assistant.
             validated_request_data = TinyShield(models).block(request.data)
             query = validated_request_data["query"]
-            assistant_config = Assistant.objects.get(name="filter-search", is_active=True)
+            try:
+                assistant_config = Assistant.objects.get(name="filter-search", is_active=True)
+            except Assistant.DoesNotExist as error:
+                raise ValueError("Active filter-search Assistant not found.") from error
             ai_model = assistant_config.ai_model
 
             # Get available tools.
