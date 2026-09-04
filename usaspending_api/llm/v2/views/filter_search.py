@@ -8,7 +8,7 @@ from rest_framework.request import Request
 from usaspending_api.common.api_request_utils import LLMAPIKeyHandler
 from usaspending_api.common.validator.tinyshield import TinyShield
 from usaspending_api.llm.assistants.filter_search import FilterSearchAssistant
-from usaspending_api.llm.models.db_models import Prompts, Session
+from usaspending_api.llm.models.db_models import Assistant, Session
 from usaspending_api.llm.tools.execute_filter import execute_filter_tool
 from usaspending_api.llm.tools.lookup_location import lookup_location_tool
 from usaspending_api.llm.tools.lookup_recipient import lookup_recipient_tool
@@ -41,20 +41,22 @@ class FilterSearchViewSet(LLMBase):
         ]
 
         try:
-            # Validate request and retrieve AI model.
+            # Validate request and retrieve the active filter-search Assistant.
             validated_request_data = TinyShield(models).block(request.data)
             query = validated_request_data["query"]
-            ai_model = self._get_ai_model()
+            try:
+                assistant_config = Assistant.objects.get(name="filter-search", is_active=True)
+            except Assistant.DoesNotExist as error:
+                raise ValueError("Active filter-search Assistant not found.") from error
+            ai_model = assistant_config.ai_model
 
             # Get available tools.
             tools = self.tools
 
-            # Retrieve system prompt from database (fall back to Assistant's default if not found).
-            system_prompt = None
-            try:
-                system_prompt = Prompts.objects.get(name="filter-preference")
-            except Prompts.DoesNotExist:
-                logger.warning("System prompt not found in database, using Assistant's default.")
+            # Use the active Assistant's configured system prompt and inference settings.
+            system_prompt = assistant_config.system_prompt
+            if system_prompt is None:
+                logger.warning("Active filter-search Assistant has no system prompt; using the default.")
 
             # Instantiate session.
             session = Session.objects.create(
@@ -81,6 +83,7 @@ class FilterSearchViewSet(LLMBase):
                 "model": ai_model,
                 "tools": tools,
                 "session": session,
+                "inference_config": assistant_config.inference_config,
             }
             # If system_prompt is set, override the Assistant's default prompt.
             if system_prompt:
