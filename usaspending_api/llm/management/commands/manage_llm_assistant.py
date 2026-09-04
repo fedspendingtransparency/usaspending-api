@@ -23,7 +23,7 @@ class Command(BaseCommand):
         )
         parser.add_argument(
             "--pk",
-            type="int",
+            type=int,
             help="Primary key of the assistant to update (e.g., 1)",
         )
         parser.add_argument(
