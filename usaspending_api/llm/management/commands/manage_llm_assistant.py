@@ -34,9 +34,7 @@ class Command(BaseCommand):
         parser.add_argument(
             "--model-id",
             type=str,
-            help=(
-                "Model ID to use (e.g., 'amazon.nova-lite-v1:0'); if used with --model-name, will only use model ID"
-            ),
+            help=("Model ID to use (e.g., 'amazon.nova-lite-v1:0'); if used with --model-name, will only use model ID"),
         )
         parser.add_argument(
             "--model-name",
@@ -69,7 +67,7 @@ class Command(BaseCommand):
         parser.add_argument(
             "--new-prompt-name",
             type=str,
-            help="Provide a name for your system prompt (if not provided, a default one will be generated)"
+            help="Provide a name for your system prompt (if not provided, a default one will be generated)",
         )
         parser.add_argument(
             "--temperature",
@@ -99,7 +97,7 @@ class Command(BaseCommand):
             type=str,
             help=(
                 "Full inference config as JSON string "
-                "(e.g., '{\"temperature\": 0.5, \"topP\": 0.8, \"maxTokens\": 5000, \"stopSequences\": []}')"
+                '(e.g., \'{"temperature": 0.5, "topP": 0.8, "maxTokens": 5000, "stopSequences": []}\')'
             ),
         )
         parser.add_argument(
@@ -117,21 +115,9 @@ class Command(BaseCommand):
             action="store_true",
             help="Clear inference config (set to empty dict)",
         )
-        parser.add_argument(
-            "--is-active",
-            action="store_true",
-            help="Activate this assistant."
-        )
-        parser.add_argument(
-            "--is-inactive",
-            action="store_true",
-            help="Deactivate this assistant."
-        )
-        parser.add_argument(
-            "--description",
-            type=str,
-            help="Description of the assistant (optional)"
-        )
+        parser.add_argument("--is-active", action="store_true", help="Activate this assistant.")
+        parser.add_argument("--is-inactive", action="store_true", help="Deactivate this assistant.")
+        parser.add_argument("--description", type=str, help="Description of the assistant (optional)")
 
     @transaction.atomic
     def handle(self, *args, **options) -> None:
@@ -286,11 +272,11 @@ class Command(BaseCommand):
             assistant.system_prompt_id = self._get_prompt_pk(assistant, options)
         # Update the inference configs if specified.
         if (
-                options.get("temperature") is not None
-                or options.get("max_tokens") is not None
-                or options.get("top_p") is not None
-                or options.get("stop_sequences") is not None
-                or options.get("inference_config_json") is not None
+            options.get("temperature") is not None
+            or options.get("max_tokens") is not None
+            or options.get("top_p") is not None
+            or options.get("stop_sequences") is not None
+            or options.get("inference_config_json") is not None
         ):
             has_configs = True
             inference_configs = self._update_inference_configs(assistant, options)
@@ -313,9 +299,9 @@ class Command(BaseCommand):
             if prompts:
                 logger.info(f"""
                     Assistant: {assistant.name} (PK: {assistant.pk}) |
-                    Model: {assistant.ai_model.name if assistant.ai_model else 'No Model Selected'} |
+                    Model: {assistant.ai_model.name if assistant.ai_model else "No Model Selected"} |
                     Active: {assistant.is_active} |
-                    System Prompt: {assistant.system_prompt.text if assistant.system_prompt else 'None'} |
+                    System Prompt: {assistant.system_prompt.text if assistant.system_prompt else "None"} |
                     Config: {assistant.inference_config} |
                     Description: {assistant.description}
                 """)
@@ -410,10 +396,7 @@ class Command(BaseCommand):
         # If prompts ARE being combined:
         else:
             return_prompt_pk = self._handle_combine_prompts(
-                current_prompt_pk,
-                existing_prompt_pk,
-                new_prompt,
-                new_prompt_name
+                current_prompt_pk, existing_prompt_pk, new_prompt, new_prompt_name
             )
         return return_prompt_pk
 
@@ -550,12 +533,12 @@ class Command(BaseCommand):
                 raise CommandError("Stop sequences cannot be empty.")
         default_config = InferenceConfig().model_dump()
         new_config = {
-            "temperature": temperature if temperature is not None else current_config.get(
-                "temperature", default_config["temperature"]
-            ),
-            "maxTokens": max_tokens if max_tokens is not None else current_config.get(
-                "maxTokens", default_config["maxTokens"]
-            ),
+            "temperature": temperature
+            if temperature is not None
+            else current_config.get("temperature", default_config["temperature"]),
+            "maxTokens": max_tokens
+            if max_tokens is not None
+            else current_config.get("maxTokens", default_config["maxTokens"]),
             "topP": top_p if top_p is not None else current_config.get("topP", default_config["topP"]),
             "stopSequences": stop_sequences
             if stop_sequences is not None

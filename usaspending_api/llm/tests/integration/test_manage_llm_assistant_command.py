@@ -21,7 +21,8 @@ class TestListAssistants:
         """Test listing assistants with basic format."""
         model = AIModel.objects.create(name="test model", model_id="test-id", provider="test")
         prompt = Prompts.objects.create(name="test prompt", description="Test", text="You are helpful")
-        Assistant.objects.create(is_active=True,
+        Assistant.objects.create(
+            is_active=True,
             name="test-assistant",
             ai_model=model,
             system_prompt=prompt,
@@ -43,7 +44,8 @@ class TestListAssistants:
             "longer than 50 characters to test the --list-with-prompts flag."
         )
         prompt = Prompts.objects.create(name="test prompt", description="Test", text=long_prompt_text)
-        Assistant.objects.create(is_active=True,
+        Assistant.objects.create(
+            is_active=True,
             name="test-assistant",
             ai_model=model,
             system_prompt=prompt,
@@ -116,7 +118,8 @@ class TestUpdateInferenceConfigTemperature:
     def test_update_temperature_preserves_other_configs(self):
         """Test that updating temperature preserves other config values."""
         model = AIModel.objects.create(name="test model", model_id="test-id", provider="test")
-        assistant = Assistant.objects.create(is_active=True,
+        assistant = Assistant.objects.create(
+            is_active=True,
             name="test-assistant",
             ai_model=model,
             inference_config={"temperature": 0.0, "topP": 0.9, "maxTokens": 2000, "stopSequences": ["END"]},
@@ -326,7 +329,8 @@ class TestUpdateInferenceConfigJSON:
     def test_update_with_json_config_partial(self):
         """Test that JSON config merges with existing config."""
         model = AIModel.objects.create(name="test model", model_id="test-id", provider="test")
-        assistant = Assistant.objects.create(is_active=True,
+        assistant = Assistant.objects.create(
+            is_active=True,
             name="test-assistant",
             ai_model=model,
             inference_config={"temperature": 0.0, "topP": 1.0, "maxTokens": 5000, "stopSequences": []},
@@ -344,7 +348,8 @@ class TestUpdateInferenceConfigJSON:
     def test_update_with_json_config_null_values(self):
         """Test that null values in JSON config allow model defaults."""
         model = AIModel.objects.create(name="test model", model_id="test-id", provider="test")
-        assistant = Assistant.objects.create(is_active=True,
+        assistant = Assistant.objects.create(
+            is_active=True,
             name="test-assistant",
             ai_model=model,
             inference_config={"temperature": 0.5, "topP": 0.9, "maxTokens": 2000, "stopSequences": ["END"]},
@@ -431,7 +436,8 @@ class TestClearInferenceConfig:
     def test_clear_inference_config(self):
         """Test clearing inference config."""
         model = AIModel.objects.create(name="test model", model_id="test-id", provider="test")
-        assistant = Assistant.objects.create(is_active=True,
+        assistant = Assistant.objects.create(
+            is_active=True,
             name="test-assistant",
             ai_model=model,
             inference_config={"temperature": 0.5, "topP": 0.9, "maxTokens": 2000, "stopSequences": ["END"]},
@@ -864,8 +870,8 @@ class TestCombinedUpdates:
         model2 = AIModel.objects.create(name="model 2", model_id="model-2", provider="provider2")
         prompt1 = Prompts.objects.create(name="prompt 1", description="Test", text="You are helpful")
         prompt2 = Prompts.objects.create(name="prompt 2", description="Test", text="You are creative")
-        assistant = Assistant.objects.create(is_active=True,
-            name="test-assistant", ai_model=model1, system_prompt=prompt1, inference_config={}
+        assistant = Assistant.objects.create(
+            is_active=True, name="test-assistant", ai_model=model1, system_prompt=prompt1, inference_config={}
         )
 
         call_command(
