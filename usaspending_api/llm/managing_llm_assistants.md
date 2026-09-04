@@ -134,7 +134,7 @@ python manage.py manage_llm_assistant \
 
 #### Update with JSON config:
 
-The JSON object may contain all or only some inference fields. Supplied fields are merged with the current configuration; use `null` to remove a specific field from the request.
+The JSON object may contain all or only some inference fields. Supplied fields are merged with the current configuration; fields not already configured use the Assistant's deterministic defaults. Use `null` to remove a specific field from the request and allow the Bedrock model's defaults.
 
 ```bash
 python manage.py manage_llm_assistant \

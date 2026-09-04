@@ -92,6 +92,36 @@ def assistant(mock_model, mock_tool, mock_search_tool, mock_session):
 
 
 class TestFilterSearchAssistant:
+    def test_empty_inference_config_uses_deterministic_defaults(self, assistant):
+        assert assistant.inference_config == {
+            "temperature": 0.0,
+            "topP": 1.0,
+            "maxTokens": 5000,
+            "stopSequences": [],
+        }
+
+    def test_null_inference_values_are_omitted(self, mock_model, mock_tool, mock_session):
+        with patch("boto3.client"):
+            assistant = FilterSearchAssistant(
+                model=mock_model,
+                tools=[mock_tool],
+                session=mock_session,
+                inference_config={"temperature": 0.4, "topP": None, "maxTokens": None},
+            )
+
+        assert assistant.inference_config == {"temperature": 0.4}
+
+    def test_all_null_inference_values_produce_empty_config(self, mock_model, mock_tool, mock_session):
+        with patch("boto3.client"):
+            assistant = FilterSearchAssistant(
+                model=mock_model,
+                tools=[mock_tool],
+                session=mock_session,
+                inference_config={"temperature": None, "topP": None, "maxTokens": None},
+            )
+
+        assert assistant.inference_config == {}
+
     @patch("usaspending_api.llm.models.db_models.Message.objects.create")
     def test_search_simple_response(self, mock_message_create, assistant):
         """Test search with a simple text response (no tool use)."""

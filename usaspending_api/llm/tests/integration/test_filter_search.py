@@ -1,23 +1,24 @@
 import json
-import os
 from unittest.mock import Mock, patch
 
 import pytest
 from model_bakery import baker
 from rest_framework import status
 
-from usaspending_api.llm.models.db_models import Session
+from usaspending_api.llm.models.db_models import Assistant, Session
 
 
 @pytest.fixture
 def ai_model_data(db):
     """Create AI model test data."""
-    return baker.make(
+    ai_model = baker.make(
         "llm.AIModel",
         name="nova micro",
         model_id="amazon.nova-micro-v1:0",
-        provider="amazon"
+        provider="amazon",
     )
+    Assistant.objects.create(name="filter-search", ai_model=ai_model, is_active=True)
+    return ai_model
 
 
 @pytest.fixture
@@ -305,42 +306,50 @@ class TestFilterSearch:
         assert "not found" in event["message"].lower()
 
     @pytest.mark.django_db
-    def test_endpoint_uses_environment_model(self, client, mock_llm_api_key, mock_bedrock_client, system_prompt_data):
-        """Test that endpoint respects LLM_DEFAULT_MODEL environment variable."""
-        # Create a different model.
+    def test_endpoint_uses_active_filter_search_assistant(
+        self, client, mock_llm_api_key, mock_bedrock_client, system_prompt_data
+    ):
+        """Test that endpoint uses the active filter-search Assistant configuration."""
         custom_model = baker.make(
             "llm.AIModel",
             name="claude 4.5",
             model_id="anthropic.claude-sonnet-4-5-20250929-v1:0",
-            provider="anthropic"
+            provider="anthropic",
+        )
+        Assistant.objects.create(
+            name="filter-search",
+            ai_model=custom_model,
+            system_prompt=system_prompt_data,
+            inference_config={"temperature": 0.4},
+            is_active=True,
         )
 
-        # Mock Bedrock response.
         mock_bedrock_client.converse.return_value = {
             "output": {
                 "message": {
                     "role": "assistant",
-                    "content": [{"text": "Results"}]
+                    "content": [{"text": "Results"}],
                 }
             },
             "stopReason": "end_turn",
             "usage": {"inputTokens": 10, "outputTokens": 20},
-            "metrics": {"latencyMs": 100}
+            "metrics": {"latencyMs": 100},
         }
 
-        # Set environment variable.
-        with patch.dict(os.environ, {"LLM_DEFAULT_MODEL": "claude 4.5"}):
-            resp = client.post(
-                self.url,
-                content_type="application/json",
-                data=json.dumps({"query": "test query"})
-            )
+        resp = client.post(
+            self.url,
+            content_type="application/json",
+            data=json.dumps({"query": "test query"}),
+        )
 
         assert resp.status_code == status.HTTP_200_OK
+        list(resp.streaming_content)
 
-        # Verify the correct model was used.
         session = Session.objects.latest("started_at")
         assert session.ai_model == custom_model
+        assert session.system_prompt == system_prompt_data
+        assert mock_bedrock_client.converse.call_args.kwargs["inferenceConfig"] == {"temperature": 0.4}
+        assert mock_bedrock_client.converse.call_args.kwargs["system"] == [{"text": system_prompt_data.text}]
 
     def test_endpoint_handles_bedrock_error(self, client, ai_model_data, mock_llm_api_key, mock_bedrock_client):
         """Test that endpoint handles Bedrock API errors gracefully."""

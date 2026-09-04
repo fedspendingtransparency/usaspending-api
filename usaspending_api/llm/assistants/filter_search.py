@@ -23,12 +23,14 @@ class FilterSearchAssistant:
         system_message: str = (
             "You are USAspending search assistant. Help the user select filters to search for federal spending"
         ),
+        inference_config: dict | None = None,
     ) -> None:
         self.model = model
         self.tools = tools
         self.tools_by_name = {tool.description.name: tool for tool in tools}
         self.session = session
         self.system_message = system_message
+        self._inference_config = inference_config
 
         self.message_order = 0
         self.messages = []
@@ -100,14 +102,14 @@ class FilterSearchAssistant:
         """
         Controls LLM response behavior.
 
-        Uses model's inference_config if available, otherwise falls back to defaults.
+        Uses the active Assistant's inference configuration when provided; otherwise falls back to defaults.
         Defaults are optimized for deterministic responses.
 
         Returns:
             Dictionary with inference parameters (temperature, topP, maxTokens, stopSequences).
         """
-        if self.model.inference_config:
-            return self.model.inference_config
+        if self._inference_config:
+            return {key: value for key, value in self._inference_config.items() if value is not None}
 
         # Default configuration for deterministic output.
         return {

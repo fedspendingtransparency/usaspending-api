@@ -548,11 +548,18 @@ class Command(BaseCommand):
             stop_sequences = [sequence.strip() for sequence in stop_sequences]
             if any(not sequence for sequence in stop_sequences):
                 raise CommandError("Stop sequences cannot be empty.")
+        default_config = InferenceConfig().model_dump()
         new_config = {
-            "temperature": temperature if temperature is not None else current_config.get("temperature"),
-            "maxTokens": max_tokens if max_tokens is not None else current_config.get("maxTokens"),
-            "topP": top_p if top_p is not None else current_config.get("topP"),
-            "stopSequences": stop_sequences if stop_sequences is not None else current_config.get("stopSequences"),
+            "temperature": temperature if temperature is not None else current_config.get(
+                "temperature", default_config["temperature"]
+            ),
+            "maxTokens": max_tokens if max_tokens is not None else current_config.get(
+                "maxTokens", default_config["maxTokens"]
+            ),
+            "topP": top_p if top_p is not None else current_config.get("topP", default_config["topP"]),
+            "stopSequences": stop_sequences
+            if stop_sequences is not None
+            else current_config.get("stopSequences", default_config["stopSequences"]),
         }
         # Validate the new config using Pydantic model.
         try:
@@ -569,13 +576,14 @@ class Command(BaseCommand):
             if not isinstance(config_dict, dict):
                 raise CommandError("Inference config JSON must be an object.")
             # Merge with current config to allow partial updates from inference_config_json.
-            # This allows the use of --inference-config-json without specifying the entire set of config options.
+            # Missing values use the Assistant's application defaults unless explicitly set to null.
             # Example: --inference-config-json '{"temperature": 0.7, "maxTokens": 1000}'
-            # ^^ This only updates those 2 values, the others remain unchanged from the current config.
+            # ^^ This only updates those 2 values; existing values remain unchanged and missing values use defaults.
             # To let an AI model use its own defaults, set values to null.
             # Example: --inference-config-json '{"maxTokens": null, "stopSequences": null}'
             # ^^ Removes those parameters from the request, allowing the Bedrock LLM to use its own defaults.
-            merged_config = {**current_config, **config_dict}
+            default_config = InferenceConfig().model_dump()
+            merged_config = {**default_config, **current_config, **config_dict}
             InferenceConfig(**merged_config)
             new_config = merged_config
         except ValidationError as e:

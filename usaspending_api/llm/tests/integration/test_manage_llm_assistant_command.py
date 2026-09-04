@@ -102,7 +102,12 @@ class TestUpdateInferenceConfigTemperature:
         call_command("manage_llm_assistant", "--name", "test-assistant", "--temperature", "0.5")
 
         assistant.refresh_from_db()
-        assert assistant.inference_config["temperature"] == 0.5
+        assert assistant.inference_config == {
+            "temperature": 0.5,
+            "topP": 1.0,
+            "maxTokens": 5000,
+            "stopSequences": [],
+        }
 
     def test_update_temperature_preserves_other_configs(self):
         """Test that updating temperature preserves other config values."""
@@ -293,6 +298,26 @@ class TestUpdateInferenceConfigJSON:
         assert assistant.inference_config["topP"] == 0.95
         assert assistant.inference_config["maxTokens"] == 8192
         assert assistant.inference_config["stopSequences"] == ["Human:", "User:"]
+
+    def test_update_with_json_config_on_empty_assistant_uses_defaults(self):
+        model = AIModel.objects.create(name="test model", model_id="test-id", provider="test")
+        assistant = Assistant.objects.create(is_active=True, name="test-assistant", ai_model=model, inference_config={})
+
+        call_command(
+            "manage_llm_assistant",
+            "--name",
+            "test-assistant",
+            "--inference-config-json",
+            '{"temperature": 0.7}',
+        )
+
+        assistant.refresh_from_db()
+        assert assistant.inference_config == {
+            "temperature": 0.7,
+            "topP": 1.0,
+            "maxTokens": 5000,
+            "stopSequences": [],
+        }
 
     def test_update_with_json_config_partial(self):
         """Test that JSON config merges with existing config."""
