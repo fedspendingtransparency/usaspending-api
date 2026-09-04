@@ -10,6 +10,8 @@ class InferenceConfig(BaseModel):
     When None, the parameter will be omitted from the inference request.
     """
 
+    model_config = ConfigDict(extra="forbid")
+
     temperature: float | None = Field(
         default=0.0, ge=0.0, le=1.0, description="Temperature (0.0-1.0). Set to null to use model default."
     )

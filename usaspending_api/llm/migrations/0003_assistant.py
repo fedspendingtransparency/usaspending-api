@@ -26,8 +26,7 @@ class Migration(migrations.Migration):
                 (
                     "ai_model",
                     models.ForeignKey(
-                        null=True,
-                        on_delete=django.db.models.deletion.SET_NULL,
+                        on_delete=django.db.models.deletion.PROTECT,
                         related_name="assistants",
                         to="llm.aimodel",
                     ),
@@ -50,7 +49,7 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "description",
-                    models.TextField()
+                    models.TextField(blank=True, default="")
                 )
             ],
             options={
