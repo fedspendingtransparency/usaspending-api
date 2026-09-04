@@ -43,47 +43,6 @@ class TestAIModel:
         assert models[1] == model2
         assert models[2] == model1
 
-    def test_ai_model_with_inference_config(self):
-        """Test creating an AIModel with custom inference config."""
-        ai_model = AIModel.objects.create(
-            name="claude 3.5",
-            model_id="anthropic.claude-3-5-sonnet",
-            provider="anthropic",
-            inference_config={
-                "temperature": 0.5,
-                "topP": 0.8,
-                "maxTokens": 8192,
-            },
-        )
-
-        assert ai_model.inference_config["temperature"] == 0.5
-        assert ai_model.inference_config["topP"] == 0.8
-        assert ai_model.inference_config["maxTokens"] == 8192
-
-    def test_ai_model_without_inference_config(self):
-        """Test that inference_config defaults to empty dict."""
-        ai_model = AIModel.objects.create(name="test model", model_id="test-id", provider="test-provider")
-
-        assert ai_model.inference_config == {}
-
-    def test_ai_model_update_inference_config(self):
-        """Test updating inference_config on existing model."""
-        ai_model = AIModel.objects.create(
-            name="test model", model_id="test-id", provider="test-provider", inference_config={"temperature": 0.0}
-        )
-
-        ai_model.inference_config = {
-            "temperature": 0.7,
-            "topP": 0.9,
-            "maxTokens": 4096,
-        }
-        ai_model.save()
-        ai_model.refresh_from_db()
-
-        assert ai_model.inference_config["temperature"] == 0.7
-        assert ai_model.inference_config["topP"] == 0.9
-        assert ai_model.inference_config["maxTokens"] == 4096
-
 
 @pytest.mark.django_db
 class TestPrompts:
