@@ -409,7 +409,12 @@ class Command(BaseCommand):
             )
         # If prompts ARE being combined:
         else:
-            return_prompt_pk = self._handle_combine_prompts(current_prompt_pk, existing_prompt_pk, new_prompt, new_prompt_name)
+            return_prompt_pk = self._handle_combine_prompts(
+                current_prompt_pk,
+                existing_prompt_pk,
+                new_prompt,
+                new_prompt_name
+            )
         return return_prompt_pk
 
     def _handle_swap_prompts(
