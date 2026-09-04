@@ -1,3 +1,5 @@
+from unittest.mock import patch
+
 import pytest
 from django.core.management import call_command
 from django.core.management.base import CommandError
@@ -7,13 +9,14 @@ from usaspending_api.llm.models.db_models import AIModel, Assistant, Prompts
 
 @pytest.mark.django_db
 class TestListAssistants:
-    def test_list_assistants_empty(self, caplog):
+    @patch("usaspending_api.llm.management.commands.manage_llm_assistant.logger.warning")
+    def test_list_assistants_empty(self, mock_warning):
         """Test listing assistants when none exist."""
-        with caplog.at_level("INFO"):
-            call_command("manage_llm_assistant", "--list")
-        assert "No AI Assistants found" in caplog.text
+        call_command("manage_llm_assistant", "--list")
+        mock_warning.assert_called_once_with("No AI Assistants found.")
 
-    def test_list_assistants_basic(self, caplog):
+    @patch("usaspending_api.llm.management.commands.manage_llm_assistant.logger.info")
+    def test_list_assistants_basic(self, mock_info):
         """Test listing assistants with basic format."""
         model = AIModel.objects.create(name="test model", model_id="test-id", provider="test")
         prompt = Prompts.objects.create(name="test prompt", description="Test", text="You are helpful")
@@ -24,12 +27,13 @@ class TestListAssistants:
             inference_config={"temperature": 0.5, "topP": 0.9, "maxTokens": 1000, "stopSequences": []},
         )
 
-        with caplog.at_level("INFO"):
-            call_command("manage_llm_assistant", "--list")
-        assert "test-assistant" in caplog.text
-        assert "test model" in caplog.text
+        call_command("manage_llm_assistant", "--list")
+        output = " ".join(str(call) for call in mock_info.call_args_list)
+        assert "test-assistant" in output
+        assert "test model" in output
 
-    def test_list_assistants_with_prompts(self, caplog):
+    @patch("usaspending_api.llm.management.commands.manage_llm_assistant.logger.info")
+    def test_list_assistants_with_prompts(self, mock_info):
         """Test listing assistants with full prompt text (longer than 50 chars)."""
         model = AIModel.objects.create(name="test model", model_id="test-id", provider="test")
         long_prompt_text = (
@@ -46,17 +50,16 @@ class TestListAssistants:
         )
 
         # Test that --list truncates the prompt
-        caplog.clear()
-        with caplog.at_level("INFO"):
-            call_command("manage_llm_assistant", "--list")
-        assert "..." in caplog.text  # Should show truncation
-        assert "intentionally longer than 50 characters" not in caplog.text  # End of prompt should be truncated
+        call_command("manage_llm_assistant", "--list")
+        short_output = " ".join(str(call) for call in mock_info.call_args_list)
+        assert "..." in short_output  # Should show truncation
+        assert "intentionally longer than 50 characters" not in short_output  # End of prompt should be truncated
 
         # Test that --list-with-prompts shows full prompt
-        caplog.clear()
-        with caplog.at_level("INFO"):
-            call_command("manage_llm_assistant", "--list-with-prompts")
-        assert long_prompt_text in caplog.text  # Full prompt should be visible
+        mock_info.reset_mock()
+        call_command("manage_llm_assistant", "--list-with-prompts")
+        full_output = " ".join(str(call) for call in mock_info.call_args_list)
+        assert long_prompt_text in full_output  # Full prompt should be visible
 
     def test_list_options_are_mutually_exclusive(self):
         with pytest.raises(CommandError, match=r"either --list or --list-with-prompts"):
@@ -624,7 +627,8 @@ class TestUpdateSystemPrompt:
                 "You are precise",
             )
 
-    def test_update_prompt_same_as_current(self, caplog):
+    @patch("usaspending_api.llm.management.commands.manage_llm_assistant.logger.info")
+    def test_update_prompt_same_as_current(self, mock_info):
         """Test that specifying the same prompt as current logs info message."""
         model = AIModel.objects.create(name="test model", model_id="test-id", provider="test")
         prompt1 = Prompts.objects.create(name="prompt 1", description="Test", text="You are helpful")
@@ -635,10 +639,10 @@ class TestUpdateSystemPrompt:
             system_prompt=prompt1,
         )
 
-        with caplog.at_level("INFO"):
-            call_command("manage_llm_assistant", "--name", "test-assistant", "--system-prompt-id", str(prompt1.pk))
+        call_command("manage_llm_assistant", "--name", "test-assistant", "--system-prompt-id", str(prompt1.pk))
 
-        assert "same as the one currently in use" in caplog.text
+        output = " ".join(str(call) for call in mock_info.call_args_list)
+        assert "same as the one currently in use" in output
 
     def test_clear_system_prompt(self):
         """Test clearing system prompt."""
