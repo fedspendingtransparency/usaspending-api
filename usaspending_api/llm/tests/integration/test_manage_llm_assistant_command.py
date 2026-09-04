@@ -1,3 +1,4 @@
+import uuid
 from unittest.mock import patch
 
 import pytest
@@ -525,7 +526,7 @@ class TestUpdateSystemPrompt:
         assistant.refresh_from_db()
         assert assistant.system_prompt is not None
         assert assistant.system_prompt.text == "You are an expert"
-        assert "Custom Prompt" in assistant.system_prompt.name
+        assert uuid.UUID(assistant.system_prompt.name)
 
     def test_update_prompt_combine_existing_and_new(self):
         """Test combining existing prompt with new text."""
