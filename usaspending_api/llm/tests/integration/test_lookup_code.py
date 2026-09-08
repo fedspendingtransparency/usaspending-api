@@ -10,7 +10,7 @@ from usaspending_api.llm.tools.lookup_code import (
     CodeResult,
     CodeTypeConfig,
     SearchResultNode,
-    lookup_codes_tool,
+    lookup_code_tool,
 )
 from usaspending_api.references.models import ToptierAgency
 from usaspending_api.references.models.cfda import Cfda
@@ -383,22 +383,22 @@ class TestErrorHandling:
 
 class TestAIToolWiring:
     def test_input_schema_requires_query_and_code_type(self):
-        schema = lookup_codes_tool.description.input_schema
+        schema = lookup_code_tool.description.input_schema
         assert set(schema["required"]) == {"query", "code_type"}
 
     def test_code_type_enum_matches_configs(self):
-        schema = lookup_codes_tool.description.input_schema
+        schema = lookup_code_tool.description.input_schema
         enum_values = set(schema["properties"]["code_type"]["enum"])
         assert enum_values == set(CODE_TYPE_CONFIGS.keys())
 
     def test_logging_function_formats_message(self):
-        msg = lookup_codes_tool.logging({"code_type": "naics", "query": "construction"})
+        msg = lookup_code_tool.logging({"code_type": "naics", "query": "construction"})
         assert "NAICS" in msg
         assert "construction" in msg
 
     def test_tool_execution_through_function_attribute(self, mock_embedding_generator, mock_expand_query):
         _make_naics("541330", "Construction of buildings")
-        result = lookup_codes_tool.function(query="541330", code_type="naics")
+        result = lookup_code_tool.function(query="541330", code_type="naics")
         assert "541330" in _flatten_codes(result["hierarchy"])
 
 

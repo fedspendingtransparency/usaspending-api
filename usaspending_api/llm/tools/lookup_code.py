@@ -1,22 +1,21 @@
 import logging
-from typing import Any, Literal, Callable
 from dataclasses import dataclass
+from typing import Any, Callable, Literal
 
 from django.contrib.postgres.search import TrigramSimilarity
-from django.db.models import Model, Value, FloatField, QuerySet
+from django.db.models import FloatField, Model, QuerySet, Value
 from django.db.models.functions import Greatest
-
 from pgvector.django import CosineDistance
 
-from usaspending_api.llm.models.py_models import AIToolDescription, AITool
-from usaspending_api.llm.embeddings.embedding_generator import EmbeddingGenerator
-from usaspending_api.llm.tools.expand_query import expand_query
-from usaspending_api.references.models.naics import NAICS
-from usaspending_api.references.models.cfda import Cfda
-from usaspending_api.references.models.psc import PSC
 from usaspending_api.accounts.models.treasury_appropriation_account import TreasuryAppropriationAccount
+from usaspending_api.llm.embeddings.embedding_generator import EmbeddingGenerator
+from usaspending_api.llm.models.py_models import AITool, AIToolDescription
+from usaspending_api.llm.tools.expand_query import expand_query
 from usaspending_api.llm.tools.helpers import hierarchy_parsers
 from usaspending_api.references.models import ToptierAgency
+from usaspending_api.references.models.cfda import Cfda
+from usaspending_api.references.models.naics import NAICS
+from usaspending_api.references.models.psc import PSC
 
 logger = logging.getLogger(__name__)
 
@@ -140,8 +139,7 @@ class CodeLookupTool:
         text_weight: float = 0.5,
         vector_weight: float = 0.5,
         top_k: int = 20,
-        use_fanout: bool = True,
-        num_variations: int = 3,
+        query_fanout: int | None = 3,
     ) -> dict[str, Any]:
         """
         Hybrid search for various code types combining text matching and vector similarity.
@@ -171,8 +169,8 @@ class CodeLookupTool:
 
         all_results = {}
         queries = [query]
-        if use_fanout:
-            queries = expand_query(query, num_variations)
+        if bool(query_fanout):
+            queries = expand_query(query, query_fanout)
             logger.info(f"Generated variations: {queries}")
 
         for q in queries:
@@ -377,7 +375,7 @@ class CodeLookupTool:
         return count
 
 
-lookup_codes_tool = AITool(
+lookup_code_tool = AITool(
     function=CodeLookupTool().lookup_codes,
     logging=lambda tool_input: f"Searching {tool_input['code_type'].upper()} codes for '{tool_input['query']}'",
     description=AIToolDescription(
