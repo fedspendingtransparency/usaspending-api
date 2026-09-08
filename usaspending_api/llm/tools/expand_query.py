@@ -1,5 +1,10 @@
+import logging
+
 import boto3
+
 from usaspending_api.llm.models.db_models import AIModel
+
+logger = logging.getLogger(__name__)
 
 
 def expand_query(query: str, num_variations: int = 3, model: AIModel = None) -> list[str]:
@@ -34,7 +39,8 @@ def expand_query(query: str, num_variations: int = 3, model: AIModel = None) -> 
 
         system = [
             {
-                "text": f"""You are a search query expansion assistant. Given a search query, generate {num_variations} related search phrases that would help find similar items.
+                "text": f"""You are a search query expansion assistant. Given a search query, generate {num_variations}
+                 related search phrases that would help find similar items.
 
                 Examples:
                 - Query: "aerospace" → ["aircraft manufacturing", "space technology", "aviation industry"]
@@ -56,7 +62,13 @@ def expand_query(query: str, num_variations: int = 3, model: AIModel = None) -> 
         ]
         model_id = model.model_id
         # First call to get tool use
-        response = client.converse(modelId=model_id, messages=messages, toolConfig=tool_config, system=system)
+        response = client.converse(
+            modelId=model_id,
+            messages=messages,
+            toolConfig=tool_config,
+            system=system,
+            inferenceConfig={"temperature": 0},
+        )
 
         output_message = response["output"]["message"]
         stop_reason = response["stopReason"]
@@ -72,16 +84,12 @@ def expand_query(query: str, num_variations: int = 3, model: AIModel = None) -> 
                 variations = tool_use["input"].get("variations", [])
 
                 if isinstance(variations, list) and len(variations) > 0:
-                    print(f"  Generated variations: {variations}")
                     return [query] + variations[:num_variations]
 
         # If tool wasn't used or failed, return original query
-        print(f"  Query expansion didn't use tool (stop_reason: {stop_reason}), using original query only")
+        logger.info(f"  Query expansion didn't use tool (stop_reason: {stop_reason}), using original query only")
         return [query]
 
     except Exception as e:
-        print(f"  Query expansion failed: {e}")
-        import traceback
-
-        traceback.print_exc()
-        return [query]  # Fallback to original only
+        logger.info(f"  Query expansion failed: {e}")
+        return [query]
