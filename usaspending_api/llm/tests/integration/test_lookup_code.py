@@ -130,7 +130,7 @@ class TestExactMatchShortCircuit:
     def test_exact_match_skips_embeddings_and_fanout(self, tool, mock_embedding_generator, mock_expand_query):
         _make_naics("541330", "Construction of buildings")
 
-        result = tool.lookup_codes("541330", "naics", use_fanout=True)
+        result = tool.lookup_codes("541330", "naics", query_fanout=3)
 
         assert "541330" in _flatten_codes(result["hierarchy"])
         mock_embedding_generator.generate_embedding.assert_not_called()
@@ -219,7 +219,7 @@ class TestHybridSearch:
         dims = getattr(NAICS, "embedding_dimensions", 256)
         mock_embedding_generator.generate_embedding.return_value = _unit_vector(dims, 0)
 
-        tool.lookup_codes("query text", "naics", use_fanout=False)
+        tool.lookup_codes("query text", "naics", query_fanout=None)
 
         mock_expand_query.assert_not_called()
 
@@ -239,7 +239,7 @@ class TestHybridSearch:
             mock_expand.return_value = ["variation a", "variation b"]
             mock_embedding_generator.generate_embedding.return_value = _unit_vector(dims, 0)
 
-            result = tool.lookup_codes("query text", "naics", use_fanout=True)
+            result = tool.lookup_codes("query text", "naics", query_fanout=3)
 
         assert "333333" in _flatten_codes(result["hierarchy"])
 
