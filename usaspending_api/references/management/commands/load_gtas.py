@@ -68,8 +68,12 @@ class Command(mixins.ETLMixin, BaseCommand):
         total_obligation_objs = [GTASSF133Balances(**values) for values in total_obligation_values]
 
         logger.info("Loading new GTAS records into database")
-        new_rec_count = len(GTASSF133Balances.objects.bulk_create(total_obligation_objs))
-        logger.info(f"Loaded: {new_rec_count:,} records")
+        try:
+            new_rec_count = len(GTASSF133Balances.objects.bulk_create(total_obligation_objs))
+            logger.info(f"Loaded: {new_rec_count:,} records")
+        except Exception as e:
+            logger.error(f"Error during bulk_create: {type(e).__name__}: {str(e)}")
+            raise
 
         load_rec = self._execute_dml_sql(self.tas_fk_sql, "Populating TAS foreign keys")
         logger.info(f"Set {load_rec:,} TAS FKs in GTAS table, {new_rec_count - load_rec:,} NULLs")
