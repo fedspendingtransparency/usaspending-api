@@ -10,6 +10,7 @@ from usaspending_api.common.validator.tinyshield import TinyShield
 from usaspending_api.llm.assistants.filter_search import FilterSearchAssistant
 from usaspending_api.llm.models.db_models import Prompts, Session
 from usaspending_api.llm.tools.execute_filter import execute_filter_tool
+from usaspending_api.llm.tools.lookup_code import lookup_code_tool
 from usaspending_api.llm.tools.lookup_location import lookup_location_tool
 from usaspending_api.llm.tools.lookup_recipient import lookup_recipient_tool
 from usaspending_api.llm.v2.views.llm_base import LLMBase
@@ -28,6 +29,7 @@ class FilterSearchViewSet(LLMBase):
 
     # Define a list of allowed AI tools to pass to the assistant.
     tools = [
+        lookup_code_tool,
         lookup_location_tool,
         lookup_recipient_tool,
         execute_filter_tool,
