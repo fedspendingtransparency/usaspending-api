@@ -78,18 +78,8 @@ class FilterSearchViewSet(LLMBase):
                 },
             )
 
-            # Create assistant with appropriate arguments.
-            assistant_kwargs = {
-                "model": ai_model,
-                "tools": tools,
-                "session": session,
-                "inference_config": assistant_config.inference_config,
-            }
-            # If system_prompt is set, override the Assistant's default prompt.
-            if system_prompt:
-                assistant_kwargs["system_message"] = system_prompt.text
-
-            assistant = FilterSearchAssistant(**assistant_kwargs)
+            # Create assistant from the persisted Assistant configuration.
+            assistant = FilterSearchAssistant(assistant=assistant_config, tools=tools, session=session)
 
             def event_stream() -> Generator[str, None, None]:
                 try:

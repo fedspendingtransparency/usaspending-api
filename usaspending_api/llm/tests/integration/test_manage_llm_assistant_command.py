@@ -64,9 +64,14 @@ class TestListAssistants:
         full_output = " ".join(str(call) for call in mock_info.call_args_list)
         assert long_prompt_text in full_output  # Full prompt should be visible
 
-    def test_list_options_are_mutually_exclusive(self):
-        with pytest.raises(CommandError, match=r"either --list or --list-with-prompts"):
+    def test_list_options_are_mutually_exclusive(self, capsys):
+        # Using `add_mutually_exclusive_group()` in the command parser blocks
+        # the custom CommandError validation, so we get a SystemExit instead.
+        with pytest.raises(SystemExit) as exc_info:
             call_command("manage_llm_assistant", "--list", "--list-with-prompts")
+
+        assert exc_info.value.code == 2
+        assert "argument --list-with-prompts: not allowed with argument --list" in capsys.readouterr().err
 
     def test_list_must_be_used_alone(self):
         with pytest.raises(CommandError, match=r"--list or --list-with-prompts must be used alone"):
@@ -820,8 +825,10 @@ class TestCreateAndActivateAssistant:
         assert active_assistant.is_active is False
         assert inactive_assistant.is_active is True
 
-    def test_active_flags_are_mutually_exclusive(self):
-        with pytest.raises(CommandError, match=r"Cannot specify both --is-active and --is-inactive"):
+    def test_active_flags_are_mutually_exclusive(self, capsys):
+        # Using `add_mutually_exclusive_group()` in the command parser blocks
+        # the custom CommandError validation, so we get a SystemExit instead.
+        with pytest.raises(SystemExit) as exc_info:
             call_command(
                 "manage_llm_assistant",
                 "--create-new",
@@ -832,6 +839,9 @@ class TestCreateAndActivateAssistant:
                 "--is-active",
                 "--is-inactive",
             )
+
+        assert exc_info.value.code == 2
+        assert "argument --is-inactive: not allowed with argument --is-active" in capsys.readouterr().err
 
 
 @pytest.mark.django_db

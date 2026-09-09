@@ -3,7 +3,7 @@ from unittest.mock import Mock, patch
 import pytest
 
 from usaspending_api.llm.assistants.filter_search import FilterSearchAssistant
-from usaspending_api.llm.models.db_models import AIModel, Session
+from usaspending_api.llm.models.db_models import AIModel, Assistant, Session
 from usaspending_api.llm.models.py_models import AITool
 
 
@@ -79,13 +79,21 @@ def mock_search_tool():
 
 
 @pytest.fixture
-def assistant(mock_model, mock_tool, mock_search_tool, mock_session):
+def mock_assistant(mock_model):
+    assistant = Mock(spec=Assistant)
+    assistant.ai_model = mock_model
+    assistant.system_prompt = Mock(text="Test system message")
+    assistant.inference_config = {}
+    return assistant
+
+
+@pytest.fixture
+def assistant(mock_assistant, mock_tool, mock_search_tool, mock_session):
     with patch("boto3.client"):
         assistant = FilterSearchAssistant(
-            model=mock_model,
+            assistant=mock_assistant,
             tools=[mock_tool, mock_search_tool],
             session=mock_session,
-            system_message="Test system message",
         )
         assistant.client = Mock()
         return assistant
@@ -100,27 +108,29 @@ class TestFilterSearchAssistant:
             "stopSequences": [],
         }
 
-    def test_null_inference_values_are_omitted(self, mock_model, mock_tool, mock_session):
+    def test_null_inference_values_are_omitted(self, mock_assistant, mock_tool, mock_session):
+        mock_assistant.inference_config = {"temperature": 0.4, "topP": None, "maxTokens": None}
         with patch("boto3.client"):
-            assistant = FilterSearchAssistant(
-                model=mock_model,
-                tools=[mock_tool],
-                session=mock_session,
-                inference_config={"temperature": 0.4, "topP": None, "maxTokens": None},
-            )
+            assistant = FilterSearchAssistant(assistant=mock_assistant, tools=[mock_tool], session=mock_session)
 
         assert assistant.inference_config == {"temperature": 0.4}
 
-    def test_all_null_inference_values_produce_empty_config(self, mock_model, mock_tool, mock_session):
+    def test_all_null_inference_values_produce_empty_config(self, mock_assistant, mock_tool, mock_session):
+        mock_assistant.inference_config = {"temperature": None, "topP": None, "maxTokens": None}
         with patch("boto3.client"):
-            assistant = FilterSearchAssistant(
-                model=mock_model,
-                tools=[mock_tool],
-                session=mock_session,
-                inference_config={"temperature": None, "topP": None, "maxTokens": None},
-            )
+            assistant = FilterSearchAssistant(assistant=mock_assistant, tools=[mock_tool], session=mock_session)
 
         assert assistant.inference_config == {}
+
+    def test_system_message_uses_assistant_prompt(self, assistant):
+        assert assistant.system_message == "Test system message"
+
+    def test_system_message_uses_default_when_assistant_has_no_prompt(self, mock_assistant, mock_tool, mock_session):
+        mock_assistant.system_prompt = None
+        with patch("boto3.client"):
+            assistant = FilterSearchAssistant(assistant=mock_assistant, tools=[mock_tool], session=mock_session)
+
+        assert assistant.system_message == FilterSearchAssistant.DEFAULT_SYSTEM_MESSAGE
 
     @patch("usaspending_api.llm.models.db_models.Message.objects.create")
     def test_search_simple_response(self, mock_message_create, assistant):
@@ -220,11 +230,11 @@ class TestFilterSearchAssistant:
     @patch("usaspending_api.llm.models.db_models.ToolUse.objects.create")
     @patch("usaspending_api.llm.models.db_models.Message.objects.create")
     def test_search_with_search_tool_completion(
-        self, mock_message_create, mock_tool_use_create, mock_session, mock_model, mock_search_tool
+        self, mock_message_create, mock_tool_use_create, mock_session, mock_assistant, mock_search_tool
     ):
         """Test search that completes with execute_filter tool."""
         with patch("boto3.client"):
-            assistant = FilterSearchAssistant(model=mock_model, tools=[mock_search_tool], session=mock_session)
+            assistant = FilterSearchAssistant(assistant=mock_assistant, tools=[mock_search_tool], session=mock_session)
             assistant.client = Mock()
 
         def create_message(**kwargs):
@@ -352,11 +362,11 @@ class TestFilterSearchAssistant:
     @patch("usaspending_api.llm.models.db_models.ToolUse.objects.create")
     @patch("usaspending_api.llm.models.db_models.Message.objects.create")
     def test_tool_error_handling(
-        self, mock_message_create, mock_tool_use_create, mock_session, mock_model, mock_search_tool
+        self, mock_message_create, mock_tool_use_create, mock_session, mock_assistant, mock_search_tool
     ):
         """Test handling of tool errors."""
         with patch("boto3.client"):
-            assistant = FilterSearchAssistant(model=mock_model, tools=[mock_search_tool], session=mock_session)
+            assistant = FilterSearchAssistant(assistant=mock_assistant, tools=[mock_search_tool], session=mock_session)
             assistant.client = Mock()
 
         def create_message(**kwargs):

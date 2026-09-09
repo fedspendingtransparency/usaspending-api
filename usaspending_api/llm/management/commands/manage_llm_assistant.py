@@ -16,119 +16,126 @@ class Command(BaseCommand):
     help = "Update the configurations of the AI Assistant being used in natural language search."
 
     def add_arguments(self, parser: CommandParser) -> None:
-        parser.add_argument(
+        assistant_group = parser.add_argument_group("Assistant Selection")
+        assistant_selection = assistant_group.add_mutually_exclusive_group()
+        assistant_selection.add_argument(
             "--name",
             type=str,
             help="Name of the assistant to update (e.g., 'filter-search')",
         )
-        parser.add_argument(
+        assistant_selection.add_argument(
             "--pk",
             type=int,
             help="Primary key of the assistant to update (e.g., 1)",
         )
-        parser.add_argument(
+
+        operations_group = parser.add_argument_group("Operations")
+        operations_group.add_argument(
             "--create-new",
             action="store_true",
-            help="Create a new AI Assistant with the specified name and configurations (requires name and AI model)",
+            help="Create a new AI Assistant with the specified name and configurations",
         )
-        parser.add_argument(
-            "--model-id",
+        operations_group.add_argument(
+            "--description",
             type=str,
-            help=("Model ID to use (e.g., 'amazon.nova-lite-v1:0'); if used with --model-name, will only use model ID"),
+            help="Description of the assistant",
         )
-        parser.add_argument(
-            "--model-name",
-            type=str,
-            help='Model name to use (e.g., "claude 4.5"); ignored if used with --model-id',
-        )
-        parser.add_argument(
-            "--clear-system-prompt",
-            action="store_true",
-            help="Clears the system prompt stored in this Assistant's record",
-        )
-        parser.add_argument(
-            "--system-prompt-id",
-            type=int,
-            help="Primary key of an existing system prompt to use (will swap with the current prompt unless combined)",
-        )
-        parser.add_argument(
-            "--new-system-prompt",
-            type=str,
-            help="A new system prompt to use in place of existing prompt (will always create a new Prompt)",
-        )
-        parser.add_argument(
-            "--combine-prompts",
-            action="store_true",
-            help=(
-                "Concatenates system prompts instead of swapping them (requires --system-prompt-id and/or"
-                " --new-system-prompt). Will create a new Prompt with all specified prompts combined"
-            ),
-        )
-        parser.add_argument(
-            "--new-prompt-name",
-            type=str,
-            help="Provide a name for your system prompt (if not provided, a default one will be generated)",
-        )
-        parser.add_argument(
-            "--temperature",
-            type=float,
-            help="Temperature value (0.0 - 1.0)",
-        )
-        parser.add_argument(
-            "--top-p",
-            type=float,
-            help="Top P value (0.0 - 1.0)",
-        )
-        parser.add_argument(
-            "--max-tokens",
-            type=int,
-            help="Maximum tokens to generate",
-        )
-        parser.add_argument(
-            "--stop-sequences",
-            action="append",
-            help=(
-                "Stop sequence to add; repeat the option for multiple sequences, allowing commas within a sequence "
-                "(e.g., --stop-sequences 'Human:,User:')"
-            ),
-        )
-        parser.add_argument(
-            "--inference-config-json",
-            type=str,
-            help=(
-                "Full inference config as JSON string "
-                '(e.g., \'{"temperature": 0.5, "topP": 0.8, "maxTokens": 5000, "stopSequences": []}\')'
-            ),
-        )
-        parser.add_argument(
+
+        listing_group = parser.add_argument_group("Listing Assistants")
+        listing_options = listing_group.add_mutually_exclusive_group()
+        listing_options.add_argument(
             "--list",
             action="store_true",
-            help="List all AI Assistants and their current configs (truncates system prompt for readability)",
+            help="List all AI Assistants and their current configs",
         )
-        parser.add_argument(
+        listing_options.add_argument(
             "--list-with-prompts",
             action="store_true",
-            help="List all AI Assistants with their current configs and full system prompt text",
+            help="List all AI Assistants with their full system prompt text",
         )
-        parser.add_argument(
+
+        model_group = parser.add_argument_group("AI Model Configurations")
+        model_group.add_argument(
+            "--model-id",
+            type=str,
+            help="Model ID to use; takes precedence over --model-name",
+        )
+        model_group.add_argument(
+            "--model-name",
+            type=str,
+            help="Model name to use when --model-id is not provided",
+        )
+
+        prompt_group = parser.add_argument_group("System Prompt Configurations")
+        prompt_group.add_argument(
+            "--clear-system-prompt",
+            action="store_true",
+            help="Clear the system prompt stored in this Assistant's record",
+        )
+        prompt_group.add_argument(
+            "--system-prompt-id",
+            type=int,
+            help="Primary key of an existing system prompt to use",
+        )
+        prompt_group.add_argument(
+            "--new-system-prompt",
+            type=str,
+            help="Create and use a new system prompt",
+        )
+        prompt_group.add_argument(
+            "--combine-prompts",
+            action="store_true",
+            help="Combine the current and specified system prompts",
+        )
+        prompt_group.add_argument(
+            "--new-prompt-name",
+            type=str,
+            help="Name for a newly created system prompt",
+        )
+
+        inference_group = parser.add_argument_group("AI Model Inference Configurations")
+        inference_group.add_argument("--temperature", type=float)
+        inference_group.add_argument("--top-p", type=float)
+        inference_group.add_argument("--max-tokens", type=int)
+        inference_group.add_argument(
+            "--stop-sequences",
+            action="append",
+            help="Stop sequence; repeat for multiple sequences",
+        )
+        inference_group.add_argument(
+            "--inference-config-json",
+            type=str,
+            help="Full inference config as a JSON string",
+        )
+        inference_group.add_argument(
             "--clear-inference-config",
             action="store_true",
-            help="Clear inference config (set to empty dict)",
+            help="Clear inference config",
         )
-        parser.add_argument("--is-active", action="store_true", help="Activate this assistant.")
-        parser.add_argument("--is-inactive", action="store_true", help="Deactivate this assistant.")
-        parser.add_argument("--description", type=str, help="Description of the assistant (optional)")
+
+        state_group = parser.add_argument_group("Assistant State Management")
+        state_options = state_group.add_mutually_exclusive_group()
+        state_options.add_argument(
+            "--is-active",
+            action="store_true",
+            help="Activate this assistant",
+        )
+        state_options.add_argument(
+            "--is-inactive",
+            action="store_true",
+            help="Deactivate this assistant",
+        )
 
     @transaction.atomic
     def handle(self, *args, **options) -> None:
         # List all AI Assistants.
-        if options.get("list") or options.get("list_with_prompts"):
+        if options["list"] or options["list_with_prompts"]:
             self._validate_list_options(options)
-            self._list_assistants(prompts=options.get("list_with_prompts", False))
+            self._list_assistants(prompts=options["list_with_prompts"])
             return
 
         self._validate_options(options)
-        if options.get("create_new"):
+        if options["create_new"]:
             if not options.get("name"):
                 raise CommandError("Must specify a name for the new AI Assistant with --name")
             assistant = self._create_assistant(options)
@@ -136,15 +143,18 @@ class Command(BaseCommand):
             return
 
         assistant = self._get_assistant(options)
-        if not self._has_updates(options):
-            raise CommandError(
-                "No update options provided. Use --help to see available options, or --list to view assistants."
-            )
-        self._apply_updates(assistant, options)
+        if self._has_updates(options):
+            self._apply_updates(assistant, options)
+            return
+        raise CommandError(
+            "No update options provided. Use --help to see available options, or --list to view assistants."
+        )
 
     @staticmethod
     def _validate_list_options(options: dict) -> None:
-        if options.get("list") and options.get("list_with_prompts"):
+        # NOTE: This check is likely unreachable after adding mutually exclusive grouping.
+        # Leaving it in in case it is reachable for some other reason.
+        if options["list"] and options["list_with_prompts"]:
             raise CommandError("Use either --list or --list-with-prompts, not both.")
 
         value_options = (
@@ -171,25 +181,30 @@ class Command(BaseCommand):
             "is_inactive",
         )
         if any(options.get(option) is not None for option in value_options) or any(
-            options.get(option) for option in flag_options
+            options[option] for option in flag_options
         ):
             raise CommandError("--list or --list-with-prompts must be used alone.")
 
     @staticmethod
     def _validate_options(options: dict) -> None:
-        if options.get("is_active") and options.get("is_inactive"):
+        if options["is_active"] and options["is_inactive"]:
             raise CommandError("Cannot specify both --is-active and --is-inactive.")
-        if options.get("combine_prompts") and not (
+
+        has_prompt_source = (
             options.get("system_prompt_id") is not None or options.get("new_system_prompt") is not None
-        ):
+        )
+        if options["combine_prompts"] and not has_prompt_source:
             raise CommandError("--combine-prompts requires --system-prompt-id and/or --new-system-prompt.")
-        if options.get("new_prompt_name") is not None and not (
-            options.get("new_system_prompt") is not None or options.get("combine_prompts")
-        ):
+
+        can_create_prompt = options.get("new_system_prompt") is not None or options["combine_prompts"]
+        if options.get("new_prompt_name") is not None and not can_create_prompt:
             raise CommandError("--new-prompt-name can only be used when creating a new prompt.")
-        if options.get("create_new") and options.get("pk") is not None:
+
+        if options["create_new"] and options.get("pk") is not None:
             raise CommandError("Cannot use --pk with --create-new.")
-        if options.get("create_new") and options.get("model_id") is None and options.get("model_name") is None:
+
+        has_model = options.get("model_id") is not None or options.get("model_name") is not None
+        if options["create_new"] and not has_model:
             raise CommandError("Creating an AI Assistant requires --model-id or --model-name.")
 
     @staticmethod
@@ -215,12 +230,12 @@ class Command(BaseCommand):
             "is_inactive",
         )
         return any(options.get(option) is not None for option in value_options) or any(
-            options.get(option) for option in flag_options
+            options[option] for option in flag_options
         )
 
     def _apply_updates(self, assistant: Assistant, options: dict) -> None:
         # Clear all current system prompts if specified.
-        if options.get("clear_system_prompt"):
+        if options["clear_system_prompt"]:
             assistant.system_prompt_id = None
 
         # Update AI Assistant configurations:
@@ -234,10 +249,10 @@ class Command(BaseCommand):
         if any(
             options.get(option) is not None
             for option in ("temperature", "max_tokens", "top_p", "stop_sequences", "inference_config_json")
-        ) or options.get("clear_inference_config"):
+        ) or options["clear_inference_config"]:
             assistant.inference_config = self._update_inference_configs(assistant, options)
         # 4. Update the assistant's active state (if provided).
-        if options.get("is_active") or options.get("is_inactive"):
+        if options["is_active"] or options["is_inactive"]:
             active_state = self._update_active_state(options, assistant=assistant)
             if active_state is not None:
                 assistant.is_active = active_state
@@ -249,11 +264,12 @@ class Command(BaseCommand):
 
     def _create_assistant(self, options: dict) -> Assistant:
         """Create a new AI Assistant with the specified name and configurations."""
-        if options.get("model_id") is None and options.get("model_name") is None:
+        has_model = options.get("model_id") is not None or options.get("model_name") is not None
+        if not has_model:
             raise CommandError("Creating an AI Assistant requires --model-id or --model-name.")
         model_pk = self._get_model_pk(options)
         # Deactivate the current active assistant with this name before creating a replacement.
-        if options.get("is_active"):
+        if options["is_active"]:
             active_state = self._update_active_state(options)
         else:
             active_state = False
@@ -263,7 +279,7 @@ class Command(BaseCommand):
             system_prompt_id=None,
             inference_config={},
             is_active=active_state,
-            description=options.get("description") or "",
+            description=options.get("description", ""),
         )
         has_configs = False
         # Update the system prompt if specified.
@@ -319,18 +335,20 @@ class Command(BaseCommand):
         # 4. If name is provided and no pk, but no active assistant found, raise an error.
         if pk is None and not name:
             raise CommandError("Must specify an AI Assistant to retrieve with --name or --pk")
+        # NOTE: This check is likely unreachable after adding mutually exclusive grouping.
+        # Leaving it in in case it is reachable for some other reason.
         if pk is not None and name:
             raise CommandError("Specify either --name or --pk, not both.")
         if pk is not None:
             try:
                 assistant = Assistant.objects.get(pk=pk)
-            except Assistant.DoesNotExist:
-                raise CommandError(f"AI Assistant with pk '{pk}' not found.") from None
+            except Assistant.DoesNotExist as exc:
+                raise CommandError(f"AI Assistant with pk '{pk}' not found.") from exc
             return self._require_model(assistant)
         try:
             assistant = Assistant.objects.get(name=name, is_active=True)
-        except Assistant.DoesNotExist:
-            raise CommandError(f"Active AI Assistant with name '{name}' not found.") from None
+        except Assistant.DoesNotExist as exc:
+            raise CommandError(f"Active AI Assistant with name '{name}' not found.") from exc
         return self._require_model(assistant)
 
     @staticmethod
@@ -351,10 +369,10 @@ class Command(BaseCommand):
             else:
                 model = AIModel.objects.get(name=model_name)
             return model.pk
-        except AIModel.DoesNotExist:
-            raise CommandError(f"Model not found: {model_id or model_name}.") from None
-        except AIModel.MultipleObjectsReturned:
-            raise CommandError(f"Multiple models found for: {model_id or model_name}.") from None
+        except AIModel.DoesNotExist as exc:
+            raise CommandError(f"Model not found: {model_id or model_name}.") from exc
+        except AIModel.MultipleObjectsReturned as exc:
+            raise CommandError(f"Multiple models found for: {model_id or model_name}.") from exc
 
     def _get_prompt_pk(self, assistant: Assistant, options: dict) -> int:
         """
@@ -376,8 +394,6 @@ class Command(BaseCommand):
         """
         # The current Assistant's system prompt primary key (can be None).
         current_prompt_pk = assistant.system_prompt_id or 0
-        # The final prompt primary key to return.
-        return_prompt_pk = assistant.system_prompt_id
         # The system prompt specified by --system-prompt-id.
         existing_prompt_pk = options.get("system_prompt_id")
         if existing_prompt_pk is not None and existing_prompt_pk < 1:
@@ -385,20 +401,11 @@ class Command(BaseCommand):
         # New system prompt to create as specified by --new-system-prompt.
         new_prompt = options.get("new_system_prompt")
         new_prompt_name = options.get("new_prompt_name")
-        # If the system prompts are NOT being combined, the active prompt is swapped with the one specified:
-        if not options.get("combine_prompts"):
-            return_prompt_pk = self._handle_swap_prompts(
-                current_prompt_pk,
-                existing_prompt_pk,
-                new_prompt,
-                new_prompt_name,
-            )
-        # If prompts ARE being combined:
-        else:
-            return_prompt_pk = self._handle_combine_prompts(
-                current_prompt_pk, existing_prompt_pk, new_prompt, new_prompt_name
-            )
-        return return_prompt_pk
+        # If prompts are being combined:
+        if options["combine_prompts"]:
+            return self._handle_combine_prompts(current_prompt_pk, existing_prompt_pk, new_prompt, new_prompt_name)
+        # Otherwise, swap the active prompt with the one specified:
+        return self._handle_swap_prompts(current_prompt_pk, existing_prompt_pk, new_prompt, new_prompt_name)
 
     def _handle_swap_prompts(
         self,
@@ -409,20 +416,20 @@ class Command(BaseCommand):
     ) -> int | None:
         """Handles swapping system prompts as specified by command options."""
         return_prompt_pk = current_prompt_pk or None
-        # If --new-system-prompt and --system-prompt-id provided without --combine-prompts flag, raise an error.
+        # Reject both prompt inputs when swapping instead of combining.
         if new_prompt is not None and existing_prompt_pk is not None:
             raise CommandError("Cannot use --new-system-prompt and --system-prompt-id without --combine-prompts")
-        # Keep the same prompt if specified prompt is what's in use and prompts are not being combined.
+        # Keep the same prompt when the specified prompt is already active and no combination is requested.
         if existing_prompt_pk is not None:
             try:
                 Prompts.objects.get(pk=existing_prompt_pk)
-            except Prompts.DoesNotExist:
-                raise CommandError(f"System prompt with pk '{existing_prompt_pk}' not found.") from None
+            except Prompts.DoesNotExist as exc:
+                raise CommandError(f"System prompt with pk '{existing_prompt_pk}' not found.") from exc
             if existing_prompt_pk == current_prompt_pk:
                 logger.info("Specified prompt is the same as the one currently in use. No changes made to prompt.")
             else:
                 return_prompt_pk = existing_prompt_pk
-        # If --new-system-prompt is provided and --combine-prompts is not, create a new prompt and return its pk.
+        # Create a new prompt when --new-system-prompt is provided for a swap.
         elif new_prompt is not None:
             return_prompt_pk = self._create_new_prompt([new_prompt], new_prompt_name)
         return return_prompt_pk
@@ -439,8 +446,8 @@ class Command(BaseCommand):
         if current_prompt_pk > 0:
             try:
                 current_prompt = Prompts.objects.get(pk=current_prompt_pk)
-            except Prompts.DoesNotExist:
-                raise CommandError(f"Current system prompt with pk '{current_prompt_pk}' not found.") from None
+            except Prompts.DoesNotExist as exc:
+                raise CommandError(f"Current system prompt with pk '{current_prompt_pk}' not found.") from exc
             current_prompt_text = current_prompt.text
         else:
             current_prompt_text = ""
@@ -450,8 +457,8 @@ class Command(BaseCommand):
         if existing_prompt_pk is not None:
             try:
                 existing_prompt = Prompts.objects.get(pk=existing_prompt_pk)
-            except Prompts.DoesNotExist:
-                raise CommandError(f"System prompt with pk '{existing_prompt_pk}' not found.") from None
+            except Prompts.DoesNotExist as exc:
+                raise CommandError(f"System prompt with pk '{existing_prompt_pk}' not found.") from exc
             existing_prompt_text = existing_prompt.text
             combined_prompt_text = [current_prompt_text, existing_prompt_text, new_prompt_text]
         else:
@@ -490,14 +497,14 @@ class Command(BaseCommand):
                     description="Custom prompt created by management command: 'manage_llm_assistant'",
                     text="\n".join(filtered_text),
                 )
-        except IntegrityError:
-            raise CommandError(f"A prompt named '{prompt_name}' already exists.") from None
+        except IntegrityError as exc:
+            raise CommandError(f"A prompt named '{prompt_name}' already exists.") from exc
         return prompt.pk
 
     def _update_inference_configs(self, assistant: Assistant, options: dict) -> dict:
         """Takes the command input and produces a new dictionary of inference configs."""
         # Handle --clear-inference-config flag.
-        if options.get("clear_inference_config"):
+        if options["clear_inference_config"]:
             if options.get("inference_config_json") is not None or any(
                 options.get(option) is not None for option in ("temperature", "max_tokens", "top_p", "stop_sequences")
             ):
@@ -577,8 +584,8 @@ class Command(BaseCommand):
 
     def _update_active_state(self, options: dict, assistant: Assistant | None = None) -> bool | None:
         """Update the active state of the assistant."""
-        is_active = options.get("is_active")
-        is_inactive = options.get("is_inactive")
+        is_active = options["is_active"]
+        is_inactive = options["is_inactive"]
 
         if is_active and is_inactive:
             raise CommandError("Cannot specify both --is-active and --is-inactive.")
