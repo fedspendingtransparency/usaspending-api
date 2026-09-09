@@ -11,10 +11,10 @@ DECLARE
     rec RECORD;
 BEGIN
     FOR rec IN 
-        SELECT conrelid::regclass AS tbm, conname
-        FROM pg_contrtraint
+        SELECT conrelid::regclass AS tbl, conname
+        FROM pg_constraint
         WHERE contype = 'f'
-          AND conrfelid = 'session'::regclass
+          AND confrelid = 'session'::regclass
     LOOP
         EXECUTE format('ALTER TABLE %s DROP CONSTRAINT IF EXISTS %I', rec.tbl, rec.conname);
     END LOOP;
@@ -39,25 +39,25 @@ DROP SEQUENCE IF EXISTS session_id_seq CASCADE;
 
 ALTER TABLE session RENAME COLUMN new_id TO id;
 ALTER TABLE session ADD PRIMARY KEY (id);
-    
+
 ALTER TABLE message RENAME COLUMN new_session_id TO session_id;
     ALTER TABLE message ALTER COLUMN session_id SET NOT NULL;
     ALTER TABLE message
     ADD CONSTRAINT message_session_id_fk
-    FOREIGN KEY (session_id) REFERENES session(id)
+    FOREIGN KEY (session_id) REFERENCES session(id)
     ON DELETE CASCADE
     DEFERRABLE INITIALLY DEFERRED;
 """
 
 REVERSE_CONVERT_SESSION_PK = """
-CREATE SEQUENCE IF NOT WXISTS session_id_seq;
+CREATE SEQUENCE IF NOT EXISTS session_id_seq;
 
 ALTER TABLE session ADD COLUMN new_id integer NOT NULL DEFAULT nextval('session_id_seq');
 ALTER TABLE message ADD COLUMN new_session_id integer;
 
 UPDATE message AS m
 SET new_session_id = s.new_id
-FROM sessions AS s
+FROM session AS s
 WHERE m.session_id = s.id;
 
 ALTER TABLE message DROP COLUMN session_id;
@@ -67,14 +67,14 @@ ALTER TABLE session DROP COLUMN id;
 ALTER TABLE session RENAME COLUMN new_id TO id;
 ALTER TABLE session ADD PRIMARY KEY (id);
 ALTER SEQUENCE session_id_seq OWNED BY session.id;
-SELECT setval('session_id_seq;, COALESCE((SELECT MAX(id) FROM session), 1), true);
-ALTER TABLE sesion ALTER COLUMN id SET DEFAULT nextval('session_id_seq');
+SELECT setval('session_id_seq', COALESCE((SELECT MAX(id) FROM session), 1), true);
+ALTER TABLE session ALTER COLUMN id SET DEFAULT nextval('session_id_seq');
 
 ALTER TABLE message RENAME COLUMN new_session_id TO session_id;
 ALTER TABLE message ALTER COLUMN session_id SET NOT NULL;
 ALTER TABLE message
-    ADD CONSTRAINT messge_session_id_fk
-    FOREIGN  KEY (session_id) REFERENCES session(id)
+    ADD CONSTRAINT message_session_id_fk
+    FOREIGN KEY (session_id) REFERENCES session(id)
     ON DELETE CASCADE
     DEFERRABLE INITIALLY DEFERRED; 
 """
@@ -82,7 +82,7 @@ ALTER TABLE message
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("llm", "004_assistant"),
+        ("llm", "0004_assistant"),
     ]
 
     operations = [
@@ -92,7 +92,7 @@ class Migration(migrations.Migration):
         ),
         migrations.RemoveIndex(
             model_name="message",
-            name="message_session_ce02df_idx",
+            name="message_session_ce0d2f_idx",
         ),
         # Integer PKs cannot be altered to UUID in place; convert columns in SQL and
         # keep django's model state in sync via SeparateDatabaseAndState
@@ -106,7 +106,7 @@ class Migration(migrations.Migration):
             ],
             database_operations=[
                 migrations.RunSQL(sql=DROP_SESSION_FKS, reverse_sql=DROP_SESSION_FKS),
-                migrations.RunSQL(sql=FORWARD_CONVERT_SESSION_PK, reverse_sql=FORWARD_CONVERT_SESSION_PK),
+                migrations.RunSQL(sql=FORWARD_CONVERT_SESSION_PK, reverse_sql=REVERSE_CONVERT_SESSION_PK),
             ],
         ),
         migrations.AlterUniqueTogether(
