@@ -38,6 +38,7 @@ class Command(BaseCommand):
         operations_group.add_argument(
             "--description",
             type=str,
+            default="",
             help="Description of the assistant",
         )
 
@@ -280,6 +281,8 @@ class Command(BaseCommand):
             system_prompt_id=None,
             inference_config={},
             is_active=active_state,
+            # Default to empty string if description is None. Ensures new assistants receive an empty string instead
+            # of an explicit database NULL.
             description=options.get("description", ""),
         )
         has_configs = False
