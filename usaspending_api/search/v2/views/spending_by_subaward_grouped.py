@@ -31,14 +31,54 @@ from usaspending_api.search.filters.time_period.query_types import (
 
 logger = logging.getLogger(__name__)
 
+SORTABLE_FIELDS = [
+    "award_id",
+    "subaward_count",
+    "award_generated_internal_id",
+    "subaward_obligation",
+    "subaward_to_award_ratio",
+]
 
-@api_transformations(
-    api_version=settings.API_VERSION, function_list=API_TRANSFORM_FUNCTIONS
-)
+SOURCE_FIELDS = [
+    "award_amount",
+    "display_award_id",
+    "generated_unique_award_id",
+    "subaward_count",
+    "total_subaward_amount",
+]
+
+# <Field in API request> : <Field name in ElasticSearch / OpenSearch document>
+API_REQUEST_FIELD_TO_ES_FIELD_MAPPER = {
+    "award_generated_internal_id": "generated_unique_award_id",
+    "award_id": "display_award_id",
+    "subaward_count": "subaward_count",
+    "subaward_obligation": "total_subaward_amount_sort",
+    "award_obligation": "award_amount_sort",
+    "subaward_to_award_ratio": "subaward_to_award_ratio_sort",
+}
+
+AMOUNT_QUANTIZE = Decimal(".01")
+RATIO_QUANTIZE = Decimal(".00000001")
+
+
+def _quantize_amount(value: Any) -> Decimal | float:
+    if value:
+        return Decimal(value).quantize(AMOUNT_QUANTIZE)
+    return 0.0
+
+
+def _quantize_ratio(subaward_amount: Any, award_amount: Any) -> Decimal | float:
+    if not award_amount:
+        return 0.0
+    return (Decimal(subaward_amount or 0) / Decimal(award_amount)).quantize(RATIO_QUANTIZE)
+
+
+@api_transformations(api_version=settings.API_VERSION, function_list=API_TRANSFORM_FUNCTIONS)
 class SpendingBySubawardGroupedVisualizationViewSet(APIView):
     """
     This route takes award filters and returns the filtered awards ids, number of subawards for each award, \
-    total amount of subaward obligation within each award and each award's generated internal id
+    total amount of subaward obligation within each award, the prime award obligation, the ratio of subaward \
+    obligation to prime award obligation, and each award's generated internal id
     """
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/search/spending_by_subaward_grouped.md"
@@ -68,12 +108,7 @@ class SpendingBySubawardGroupedVisualizationViewSet(APIView):
                 "name": "sorted",
                 "key": "sort",
                 "type": "enum",
-                "enum_values": [
-                    "award_id",
-                    "subaward_count",
-                    "award_generated_internal_id",
-                    "subaward_obligation",
-                ],
+                "enum_values": SORTABLE_FIELDS,
                 "text_type": "search",
                 "default": "award_id",
             },
@@ -81,9 +116,7 @@ class SpendingBySubawardGroupedVisualizationViewSet(APIView):
 
         # Accepts the same filters as spending_by_award
         self.models.extend(copy.deepcopy(AWARD_FILTER_NO_RECIPIENT_ID))
-        self.models.extend(
-            copy.deepcopy([model for model in PAGINATION if model["name"] != "sort"])
-        )
+        self.models.extend(copy.deepcopy([model for model in PAGINATION if model["name"] != "sort"]))
 
     @cache_response()
     def post(self, request: Request) -> Response:
@@ -106,9 +139,7 @@ class SpendingBySubawardGroupedVisualizationViewSet(APIView):
         )
 
         query_with_filters = QueryWithFilters(QueryType.AWARDS)
-        filter_query = query_with_filters.generate_elasticsearch_query(
-            filters=filters, options=time_period_obj
-        )
+        filter_query = query_with_filters.generate_elasticsearch_query(filters=filters, options=time_period_obj)
         results = self.build_elasticsearch_search(filter_query)
 
         return Response(self.construct_es_response(results))
@@ -127,38 +158,22 @@ class SpendingBySubawardGroupedVisualizationViewSet(APIView):
             },
             "messages": [
                 under_development_message(),
-                *get_generic_filters_message(
-                    self.original_filters.keys(), [elem["name"] for elem in self.models]
-                ),
+                *get_generic_filters_message(self.original_filters.keys(), [elem["name"] for elem in self.models]),
             ],
         }
 
     def build_elasticsearch_search(self, filter_query: ES_Q) -> list[dict[str, Any]]:
         lower_limit = (self.pagination["page"] - 1) * self.pagination["limit"]
-
-        # <Field in API request> : <Field name in ElasticSearch document>
-        api_request_field_to_es_field_mapper = {
-            "award_generated_internal_id": "generated_unique_award_id",
-            "award_id": "display_award_id",
-            "subaward_count": "subaward_count",
-            "subaward_obligation": "total_subaward_amount",
-            "award_amount": "award_amount_sort",
-            "subaward_amount": "subaward_amount_sort",
-        }
+        sort_order = "asc" if self.pagination["sort_order"] == "asc" else "desc"
+        sorts = [{API_REQUEST_FIELD_TO_ES_FIELD_MAPPER[self.pagination["sort_key"]]: {"order": sort_order}}]
+        if self.pagination["sort_key"] != "award_id":
+            sorts.append({"display_award_id": {"order": sort_order}})
 
         search = (
             AwardSearch()
             .filter(filter_query)
-            .source(fields=list(api_request_field_to_es_field_mapper.values()))
-            .sort(
-                {
-                    api_request_field_to_es_field_mapper[self.pagination["sort_key"]]: {
-                        "order": "asc"
-                        if self.pagination["sort_order"] == "asc"
-                        else "desc"
-                    }
-                }
-            )
+            .source(fields=SOURCE_FIELDS)
+            .sort(*sorts)
             .extra(from_=lower_limit, size=self.pagination["limit"])
         )
         es_response = search.handle_execute()
@@ -166,22 +181,17 @@ class SpendingBySubawardGroupedVisualizationViewSet(APIView):
         if es_response is None:
             raise Exception("Breaking generator, unable to reach cluster")
 
-        results = [
-            {
-                "award_id": source["_source"]["display_award_id"],
-                "subaward_count": source["_source"]["subaward_count"],
-                "subaward_obligation": (
-                    Decimal(source["_source"]["total_subaward_amount"]).quantize(
-                        Decimal(".01")
-                    )
-                    if source["_source"]["total_subaward_amount"]
-                    else 0.0
-                ),
-                "award_generated_internal_id": source["_source"][
-                    "generated_unique_award_id"
-                ],
-            }
-            for source in es_response["hits"]["hits"]
-        ]
+        return [self.build_result(source["_source"]) for source in es_response["hits"]["hits"]]
 
-        return results
+    @staticmethod
+    def _build_result(source: dict[str, Any]) -> dict[str, Any]:
+        subaward_obligation = _quantize_amount(source.get("total_subaward_amount"))
+        award_obligation = _quantize_amount(source.get("award_amount"))
+        return {
+            "award_id": source["display_award_id"],
+            "subaward_count": source["subaward_count"],
+            "subaward_obligation": subaward_obligation,
+            "award_obligation": award_obligation,
+            "subaward_to_award_ratio": _quantize_ratio(source.get("total_subaward_amount"), source.get("award_amount")),
+            "award_generated_internal_id": source["geneerated_unique_award_id"],
+        }
