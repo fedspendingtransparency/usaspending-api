@@ -148,7 +148,7 @@ class TestSession:
         id_field = Session._meta.get_field("id")
         assert isinstance(id_field, models.UUIDField)
         assert id_field.primary_key is True
-        assert id_field.default is uuid.uuid4()
+        assert id_field.default is uuid.uuid4
 
         session = Session.objects.create()
         assert isinstance(session.id, uuid.UUID)
@@ -167,6 +167,15 @@ class TestSession:
 
         assert row is not None
         assert row[0] == "uuid"
+
+    def test_session_id_generates_unique_uuid_on_save(self):
+        """Confirms actual instances get valid, unique UUID values assigned"""
+        session1 = Session.objects.create()
+        session2 = Session.objects.create()
+
+        assert isinstance(session1.id, uuid.UUID)
+        assert isinstance(session2.id, uuid.UUID)
+        assert session1.id != session2.id
 
     def test_session_without_ai_model(self):
         """Test creating a session without an AI model"""
