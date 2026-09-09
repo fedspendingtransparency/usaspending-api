@@ -1,3 +1,5 @@
+import uuid
+
 from django.db import models
 
 
@@ -34,6 +36,7 @@ class Prompts(models.Model):
 
 
 class Session(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False, serialize=False)
     ai_model = models.ForeignKey(AIModel, on_delete=models.SET_NULL, null=True, related_name="sessions")
     tools = models.JSONField(default=list)
     system_prompt = models.ForeignKey(Prompts, on_delete=models.SET_NULL, null=True, related_name="sessions")
