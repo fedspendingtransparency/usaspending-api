@@ -3,7 +3,7 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("llm", "0004_assistant"),
+        ("llm", "0005_assistant_updates"),
     ]
 
     operations = [
