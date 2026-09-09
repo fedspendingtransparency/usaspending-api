@@ -193,5 +193,5 @@ class SpendingBySubawardGroupedVisualizationViewSet(APIView):
             "subaward_obligation": subaward_obligation,
             "award_obligation": award_obligation,
             "subaward_to_award_ratio": _quantize_ratio(source.get("total_subaward_amount"), source.get("award_amount")),
-            "award_generated_internal_id": source["geneerated_unique_award_id"],
+            "award_generated_internal_id": source["generated_unique_award_id"],
         }
