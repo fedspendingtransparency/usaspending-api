@@ -62,5 +62,5 @@
     inference_config:
       temperature: 0.0
       topP: 1.0
-      maxTokens: 5000
+      maxTokens: 8192
       stopSequences: []
