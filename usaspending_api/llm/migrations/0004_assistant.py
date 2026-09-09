@@ -6,7 +6,7 @@ import django.db.models.deletion
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("llm", "0002_create_pgvector"),
+        ("llm", "0003_aimodel_inference_config"),
     ]
 
     operations = [
@@ -40,17 +40,8 @@ class Migration(migrations.Migration):
                         to="llm.prompts",
                     ),
                 ),
-                (
-                    "is_active",
-                    models.BooleanField(
-                        default=False,
-                        help_text="Active/Inactive state for the assistant"
-                    )
-                ),
-                (
-                    "description",
-                    models.TextField(blank=True, default="")
-                )
+                ("is_active", models.BooleanField(default=False, help_text="Active/Inactive state for the assistant")),
+                ("description", models.TextField(blank=True, default="")),
             ],
             options={
                 "db_table": "assistant",
@@ -62,11 +53,15 @@ class Migration(migrations.Migration):
             constraint=models.UniqueConstraint(
                 fields=("name", "is_active"),
                 condition=models.Q(is_active=True),
-                name="only_one_active_assistant_per_name"
+                name="only_one_active_assistant_per_name",
             ),
         ),
         migrations.AddIndex(
             model_name="assistant",
             index=models.Index(fields=["name"], name="assistant_name_e87191_idx"),
+        ),
+        migrations.RemoveField(
+            model_name="aimodel",
+            name="inference_config",
         ),
     ]

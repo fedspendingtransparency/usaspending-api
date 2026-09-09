@@ -190,9 +190,7 @@ class Command(BaseCommand):
         if options["is_active"] and options["is_inactive"]:
             raise CommandError("Cannot specify both --is-active and --is-inactive.")
 
-        has_prompt_source = (
-            options.get("system_prompt_id") is not None or options.get("new_system_prompt") is not None
-        )
+        has_prompt_source = options.get("system_prompt_id") is not None or options.get("new_system_prompt") is not None
         if options["combine_prompts"] and not has_prompt_source:
             raise CommandError("--combine-prompts requires --system-prompt-id and/or --new-system-prompt.")
 
@@ -246,10 +244,13 @@ class Command(BaseCommand):
         if options.get("system_prompt_id") is not None or options.get("new_system_prompt") is not None:
             assistant.system_prompt_id = self._get_prompt_pk(assistant, options)
         # 3. Update inference configs (if provided).
-        if any(
-            options.get(option) is not None
-            for option in ("temperature", "max_tokens", "top_p", "stop_sequences", "inference_config_json")
-        ) or options["clear_inference_config"]:
+        if (
+            any(
+                options.get(option) is not None
+                for option in ("temperature", "max_tokens", "top_p", "stop_sequences", "inference_config_json")
+            )
+            or options["clear_inference_config"]
+        ):
             assistant.inference_config = self._update_inference_configs(assistant, options)
         # 4. Update the assistant's active state (if provided).
         if options["is_active"] or options["is_inactive"]:
