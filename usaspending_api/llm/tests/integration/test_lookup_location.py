@@ -14,32 +14,32 @@ def mock_database(monkeypatch):
     """Mock the database models to return test data."""
     from unittest.mock import MagicMock
 
-    # Mock PopCounty for state codes
-    mock_pop_county = MagicMock()
-    mock_pop_county.objects.values.return_value.distinct.return_value = [
-        {'state_name': 'Texas', 'state_code': 'TX'},
-        {'state_name': 'California', 'state_code': 'CA'},
-        {'state_name': 'Florida', 'state_code': 'FL'},
-        {'state_name': 'Illinois', 'state_code': 'IL'},
-        {'state_name': 'Missouri', 'state_code': 'MO'},
-        {'state_name': 'Kansas', 'state_code': 'KS'},
-        {'state_name': 'New York', 'state_code': 'NY'},
-        {'state_name': 'Washington', 'state_code': 'WA'},
-        {'state_name': 'Massachusetts', 'state_code': 'MA'},
+    # Mock PopCongressionalDistrict for state codes
+    mock_pop_cong_district = MagicMock()
+    mock_pop_cong_district.objects.values.return_value.distinct.return_value = [
+        {'state_name': 'Texas', 'state_abbreviation': 'TX'},
+        {'state_name': 'California', 'state_abbreviation': 'CA'},
+        {'state_name': 'Florida', 'state_abbreviation': 'FL'},
+        {'state_name': 'Illinois', 'state_abbreviation': 'IL'},
+        {'state_name': 'Missouri', 'state_abbreviation': 'MO'},
+        {'state_name': 'Kansas', 'state_abbreviation': 'KS'},
+        {'state_name': 'New York', 'state_abbreviation': 'NY'},
+        {'state_name': 'Washington', 'state_abbreviation': 'WA'},
+        {'state_name': 'Massachusetts', 'state_abbreviation': 'MA'},
     ]
 
     # Mock RefCountryCode for country codes
-    mock_country_code = MagicMock()
-    mock_country_code.objects.values.return_value = [
+    mock_ref_country_code = MagicMock()
+    mock_ref_country_code.objects.values.return_value = [
         {'country_name': 'United States', 'country_code': 'USA'},
         {'country_name': 'Germany', 'country_code': 'DEU'},
         {'country_name': 'Turkey', 'country_code': 'TUR'},
     ]
 
-    monkeypatch.setattr('usaspending_api.llm.tools.lookup_location.PopCounty', mock_pop_county)
-    monkeypatch.setattr('usaspending_api.llm.tools.lookup_location.RefCountryCode', mock_country_code)
+    monkeypatch.setattr('usaspending_api.llm.tools.lookup_location.PopCongressionalDistrict', mock_pop_cong_district)
+    monkeypatch.setattr('usaspending_api.llm.tools.lookup_location.RefCountryCode', mock_ref_country_code)
 
-    return mock_pop_county, mock_country_code
+    return mock_pop_cong_district, mock_ref_country_code
 
 
 @pytest.fixture
@@ -620,11 +620,11 @@ class TestEdgeCases:
 class TestHelperMethods:
     """Test internal helper methods."""
 
-    def test_get_state_code(self, location_tool):
+    def test_get_state_abbr(self, location_tool):
         """Test state code lookup."""
-        assert location_tool._get_state_code("Texas") == "TX"
-        assert location_tool._get_state_code("CALIFORNIA") == "CA"
-        assert location_tool._get_state_code("") == "XX"
+        assert location_tool._get_state_abbr("Texas") == "TX"
+        assert location_tool._get_state_abbr("CALIFORNIA") == "CA"
+        assert location_tool._get_state_abbr("") == "XX"
 
     def test_get_country_code(self, location_tool):
         """Test country code lookup."""
@@ -726,28 +726,28 @@ class TestRealWorldScenarios:
 class TestDatabaseIntegration:
     """Test integration with Django models for reference data."""
 
-    @patch('usaspending_api.llm.tools.lookup_location.PopCounty')
-    def test_state_codes_loaded_from_database(self, mock_pop_county):
-        """AC: State codes should be loaded from PopCounty model."""
-        mock_pop_county.objects.values.return_value.distinct.return_value = [
-            {'state_name': 'Texas', 'state_code': 'TX'},
-            {'state_name': 'California', 'state_code': 'CA'},
+    @patch('usaspending_api.llm.tools.lookup_location.PopCongressionalDistrict')
+    def test_state_abbrs_loaded_from_database(self, mock_pop_cong_district):
+        """AC: State codes should be loaded from PopCongressionalDistrict model."""
+        mock_pop_cong_district.objects.values.return_value.distinct.return_value = [
+            {'state_name': 'Texas', 'state_abbreviation': 'TX'},
+            {'state_name': 'California', 'state_abbreviation': 'CA'},
         ]
 
         # Create a fresh instance with the mock
         location_tool = LocationLookupTool()
 
-        state_codes = location_tool.state_codes
+        state_abbrs = location_tool.state_abbreviations
 
-        assert 'Texas' in state_codes
-        assert state_codes['Texas'] == 'TX'
-        assert 'TEXAS' in state_codes  # Upper case version
-        mock_pop_county.objects.values.assert_called_once_with('state_name', 'state_code')
+        assert 'Texas' in state_abbrs
+        assert state_abbrs['Texas'] == 'TX'
+        assert 'TEXAS' in state_abbrs  # Upper case version
+        mock_pop_cong_district.objects.values.assert_called_once_with('state_name', 'state_abbreviation')
 
     @patch('usaspending_api.llm.tools.lookup_location.RefCountryCode')
-    def test_country_codes_loaded_from_database(self, mock_country_code):
+    def test_country_codes_loaded_from_database(self, mock_ref_country_code):
         """AC: Country codes should be loaded from RefCountryCode model."""
-        mock_country_code.objects.values.return_value = [
+        mock_ref_country_code.objects.values.return_value = [
             {'country_name': 'United States', 'country_code': 'USA'},
             {'country_name': 'Germany', 'country_code': 'DEU'},
         ]
@@ -759,24 +759,24 @@ class TestDatabaseIntegration:
 
         assert 'united states' in country_codes
         assert country_codes['united states'] == 'USA'
-        mock_country_code.objects.values.assert_called_once_with('country_name', 'country_code')
+        mock_ref_country_code.objects.values.assert_called_once_with('country_name', 'country_code')
 
-    @patch('usaspending_api.llm.tools.lookup_location.PopCounty')
-    def test_state_codes_cached_after_first_load(self, mock_pop_county):
+    @patch('usaspending_api.llm.tools.lookup_location.PopCongressionalDistrict')
+    def test_state_abbrs_cached_after_first_load(self, mock_pop_cong_district):
         """Test that state codes are cached to avoid repeated DB queries."""
-        mock_pop_county.objects.values.return_value.distinct.return_value = [
-            {'state_name': 'Texas', 'state_code': 'TX'},
+        mock_pop_cong_district.objects.values.return_value.distinct.return_value = [
+            {'state_name': 'Texas', 'state_abbreviation': 'TX'},
         ]
 
         # Create a fresh instance
         location_tool = LocationLookupTool()
 
         # Access twice
-        _ = location_tool.state_codes
-        _ = location_tool.state_codes
+        _ = location_tool.state_abbreviations
+        _ = location_tool.state_abbreviations
 
         # Database should only be queried once
-        assert mock_pop_county.objects.values.call_count == 1
+        assert mock_pop_cong_district.objects.values.call_count == 1
 
 
 class TestSingleQueryRequirement:
