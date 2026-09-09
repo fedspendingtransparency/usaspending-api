@@ -1,6 +1,7 @@
 import json
 import logging
 import uuid
+from argparse import SUPPRESS
 
 from django.core.management.base import BaseCommand, CommandError, CommandParser
 from django.db import IntegrityError, transaction
@@ -38,7 +39,7 @@ class Command(BaseCommand):
         operations_group.add_argument(
             "--description",
             type=str,
-            default="",
+            default=SUPPRESS,
             help="Description of the assistant",
         )
 
@@ -281,8 +282,8 @@ class Command(BaseCommand):
             system_prompt_id=None,
             inference_config={},
             is_active=active_state,
-            # Default to empty string if description is None. Ensures new assistants receive an empty string instead
-            # of an explicit database NULL.
+            # Default to empty string when description is omitted. Ensures new assistants receive an empty string
+            # instead of an explicit database NULL.
             description=options.get("description", ""),
         )
         has_configs = False
