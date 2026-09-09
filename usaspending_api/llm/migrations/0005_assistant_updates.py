@@ -46,4 +46,9 @@ class Migration(migrations.Migration):
             model_name="aimodel",
             name="inference_config",
         ),
+        migrations.AlterField(
+            model_name="aimodel",
+            name="model_id",
+            field=models.CharField(max_length=100, unique=True),
+        ),
     ]
