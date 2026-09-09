@@ -17,27 +17,27 @@ def mock_database(monkeypatch):
     # Mock PopCongressionalDistrict for state codes
     mock_pop_cong_district = MagicMock()
     mock_pop_cong_district.objects.values.return_value.distinct.return_value = [
-        {'state_name': 'Texas', 'state_abbreviation': 'TX'},
-        {'state_name': 'California', 'state_abbreviation': 'CA'},
-        {'state_name': 'Florida', 'state_abbreviation': 'FL'},
-        {'state_name': 'Illinois', 'state_abbreviation': 'IL'},
-        {'state_name': 'Missouri', 'state_abbreviation': 'MO'},
-        {'state_name': 'Kansas', 'state_abbreviation': 'KS'},
-        {'state_name': 'New York', 'state_abbreviation': 'NY'},
-        {'state_name': 'Washington', 'state_abbreviation': 'WA'},
-        {'state_name': 'Massachusetts', 'state_abbreviation': 'MA'},
+        {"state_name": "Texas", "state_abbreviation": "TX"},
+        {"state_name": "California", "state_abbreviation": "CA"},
+        {"state_name": "Florida", "state_abbreviation": "FL"},
+        {"state_name": "Illinois", "state_abbreviation": "IL"},
+        {"state_name": "Missouri", "state_abbreviation": "MO"},
+        {"state_name": "Kansas", "state_abbreviation": "KS"},
+        {"state_name": "New York", "state_abbreviation": "NY"},
+        {"state_name": "Washington", "state_abbreviation": "WA"},
+        {"state_name": "Massachusetts", "state_abbreviation": "MA"},
     ]
 
     # Mock RefCountryCode for country codes
     mock_ref_country_code = MagicMock()
     mock_ref_country_code.objects.values.return_value = [
-        {'country_name': 'United States', 'country_code': 'USA'},
-        {'country_name': 'Germany', 'country_code': 'DEU'},
-        {'country_name': 'Turkey', 'country_code': 'TUR'},
+        {"country_name": "United States", "country_code": "USA"},
+        {"country_name": "Germany", "country_code": "DEU"},
+        {"country_name": "Turkey", "country_code": "TUR"},
     ]
 
-    monkeypatch.setattr('usaspending_api.llm.tools.lookup_location.PopCongressionalDistrict', mock_pop_cong_district)
-    monkeypatch.setattr('usaspending_api.llm.tools.lookup_location.RefCountryCode', mock_ref_country_code)
+    monkeypatch.setattr("usaspending_api.llm.tools.lookup_location.PopCongressionalDistrict", mock_pop_cong_district)
+    monkeypatch.setattr("usaspending_api.llm.tools.lookup_location.RefCountryCode", mock_ref_country_code)
 
     return mock_pop_cong_district, mock_ref_country_code
 
@@ -51,7 +51,7 @@ def location_tool(mock_database):
 @pytest.fixture
 def mock_search():
     """Fixture for mocked OpenSearch."""
-    with patch('usaspending_api.llm.tools.lookup_location.LocationSearch') as mock_search_class:
+    with patch("usaspending_api.llm.tools.lookup_location.LocationSearch") as mock_search_class:
         mock_search = MagicMock()
         mock_search_class.return_value = mock_search
         mock_search.query.return_value = mock_search
@@ -104,11 +104,7 @@ class TestLocationTypes:
     def test_state_lookup(self, location_tool, mock_search):
         """AC: State name and code lookup."""
         mock_search.execute.return_value.hits = [
-            create_mock_hit(
-                "TEXAS",
-                "state",
-                json.dumps({"state_name": "TEXAS", "country_name": "UNITED STATES"})
-            )
+            create_mock_hit("TEXAS", "state", json.dumps({"state_name": "TEXAS", "country_name": "UNITED STATES"}))
         ]
 
         result = location_tool.lookup_location("Texas")
@@ -127,11 +123,7 @@ class TestLocationTypes:
             create_mock_hit(
                 "CHICAGO, ILLINOIS",
                 "city",
-                json.dumps({
-                    "city_name": "CHICAGO",
-                    "state_name": "ILLINOIS",
-                    "country_name": "UNITED STATES"
-                })
+                json.dumps({"city_name": "CHICAGO", "state_name": "ILLINOIS", "country_name": "UNITED STATES"}),
             )
         ]
 
@@ -149,12 +141,14 @@ class TestLocationTypes:
             create_mock_hit(
                 "JACKSON COUNTY, MISSOURI",
                 "county",
-                json.dumps({
-                    "county_name": "JACKSON",
-                    "county_fips": "095",
-                    "state_name": "MISSOURI",
-                    "country_name": "UNITED STATES"
-                })
+                json.dumps(
+                    {
+                        "county_name": "JACKSON",
+                        "county_fips": "095",
+                        "state_name": "MISSOURI",
+                        "country_name": "UNITED STATES",
+                    }
+                ),
             )
         ]
 
@@ -168,11 +162,7 @@ class TestLocationTypes:
     def test_zip_code_lookup(self, location_tool, mock_search):
         """AC: ZIP code lookup."""
         mock_search.execute.return_value.hits = [
-            create_mock_hit(
-                "64198",
-                "zip_code",
-                json.dumps({"zip_code": "64198", "country_name": "UNITED STATES"})
-            )
+            create_mock_hit("64198", "zip_code", json.dumps({"zip_code": "64198", "country_name": "UNITED STATES"}))
         ]
 
         result = location_tool.lookup_location("64198")
@@ -188,11 +178,7 @@ class TestLocationTypes:
             create_mock_hit(
                 "MO-04",
                 "current_cd",
-                json.dumps({
-                    "current_cd": "MO-04",
-                    "state_name": "MISSOURI",
-                    "country_name": "UNITED STATES"
-                })
+                json.dumps({"current_cd": "MO-04", "state_name": "MISSOURI", "country_name": "UNITED STATES"}),
             )
         ]
 
@@ -208,11 +194,7 @@ class TestLocationTypes:
             create_mock_hit(
                 "NY-12",
                 "original_cd",
-                json.dumps({
-                    "original_cd": "NY-12",
-                    "state_name": "NEW YORK",
-                    "country_name": "UNITED STATES"
-                })
+                json.dumps({"original_cd": "NY-12", "state_name": "NEW YORK", "country_name": "UNITED STATES"}),
             )
         ]
 
@@ -224,11 +206,7 @@ class TestLocationTypes:
     def test_country_lookup(self, location_tool, mock_search):
         """AC: Country name and code lookup."""
         mock_search.execute.return_value.hits = [
-            create_mock_hit(
-                "GERMANY",
-                "country",
-                json.dumps({"country_name": "GERMANY", "country_code": "DEU"})
-            )
+            create_mock_hit("GERMANY", "country", json.dumps({"country_name": "GERMANY", "country_code": "DEU"}))
         ]
 
         result = location_tool.lookup_location("Germany")
@@ -246,10 +224,7 @@ class TestFuzzyMatching:
         """AC: Fuzzy matching handles typos."""
         mock_search.execute.return_value.hits = [
             create_mock_hit(
-                "FLORIDA",
-                "state",
-                json.dumps({"state_name": "FLORIDA", "country_name": "UNITED STATES"}),
-                score=8.0
+                "FLORIDA", "state", json.dumps({"state_name": "FLORIDA", "country_name": "UNITED STATES"}), score=8.0
             )
         ]
 
@@ -266,7 +241,7 @@ class TestFuzzyMatching:
                 "MASSACHUSETTS",
                 "state",
                 json.dumps({"state_name": "MASSACHUSETTS", "country_name": "UNITED STATES"}),
-                score=7.0
+                score=7.0,
             )
         ]
 
@@ -278,11 +253,7 @@ class TestFuzzyMatching:
     def test_case_insensitive(self, location_tool, mock_search):
         """AC: Fuzzy matching is case insensitive."""
         mock_search.execute.return_value.hits = [
-            create_mock_hit(
-                "TEXAS",
-                "state",
-                json.dumps({"state_name": "TEXAS", "country_name": "UNITED STATES"})
-            )
+            create_mock_hit("TEXAS", "state", json.dumps({"state_name": "TEXAS", "country_name": "UNITED STATES"}))
         ]
 
         for query in ["texas", "TEXAS", "Texas", "tExAs"]:
@@ -324,10 +295,15 @@ class TestQueryBehavior:
     def test_multiple_results_returned(self, location_tool, mock_search):
         """Test that multiple results are returned and deduplicated."""
         mock_search.execute.return_value.hits = [
-            create_mock_hit("TEXAS", "state", json.dumps({"state_name": "TEXAS", "country_name": "UNITED STATES"}),
-                            10.0),
-            create_mock_hit("TEXARKANA, TEXAS", "city", json.dumps(
-                {"city_name": "TEXARKANA", "state_name": "TEXAS", "country_name": "UNITED STATES"}), 7.5),
+            create_mock_hit(
+                "TEXAS", "state", json.dumps({"state_name": "TEXAS", "country_name": "UNITED STATES"}), 10.0
+            ),
+            create_mock_hit(
+                "TEXARKANA, TEXAS",
+                "city",
+                json.dumps({"city_name": "TEXARKANA", "state_name": "TEXAS", "country_name": "UNITED STATES"}),
+                7.5,
+            ),
         ]
 
         result = location_tool.lookup_location("Tex")
@@ -357,8 +333,9 @@ class TestErrorHandling:
         # Both will process, but the malformed one will have empty data
         mock_search.execute.return_value.hits = [
             create_mock_hit("BAD", "state", "invalid json {{{", 10.0),
-            create_mock_hit("TEXAS", "state", json.dumps({"state_name": "TEXAS", "country_name": "UNITED STATES"}),
-                            9.0),
+            create_mock_hit(
+                "TEXAS", "state", json.dumps({"state_name": "TEXAS", "country_name": "UNITED STATES"}), 9.0
+            ),
         ]
 
         result = location_tool.lookup_location("Test")
@@ -385,11 +362,7 @@ class TestIntegrationWithFilters:
     def test_location_compatible_with_filters_model(self, location_tool, mock_search):
         """AC: Returned locations work with Filters.selectedLocations."""
         mock_search.execute.return_value.hits = [
-            create_mock_hit(
-                "TEXAS",
-                "state",
-                json.dumps({"state_name": "TEXAS", "country_name": "UNITED STATES"})
-            )
+            create_mock_hit("TEXAS", "state", json.dumps({"state_name": "TEXAS", "country_name": "UNITED STATES"}))
         ]
 
         result = location_tool.lookup_location("Texas")
@@ -408,11 +381,7 @@ class TestIntegrationWithFilters:
             create_mock_hit(
                 "CHICAGO, ILLINOIS",
                 "city",
-                json.dumps({
-                    "city_name": "CHICAGO",
-                    "state_name": "ILLINOIS",
-                    "country_name": "UNITED STATES"
-                })
+                json.dumps({"city_name": "CHICAGO", "state_name": "ILLINOIS", "country_name": "UNITED STATES"}),
             )
         ]
 
@@ -434,9 +403,9 @@ class TestAIToolImplementation:
 
     def test_tool_has_required_attributes(self):
         """AC: AITool model is properly implemented."""
-        assert hasattr(lookup_location_tool, 'function')
-        assert hasattr(lookup_location_tool, 'description')
-        assert hasattr(lookup_location_tool, 'logging')
+        assert hasattr(lookup_location_tool, "function")
+        assert hasattr(lookup_location_tool, "description")
+        assert hasattr(lookup_location_tool, "logging")
 
         assert callable(lookup_location_tool.function)
         assert callable(lookup_location_tool.logging)
@@ -484,11 +453,7 @@ class TestAIToolImplementation:
     def test_tool_execution(self, mock_search):
         """Test executing tool through AITool interface."""
         mock_search.execute.return_value.hits = [
-            create_mock_hit(
-                "TEXAS",
-                "state",
-                json.dumps({"state_name": "TEXAS", "country_name": "UNITED STATES"})
-            )
+            create_mock_hit("TEXAS", "state", json.dumps({"state_name": "TEXAS", "country_name": "UNITED STATES"}))
         ]
 
         # Execute through the tool's function attribute
@@ -504,11 +469,7 @@ class TestResponseStructure:
     def test_response_has_required_fields(self, location_tool, mock_search):
         """Test that response contains all required fields."""
         mock_search.execute.return_value.hits = [
-            create_mock_hit(
-                "TEXAS",
-                "state",
-                json.dumps({"state_name": "TEXAS", "country_name": "UNITED STATES"})
-            )
+            create_mock_hit("TEXAS", "state", json.dumps({"state_name": "TEXAS", "country_name": "UNITED STATES"}))
         ]
 
         result = location_tool.lookup_location("Texas")
@@ -532,11 +493,7 @@ class TestResponseStructure:
     def test_identifier_is_dictionary_key(self, location_tool, mock_search):
         """Test that identifier matches the dictionary key."""
         mock_search.execute.return_value.hits = [
-            create_mock_hit(
-                "TEXAS",
-                "state",
-                json.dumps({"state_name": "TEXAS", "country_name": "UNITED STATES"})
-            )
+            create_mock_hit("TEXAS", "state", json.dumps({"state_name": "TEXAS", "country_name": "UNITED STATES"}))
         ]
 
         result = location_tool.lookup_location("Texas")
@@ -575,7 +532,7 @@ class TestEdgeCases:
             create_mock_hit(
                 "ST. LOUIS, MISSOURI",
                 "city",
-                json.dumps({"city_name": "ST. LOUIS", "state_name": "MISSOURI", "country_name": "UNITED STATES"})
+                json.dumps({"city_name": "ST. LOUIS", "state_name": "MISSOURI", "country_name": "UNITED STATES"}),
             )
         ]
 
@@ -586,11 +543,7 @@ class TestEdgeCases:
     def test_whitespace_handling(self, location_tool, mock_search):
         """Test that leading/trailing whitespace is handled."""
         mock_search.execute.return_value.hits = [
-            create_mock_hit(
-                "TEXAS",
-                "state",
-                json.dumps({"state_name": "TEXAS", "country_name": "UNITED STATES"})
-            )
+            create_mock_hit("TEXAS", "state", json.dumps({"state_name": "TEXAS", "country_name": "UNITED STATES"}))
         ]
 
         result = location_tool.lookup_location("  Texas  ")
@@ -601,11 +554,7 @@ class TestEdgeCases:
     def test_foreign_city_without_state(self, location_tool, mock_search):
         """Test foreign city lookup that doesn't have a state."""
         mock_search.execute.return_value.hits = [
-            create_mock_hit(
-                "ISTANBUL",
-                "city",
-                json.dumps({"city_name": "ISTANBUL", "country_name": "TURKEY"})
-            )
+            create_mock_hit("ISTANBUL", "city", json.dumps({"city_name": "ISTANBUL", "country_name": "TURKEY"}))
         ]
 
         result = location_tool.lookup_location("Istanbul")
@@ -646,34 +595,43 @@ class TestHelperMethods:
     def test_build_identifier_formats(self, location_tool):
         """Test identifier format for each location type."""
         # State
-        assert location_tool._build_identifier(
-            {"state_name": "MISSOURI", "country_name": "UNITED STATES"}, "state"
-        ) == "USA_MO"
+        assert (
+            location_tool._build_identifier({"state_name": "MISSOURI", "country_name": "UNITED STATES"}, "state")
+            == "USA_MO"
+        )
 
         # City
-        assert location_tool._build_identifier(
-            {"city_name": "CHICAGO", "state_name": "ILLINOIS", "country_name": "UNITED STATES"}, "city"
-        ) == "USA_IL_CHICAGO"
+        assert (
+            location_tool._build_identifier(
+                {"city_name": "CHICAGO", "state_name": "ILLINOIS", "country_name": "UNITED STATES"}, "city"
+            )
+            == "USA_IL_CHICAGO"
+        )
 
         # County
-        assert location_tool._build_identifier(
-            {"county_fips": "095", "state_name": "MISSOURI", "country_name": "UNITED STATES"}, "county"
-        ) == "USA_MO_095"
+        assert (
+            location_tool._build_identifier(
+                {"county_fips": "095", "state_name": "MISSOURI", "country_name": "UNITED STATES"}, "county"
+            )
+            == "USA_MO_095"
+        )
 
         # Zip
-        assert location_tool._build_identifier(
-            {"zip_code": "64198", "country_name": "UNITED STATES"}, "zip_code"
-        ) == "USA_64198"
+        assert (
+            location_tool._build_identifier({"zip_code": "64198", "country_name": "UNITED STATES"}, "zip_code")
+            == "USA_64198"
+        )
 
         # Congressional district
-        assert location_tool._build_identifier(
-            {"current_cd": "MO-04", "state_name": "MISSOURI", "country_name": "UNITED STATES"}, "current_cd"
-        ) == "USA_MO_04"
+        assert (
+            location_tool._build_identifier(
+                {"current_cd": "MO-04", "state_name": "MISSOURI", "country_name": "UNITED STATES"}, "current_cd"
+            )
+            == "USA_MO_04"
+        )
 
         # Country
-        assert location_tool._build_identifier(
-            {"country_name": "GERMANY", "country_code": "DEU"}, "country"
-        ) == "DEU"
+        assert location_tool._build_identifier({"country_name": "GERMANY", "country_code": "DEU"}, "country") == "DEU"
 
 
 class TestRealWorldScenarios:
@@ -682,10 +640,18 @@ class TestRealWorldScenarios:
     def test_ambiguous_query_with_multiple_results(self, location_tool, mock_search):
         """Test query that returns multiple valid locations."""
         mock_search.execute.return_value.hits = [
-            create_mock_hit("KANSAS CITY, MISSOURI", "city", json.dumps(
-                {"city_name": "KANSAS CITY", "state_name": "MISSOURI", "country_name": "UNITED STATES"}), 10.0),
-            create_mock_hit("KANSAS CITY, KANSAS", "city", json.dumps(
-                {"city_name": "KANSAS CITY", "state_name": "KANSAS", "country_name": "UNITED STATES"}), 9.5),
+            create_mock_hit(
+                "KANSAS CITY, MISSOURI",
+                "city",
+                json.dumps({"city_name": "KANSAS CITY", "state_name": "MISSOURI", "country_name": "UNITED STATES"}),
+                10.0,
+            ),
+            create_mock_hit(
+                "KANSAS CITY, KANSAS",
+                "city",
+                json.dumps({"city_name": "KANSAS CITY", "state_name": "KANSAS", "country_name": "UNITED STATES"}),
+                9.5,
+            ),
         ]
 
         result = location_tool.lookup_location("Kansas City")
@@ -698,8 +664,9 @@ class TestRealWorldScenarios:
     def test_location_type_narrows_results(self, location_tool, mock_search):
         """Test that location_type filter helps with ambiguous queries."""
         mock_search.execute.return_value.hits = [
-            create_mock_hit("WASHINGTON", "state",
-                            json.dumps({"state_name": "WASHINGTON", "country_name": "UNITED STATES"}), 10.0)
+            create_mock_hit(
+                "WASHINGTON", "state", json.dumps({"state_name": "WASHINGTON", "country_name": "UNITED STATES"}), 10.0
+            )
         ]
 
         result = location_tool.lookup_location("Washington", location_type="state")
@@ -713,8 +680,12 @@ class TestRealWorldScenarios:
         # Mock should only return 5 results when top_k=5
         # This simulates OpenSearch respecting the limit
         mock_search.execute.return_value.hits = [
-            create_mock_hit(f"CITY{i}", "city", json.dumps(
-                {"city_name": f"CITY{i}", "state_name": "STATE", "country_name": "UNITED STATES"}), 10.0 - i * 0.5)
+            create_mock_hit(
+                f"CITY{i}",
+                "city",
+                json.dumps({"city_name": f"CITY{i}", "state_name": "STATE", "country_name": "UNITED STATES"}),
+                10.0 - i * 0.5,
+            )
             for i in range(5)  # Changed from 10 to 5 to match top_k parameter
         ]
 
@@ -726,12 +697,12 @@ class TestRealWorldScenarios:
 class TestDatabaseIntegration:
     """Test integration with Django models for reference data."""
 
-    @patch('usaspending_api.llm.tools.lookup_location.PopCongressionalDistrict')
+    @patch("usaspending_api.llm.tools.lookup_location.PopCongressionalDistrict")
     def test_state_abbrs_loaded_from_database(self, mock_pop_cong_district):
         """AC: State codes should be loaded from PopCongressionalDistrict model."""
         mock_pop_cong_district.objects.values.return_value.distinct.return_value = [
-            {'state_name': 'Texas', 'state_abbreviation': 'TX'},
-            {'state_name': 'California', 'state_abbreviation': 'CA'},
+            {"state_name": "Texas", "state_abbreviation": "TX"},
+            {"state_name": "California", "state_abbreviation": "CA"},
         ]
 
         # Create a fresh instance with the mock
@@ -739,17 +710,17 @@ class TestDatabaseIntegration:
 
         state_abbrs = location_tool.state_abbreviations
 
-        assert 'Texas' in state_abbrs
-        assert state_abbrs['Texas'] == 'TX'
-        assert 'TEXAS' in state_abbrs  # Upper case version
-        mock_pop_cong_district.objects.values.assert_called_once_with('state_name', 'state_abbreviation')
+        assert "Texas" in state_abbrs
+        assert state_abbrs["Texas"] == "TX"
+        assert "TEXAS" in state_abbrs  # Upper case version
+        mock_pop_cong_district.objects.values.assert_called_once_with("state_name", "state_abbreviation")
 
-    @patch('usaspending_api.llm.tools.lookup_location.RefCountryCode')
+    @patch("usaspending_api.llm.tools.lookup_location.RefCountryCode")
     def test_country_codes_loaded_from_database(self, mock_ref_country_code):
         """AC: Country codes should be loaded from RefCountryCode model."""
         mock_ref_country_code.objects.values.return_value = [
-            {'country_name': 'United States', 'country_code': 'USA'},
-            {'country_name': 'Germany', 'country_code': 'DEU'},
+            {"country_name": "United States", "country_code": "USA"},
+            {"country_name": "Germany", "country_code": "DEU"},
         ]
 
         # Create a fresh instance with the mock
@@ -757,15 +728,15 @@ class TestDatabaseIntegration:
 
         country_codes = location_tool.country_codes
 
-        assert 'united states' in country_codes
-        assert country_codes['united states'] == 'USA'
-        mock_ref_country_code.objects.values.assert_called_once_with('country_name', 'country_code')
+        assert "united states" in country_codes
+        assert country_codes["united states"] == "USA"
+        mock_ref_country_code.objects.values.assert_called_once_with("country_name", "country_code")
 
-    @patch('usaspending_api.llm.tools.lookup_location.PopCongressionalDistrict')
+    @patch("usaspending_api.llm.tools.lookup_location.PopCongressionalDistrict")
     def test_state_abbrs_cached_after_first_load(self, mock_pop_cong_district):
         """Test that state codes are cached to avoid repeated DB queries."""
         mock_pop_cong_district.objects.values.return_value.distinct.return_value = [
-            {'state_name': 'Texas', 'state_abbreviation': 'TX'},
+            {"state_name": "Texas", "state_abbreviation": "TX"},
         ]
 
         # Create a fresh instance
@@ -819,13 +790,10 @@ class TestGenericAIToolModel:
                 description="A test tool",
                 input_schema={
                     "type": "object",
-                    "properties": {
-                        "param1": {"type": "string"},
-                        "param2": {"type": "integer", "default": 10}
-                    },
-                    "required": ["param1"]
-                }
-            )
+                    "properties": {"param1": {"type": "string"}, "param2": {"type": "integer", "default": 10}},
+                    "required": ["param1"],
+                },
+            ),
         )
 
         # Verify tool works
