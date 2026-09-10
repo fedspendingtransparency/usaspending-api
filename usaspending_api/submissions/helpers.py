@@ -190,6 +190,9 @@ def get_submission_ids_for_periods(
     sql = f"""
         select  submission_id
         from    submission_attributes
+                inner join dabs_submission_window_schedule dabs on
+                    submission_window_id = dabs.id and
+                    dabs.submission_reveal_date <= now()
         where   (toptier_code, reporting_fiscal_year, reporting_fiscal_period) in (
                     select  distinct on (toptier_code)
                             toptier_code, reporting_fiscal_year, reporting_fiscal_period

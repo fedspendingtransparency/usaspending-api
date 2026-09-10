@@ -2,6 +2,7 @@ from django.db.models import DecimalField, F, Func, IntegerField, OuterRef, Q, S
 from rest_framework.response import Response
 
 from usaspending_api.agency.v2.views.agency_base import AgencyBase
+from usaspending_api.common.helpers.date_helper import now
 from usaspending_api.common.helpers.generic_helper import get_pagination_metadata
 from usaspending_api.common.helpers.pagination_mixin import PaginationMixin
 from usaspending_api.references.models import Agency, ToptierAgencyPublishedDABSView
@@ -88,6 +89,7 @@ class AgenciesOverview(PaginationMixin, AgencyBase):
                     SubmissionAttributes.objects.filter(
                         reporting_fiscal_year=self.fiscal_year,
                         reporting_fiscal_period=self.fiscal_period,
+                        submission_window__submission_reveal_date__lte=now(),
                         toptier_code=OuterRef("toptier_code"),
                     ).values("published_date")
                 ),
@@ -95,6 +97,7 @@ class AgenciesOverview(PaginationMixin, AgencyBase):
                     SubmissionAttributes.objects.filter(
                         reporting_fiscal_year=self.fiscal_year,
                         reporting_fiscal_period=self.fiscal_period,
+                        submission_window__submission_reveal_date__lte=now(),
                         toptier_code=OuterRef("toptier_code"),
                     ).values("certified_date")
                 ),
@@ -102,6 +105,7 @@ class AgenciesOverview(PaginationMixin, AgencyBase):
                     SubmissionAttributes.objects.filter(
                         reporting_fiscal_year=self.fiscal_year,
                         reporting_fiscal_period=self.fiscal_period,
+                        submission_window__submission_reveal_date__lte=now(),
                         toptier_code=OuterRef("toptier_code"),
                     ).values("quarter_format_flag")
                 ),

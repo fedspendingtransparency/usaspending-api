@@ -32,6 +32,7 @@ ACCOUNTS_SQL = SQL(
     """
     with gather_financial_accounts_by_awards as (
         select  a.funding_agency_id,
+                faba.submission_id,
                 nullif(faba.transaction_obligated_amount, 'NaN') transaction_obligated_amount,
                 faba.treasury_account_id
         from    vw_awards a
@@ -54,6 +55,11 @@ ACCOUNTS_SQL = SQL(
             fa.id = taa.federal_account_id
         left outer join agency a on a.id = gfaba.funding_agency_id
         left outer join toptier_agency ta on ta.toptier_agency_id = a.toptier_agency_id
+        inner join submission_attributes sa on 
+            gfaba.submission_id = sa.submission_id
+        inner join dabs_submission_window_schedule dabs on
+            sa.submission_window_id = dabs.id and
+            dabs.submission_reveal_date <= now()
     group by
         federal_account, fa.account_title, funding_agency_abbreviation, funding_agency_name,
         a.id

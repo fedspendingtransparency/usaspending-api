@@ -6,6 +6,7 @@ other types of filters so they get their own file.
 import logging
 
 from usaspending_api.accounts.v2.filters.account_download import generate_treasury_account_query
+from usaspending_api.common.helpers.date_helper import now
 from usaspending_api.search.models import TransactionSearch, SubawardSearch
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.validator.tinyshield import TinyShield
@@ -32,7 +33,10 @@ def awards_treasury_account_funding_filter(account_type, download_table, filters
     if account_level != "treasury_account":
         raise InvalidParameterException("Only treasury level account reporting is supported at this time")
     award_id = _get_award_id(filters)
-    queryset = download_table.objects.filter(award_id=award_id)
+    queryset = download_table.objects.filter(
+        award_id=award_id,
+        submission__submission_window__submission_reveal_date__lte=now()
+    )
     queryset = generate_treasury_account_query(queryset, "award_financial")
     return queryset
 
