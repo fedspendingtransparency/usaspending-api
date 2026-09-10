@@ -1,5 +1,4 @@
 import json
-import os
 import uuid
 from unittest.mock import Mock, patch
 
