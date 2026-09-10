@@ -42,7 +42,7 @@ def run_psql_to_file(
     sql_path: str,
     output_path: str,
     env: dict,
-    job_id: int,
+    job_id: int = 0,
     quiet: bool = True,
     on_error_stop: bool = True,
 ) -> None:
