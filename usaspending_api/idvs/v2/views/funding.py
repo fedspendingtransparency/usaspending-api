@@ -129,7 +129,7 @@ GET_FUNDING_SQL = SQL(
         left outer join toptier_agency ata on ata.toptier_agency_id = aa.toptier_agency_id
         left outer join agency faa on faa.id = gfaba.funding_agency_id
         left outer join toptier_agency fta on fta.toptier_agency_id = faa.toptier_agency_id
-        innter join dabs_submission_window_schedule dabs on 
+        innter join dabs_submission_window_schedule dabs on
             sa.submission_window_id = dabs.id and
             dabs.submission_reveal_date <= now
     {order_by}
