@@ -227,6 +227,7 @@ GRANTS_URL = "https://apply07.grants.gov/grantsws/rest/opportunities/search/cfda
 # Applications https://docs.djangoproject.com/en/3.2/ref/settings/#installed-apps
 INSTALLED_APPS = [
     # Built-in
+    "daphne",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -588,3 +589,5 @@ SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
 
 BAKER_CUSTOM_CLASS = "usaspending_api.tests.custom_model_baker.CustomBaker"
+
+ASGI_APPLICATION = "usaspending_api.asgi.application"
