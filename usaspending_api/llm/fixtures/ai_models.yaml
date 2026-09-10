@@ -4,63 +4,33 @@
     name: claude 4.5
     model_id: anthropic.claude-sonnet-4-5-20250929-v1:0
     provider: anthropic
-    inference_config:
-      temperature: 0.0
-      topP: 1.0
-      maxTokens: 8192
-      stopSequences: []
 - model: llm.aimodel
   pk: 2
   fields:
     name: claude 3.7
     model_id: anthropic.claude-3-7-sonnet-20250219-v1:0
     provider: anthropic
-    inference_config:
-      temperature: 0.0
-      topP: 1.0
-      maxTokens: 8192
-      stopSequences: []
 - model: llm.aimodel
   pk: 3
   fields:
     name: nova lite
     model_id: amazon.nova-lite-v1:0
     provider: amazon
-    inference_config:
-      temperature: 0.0
-      topP: 1.0
-      maxTokens: 5000
-      stopSequences: []
 - model: llm.aimodel
   pk: 4
   fields:
     name: nova micro
     model_id: amazon.nova-micro-v1:0
     provider: amazon
-    inference_config:
-      temperature: 0.0
-      topP: 1.0
-      maxTokens: 5000
-      stopSequences: []
 - model: llm.aimodel
   pk: 5
   fields:
     name: nova pro
     model_id: amazon.nova-pro-v1:0
     provider: amazon
-    inference_config:
-      temperature: 0.0
-      topP: 1.0
-      maxTokens: 5000
-      stopSequences: []
 - model: llm.aimodel
   pk: 6
   fields:
     name: titan
     model_id: amazon.titan-embed-text-v2:0
     provider: amazon
-    inference_config:
-      temperature: 0.0
-      topP: 1.0
-      maxTokens: 8192
-      stopSequences: []
