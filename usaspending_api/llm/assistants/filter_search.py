@@ -5,7 +5,7 @@ from typing import Any, Generator
 
 import boto3
 
-from usaspending_api.llm.models.db_models import AIModel, Message, Session, ToolUse
+from usaspending_api.llm.models.db_models import Assistant, Message, Session, ToolUse
 from usaspending_api.llm.models.py_models import AITool
 
 logger = logging.getLogger(__name__)
@@ -14,25 +14,17 @@ logger = logging.getLogger(__name__)
 class FilterSearchAssistant:
     MAX_TOOL_ITERATIONS = 15
     COMPLETION_TOOL_NAME = "execute_filter"
+    DEFAULT_SYSTEM_MESSAGE = (
+        "You are USAspending search assistant. Help the user select filters to search for federal spending"
+    )
 
-    def __init__(
-        self,
-        model: AIModel,
-        tools: list[AITool],
-        session: Session,
-        system_message: str = (
-            "You are USAspending search assistant. Help the user select filters to search for federal spending"
-        ),
-    ) -> None:
-        self.model = model
+    def __init__(self, assistant: Assistant, tools: list[AITool], session: Session) -> None:
+        self.assistant = assistant
         self.tools = tools
         self.tools_by_name = {tool.description.name: tool for tool in tools}
         self.session = session
-        self.system_message = system_message
-
         self.message_order = 0
         self.messages = []
-
         self.tool_iterations = 0
 
     @cached_property
@@ -96,18 +88,25 @@ class FilterSearchAssistant:
         return {"tools": [{"toolSpec": {"inputSchema": {"json": spec.pop("input_schema")}, **spec}} for spec in specs]}
 
     @cached_property
+    def system_message(self) -> str:
+        """Return the active Assistant's system prompt or the default prompt."""
+        if self.assistant.system_prompt:
+            return self.assistant.system_prompt.text
+        return self.DEFAULT_SYSTEM_MESSAGE
+
+    @cached_property
     def inference_config(self) -> dict:
         """
         Controls LLM response behavior.
 
-        Uses model's inference_config if available, otherwise falls back to defaults.
+        Uses the active Assistant's inference configuration when provided; otherwise falls back to defaults.
         Defaults are optimized for deterministic responses.
 
         Returns:
             Dictionary with inference parameters (temperature, topP, maxTokens, stopSequences).
         """
-        if self.model.inference_config:
-            return self.model.inference_config
+        if self.assistant.inference_config:
+            return {key: value for key, value in self.assistant.inference_config.items() if value is not None}
 
         # Default configuration for deterministic output.
         return {
@@ -124,7 +123,7 @@ class FilterSearchAssistant:
             f"Starting filter search: session={self.session.id}, query_length={len(query)}",
             extra={
                 "session_id": str(self.session.id),
-                "model_id": self.model.model_id,
+                "model_id": self.assistant.ai_model.model_id,
                 "query_length": len(query),
             },
         )
@@ -133,7 +132,7 @@ class FilterSearchAssistant:
         self.message_order += 1
         self.messages.append({"role": "user", "content": [{"text": query}]})
         response = self.client.converse(
-            modelId=self.model.model_id,
+            modelId=self.assistant.ai_model.model_id,
             messages=self.messages,
             toolConfig=self.tool_config,
             system=[{"text": self.system_message}],
@@ -147,7 +146,7 @@ class FilterSearchAssistant:
             f"Initial filter search response received: session={self.session.id}, stop_reason={stop_reason}",
             extra={
                 "session_id": str(self.session.id),
-                "model_id": self.model.model_id,
+                "model_id": self.assistant.ai_model.model_id,
                 "input_tokens": response["usage"]["inputTokens"],
                 "output_tokens": response["usage"]["outputTokens"],
                 "latency_ms": response["metrics"]["latencyMs"],
@@ -170,7 +169,7 @@ class FilterSearchAssistant:
                 break
 
             response = self.client.converse(
-                modelId=self.model.model_id,
+                modelId=self.assistant.ai_model.model_id,
                 messages=self.messages,
                 toolConfig=self.tool_config,
                 system=[{"text": self.system_message}],
@@ -184,7 +183,7 @@ class FilterSearchAssistant:
                 f"session={self.session.id}, stop_reason={stop_reason}",
                 extra={
                     "session_id": str(self.session.id),
-                    "model_id": self.model.model_id,
+                    "model_id": self.assistant.ai_model.model_id,
                     "input_tokens": response["usage"]["inputTokens"],
                     "output_tokens": response["usage"]["outputTokens"],
                     "latency_ms": response["metrics"]["latencyMs"],

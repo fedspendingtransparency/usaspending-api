@@ -4,12 +4,27 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
 class InferenceConfig(BaseModel):
-    """Model for AI inference configuration parameters."""
+    """Model for AI inference configuration parameters.
 
-    temperature: float = Field(default=0.0, ge=0.0, le=1.0, description="Temperature for response randomness (0.0-1.0)")
-    topP: float = Field(default=1.0, ge=0.0, le=1.0, description="Top P sampling parameter (0.0-1.0)")
-    maxTokens: int = Field(default=5000, gt=0, description="Maximum tokens to generate")
-    stopSequences: list[str] = Field(default_factory=list, description="List of stop sequences")
+    All fields accept None to allow the AI model to use its own defaults.
+    When None, the parameter will be omitted from the inference request.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    temperature: float | None = Field(
+        default=0.0, ge=0.0, le=1.0, description="Temperature (0.0-1.0). Set to null to use model default."
+    )
+    topP: float | None = Field(
+        default=1.0, ge=0.0, le=1.0, description="Top P sampling (0.0-1.0). Set to null to use model default."
+    )
+    maxTokens: int | None = Field(
+        default=5000, gt=0, description="Maximum tokens to generate. Set to null to use model default."
+    )
+    stopSequences: list[str] | None = Field(
+        default_factory=list,
+        description="Stop sequences ([] for none, null for model default).",
+    )
 
 
 class AIToolDescription(BaseModel):
