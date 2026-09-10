@@ -1,23 +1,24 @@
 import json
-import os
 from unittest.mock import Mock, patch
 
 import pytest
 from model_bakery import baker
 from rest_framework import status
 
-from usaspending_api.llm.models.db_models import Session
+from usaspending_api.llm.models.db_models import Assistant, Session
 
 
 @pytest.fixture
 def ai_model_data(db):
     """Create AI model test data."""
-    return baker.make(
+    ai_model = baker.make(
         "llm.AIModel",
         name="nova micro",
         model_id="amazon.nova-micro-v1:0",
-        provider="amazon"
+        provider="amazon",
     )
+    Assistant.objects.create(name="filter-search", ai_model=ai_model, is_active=True)
+    return ai_model
 
 
 @pytest.fixture
@@ -44,7 +45,7 @@ def system_prompt_data(db):
         "llm.Prompts",
         name="initial",
         description="initial system prompt for the search assistant",
-        text="You are USAspending search assistant. You help the user search for federal spending."
+        text="You are USAspending search assistant. You help the user search for federal spending.",
     )
 
 
@@ -55,11 +56,7 @@ class TestFilterSearch:
 
     def test_endpoint_requires_api_key(self, client, ai_model_data):
         """Test that endpoint requires X-LLM-API-Key header."""
-        resp = client.post(
-            self.url,
-            content_type="application/json",
-            data=json.dumps({"query": "test query"})
-        )
+        resp = client.post(self.url, content_type="application/json", data=json.dumps({"query": "test query"}))
         # Without mocking the API key validator, it should fail.
         # The actual status depends on whether the secret is configured.
         assert resp.status_code in [status.HTTP_403_FORBIDDEN, status.HTTP_500_INTERNAL_SERVER_ERROR]
@@ -67,11 +64,7 @@ class TestFilterSearch:
     @pytest.mark.django_db
     def test_endpoint_rejects_missing_query(self, client, ai_model_data, mock_llm_api_key):
         """Test that endpoint rejects requests without query parameter."""
-        resp = client.post(
-            self.url,
-            content_type="application/json",
-            data=json.dumps({})
-        )
+        resp = client.post(self.url, content_type="application/json", data=json.dumps({}))
         # Endpoint returns streaming response even for validation errors.
         assert resp.status_code == status.HTTP_200_OK
         assert resp["Content-Type"] == "application/x-ndjson"
@@ -87,11 +80,7 @@ class TestFilterSearch:
     @pytest.mark.django_db
     def test_endpoint_rejects_empty_query(self, client, ai_model_data, mock_llm_api_key):
         """Test that endpoint rejects empty query string."""
-        resp = client.post(
-            self.url,
-            content_type="application/json",
-            data=json.dumps({"query": ""})
-        )
+        resp = client.post(self.url, content_type="application/json", data=json.dumps({"query": ""}))
         # Endpoint returns streaming response even for validation errors.
         assert resp.status_code == status.HTTP_200_OK
         assert resp["Content-Type"] == "application/x-ndjson"
@@ -108,11 +97,7 @@ class TestFilterSearch:
     def test_endpoint_rejects_query_too_long(self, client, ai_model_data, mock_llm_api_key):
         """Test that endpoint rejects query strings longer than 1000 characters."""
         long_query = "a" * 1001
-        resp = client.post(
-            self.url,
-            content_type="application/json",
-            data=json.dumps({"query": long_query})
-        )
+        resp = client.post(self.url, content_type="application/json", data=json.dumps({"query": long_query}))
         # Endpoint returns streaming response even for validation errors.
         assert resp.status_code == status.HTTP_200_OK
         assert resp["Content-Type"] == "application/x-ndjson"
@@ -131,21 +116,14 @@ class TestFilterSearch:
         """Test that endpoint accepts valid query and returns streaming response."""
         # Mock Bedrock response.
         mock_bedrock_client.converse.return_value = {
-            "output": {
-                "message": {
-                    "role": "assistant",
-                    "content": [{"text": "Here are your results"}]
-                }
-            },
+            "output": {"message": {"role": "assistant", "content": [{"text": "Here are your results"}]}},
             "stopReason": "end_turn",
             "usage": {"inputTokens": 10, "outputTokens": 20},
-            "metrics": {"latencyMs": 100}
+            "metrics": {"latencyMs": 100},
         }
 
         resp = client.post(
-            self.url,
-            content_type="application/json",
-            data=json.dumps({"query": "Find contracts in California"})
+            self.url, content_type="application/json", data=json.dumps({"query": "Find contracts in California"})
         )
 
         assert resp.status_code == status.HTTP_200_OK
@@ -157,24 +135,15 @@ class TestFilterSearch:
         """Test that endpoint creates a Session record."""
         # Mock Bedrock response.
         mock_bedrock_client.converse.return_value = {
-            "output": {
-                "message": {
-                    "role": "assistant",
-                    "content": [{"text": "Results"}]
-                }
-            },
+            "output": {"message": {"role": "assistant", "content": [{"text": "Results"}]}},
             "stopReason": "end_turn",
             "usage": {"inputTokens": 10, "outputTokens": 20},
-            "metrics": {"latencyMs": 100}
+            "metrics": {"latencyMs": 100},
         }
 
         initial_session_count = Session.objects.count()
 
-        resp = client.post(
-            self.url,
-            content_type="application/json",
-            data=json.dumps({"query": "test query"})
-        )
+        resp = client.post(self.url, content_type="application/json", data=json.dumps({"query": "test query"}))
 
         assert resp.status_code == status.HTTP_200_OK
         assert Session.objects.count() == initial_session_count + 1
@@ -189,22 +158,13 @@ class TestFilterSearch:
         """Test that endpoint returns properly formatted NDJSON stream."""
         # Mock Bedrock response.
         mock_bedrock_client.converse.return_value = {
-            "output": {
-                "message": {
-                    "role": "assistant",
-                    "content": [{"text": "Results"}]
-                }
-            },
+            "output": {"message": {"role": "assistant", "content": [{"text": "Results"}]}},
             "stopReason": "end_turn",
             "usage": {"inputTokens": 10, "outputTokens": 20},
-            "metrics": {"latencyMs": 100}
+            "metrics": {"latencyMs": 100},
         }
 
-        resp = client.post(
-            self.url,
-            content_type="application/json",
-            data=json.dumps({"query": "test query"})
-        )
+        resp = client.post(self.url, content_type="application/json", data=json.dumps({"query": "test query"}))
 
         assert resp.status_code == status.HTTP_200_OK
 
@@ -235,34 +195,27 @@ class TestFilterSearch:
                                 "toolUse": {
                                     "toolUseId": "tool-123",
                                     "name": "lookup_location",
-                                    "input": {"query": "California"}
+                                    "input": {"query": "California"},
                                 }
                             }
-                        ]
+                        ],
                     }
                 },
                 "stopReason": "tool_use",
                 "usage": {"inputTokens": 10, "outputTokens": 20},
-                "metrics": {"latencyMs": 100}
+                "metrics": {"latencyMs": 100},
             },
             # Second call: LLM provides final response.
             {
-                "output": {
-                    "message": {
-                        "role": "assistant",
-                        "content": [{"text": "Found California"}]
-                    }
-                },
+                "output": {"message": {"role": "assistant", "content": [{"text": "Found California"}]}},
                 "stopReason": "end_turn",
                 "usage": {"inputTokens": 15, "outputTokens": 25},
-                "metrics": {"latencyMs": 120}
-            }
+                "metrics": {"latencyMs": 120},
+            },
         ]
 
         resp = client.post(
-            self.url,
-            content_type="application/json",
-            data=json.dumps({"query": "Find contracts in California"})
+            self.url, content_type="application/json", data=json.dumps({"query": "Find contracts in California"})
         )
 
         assert resp.status_code == status.HTTP_200_OK
@@ -287,11 +240,7 @@ class TestFilterSearch:
     def test_endpoint_handles_missing_ai_model(self, client, mock_llm_api_key):
         """Test that endpoint handles missing AI model gracefully."""
         # Don't create ai_model_data fixture.
-        resp = client.post(
-            self.url,
-            content_type="application/json",
-            data=json.dumps({"query": "test query"})
-        )
+        resp = client.post(self.url, content_type="application/json", data=json.dumps({"query": "test query"}))
 
         assert resp.status_code == status.HTTP_200_OK
         assert resp["Content-Type"] == "application/x-ndjson"
@@ -305,53 +254,57 @@ class TestFilterSearch:
         assert "not found" in event["message"].lower()
 
     @pytest.mark.django_db
-    def test_endpoint_uses_environment_model(self, client, mock_llm_api_key, mock_bedrock_client, system_prompt_data):
-        """Test that endpoint respects LLM_DEFAULT_MODEL environment variable."""
-        # Create a different model.
+    def test_endpoint_uses_active_filter_search_assistant(
+        self, client, mock_llm_api_key, mock_bedrock_client, system_prompt_data
+    ):
+        """Test that endpoint uses the active filter-search Assistant configuration."""
         custom_model = baker.make(
             "llm.AIModel",
             name="claude 4.5",
             model_id="anthropic.claude-sonnet-4-5-20250929-v1:0",
-            provider="anthropic"
+            provider="anthropic",
+        )
+        Assistant.objects.create(
+            name="filter-search",
+            ai_model=custom_model,
+            system_prompt=system_prompt_data,
+            inference_config={"temperature": 0.4},
+            is_active=True,
         )
 
-        # Mock Bedrock response.
         mock_bedrock_client.converse.return_value = {
             "output": {
                 "message": {
                     "role": "assistant",
-                    "content": [{"text": "Results"}]
+                    "content": [{"text": "Results"}],
                 }
             },
             "stopReason": "end_turn",
             "usage": {"inputTokens": 10, "outputTokens": 20},
-            "metrics": {"latencyMs": 100}
+            "metrics": {"latencyMs": 100},
         }
 
-        # Set environment variable.
-        with patch.dict(os.environ, {"LLM_DEFAULT_MODEL": "claude 4.5"}):
-            resp = client.post(
-                self.url,
-                content_type="application/json",
-                data=json.dumps({"query": "test query"})
-            )
+        resp = client.post(
+            self.url,
+            content_type="application/json",
+            data=json.dumps({"query": "test query"}),
+        )
 
         assert resp.status_code == status.HTTP_200_OK
+        list(resp.streaming_content)
 
-        # Verify the correct model was used.
         session = Session.objects.latest("started_at")
         assert session.ai_model == custom_model
+        assert session.system_prompt == system_prompt_data
+        assert mock_bedrock_client.converse.call_args.kwargs["inferenceConfig"] == {"temperature": 0.4}
+        assert mock_bedrock_client.converse.call_args.kwargs["system"] == [{"text": system_prompt_data.text}]
 
     def test_endpoint_handles_bedrock_error(self, client, ai_model_data, mock_llm_api_key, mock_bedrock_client):
         """Test that endpoint handles Bedrock API errors gracefully."""
         # Mock Bedrock to raise an error.
         mock_bedrock_client.converse.side_effect = Exception("Bedrock API error")
 
-        resp = client.post(
-            self.url,
-            content_type="application/json",
-            data=json.dumps({"query": "test query"})
-        )
+        resp = client.post(self.url, content_type="application/json", data=json.dumps({"query": "test query"}))
 
         assert resp.status_code == status.HTTP_200_OK
 
@@ -375,32 +328,19 @@ class TestFilterSearch:
         """Test query length validation at boundaries."""
         # Mock Bedrock response.
         mock_bedrock_client.converse.return_value = {
-            "output": {
-                "message": {
-                    "role": "assistant",
-                    "content": [{"text": "Results"}]
-                }
-            },
+            "output": {"message": {"role": "assistant", "content": [{"text": "Results"}]}},
             "stopReason": "end_turn",
             "usage": {"inputTokens": 10, "outputTokens": 20},
-            "metrics": {"latencyMs": 100}
+            "metrics": {"latencyMs": 100},
         }
 
         # Test minimum length (1 character).
-        resp = client.post(
-            self.url,
-            content_type="application/json",
-            data=json.dumps({"query": "a"})
-        )
+        resp = client.post(self.url, content_type="application/json", data=json.dumps({"query": "a"}))
         assert resp.status_code == status.HTTP_200_OK
 
         # Test maximum length (1000 characters).
         max_query = "a" * 1000
-        resp = client.post(
-            self.url,
-            content_type="application/json",
-            data=json.dumps({"query": max_query})
-        )
+        resp = client.post(self.url, content_type="application/json", data=json.dumps({"query": max_query}))
         assert resp.status_code == status.HTTP_200_OK
 
     @pytest.mark.django_db
@@ -419,34 +359,25 @@ class TestFilterSearch:
                                 "toolUse": {
                                     "toolUseId": "tool-123",
                                     "name": "lookup_location",
-                                    "input": {"query": "Texas"}
+                                    "input": {"query": "Texas"},
                                 }
                             }
-                        ]
+                        ],
                     }
                 },
                 "stopReason": "tool_use",
                 "usage": {"inputTokens": 10, "outputTokens": 20},
-                "metrics": {"latencyMs": 100}
+                "metrics": {"latencyMs": 100},
             },
             {
-                "output": {
-                    "message": {
-                        "role": "assistant",
-                        "content": [{"text": "Done"}]
-                    }
-                },
+                "output": {"message": {"role": "assistant", "content": [{"text": "Done"}]}},
                 "stopReason": "end_turn",
                 "usage": {"inputTokens": 15, "outputTokens": 25},
-                "metrics": {"latencyMs": 120}
-            }
+                "metrics": {"latencyMs": 120},
+            },
         ]
 
-        resp = client.post(
-            self.url,
-            content_type="application/json",
-            data=json.dumps({"query": "test query"})
-        )
+        resp = client.post(self.url, content_type="application/json", data=json.dumps({"query": "test query"}))
 
         # Parse all events.
         content = b"".join(resp.streaming_content).decode("utf-8")
