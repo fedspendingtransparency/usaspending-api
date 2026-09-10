@@ -1,3 +1,4 @@
+# ruff: noqa
 import logging
 import os
 import re
@@ -78,7 +79,7 @@ class Command(BaseCommand):
         )
         source.query_paths.update({"correction_delete_ind": award_map["correction_delete_ind"]})
         if award_type == "Contracts":
-            source.query_paths.update({"agency_id": "transaction__contract_data__agency_id"})
+            source.query_paths.update({"agency_id": "agency_id"})
             source.query_paths.move_to_end("agency_id", last=False)
         source.query_paths.move_to_end("correction_delete_ind", last=False)
         source.human_names = list(source.query_paths.keys())
@@ -96,11 +97,11 @@ class Command(BaseCommand):
                 )
             )
         else:
-            indicator_field = F("transaction__assistance_data__correction_delete_indicatr")
+            indicator_field = F("correction_delete_indicatr")
             source.queryset = source.queryset.annotate(
                 correction_delete_ind=Case(
                     When(etl_update_date__gt=generate_since, then=indicator_field),
-                    When(transaction__transactiondelta__isnull=False, then=Value("C")),
+                    When(transactiondelta__isnull=False, then=Value("C")),
                     default=indicator_field,
                     output_field=CharField(),
                 )
@@ -110,7 +111,7 @@ class Command(BaseCommand):
         if self.debugging_end_date:
             update_date_filter &= Q(etl_update_date__lt=self.debugging_end_date)
 
-        source.queryset = source.queryset.filter(Q(update_date_filter | Q(transaction__transactiondelta__isnull=False)))
+        source.queryset = source.queryset.filter(Q(update_date_filter | Q(transactiondelta__isnull=False)))
 
         # Generate file using helper functions
         file_path = self.create_local_file(award_type, source, agency_code, generate_since)
@@ -132,7 +133,7 @@ class Command(BaseCommand):
         )
 
     def create_local_file(
-            self, award_type: str, source: DownloadSource, agency_code: str, generate_since: str | None
+        self, award_type: str, source: DownloadSource, agency_code: str, generate_since: str | None
     ) -> str | None:
         """Generate complete file from SQL query and S3 bucket deletion files, then zip it locally"""
         import shutil
@@ -177,20 +178,16 @@ class Command(BaseCommand):
             psql_env = build_psql_env(
                 dsn=db_url,
                 statement_timeout_hours=settings.DOWNLOAD_DB_TIMEOUT_IN_HOURS,
-                work_mem_mb=settings.DOWNLOAD_DB_WORK_MEM_IN_MB
+                work_mem_mb=settings.DOWNLOAD_DB_WORK_MEM_IN_MB,
             )
 
             # Execute psql using helper
             run_psql_to_file(
-                sql_path=temp_sql_file_path,
-                output_path=source_path,
-                env=psql_env,
-                quiet=False,
-                on_error_stop=True
+                sql_path=temp_sql_file_path, output_path=source_path, env=psql_env, quiet=False, on_error_stop=True
             )
 
         except subprocess.CalledProcessError as e:
-            logger.exception(e.output if hasattr(e, 'output') else str(e))
+            logger.exception(e.output if hasattr(e, "output") else str(e))
             raise e
         finally:
             # Always cleanup temp SQL file
