@@ -9,6 +9,7 @@ from pgvector.django import CosineDistance
 
 from usaspending_api.accounts.models.treasury_appropriation_account import TreasuryAppropriationAccount
 from usaspending_api.llm.embeddings.embedding_generator import EmbeddingGenerator
+from usaspending_api.llm.models.db_models import AIModel
 from usaspending_api.llm.models.py_models import AITool, AIToolDescription
 from usaspending_api.llm.tools.expand_query import expand_query
 from usaspending_api.llm.tools.helpers import hierarchy_parsers
@@ -170,7 +171,7 @@ class CodeLookupTool:
         all_results = {}
         queries = [query]
         if bool(query_fanout):
-            queries = expand_query(query, query_fanout)
+            queries = expand_query(query, AIModel.objects.get(name="nova micro"), query_fanout)
             logger.info(f"Generated variations: {queries}")
 
         for q in queries:

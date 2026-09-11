@@ -7,10 +7,8 @@ from usaspending_api.llm.models.db_models import AIModel
 logger = logging.getLogger(__name__)
 
 
-def expand_query(query: str, num_variations: int = 3, model: AIModel = None) -> list[str]:
+def expand_query(query: str, model: AIModel, num_variations: int = 3) -> list[str]:
     """Generate related search queries using Amazon Bedrock converse API with tool"""
-    if model is None:
-        model = AIModel.objects.get(name="nova micro")
     try:
         client = boto3.client(service_name="bedrock-runtime")
 
