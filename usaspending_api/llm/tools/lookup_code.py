@@ -138,6 +138,7 @@ class CodeLookupTool:
         query: str,
         code_type: Literal["naics", "psc", "cfda", "tas"],
         top_k: int = 20,
+        query_fanout: int | None = 3,
     ) -> dict[str, Any]:
         """
         Hybrid search for various code types combining text matching and vector similarity.
@@ -153,7 +154,7 @@ class CodeLookupTool:
 
         results = self._handle_exact_search(query, config, code_type, budget_bureau_names, top_k)
         if results is None:
-            results = self._handle_hybrid_search(query, config, code_type, budget_bureau_names, top_k)
+            results = self._handle_hybrid_search(query, config, code_type, budget_bureau_names, top_k, query_fanout)
         return results
 
     def _handle_exact_search(

@@ -102,7 +102,14 @@ def mock_expand_query():
     """By default, disable fanout expansion so hybrid search runs against
     only the original query string."""
     with patch("usaspending_api.llm.tools.lookup_code.expand_query") as mock_fn:
-        mock_fn.side_effect = lambda query, num_variations: [query]
+        mock_fn.side_effect = lambda query, model, query_fanout: [query]
+        yield mock_fn
+
+
+@pytest.fixture
+def mock_get_aimodel():
+    with patch("usaspending_api.llm.tools.lookup_code.AIModel.objects.get") as mock_fn:
+        mock_fn.side_effect = None
         yield mock_fn
 
 
@@ -197,7 +204,9 @@ class TestPrefixMatch:
 
 
 class TestHybridSearch:
-    def test_falls_through_to_embedding_search(self, tool, mock_embedding_generator, mock_expand_query):
+    def test_falls_through_to_embedding_search(
+        self, tool, mock_embedding_generator, mock_expand_query, mock_get_aimodel
+    ):
         dims = getattr(NAICS, "embedding_dimensions", 256)
         _make_naics("999999", "Totally unrelated description", embedding=_unit_vector(dims, 0))
 
@@ -208,7 +217,9 @@ class TestHybridSearch:
         assert "999999" in _flatten_codes(result["hierarchy"])
         mock_embedding_generator.generate_embedding.assert_called()
 
-    def test_vector_distance_threshold_excludes_far_matches(self, tool, mock_embedding_generator, mock_expand_query):
+    def test_vector_distance_threshold_excludes_far_matches(
+        self, tool, mock_embedding_generator, mock_expand_query, mock_get_aimodel
+    ):
         dims = getattr(NAICS, "embedding_dimensions", 256)
 
         _make_naics("111111", "Close match", embedding=_unit_vector(dims, 0))
@@ -222,7 +233,7 @@ class TestHybridSearch:
         assert "111111" in codes
         assert "222222" not in codes
 
-    def test_top_k_truncates_results(self, tool, mock_embedding_generator, mock_expand_query):
+    def test_top_k_truncates_results(self, tool, mock_embedding_generator, mock_expand_query, mock_get_aimodel):
         dims = getattr(NAICS, "embedding_dimensions", 256)
         mock_embedding_generator.generate_embedding.return_value = _unit_vector(dims, 0)
 
@@ -232,7 +243,9 @@ class TestHybridSearch:
         result = tool.lookup_codes("query text", "naics", top_k=2)
         assert result["total_codes"] <= 2
 
-    def test_use_fanout_false_does_not_call_expand_query(self, tool, mock_embedding_generator, mock_expand_query):
+    def test_use_fanout_false_does_not_call_expand_query(
+        self, tool, mock_embedding_generator, mock_expand_query, mock_get_aimodel
+    ):
         dims = getattr(NAICS, "embedding_dimensions", 256)
         mock_embedding_generator.generate_embedding.return_value = _unit_vector(dims, 0)
 
@@ -240,7 +253,9 @@ class TestHybridSearch:
 
         mock_expand_query.assert_not_called()
 
-    def test_embedding_failure_does_not_raise(self, tool, mock_embedding_generator, mock_expand_query):
+    def test_embedding_failure_does_not_raise(
+        self, tool, mock_embedding_generator, mock_expand_query, mock_get_aimodel
+    ):
         mock_embedding_generator.generate_embedding.side_effect = Exception("API down")
 
         result = tool.lookup_codes("query text", "naics")
@@ -248,7 +263,7 @@ class TestHybridSearch:
         assert result["hierarchy"] == {}
         assert result["total_codes"] == 0
 
-    def test_duplicate_matches_across_fanout_keep_higher_score(self, tool, mock_embedding_generator):
+    def test_duplicate_matches_across_fanout_keep_higher_score(self, tool, mock_embedding_generator, mock_get_aimodel):
         dims = getattr(NAICS, "embedding_dimensions", 256)
         _make_naics("333333", "Some match", embedding=_unit_vector(dims, 0))
 
@@ -391,7 +406,9 @@ class TestErrorHandling:
         assert "error" in result
         assert result["results"] == []
 
-    def test_no_matches_anywhere_returns_empty_hierarchy(self, tool, mock_embedding_generator, mock_expand_query):
+    def test_no_matches_anywhere_returns_empty_hierarchy(
+        self, tool, mock_embedding_generator, mock_expand_query, mock_get_aimodel
+    ):
         mock_embedding_generator.generate_embedding.return_value = None
 
         result = tool.lookup_codes("nothing matches this", "naics")
@@ -435,6 +452,7 @@ class TestDedupeTasByPeriodOfAvailability:
         tool,
         mock_embedding_generator,
         mock_expand_query,
+        mock_get_aimodel,
     ):
         dims = getattr(TreasuryAppropriationAccount, "embedding_dimensions", 256)
         for year in ("2015", "2016", "2017"):
@@ -456,7 +474,9 @@ class TestDedupeTasByPeriodOfAvailability:
         tas_leaf_codes = {c for c in codes if c.count("-") == 3}
         assert len(tas_leaf_codes) == 1
 
-    def test_different_sub_account_not_collapsed(self, tool, mock_embedding_generator, mock_expand_query):
+    def test_different_sub_account_not_collapsed(
+        self, tool, mock_embedding_generator, mock_expand_query, mock_get_aimodel
+    ):
         dims = getattr(TreasuryAppropriationAccount, "embedding_dimensions", 256)
         _make_tas(
             "011-2016/2016-0001-000",
@@ -486,7 +506,7 @@ class TestDedupeTasByPeriodOfAvailability:
         assert "011-2016/2016-0001-000" in codes
         assert "011-2016/2016-0001-001" in codes
 
-    def test_different_ata_not_collapsed(self, tool, mock_embedding_generator, mock_expand_query):
+    def test_different_ata_not_collapsed(self, tool, mock_embedding_generator, mock_expand_query, mock_get_aimodel):
         dims = getattr(TreasuryAppropriationAccount, "embedding_dimensions", 256)
         _make_tas(
             "011-2016/2016-0001-000",
