@@ -29,8 +29,7 @@ def build_psql_env(
     # Set optional PostgreSQL options
     if statement_timeout_hours or work_mem_mb:
         options = []
-        if statement_timeout_hours:
-            options.append(f"--statement-timeout={statement_timeout_hours}h")
+        options.append("--statement-timeout=12h")
         if work_mem_mb:
             options.append(f"--work-mem={work_mem_mb}MB")
         env["PGOPTIONS"] = " ".join(options)
@@ -60,8 +59,6 @@ def run_psql_to_file(
 
     if quiet:
         psql_args.append("-q")
-        
-    psql_args.append("--statement-timeout=12h")
 
     psql_args.extend(["-o", output_path])
 
