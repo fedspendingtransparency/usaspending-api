@@ -122,7 +122,7 @@ class FilterSearchAssistant:
         logger.info(
             f"Starting filter search: session={self.session.id}, query_length={len(query)}",
             extra={
-                "session_id": self.session.id,
+                "session_id": str(self.session.id),
                 "model_id": self.assistant.ai_model.model_id,
                 "query_length": len(query),
             },
@@ -145,7 +145,7 @@ class FilterSearchAssistant:
         logger.info(
             f"Initial filter search response received: session={self.session.id}, stop_reason={stop_reason}",
             extra={
-                "session_id": self.session.id,
+                "session_id": str(self.session.id),
                 "model_id": self.assistant.ai_model.model_id,
                 "input_tokens": response["usage"]["inputTokens"],
                 "output_tokens": response["usage"]["outputTokens"],
@@ -182,7 +182,7 @@ class FilterSearchAssistant:
                 f"Filter search response received (iteration {self.tool_iterations}): "
                 f"session={self.session.id}, stop_reason={stop_reason}",
                 extra={
-                    "session_id": self.session.id,
+                    "session_id": str(self.session.id),
                     "model_id": self.assistant.ai_model.model_id,
                     "input_tokens": response["usage"]["inputTokens"],
                     "output_tokens": response["usage"]["outputTokens"],
@@ -211,7 +211,7 @@ class FilterSearchAssistant:
         logger.info(
             f"Search completed for session {self.session.id}",
             extra={
-                "session_id": self.session.id,
+                "session_id": str(self.session.id),
                 "tool_iterations": self.tool_iterations,
                 "search_complete": search_complete,
                 "total_input_tokens": total_input_tokens,
@@ -247,7 +247,7 @@ class FilterSearchAssistant:
                     extra={
                         "tool_name": tool.description.name,
                         "execution_time_ms": execution_time_ms,
-                        "session_id": self.session.id,
+                        "session_id": str(self.session.id),
                         "has_error": "error" in result,
                         "tool_use_id": t.id,
                         "tool_input": t.tool_input,
@@ -270,7 +270,7 @@ class FilterSearchAssistant:
                     extra={
                         "tool_name": tool.description.name,
                         "execution_time_ms": execution_time_ms,
-                        "session_id": self.session.id,
+                        "session_id": str(self.session.id),
                         "error": str(e),
                         "tool_use_id": t.id,
                         "tool_input": t.tool_input,

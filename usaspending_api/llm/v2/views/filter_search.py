@@ -68,7 +68,7 @@ class FilterSearchViewSet(LLMBase):
             logger.info(
                 f"Filter search session initialized: session_id={session.id}, model={ai_model.name}",
                 extra={
-                    "session_id": session.id,
+                    "session_id": str(session.id),
                     "model_id": ai_model.model_id,
                     "model_name": ai_model.name,
                     "provider": ai_model.provider,
@@ -107,7 +107,7 @@ class FilterSearchViewSet(LLMBase):
                     logger.info(
                         f"Filter search session completed: session_id={session.id}, duration={duration_seconds:.3f}s",
                         extra={
-                            "session_id": session.id,
+                            "session_id": str(session.id),
                             "duration_seconds": duration_seconds,
                             "message_count": message_count,
                             "tool_use_count": tool_use_count,

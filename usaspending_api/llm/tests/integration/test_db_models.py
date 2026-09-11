@@ -1,5 +1,7 @@
+import uuid
+
 import pytest
-from django.db import IntegrityError
+from django.db import IntegrityError, connection, models
 from django.utils import timezone
 
 from usaspending_api.llm.models.db_models import AIModel, Assistant, Message, Prompts, Session, ToolUse
@@ -98,12 +100,47 @@ class TestSession:
         session = Session.objects.create(ai_model=ai_model, system_prompt=prompt, tools=["tool1", "tool2"])
 
         assert session.id is not None
+        assert isinstance(session.id, uuid.UUID)
         assert session.ai_model == ai_model
         assert session.system_prompt == prompt
         assert session.tools == ["tool1", "tool2"]
         assert session.started_at is not None
         assert session.ended_at is None
         assert session.feedback is None
+
+    def test_session_id_is_uuid_field(self):
+        """session.id is a UUID both on the model and on the session table"""
+        id_field = Session._meta.get_field("id")
+        assert isinstance(id_field, models.UUIDField)
+        assert id_field.primary_key is True
+        assert id_field.default is uuid.uuid4
+
+        session = Session.objects.create()
+        assert isinstance(session.id, uuid.UUID)
+
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                SELECT data_type
+                FROM information_schema.columns
+                WHERE table_schema = current_schema()
+                  AND table_name = 'session'
+                  AND column_name = 'id'
+                """
+            )
+            row = cursor.fetchone()
+
+        assert row is not None
+        assert row[0] == "uuid"
+
+    def test_session_id_generates_unique_uuid_on_save(self):
+        """Confirms actual instances get valid, unique UUID values assigned"""
+        session1 = Session.objects.create()
+        session2 = Session.objects.create()
+
+        assert isinstance(session1.id, uuid.UUID)
+        assert isinstance(session2.id, uuid.UUID)
+        assert session1.id != session2.id
 
     def test_session_without_ai_model(self):
         """Test creating a session without an AI model"""

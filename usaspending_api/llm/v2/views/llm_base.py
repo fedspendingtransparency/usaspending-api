@@ -2,6 +2,7 @@ import json
 import logging
 import os
 from typing import Generator
+from uuid import UUID
 
 from django.http import StreamingHttpResponse
 from rest_framework.views import APIView
@@ -57,13 +58,13 @@ class LLMBase(APIView):
         """
         return json.dumps(event) + "\n"
 
-    def _error_response(self, message: str, search_id: str | int = None) -> StreamingHttpResponse:
+    def _error_response(self, message: str, search_id: str | UUID | None = None) -> StreamingHttpResponse:
         """
         Generate a streaming error response in newline-delimited JSON (NDJSON) format.
 
         Args:
             message: Error message to return to the client.
-            search_id: Optional session/search ID (ints will be converted to strings).
+            search_id: Optional session/search UUID (converted to a string in the response).
 
         Returns:
             StreamingHttpResponse with error event in NDJSON format.
@@ -71,18 +72,15 @@ class LLMBase(APIView):
         error_event = {
             "search_id": str(search_id) if search_id is not None else None,
             "type": "search_error",
-            "message": message
+            "message": message,
         }
 
         def error_stream() -> Generator[str, None, None]:
             yield self._ndjson_format(error_event)
 
-        response = StreamingHttpResponse(
-            error_stream(),
-            content_type="application/x-ndjson"
-        )
+        response = StreamingHttpResponse(error_stream(), content_type="application/x-ndjson")
         # Disable webserver caching/buffering to enable pass-through behavior of chunks.
         response["Cache-Control"] = "no-cache"
-        response["X-Accel-Buffering"] = "no"
+        response["X-Accel-Buffexxring"] = "no"
 
         return response
