@@ -43,7 +43,7 @@ def get_cfda_ancestors(code: str) -> set[str]:
     """
     if "." in code:
         agency = code.split(".")[0]
-        return set(agency)
+        return set([agency])
     return set()
 
 
@@ -52,21 +52,24 @@ def get_tas_ancestors(code: str) -> set[str]:
     Get all ancestor codes for TAS.
     TAS hierarchy: AID -> AID-MAIN ->Full rendering label
 
-    Format: AID-[BPOA/EPOA]-MAIN-SUB or AID-[X]-MAIN-SUB
+    Format: [ATA-]AID-[BPOA/EPOA|X]-MAIN-SUB
 
     Examples:
         "302-2017/2018-1700-000" -> ["302", "302-1700"]
         "009-X-0200-000"-> ["009", "009-0200"]
+        "019-011-X-1071-000" -> {"011", "011-1071"}  (ATA present)
         "302-1700" -> ["302"]
         "302"-> []
     """
 
     parts = code.split("-")
-    toptier_code = parts[0]
-    ancestors = {toptier_code}
-    if len(parts) >= 3:
-        ancestors.add(toptier_code + "-" + parts[2])
-    return ancestors
+    if len(parts) < 2:
+        return set()
+    if len(parts) < 4:
+        return {parts[0]}
+    aid = parts[-4]
+    main = parts[-2]
+    return {aid, f"{aid}-{main}"}
 
 
 def get_naics_parent(code: str) -> str | None:
@@ -98,13 +101,14 @@ def get_tas_parent(code: str) -> str | None:
 
     Examples:
         "302-2017/2018-1700-000" -> "302-1700"
+        "019-011-X-1071-000" -> "011-1071"  (ATA present)
         "302-1700" -> "302"
         "302" -> None
     """
     parts = code.split("-")
     parent = None
-    if len(parts) == 2:
+    if 2 <= len(parts) < 4:
         parent = parts[0]
-    elif len(parts) >= 3:
-        parent = parts[0] + "-" + parts[2]
+    elif len(parts) >= 4:
+        parent = parts[-4] + "-" + parts[-2]
     return parent

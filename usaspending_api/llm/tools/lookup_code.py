@@ -3,8 +3,8 @@ from dataclasses import dataclass
 from typing import Any, Callable, Literal
 
 from django.contrib.postgres.search import TrigramSimilarity
-from django.db.models import FloatField, Model, QuerySet, Value
-from django.db.models.functions import Greatest
+from django.db.models import F, FloatField, Model, QuerySet, Value, Window
+from django.db.models.functions import Greatest, RowNumber
 from pgvector.django import CosineDistance
 
 from usaspending_api.accounts.models.treasury_appropriation_account import TreasuryAppropriationAccount
@@ -137,10 +137,7 @@ class CodeLookupTool:
         self,
         query: str,
         code_type: Literal["naics", "psc", "cfda", "tas"],
-        text_weight: float = 0.5,
-        vector_weight: float = 0.5,
         top_k: int = 20,
-        query_fanout: int | None = 3,
     ) -> dict[str, Any]:
         """
         Hybrid search for various code types combining text matching and vector similarity.
@@ -152,9 +149,21 @@ class CodeLookupTool:
             }
 
         config = CODE_TYPE_CONFIGS[code_type]
-        model = config.model_class
         budget_bureau_names = {}
 
+        results = self._handle_exact_search(query, config, code_type, budget_bureau_names, top_k)
+        if results is None:
+            results = self._handle_hybrid_search(query, config, code_type, budget_bureau_names, top_k)
+        return results
+
+    def _handle_exact_search(
+        self,
+        query: str,
+        config: CodeTypeConfig,
+        code_type: Literal["naics", "psc", "cfda", "tas"],
+        budget_bureau_names: dict[str, str],
+        top_k: int,
+    ) -> dict[str, Any] | None:
         exact_qs, prefix_qs = self._query_exact_and_prefix_matches(config, query)
 
         # Exact and prefix code matches skip embeddings/fanout entirely
@@ -167,7 +176,22 @@ class CodeLookupTool:
             )
             all_results = prefix_results | exact_results
             return self._finalize_results(all_results, config, code_type, budget_bureau_names, top_k)
+        else:
+            return None
 
+    def _handle_hybrid_search(
+        self,
+        query: str,
+        config: CodeTypeConfig,
+        code_type: Literal["naics", "psc", "cfda", "tas"],
+        budget_bureau_names: dict[str, str],
+        top_k: int,
+        query_fanout: int | None = 3,
+    ) -> dict[str, Any]:
+        TEXT_WEIGHT: float = 0.5
+        VECTOR_WEIGHT: float = 0.5
+
+        model = config.model_class
         all_results = {}
         queries = [query]
         if bool(query_fanout):
@@ -194,20 +218,16 @@ class CodeLookupTool:
             desc_similarity = TrigramSimilarity(config.description_field, q)
             text_score = Greatest(code_similarity, desc_similarity)
 
-            qs = (
-                qs.annotate(
-                    vector_distance=CosineDistance("embedding", embedding),
-                    hybrid_score=(
-                        (Value(text_weight, output_field=FloatField()) * text_score)
-                        + (
-                            Value(vector_weight, output_field=FloatField())
-                            * (1.0 - CosineDistance("embedding", embedding))
-                        )
-                    ),
-                )
-                .filter(vector_distance__lt=0.75)
-                .order_by("-hybrid_score")[:top_k]
-            )
+            qs = qs.annotate(
+                vector_distance=CosineDistance("embedding", embedding),
+                hybrid_score=(
+                    (Value(TEXT_WEIGHT, output_field=FloatField()) * text_score)
+                    + (Value(VECTOR_WEIGHT, output_field=FloatField()) * (1.0 - CosineDistance("embedding", embedding)))
+                ),
+            ).filter(vector_distance__lt=0.75)
+            if code_type == "tas":
+                qs = self._dedupe_tas_by_period_of_availability(qs)
+            qs = qs.order_by("-hybrid_score")[:top_k]
 
             for result in qs:
                 code_value = getattr(result, config.code_field)
@@ -224,9 +244,10 @@ class CodeLookupTool:
                     if code_type == "tas" and hasattr(result, "budget_bureau_name"):
                         entry.budget_bureau_name = result.budget_bureau_name
                         parts = code_value.split("-")
-                        if len(parts) >= 3:
-                            aid_main = f"{parts[0]}-{parts[2]}"
-                            budget_bureau_names[aid_main] = result.budget_bureau_name
+                        if len(parts) >= 4:
+                            aid = parts[-4]
+                            main = parts[-2]
+                            budget_bureau_names[f"{aid}-{main}"] = result.budget_bureau_name
                     all_results[code_value] = entry
 
         return self._finalize_results(all_results, config, code_type, budget_bureau_names, top_k)
@@ -241,6 +262,24 @@ class CodeLookupTool:
             **{f"{code_field}__iexact": query}
         )
         return exact_qs, prefix_qs
+
+    @staticmethod
+    def _dedupe_tas_by_period_of_availability(queryset: QuerySet) -> QuerySet:
+        """Get a single tas symbol for each account with multiple time periods.  This prevents TASs that differ only
+        in period of availability from filling the results window with near duplicates."""
+        ranked = queryset.annotate(
+            account_rank=Window(
+                expression=RowNumber(),
+                partition_by=[
+                    F("allocation_transfer_agency_id"),
+                    F("agency_id"),
+                    F("main_account_code"),
+                    F("sub_account_code"),
+                ],
+                order_by=F("hybrid_score").desc(),
+            )
+        )
+        return ranked.filter(account_rank=1).order_by("-hybrid_score")
 
     @staticmethod
     def _build_result_entries(
