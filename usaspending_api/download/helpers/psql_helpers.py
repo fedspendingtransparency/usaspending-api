@@ -39,7 +39,12 @@ def build_psql_env(
 
 
 def run_psql_to_file(
-    sql_path: str, output_path: str, env: dict, quiet: bool = True, on_error_stop: bool = True
+    sql_path: str,
+    output_path: str,
+    env: dict,
+    job_id: int | None = None,
+    quiet: bool = True,
+    on_error_stop: bool = True,
 ) -> None:
     """
     Execute a psql command that reads SQL from a file and writes output to another file.
@@ -70,8 +75,8 @@ def run_psql_to_file(
     logger.info("Testing database connection...")
     test_process = subprocess.run(["psql", "-c", "SELECT 1;"], env=env, capture_output=True, timeout=30)
     if test_process.returncode != 0:
-        logger.error(f"Database connection test failed: {test_process.stderr.decode()}")
-        raise Exception(f"Cannot connect to database: {test_process.stderr.decode()}")
+        logger.error(f"Database connection test failed: {test_process.stderr.decode()} for job {job_id}")
+        raise Exception(f"Cannot connect to database: {test_process.stderr.decode()} for job {job_id}")
     logger.info("Database connection test successful")
 
     logger.info("Starting cat and psql processes...")
@@ -98,12 +103,14 @@ def run_psql_to_file(
         psql_output, psql_error = psql_process.communicate()
         cat_process.wait(timeout=30)
     except subprocess.TimeoutExpired:
-        logger.error("Process timed out! Killing processes...")
+        logger.error(f"Process timed out! Killing processes... for job {job_id}")
         psql_process.kill()
-        cat_process.kill()
         raise Exception(
-            "psql process timed out by the server's process OR cat process timed out after 30 seconds"
+            f"psql process timed out by the server's process OR cat process timed out after 30 seconds for job {job_id}"
         ) from None
+    finally:
+        if cat_process.poll() is None:
+            cat_process.kill()
 
     logger.info(f"psql return code: {psql_process.returncode}")
     logger.info(f"psql stdout: {psql_output.decode() if psql_output else 'empty'}")
@@ -112,7 +119,7 @@ def run_psql_to_file(
     # Check for errors
     if psql_process.returncode != 0:
         error_msg = psql_error.decode() if psql_error else psql_output.decode() if psql_output else "Unknown error"
-        logger.error(f"psql failed: {error_msg}")
+        logger.error(f"psql failed in job {job_id}: {error_msg}")
         raise subprocess.CalledProcessError(psql_process.returncode, psql_args, output=psql_output, stderr=psql_error)
 
     logger.info("psql completed successfully")
