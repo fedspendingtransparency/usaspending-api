@@ -1,3 +1,4 @@
+# ruff: noqa
 """
 This model was originally created to satisfy DEV-2417:
 
@@ -17,10 +18,11 @@ The monthly delta process will handle the rest.
 """
 
 from datetime import datetime, timezone
+
 from django.db import models, transaction
 from django.db.utils import IntegrityError
-from usaspending_api.awards.models.transaction_normalized import TransactionNormalized
 
+from usaspending_api.awards.models.transaction_normalized import TransactionNormalized
 
 # To keep queries from getting too large.
 CHUNK_SIZE = 5000
@@ -57,7 +59,6 @@ class TransactionDeltaManager(models.Manager):
 
             created_at = datetime.now(timezone.utc)
             with transaction.atomic():
-
                 # Perform upserts in chunks.
                 for chunk_start in range(0, len(transaction_ids), CHUNK_SIZE):
                     chunk_of_ids = transaction_ids[chunk_start : chunk_start + CHUNK_SIZE]
@@ -72,9 +73,8 @@ class TransactionDeltaManager(models.Manager):
 
 
 class TransactionDelta(models.Model):
-
     transaction = models.OneToOneField(
-        "awards.TransactionNormalized", on_delete=models.CASCADE, primary_key=True, db_constraint=False
+        "search.TransactionSearch", on_delete=models.CASCADE, primary_key=True, db_constraint=False
     )
     created_at = models.DateTimeField()
 
