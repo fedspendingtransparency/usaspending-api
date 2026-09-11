@@ -48,16 +48,33 @@ def _make_cfda(program_number, program_title):
     return baker.make(Cfda, program_number=program_number, program_title=program_title, _save_kwargs=SAVE_NO_EMBED)
 
 
-def _make_tas(label, title, agency_id="012", main="0123", sub="000"):
-    return baker.make(
+def _make_tas(
+    label,
+    title,
+    agency_id="012",
+    main="0123",
+    sub="000",
+    ata=None,
+    bpoa=None,
+    epoa=None,
+    embedding=None,
+):
+    tas = baker.make(
         TreasuryAppropriationAccount,
         tas_rendering_label=label,
         account_title=title,
         agency_id=agency_id,
         main_account_code=main,
         sub_account_code=sub,
+        allocation_transfer_agency_id=ata,
+        beginning_period_of_availability=bpoa,
+        ending_period_of_availability=epoa,
         _save_kwargs=SAVE_NO_EMBED,
     )
+    if embedding is not None:
+        tas.embedding = embedding
+        tas.save(**SAVE_NO_EMBED)
+    return tas
 
 
 def _make_toptier_agency(toptier_code, name, abbreviation):
@@ -410,3 +427,93 @@ class TestCodeTypeConfigsConsistency:
         assert config.code_field
         assert config.description_field
         assert callable(config.get_all_ancestors)
+
+
+class TestDedupeTasByPeriodOfAvailability:
+    def test_multiple_periods_same_account_collapse_to_best_score(
+        self,
+        tool,
+        mock_embedding_generator,
+        mock_expand_query,
+    ):
+        dims = getattr(TreasuryAppropriationAccount, "embedding_dimensions", 256)
+        for year in ("2015", "2016", "2017"):
+            _make_tas(
+                f"011-{year}/{year}-0001-000",
+                "Test Tas",
+                agency_id="011",
+                main="0001",
+                sub="000",
+                bpoa=year,
+                epoa=year,
+                embedding=_unit_vector(dims, 0),
+            )
+        mock_embedding_generator.generate_embedding.return_value = _unit_vector(dims, 0)
+
+        result = tool.lookup_codes("test tas", "tas")
+
+        codes = _flatten_codes(result["hierarchy"])
+        tas_leaf_codes = {c for c in codes if c.count("-") == 3}
+        assert len(tas_leaf_codes) == 1
+
+    def test_different_sub_account_not_collapsed(self, tool, mock_embedding_generator, mock_expand_query):
+        dims = getattr(TreasuryAppropriationAccount, "embedding_dimensions", 256)
+        _make_tas(
+            "011-2016/2016-0001-000",
+            "Main sub",
+            agency_id="011",
+            main="0001",
+            sub="000",
+            bpoa="2016",
+            epoa="2016",
+            embedding=_unit_vector(dims, 0),
+        )
+        _make_tas(
+            "011-2016/2016-0001-001",
+            "Other sub",
+            agency_id="011",
+            main="0001",
+            sub="001",
+            bpoa="2016",
+            epoa="2016",
+            embedding=_unit_vector(dims, 0),
+        )
+        mock_embedding_generator.generate_embedding.return_value = _unit_vector(dims, 0)
+
+        result = tool.lookup_codes("main sub", "tas")
+
+        codes = _flatten_codes(result["hierarchy"])
+        assert "011-2016/2016-0001-000" in codes
+        assert "011-2016/2016-0001-001" in codes
+
+    def test_different_ata_not_collapsed(self, tool, mock_embedding_generator, mock_expand_query):
+        dims = getattr(TreasuryAppropriationAccount, "embedding_dimensions", 256)
+        _make_tas(
+            "011-2016/2016-0001-000",
+            "No ATA",
+            agency_id="011",
+            main="0001",
+            sub="000",
+            ata=None,
+            bpoa="2016",
+            epoa="2016",
+            embedding=_unit_vector(dims, 0),
+        )
+        _make_tas(
+            "019-011-2016/2016-0001-000",
+            "With ATA",
+            agency_id="011",
+            main="0001",
+            sub="000",
+            ata="019",
+            bpoa="2016",
+            epoa="2016",
+            embedding=_unit_vector(dims, 0),
+        )
+        mock_embedding_generator.generate_embedding.return_value = _unit_vector(dims, 0)
+
+        result = tool.lookup_codes("compensation", "tas")
+
+        codes = _flatten_codes(result["hierarchy"])
+        assert "011-2016/2016-0001-000" in codes
+        assert "019-011-2016/2016-0001-000" in codes
