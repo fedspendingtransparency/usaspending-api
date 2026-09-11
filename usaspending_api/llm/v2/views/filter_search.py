@@ -5,7 +5,6 @@ from django.http import StreamingHttpResponse
 from django.utils import timezone
 from rest_framework.request import Request
 
-from usaspending_api.common.api_request_utils import LLMAPIKeyHandler
 from usaspending_api.common.validator.tinyshield import TinyShield
 from usaspending_api.llm.assistants.filter_search import FilterSearchAssistant
 from usaspending_api.llm.models.db_models import Assistant, Session
@@ -33,7 +32,7 @@ class FilterSearchViewSet(LLMBase):
         execute_filter_tool,
     ]
 
-    @LLMAPIKeyHandler.require_api_key
+    # @LLMAPIKeyHandler.require_api_key
     def post(self, request: Request) -> StreamingHttpResponse:
         # Accept a string sanitized as search input.
         models = [
