@@ -115,6 +115,42 @@ class TestInferenceConfig:
         assert config.maxTokens == 2048
         assert config.stopSequences == ["END"]
 
+    def test_inference_config_accepts_none_for_temperature(self):
+        """Test that temperature can be None to use model defaults"""
+        config = InferenceConfig(temperature=None)
+        assert config.temperature is None
+
+    def test_inference_config_accepts_none_for_top_p(self):
+        """Test that topP can be None to use model defaults"""
+        config = InferenceConfig(topP=None)
+        assert config.topP is None
+
+    def test_inference_config_accepts_none_for_max_tokens(self):
+        """Test that maxTokens can be None to use model defaults"""
+        config = InferenceConfig(maxTokens=None)
+        assert config.maxTokens is None
+
+    def test_inference_config_accepts_none_for_stop_sequences(self):
+        """Test that stopSequences can be None to use model defaults"""
+        config = InferenceConfig(stopSequences=None)
+        assert config.stopSequences is None
+
+    def test_inference_config_all_none_values(self):
+        """Test that all fields can be None simultaneously"""
+        config = InferenceConfig(temperature=None, topP=None, maxTokens=None, stopSequences=None)
+        assert config.temperature is None
+        assert config.topP is None
+        assert config.maxTokens is None
+        assert config.stopSequences is None
+
+    def test_inference_config_mixed_none_and_values(self):
+        """Test mixing None and actual values"""
+        config = InferenceConfig(temperature=0.7, topP=None, maxTokens=1000, stopSequences=None)
+        assert config.temperature == 0.7
+        assert config.topP is None
+        assert config.maxTokens == 1000
+        assert config.stopSequences is None
+
 
 class TestRecipientFields:
     """Tests for recipient-related fields in Filters model"""
