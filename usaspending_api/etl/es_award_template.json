@@ -847,6 +847,10 @@
         "type": "scaled_float",
         "scaling_factor": 100
       },
+      "subaward_to_award_ratio": {
+        "type": "scaled_float",
+        "scaling_factor": 100000000
+      },
       "transaction_count": {
         "type": "integer"
       },
@@ -887,6 +891,9 @@
         "type": "long"
       },
       "total_subaward_amount_sort": {
+        "type": "long"
+      },
+      "subaward_to_award_ratio_sort": {
         "type": "long"
       }
     }
