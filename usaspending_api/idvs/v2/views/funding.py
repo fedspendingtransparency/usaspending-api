@@ -119,7 +119,7 @@ GET_FUNDING_SQL = SQL(
         gfaba.gross_outlay_amount
     from
         gather_financial_accounts_by_awards gfaba
-        left outer join submission_attributes sa on sa.submission_id = gfaba.submission_id
+        inner join submission_attributes sa on sa.submission_id = gfaba.submission_id
         left outer join treasury_appropriation_account taa on
             taa.treasury_account_identifier = gfaba.treasury_account_id
         left outer join federal_account fa on fa.id = taa.federal_account_id
@@ -129,6 +129,9 @@ GET_FUNDING_SQL = SQL(
         left outer join toptier_agency ata on ata.toptier_agency_id = aa.toptier_agency_id
         left outer join agency faa on faa.id = gfaba.funding_agency_id
         left outer join toptier_agency fta on fta.toptier_agency_id = faa.toptier_agency_id
+        innter join dabs_submission_window_schedule dabs on
+            sa.submission_window_id = dabs.id and
+            dabs.submission_reveal_date <= now
     {order_by}
     limit {limit} offset {offset}
 """

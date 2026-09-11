@@ -1,7 +1,11 @@
-from django.db.models import DecimalField, F, Func, IntegerField, OuterRef, Q, Subquery, Value
+from typing import Any
+
+from django.db.models import DecimalField, F, Func, IntegerField, OuterRef, Q, QuerySet, Subquery, Value
+from rest_framework.request import Request
 from rest_framework.response import Response
 
 from usaspending_api.agency.v2.views.agency_base import AgencyBase
+from usaspending_api.common.helpers.date_helper import now
 from usaspending_api.common.helpers.generic_helper import get_pagination_metadata
 from usaspending_api.common.helpers.pagination_mixin import PaginationMixin
 from usaspending_api.references.models import Agency, ToptierAgencyPublishedDABSView
@@ -18,7 +22,7 @@ class AgenciesOverview(PaginationMixin, AgencyBase):
         super().__init__(*args, **kwargs)
         self.params_to_validate = ["fiscal_year", "fiscal_period", "filter"]
 
-    def get(self, request):
+    def get(self, request: Request) -> Response:
         self.sortable_columns = [
             "toptier_code",
             "current_total_budget_authority_amount",
@@ -40,7 +44,7 @@ class AgenciesOverview(PaginationMixin, AgencyBase):
             {"page_metadata": page_metadata, "results": results, "messages": self.standard_response_messages}
         )
 
-    def get_agency_overview(self):
+    def get_agency_overview(self) -> list[dict]:
         agency_filters = []
         if self.filter is not None:
             agency_filters.append(Q(name__icontains=self.filter) | Q(abbreviation__icontains=self.filter))
@@ -88,6 +92,7 @@ class AgenciesOverview(PaginationMixin, AgencyBase):
                     SubmissionAttributes.objects.filter(
                         reporting_fiscal_year=self.fiscal_year,
                         reporting_fiscal_period=self.fiscal_period,
+                        submission_window__submission_reveal_date__lte=now(),
                         toptier_code=OuterRef("toptier_code"),
                     ).values("published_date")
                 ),
@@ -95,6 +100,7 @@ class AgenciesOverview(PaginationMixin, AgencyBase):
                     SubmissionAttributes.objects.filter(
                         reporting_fiscal_year=self.fiscal_year,
                         reporting_fiscal_period=self.fiscal_period,
+                        submission_window__submission_reveal_date__lte=now(),
                         toptier_code=OuterRef("toptier_code"),
                     ).values("certified_date")
                 ),
@@ -102,6 +108,7 @@ class AgenciesOverview(PaginationMixin, AgencyBase):
                     SubmissionAttributes.objects.filter(
                         reporting_fiscal_year=self.fiscal_year,
                         reporting_fiscal_period=self.fiscal_period,
+                        submission_window__submission_reveal_date__lte=now(),
                         toptier_code=OuterRef("toptier_code"),
                     ).values("quarter_format_flag")
                 ),
@@ -192,7 +199,7 @@ class AgenciesOverview(PaginationMixin, AgencyBase):
 
         return formatted_results
 
-    def format_results(self, result_list):
+    def format_results(self, result_list: QuerySet) -> list[dict]:
         agencies = {
             a["toptier_agency__toptier_code"]: a["id"]
             for a in Agency.objects.filter(toptier_flag=True).values("toptier_agency__toptier_code", "id")
@@ -200,7 +207,7 @@ class AgenciesOverview(PaginationMixin, AgencyBase):
         results = [self.format_result(result, agencies) for result in result_list]
         return results
 
-    def format_result(self, result, agencies):
+    def format_result(self, result: Any, agencies: dict) -> dict[str, Any]:
         """
         Fields coming from ReportingAgencyOverview are already NULL, for periods without
         submissions. Fields coming from other models, such as ReportingAgencyTas, may
