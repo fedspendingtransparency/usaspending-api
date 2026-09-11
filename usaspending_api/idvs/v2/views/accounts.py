@@ -75,7 +75,7 @@ ACCOUNTS_SQL = SQL(
         left outer join agency a on a.id = gfaba.funding_agency_id
         left outer join toptier_agency ta on ta.toptier_agency_id = a.toptier_agency_id
         inner join submission_attributes sa on
-            faba.submission_id = sa.submission_id
+            gfaba.submission_id = sa.submission_id
         inner join dabs_submission_window_schedule dabs on
             sa.submission_window_id = dabs.id and
             dabs.submission_reveal_date <= now()
