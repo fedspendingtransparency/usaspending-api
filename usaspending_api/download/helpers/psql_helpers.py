@@ -60,6 +60,8 @@ def run_psql_to_file(
 
     if quiet:
         psql_args.append("-q")
+        
+    psql_args.append("--statement-timeout=12h")
 
     psql_args.extend(["-o", output_path])
 
