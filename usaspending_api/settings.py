@@ -55,7 +55,7 @@ SECRET_KEY = get_random_secret_key()
 
 # SECURITY WARNING: don't run with debug turned on in production!
 # Defaults to False, unless DJANGO_DEBUG env var is set to a truthy value
-DEBUG = True  # os.environ.get("DJANGO_DEBUG", "").lower() in ["true", "1", "yes"]
+DEBUG = os.environ.get("DJANGO_DEBUG", "").lower() in ["true", "1", "yes"]
 
 HOST = os.environ.get("HOST", "localhost:3000")
 
