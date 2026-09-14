@@ -1,14 +1,22 @@
-import json
 import logging
 import os
-from typing import Generator
+from typing import Any, Generator, Literal
 
 from django.http import StreamingHttpResponse
+from pydantic import BaseModel
 from rest_framework.views import APIView
 
 from usaspending_api.llm.models.db_models import AIModel
 
 logger = logging.getLogger(__name__)
+
+
+class FilterSearchEvent(BaseModel):
+    search_id: str | None = None
+    tool_use_id: str | None = None
+    type: Literal["search_start", "search_error", "search_complete", "tool_start", "tool_complete", "tool_error"]
+    message: str
+    result: Any = None
 
 
 class LLMBase(APIView):
@@ -45,7 +53,7 @@ class LLMBase(APIView):
 
         return ai_model
 
-    def _ndjson_format(self, event: dict) -> str:
+    def _ndjson_format(self, event: FilterSearchEvent) -> str:
         """
         Format an event dictionary as a newline-delimited JSON (NDJSON) string.
 
@@ -55,7 +63,7 @@ class LLMBase(APIView):
         Returns:
             JSON string with newline terminator for NDJSON streaming (application/x-ndjson).
         """
-        return json.dumps(event) + "\n"
+        return event.json(exclude_unset=True) + "\n"
 
     def _error_response(self, message: str, search_id: str | int = None) -> StreamingHttpResponse:
         """
@@ -68,19 +76,16 @@ class LLMBase(APIView):
         Returns:
             StreamingHttpResponse with error event in NDJSON format.
         """
-        error_event = {
-            "search_id": str(search_id) if search_id is not None else None,
-            "type": "search_error",
-            "message": message
-        }
+        error_event = FilterSearchEvent(
+            search_id=str(search_id) if search_id is not None else None,
+            type="search_error",
+            message=message,
+        )
 
         def error_stream() -> Generator[str, None, None]:
             yield self._ndjson_format(error_event)
 
-        response = StreamingHttpResponse(
-            error_stream(),
-            content_type="application/x-ndjson"
-        )
+        response = StreamingHttpResponse(error_stream(), content_type="application/x-ndjson")
         # Disable webserver caching/buffering to enable pass-through behavior of chunks.
         response["Cache-Control"] = "no-cache"
         response["X-Accel-Buffering"] = "no"
