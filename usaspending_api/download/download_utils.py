@@ -11,6 +11,22 @@ from usaspending_api.download.lookups import VALUE_MAPPINGS
 from usaspending_api.download.models import DownloadJob
 from usaspending_api.references.models import ToptierAgency
 
+SEARCH_DOWNLOAD_NAME_BY_SPENDING_LEVEL = {
+    ("awards",): "PrimeAwardSummaries",
+    ("transactions",): "PrimeTransactions",
+    ("subawards",): "SubawardSummaries",
+    ("awards", "subawards"): "PrimeAwardSummariesAndSubawards",
+    ("subawards", "transactions"): "PrimeTransactionsAndSubawards",
+    ("awards", "transactions"): "PrimeAwardSummariesAndTransactions",
+    ("awards", "subawards", "transasctions"): "PrimeAwardTransactionsAndSubawards",
+}
+
+DOWNLOAD_TYPE_TO_SPENDING_LEVEL = {
+    "elasticsearch_awards": "awards",
+    "elasticsearch_transactions": "transactions",
+    "elasticsearch_sub_awards": "subawards",
+}
+
 
 def create_unique_filename(json_request: dict[str, Any], origination: str | None = None) -> str:
     timestamp = datetime.strftime(datetime.now(timezone.utc), "%Y-%m-%d_H%HM%MS%S%f")
@@ -41,7 +57,7 @@ def create_unique_filename(json_request: dict[str, Any], origination: str | None
         )
     elif json_request["request_type"] == "search":
         # Search Endpoint uses Award download_types, but has set filename
-        download_name = f"PrimeAwardsTransactionsAndSubawards_{timestamp}.zip"
+        download_name = f"{create_search_download_name(json_request)}_{timestamp}.zip"
     else:  # "award" downloads
         agency = ""
 
@@ -54,6 +70,25 @@ def create_unique_filename(json_request: dict[str, Any], origination: str | None
         download_name = f"{agency}{award_type_name}_{timestamp}.zip"
 
     return download_name
+
+
+def create_search_download_name(json_request: dict[str, Any]) -> str:
+    spending_levels = _resolve_search_spending_levels(json_request)
+    return SEARCH_DOWNLOAD_NAME_BY_SPENDING_LEVEL[tuple(sorted(spending_levels))]
+
+
+def _resolve_search_spending_levels(json_request: dict[str, Any]) -> list[str]:
+    spending_level = json_request.get("spending_level")
+    if spending_level:
+        return spending_level
+
+    download_types = json_request.get("download_types") or ()
+    derived = [
+        DOWNLOAD_TYPE_TO_SPENDING_LEVEL[download_type]
+        for download_type in download_types
+        if download_type in DOWNLOAD_TYPE_TO_SPENDING_LEVEL
+    ]
+    return derived or ["awards", "transactions", "subawards"]
 
 
 def obtain_zip_filename_format(download_types: list[str]) -> str:
