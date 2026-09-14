@@ -18,7 +18,7 @@ SEARCH_DOWNLOAD_NAME_BY_SPENDING_LEVEL = {
     ("awards", "subawards"): "PrimeAwardSummariesAndSubawards",
     ("subawards", "transactions"): "PrimeTransactionsAndSubawards",
     ("awards", "transactions"): "PrimeAwardSummariesAndTransactions",
-    ("awards", "subawards", "transasctions"): "PrimeAwardTransactionsAndSubawards",
+    ("awards", "subawards", "transactions"): "PrimeAwardTransactionsAndSubawards",
 }
 
 DOWNLOAD_TYPE_TO_SPENDING_LEVEL = {
