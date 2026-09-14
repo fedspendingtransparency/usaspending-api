@@ -20,7 +20,7 @@ class LLMBase(APIView):
     """
 
     # Default AI model name (can be overridden by LLM_DEFAULT_MODEL env variable).
-    DEFAULT_MODEL_NAME = "nova micro"
+    DEFAULT_MODEL_NAME = "nova pro"
 
     def _get_ai_model(self, model_name: str = None) -> AIModel:
         """
@@ -71,16 +71,13 @@ class LLMBase(APIView):
         error_event = {
             "search_id": str(search_id) if search_id is not None else None,
             "type": "search_error",
-            "message": message
+            "message": message,
         }
 
         def error_stream() -> Generator[str, None, None]:
             yield self._ndjson_format(error_event)
 
-        response = StreamingHttpResponse(
-            error_stream(),
-            content_type="application/x-ndjson"
-        )
+        response = StreamingHttpResponse(error_stream(), content_type="application/x-ndjson")
         # Disable webserver caching/buffering to enable pass-through behavior of chunks.
         response["Cache-Control"] = "no-cache"
         response["X-Accel-Buffering"] = "no"
