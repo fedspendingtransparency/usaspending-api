@@ -6,7 +6,7 @@ from opensearchpy.helpers.query import Q
 
 from usaspending_api.common.elasticsearch.search_wrappers import LocationSearch
 from usaspending_api.llm.models.py_models import AITool, AIToolDescription
-from usaspending_api.references.models import PopCounty, RefCountryCode
+from usaspending_api.references.models import PopCongressionalDistrict, RefCountryCode
 
 logger = logging.getLogger(__name__)
 
@@ -29,23 +29,23 @@ class LocationLookupTool:
 
     def __init__(self):
         """Initialize with cached lookups from database."""
-        self._state_code_cache = None
+        self._state_abbr_cache = None
         self._country_code_cache = None
 
     @property
-    def state_codes(self) -> dict[str, str]:
-        """Lazy-load state codes from PopCounty model."""
-        if self._state_code_cache is None:
-            self._state_code_cache = {}
-            for county in PopCounty.objects.values("state_name", "state_code").distinct():
+    def state_abbreviations(self) -> dict[str, str]:
+        """Lazy-load state abbreviations from PopCounty model."""
+        if self._state_abbr_cache is None:
+            self._state_abbr_cache = {}
+            for county in PopCongressionalDistrict.objects.values("state_name", "state_abbreviation").distinct():
                 state_name = county["state_name"]
-                state_code = county["state_code"]
-                if state_name and state_code:
+                state_abbr = county["state_abbreviation"]
+                if state_name and state_abbr:
                     # Store with multiple case variations for flexible lookup
-                    self._state_code_cache[state_name] = state_code
-                    self._state_code_cache[state_name.lower()] = state_code
-                    self._state_code_cache[state_name.upper()] = state_code
-        return self._state_code_cache
+                    self._state_abbr_cache[state_name] = state_abbr
+                    self._state_abbr_cache[state_name.lower()] = state_abbr
+                    self._state_abbr_cache[state_name.upper()] = state_abbr
+        return self._state_abbr_cache
 
     @property
     def country_codes(self) -> dict[str, str]:
@@ -229,22 +229,22 @@ class LocationLookupTool:
 
             case "state":
                 state_name = data.get("state_name", "")
-                state_code = self._get_state_code(state_name)
-                result = f"USA_{state_code}"
+                state_abbr = self._get_state_abbr(state_name)
+                result = f"USA_{state_abbr}"
 
             case "city":
                 country = data.get("country_name", "USA")
                 country_code = self._get_country_code(country)
                 state = data.get("state_name", "")
-                state_code = self._get_state_code(state) if state else "undefined"
+                state_abbr = self._get_state_abbr(state) if state else "undefined"
                 city = data.get("city_name", "").replace(" ", "_")  # Normalize spaces
-                result = f"{country_code}_{state_code}_{city}"
+                result = f"{country_code}_{state_abbr}_{city}"
 
             case "county":
                 state = data.get("state_name", "")
-                state_code = self._get_state_code(state)
+                state_abbr = self._get_state_abbr(state)
                 county_fips = data.get("county_fips", "")
-                result = f"USA_{state_code}_{county_fips}"
+                result = f"USA_{state_abbr}_{county_fips}"
 
             case "zip_code":
                 zip_code = data.get("zip_code", "")
@@ -274,7 +274,7 @@ class LocationLookupTool:
 
         # Add type-specific fields (only non-None values)
         if data.get("state_name"):
-            filter_obj["state"] = self._get_state_code(data["state_name"])
+            filter_obj["state"] = self._get_state_abbr(data["state_name"])
 
         if data.get("city_name"):
             filter_obj["city"] = data["city_name"]
@@ -316,16 +316,16 @@ class LocationLookupTool:
             "title": full_location,
         }
 
-    def _get_state_code(self, state_name: str) -> str:
-        """Convert state name to 2-letter code."""
+    def _get_state_abbr(self, state_name: str) -> str:
+        """Convert state name to 2-letter abbreviation."""
         if not state_name:
             return "XX"
 
         # Try multiple case variations
         code = (
-            self.state_codes.get(state_name)
-            or self.state_codes.get(state_name.lower())
-            or self.state_codes.get(state_name.upper())
+            self.state_abbreviations.get(state_name)
+            or self.state_abbreviations.get(state_name.lower())
+            or self.state_abbreviations.get(state_name.upper())
         )
 
         return code if code else "XX"
@@ -355,7 +355,7 @@ lookup_location_tool = AITool(
 
                 This tool supports:
                 - Country names and codes (e.g., 'USA', 'United States', 'Germany')
-                - State names and codes (e.g., 'Texas', 'TX', 'Texa' with fuzzy match)
+                - State names and abbreviations (e.g., 'Texas', 'TX', 'Texa' with fuzzy match)
                 - City names (e.g., 'Chicago', 'New York', 'Chicgo' with fuzzy match)
                 - County names and FIPS codes
                 - ZIP codes (e.g., '64198', '10001')
