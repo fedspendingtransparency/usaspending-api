@@ -28,7 +28,7 @@ class LLMBase(APIView):
     """
 
     # Default AI model name (can be overridden by LLM_DEFAULT_MODEL env variable).
-    DEFAULT_MODEL_NAME = "nova micro"
+    DEFAULT_MODEL_NAME = "nova pro"
 
     def _get_ai_model(self, model_name: str = None) -> AIModel:
         """
