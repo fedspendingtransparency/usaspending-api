@@ -594,3 +594,20 @@ services:
       - GF_FEATURE_TOGGLES_ENABLE=traceqlEditor
     ports:
       - "3000:3000"
+
+  sample-server:
+    image: usaspending-sample-server
+    build:
+      context: .
+      dockerfile: sample_server.Dockerfile
+    container_name: usaspending-sample-server
+    ports:
+      - "80:80"
+    volumes:
+      - type: bind
+        source: ${HOME}/.aws
+        target: /root/.aws
+        read_only: false
+    command: /usr/bin/supervisord -c "/etc/supervisor/conf.d/supervisord.conf"
+    environment:
+      <<: *application-vars

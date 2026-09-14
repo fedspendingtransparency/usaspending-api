@@ -7,19 +7,17 @@ For more information on this file, see
 https://docs.djangoproject.com/en/2.2/howto/deployment/wsgi/
 """
 
-# Standard library imports
 import logging
 import os
+from typing import Any
 
-# Django imports
-from django.core.wsgi import get_wsgi_application
-
-# OpenTelemetry imports
+from asgiref.typing import Scope
+from django.core.asgi import get_asgi_application
 from opentelemetry import trace
+from opentelemetry.instrumentation.asgi import OpenTelemetryMiddleware, asgi_getter
 from opentelemetry.instrumentation.django import DjangoInstrumentor
-from opentelemetry.instrumentation.wsgi import OpenTelemetryMiddleware
+from opentelemetry.trace import Span
 
-# Local imports
 from usaspending_api.common.logging import configure_logging
 from usaspending_api.settings import IS_LOCAL, TRACE_ENV
 
@@ -44,27 +42,26 @@ HEADERS_TO_CAPTURE = [
 logger = logging.getLogger(__name__)
 
 
-def request_hook(span, environ):
+def _add_headers_from_scope(span: Span, scope: Scope, attribute_prefix: str) -> None:
     if span and span.is_recording():
         for header in HEADERS_TO_CAPTURE:
-            header_env_name = f"HTTP_{header.replace('-', '_').upper()}"
-            header_value = environ.get(header_env_name)
+            header_value = asgi_getter.get(scope, header)
             if header_value:
-                span.set_attribute(f"http.request.header.{header}", header_value)
+                span.set_attribute(f"{attribute_prefix}.{header}", header_value)
+
+
+def client_request_hook(span: Span, scope: Scope, message: dict[str, Any]) -> None:
+    _add_headers_from_scope(span, scope, "http.request.header")
 
     if IS_LOCAL and os.getenv("TOGGLE_OTEL_CONSOLE_LOGGING") == "True":
-        logger.info("\nRequest hook executed\n")
+        logger.info("\nClient request hook executed\n")
 
 
-def response_hook(span, environ, status, response_headers):
-    if span and span.is_recording():
-        for header in HEADERS_TO_CAPTURE:
-            for response_header in response_headers:
-                if response_header[0].lower() == header:
-                    span.set_attribute(f"http.response.header.{header}", response_header[1])
+def client_response_hook(span: Span, scope: Scope, message: dict[str, Any]):
+    _add_headers_from_scope(span, scope, "http.response.header")
 
     if IS_LOCAL and os.getenv("TOGGLE_OTEL_CONSOLE_LOGGING") == "True":
-        logger.info("\nResponse hook executed\n")
+        logger.info("\nClient response hook executed\n")
 
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "usaspending_api.settings")
@@ -86,5 +83,7 @@ OTEL_EXPORTER_OTLP_TRACES_ENDPOINT = os.getenv("OTEL_EXPORTER_OTLP_TRACES_ENDPOI
 
 ############################################################
 
-application = get_wsgi_application()
-application = OpenTelemetryMiddleware(application, request_hook=request_hook, response_hook=response_hook)
+application = get_asgi_application()
+application = OpenTelemetryMiddleware(
+    application, client_request_hook=client_request_hook, client_response_hook=client_response_hook
+)
