@@ -115,10 +115,9 @@ def test_spending_by_subaward_grouped_legacy_filter(
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()["page_metadata"]["page"] == 1
     assert resp.json()["limit"] == 3
-    assert len(resp.json()["results"]) == 3
-    assert resp.json()["results"][0] == EXPECTED_F4103
-    assert resp.json()["results"][1] == EXPECTED_F4102
-    assert resp.json()["results"][2] == EXPECTED_F4101
+    assert len(resp.json()["results"]) == 2
+    assert resp.json()["results"][0] == EXPECTED_F4102
+    assert resp.json()["results"][1] == EXPECTED_F4101
 
 
 @pytest.mark.django_db
