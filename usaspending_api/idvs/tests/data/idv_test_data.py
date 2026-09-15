@@ -17,7 +17,6 @@ in the IDV world but has been added for testing purposes.  Hope this helps.
 import pytest
 from model_bakery import baker
 
-
 AWARD_COUNT = 15
 IDVS = (1, 2, 3, 4, 5, 7, 8)
 PARENTS = {3: 1, 4: 1, 5: 1, 6: 1, 7: 2, 8: 2, 9: 2, 10: 2, 11: 7, 12: 7, 13: 8, 14: 8, 15: 9}

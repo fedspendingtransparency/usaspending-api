@@ -1,16 +1,15 @@
 from dataclasses import dataclass
 from functools import lru_cache
+from typing import List, Optional
 
 from django.db import connection
-from django.db.models import Q, Max, Case, When, F, IntegerField, Value
-from typing import Optional, List
-
+from django.db.models import Case, F, IntegerField, Max, Q, Value, When
 from django.db.models.functions import Cast
 from django_cte import With
 
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers.date_helper import now
-from usaspending_api.common.helpers.fiscal_year_helpers import is_final_quarter, is_final_period
+from usaspending_api.common.helpers.fiscal_year_helpers import is_final_period, is_final_quarter
 from usaspending_api.submissions.models import DABSSubmissionWindowSchedule, SubmissionAttributes
 
 
@@ -187,7 +186,7 @@ def get_submission_ids_for_periods(
     Additionally, this method is used mostly for downloads where 50 is much larger than the number
     of concurrent downloads that process at a time.
     """
-    sql = f"""
+    sql = """
         select  submission_id
         from    submission_attributes
                 inner join dabs_submission_window_schedule dabs on
@@ -244,7 +243,7 @@ def get_latest_submission_ids_for_fiscal_year(fiscal_year: int) -> list:
 
 
 def _get_latest_submission_ids_for_each_fiscal_quarter(
-    federal_account_id_filter_obj, fiscal_years: List[int], federal_account_id: int
+    federal_account_id_filter_obj: str, fiscal_years: List[int], federal_account_id: int
 ) -> list:
     filters = {"submission_window__submission_reveal_date__lte": now()}
     if len(fiscal_years) > 0:

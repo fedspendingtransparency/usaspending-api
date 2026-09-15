@@ -6,13 +6,12 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from usaspending_api.awards.models import FinancialAccountsByAwards, Award
+from usaspending_api.awards.models import Award, FinancialAccountsByAwards
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.helpers.date_helper import now
-from usaspending_api.common.validator.tinyshield import TinyShield
 from usaspending_api.common.validator.award import get_internal_or_generated_award_id_model
+from usaspending_api.common.validator.tinyshield import TinyShield
 from usaspending_api.submissions.models.submission_attributes import SubmissionAttributes
-
 
 logger = logging.getLogger("console")
 
@@ -39,10 +38,10 @@ class FederalAccountCountRetrieveViewSet(APIView):
             award = Award.objects.get(**award_filter)
         except Award.DoesNotExist:
             logger.info("No Award found with: '{}'".format(award_id))
-            raise NotFound("No Award found with: '{}'".format(award_id))
+            raise NotFound("No Award found with: '{}'".format(award_id)) from None
 
         federal_account_count = FinancialAccountsByAwards.objects.annotate(
-            reveal_date = Subquery(
+            reveal_date=Subquery(
                 SubmissionAttributes.objects.filter(submission_id=OuterRef("submission_id")).values(
                     "submission_window__submission_reveal_date"
                 )
