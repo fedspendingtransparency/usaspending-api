@@ -114,7 +114,7 @@ def test_spark_app_run_local_master(spark: SparkSession):
 
 
 def test_spark_write_csv_app_run(spark: SparkSession, s3_unittest_data_bucket):
-    """More involved integration test that requires MinIO to be up as an s3 alternative."""
+    """More involved integration test that requires RustFS to be up as an s3 alternative."""
     data = [
         {
             "first_col": "row 1",

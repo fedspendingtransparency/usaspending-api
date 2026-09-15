@@ -21,16 +21,16 @@ runs:
 
     # The conditionals below this all check against a string because inputs for actions are actually
     # strings, not booleans: https://github.com/actions/runner/issues/1483
-    - name: Create directories needed for Minio
+    - name: Create directories needed for RustFS
       if: ${{ inputs.is-integration-test == 'true' }}
       shell: bash
       run: mkdir -p "$HOME/Development/data/usaspending/docker/usaspending-s3"  # same value as .env.template
 
-    - name: Build docker containers for DB, ES, and Minio
+    - name: Build docker containers for DB, ES, and RustFS
       working-directory: ${{ inputs.working-directory }}
       if: ${{ inputs.is-integration-test == 'true' }}
       shell: bash
-      run: docker compose up -d usaspending-db usaspending-es minio
+      run: docker compose up -d usaspending-db usaspending-es usaspending-s3
 
     - name: Download broker docker image
       if: ${{ inputs.is-integration-test == 'true' }}
