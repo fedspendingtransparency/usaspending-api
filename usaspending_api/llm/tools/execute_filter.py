@@ -15,22 +15,32 @@ from usaspending_api.references.models import FilterHash
 logger = logging.getLogger(__name__)
 
 
-def execute_filter(**kwargs) -> dict[str, str]:
-    logger.info(f"Starting execute_filter with {len(kwargs)} filter parameter(s)", extra={"filter_count": len(kwargs)})
-
+def build_filter_request(filter_input: dict) -> dict:
+    """
+    Function added to separate the execution of the filter from the construction of the filter request so the eval
+    framework can compare the same normalized filter payload used to produce the production hash.
+    """
     try:
-        filters = Filters(**kwargs)
-        logger.debug(f"Filter validation successful: {list(kwargs.keys())}")
-    except ValidationError as e:
+        filters = Filters(**filter_input)
+    except ValidationError as exc:
         return {
-            "error": str(e),
-            "message": "The input parameters are invalid.  Look at the error message and try again.",
+            "error": str(exc),
+            "message": "The input parameters are invalid. Look at the error message and try again.",
         }
 
     filter_request = FilterRequest(filters=filters).model_dump(exclude_none=True)
+
     if "keyword" in filter_request["filters"]:
-        updated_keyword = {v: v for v in filter_request["filters"]["keyword"]}
-        filter_request["filters"]["keyword"] = updated_keyword
+        filter_request["filters"]["keyword"] = {v: v for v in filter_request["filters"]["keyword"]}
+
+    return filter_request
+
+
+def execute_filter(**kwargs) -> dict[str, str]:
+    logger.info(f"Starting execute_filter with {len(kwargs)} filter parameter(s)", extra={"filter_count": len(kwargs)})
+
+    filter_request = build_filter_request(kwargs)
+    logger.debug(f"Filter validation successful: {list(kwargs.keys())}")
 
     filter_json = json.dumps(filter_request, sort_keys=True)
     hash_key = create_hash(filter_json.encode("utf-8"))
@@ -63,7 +73,7 @@ execute_filter_tool = AITool(
     description=AIToolDescription(
         name="execute_filter",
         description="""
-            This tool selects filters for a USASspending advanced search.
+            This tool selects filters for a USAspending advanced search.
             Use multiple filters if necessary to filter the results to the user's intent.
             Filters are combined with an AND operator.
             Awards will only appear if they meet all of the filter conditions.
