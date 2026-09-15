@@ -111,7 +111,7 @@ class ClosedPeriod:
         return Q(**{f"{prefix}submission_id__in": submission_ids})
 
 
-def get_last_closed_periods_per_year():
+def get_last_closed_periods_per_year() -> list[ClosedPeriod]:
     """
     Returns a list of ClosedPeriods.  fiscal_quarter or fiscal_month may be None if the year didn't
     have a corresponding period or the period hasn't passed its reveal date yet.
@@ -190,6 +190,9 @@ def get_submission_ids_for_periods(
     sql = f"""
         select  submission_id
         from    submission_attributes
+                inner join dabs_submission_window_schedule dabs on
+                    submission_window_id = dabs.id and
+                    dabs.submission_reveal_date <= now()
         where   (toptier_code, reporting_fiscal_year, reporting_fiscal_period) in (
                     select  distinct on (toptier_code)
                             toptier_code, reporting_fiscal_year, reporting_fiscal_period
@@ -214,7 +217,7 @@ def get_submission_ids_for_periods(
         return [r[0] for r in cursor.fetchall()]
 
 
-def get_latest_submission_ids_for_fiscal_year(fiscal_year: int):
+def get_latest_submission_ids_for_fiscal_year(fiscal_year: int) -> list:
     """
     Returns a list of submission_ids that consists of the latest submission_id for each Reporting Agency.
     This list will capture cases where a Reporting Agency might not submit in the most recent Submission Period
@@ -242,7 +245,7 @@ def get_latest_submission_ids_for_fiscal_year(fiscal_year: int):
 
 def _get_latest_submission_ids_for_each_fiscal_quarter(
     federal_account_id_filter_obj, fiscal_years: List[int], federal_account_id: int
-):
+) -> list:
     filters = {"submission_window__submission_reveal_date__lte": now()}
     if len(fiscal_years) > 0:
         filters["reporting_fiscal_year__in"] = fiscal_years
@@ -268,26 +271,30 @@ def _get_latest_submission_ids_for_each_fiscal_quarter(
 
 
 def get_latest_submission_ids_for_each_fiscal_quarter_file_a(
-    fiscal_years: List[int] = [], federal_account_id: int = None
-):
+    fiscal_years: List[int] = None, federal_account_id: int = None
+) -> list:
     """
     Returns a list of submission_ids that consists of the latest submission_id containing file a data for each quarter
     of a given fiscal year and federal account. This list will capture cases where a Reporting Agency might not submit
     in the most recent Submission Period but they do have a Submission in the provided Fiscal Year.
     """
+    if fiscal_years is None:
+        fiscal_years = []
     return _get_latest_submission_ids_for_each_fiscal_quarter(
         "appropriationaccountbalances", fiscal_years, federal_account_id
     )
 
 
 def get_latest_submission_ids_for_each_fiscal_quarter_file_b(
-    fiscal_years: List[int] = [], federal_account_id: int = None
-):
+    fiscal_years: List[int] = None, federal_account_id: int = None
+) -> list:
     """
     Returns a list of submission_ids that consists of the latest submission_id containing file b data for each quarter
     of a given fiscal year and federal account. This list will capture cases where a Reporting Agency might not submit
     in the most recent Submission Period but they do have a Submission in the provided Fiscal Year.
     """
+    if fiscal_years is None:
+        fiscal_years = []
     return _get_latest_submission_ids_for_each_fiscal_quarter(
         "financialaccountsbyprogramactivityobjectclass", fiscal_years, federal_account_id
     )

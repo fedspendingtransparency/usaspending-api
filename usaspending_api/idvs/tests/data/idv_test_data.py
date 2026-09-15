@@ -30,6 +30,7 @@ def create_idv_test_data(db):
 
     dsws = baker.make(
         "submissions.DABSSubmissionWindowSchedule",
+        id=9998,
         submission_reveal_date="2021-01-01",
     )
 
@@ -112,6 +113,8 @@ def create_idv_test_data(db):
         submission_attributes = baker.make(
             "submissions.SubmissionAttributes",
             submission_id=1000 + award_id,
+            submission_window=dsws,
+            submission_window_id=dsws.id,
             reporting_fiscal_year=2000 + award_id,
             reporting_fiscal_period=award_id % 12 + 1,
             reporting_fiscal_quarter=(award_id % 12 + 3) // 3,
@@ -188,12 +191,14 @@ def create_idv_test_data(db):
             "submissions.SubmissionAttributes",
             reporting_fiscal_year=2008,
             submission_window=dsws,
+            submission_window_id=dsws.id,
             toptier_code=awarding_toptier_agency.toptier_code,
         )
         baker.make(
             "submissions.SubmissionAttributes",
             reporting_fiscal_year=2008,
             submission_window=dsws,
+            submission_window_id=dsws.id,
             toptier_code=funding_toptier_agency.toptier_code,
         )
 
