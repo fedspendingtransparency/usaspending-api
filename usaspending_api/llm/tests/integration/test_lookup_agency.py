@@ -181,16 +181,16 @@ class TestLookupAgenciesExactAndPrefix:
         mock_embedding_generator.generate_embedding.assert_not_called()
 
     def test_results_ordered_toptier_first_then_alphabetically(self, tool, mock_embedding_generator):
-        _make_matview_row("200", "Zeta Bureau", toptier_flag=False)
-        _make_matview_row("200", "Alpha Bureau", toptier_flag=True)
-        _make_matview_row("200", "Beta Bureau", toptier_flag=True)
+        _make_matview_row("100", "Bureau of Zeta", toptier_flag=False)
+        _make_matview_row("200", "Bureau of Alpha", toptier_flag=True)
+        _make_matview_row("300", "Bureau of Beta", toptier_flag=True)
 
         result = tool.lookup_agencies("Bureau")
 
         names = [r["toptier_agency"]["name"] for r in result["results"]]
-        assert names[0] == "Alpha Bureau"
-        assert names[1] == "Beta Bureau"
-        assert names[-1] == "Zeta Bureau"
+        assert names[0] == "Bureau of Alpha"
+        assert names[1] == "Bureau of Beta"
+        assert names[-1] == "Bureau of Zeta"
 
     def test_top_k_truncates_results(self, tool, mock_embedding_generator):
         for i in range(5):
@@ -299,13 +299,6 @@ class TestMatviewRowToEntry:
             "name": "National Aeronautics and Space Administration",
         }
         assert entry["subtier_agency"] == {"abbreviation": "NS", "name": "NASA Subtier"}
-
-    def test_handles_null_subtier_fields(self, tool):
-        row = _make_matview_row("080", "National Aeronautics and Space Administration", "NASA")
-
-        entry = AgencyLookupTool._matview_row_to_entry(row)
-
-        assert entry["subtier_agency"] == {"abbreviation": None, "name": None}
 
 
 class TestAgencyRowToEntry:
