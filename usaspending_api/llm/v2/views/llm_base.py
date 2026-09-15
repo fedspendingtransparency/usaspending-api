@@ -81,6 +81,6 @@ class LLMBase(APIView):
         response = StreamingHttpResponse(error_stream(), content_type="application/x-ndjson")
         # Disable webserver caching/buffering to enable pass-through behavior of chunks.
         response["Cache-Control"] = "no-cache"
-        response["X-Accel-Buffexxring"] = "no"
+        response["X-Accel-Buffering"] = "no"
 
         return response
