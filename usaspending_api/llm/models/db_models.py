@@ -3,13 +3,8 @@ from django.db import models
 
 class AIModel(models.Model):
     name = models.CharField(max_length=100)
-    model_id = models.CharField(max_length=100)
+    model_id = models.CharField(max_length=100, unique=True)
     provider = models.CharField(max_length=100)
-    inference_config = models.JSONField(
-        default=dict,
-        blank=True,
-        help_text="Inference configuration (e.g., temperature, topP, maxTokens)",
-    )
 
     def __str__(self):
         return f"{self.name} - {self.model_id} ({self.provider})"
@@ -100,13 +95,15 @@ class ToolUse(models.Model):
 
 class Assistant(models.Model):
     name = models.TextField()
-    ai_model = models.ForeignKey(AIModel, on_delete=models.SET_NULL, null=True, related_name="assistants")
+    ai_model = models.ForeignKey(AIModel, on_delete=models.PROTECT, related_name="assistants")
     system_prompt = models.ForeignKey(Prompts, on_delete=models.SET_NULL, null=True, related_name="assistants")
     inference_config = models.JSONField(
         default=dict,
         blank=True,
         help_text="Inference configuration (e.g., temperature, topP, maxTokens)",
     )
+    is_active = models.BooleanField(default=False, help_text="Active/Inactive state for the assistant")
+    description = models.TextField(blank=True, default="")
 
     def __str__(self):
         model_name = self.ai_model.name if self.ai_model else "No Model Selected"
@@ -118,13 +115,20 @@ class Assistant(models.Model):
         else:
             prompt_preview = "No Prompt Selected"
         return (
-            f"Assistant: {self.name} | Model: {model_name} | "
-            f"Prompt Preview: {prompt_preview} | Config: {self.inference_config}"
+            f"Assistant: {self.name} (PK: {self.pk}) | Model: {model_name} | Active: {self.is_active} "
+            f"Prompt Preview: {prompt_preview} | Config: {self.inference_config} | Description: {self.description}"
         )
 
     class Meta:
         db_table = "assistant"
         ordering = ["-id"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["name", "is_active"],
+                condition=models.Q(is_active=True),
+                name="only_one_active_assistant_per_name",
+            )
+        ]
         indexes = [
             models.Index(fields=["name"]),
         ]
