@@ -94,7 +94,7 @@ FUNDING_SQL = SQL(
                 gfaba.program_activity_id = pa.id
             inner join submission_attributes sa on
                 gfaba.submission_id = sa.submission_id
-            inner join dabs.submission_reveal_date dabs on
+            inner join dabs_submission_reveal_date dabs on
                 sa.submission_window_id = dabs.id and
                 dabs.submission_reveal_date <= now()
     {order_by}
