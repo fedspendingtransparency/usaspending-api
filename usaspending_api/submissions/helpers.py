@@ -31,7 +31,6 @@ def validate_request_within_revealed_submissions(
     fiscal_period: Optional[int] = None,
     is_quarter: Optional[bool] = None,
 ) -> None:
-
     latest_submission_period = get_last_closed_submission_date(is_quarter=is_quarter)
     sub_window_year = latest_submission_period["submission_fiscal_year"]
     sub_window_quarter = latest_submission_period["submission_fiscal_quarter"]

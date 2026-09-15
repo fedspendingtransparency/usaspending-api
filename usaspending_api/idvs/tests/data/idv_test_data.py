@@ -40,7 +40,6 @@ def create_idv_test_data(db):
     # would we know for sure the $100 returned by our API endpoint actually came
     # from base_and_all_options and not base_exercised_options_val?
     for award_id in range(1, AWARD_COUNT + 1):
-
         parent_award_id = PARENTS.get(award_id)
 
         # These are intended to be grafted into strings so we will pad with

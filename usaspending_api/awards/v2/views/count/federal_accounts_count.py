@@ -29,7 +29,6 @@ class FederalAccountCountRetrieveViewSet(APIView):
         return TinyShield([models]).block(request_dict)
 
     def _business_logic(self, request_data: dict) -> list:
-
         award_id = request_data["award_id"]
 
         try:
@@ -40,13 +39,17 @@ class FederalAccountCountRetrieveViewSet(APIView):
             logger.info("No Award found with: '{}'".format(award_id))
             raise NotFound("No Award found with: '{}'".format(award_id)) from None
 
-        federal_account_count = FinancialAccountsByAwards.objects.annotate(
-            reveal_date=Subquery(
-                SubmissionAttributes.objects.filter(submission_id=OuterRef("submission_id")).values(
-                    "submission_window__submission_reveal_date"
+        federal_account_count = (
+            FinancialAccountsByAwards.objects.annotate(
+                reveal_date=Subquery(
+                    SubmissionAttributes.objects.filter(submission_id=OuterRef("submission_id")).values(
+                        "submission_window__submission_reveal_date"
+                    )
                 )
             )
-        ).filter(award_id=award.id, reveal_date__lte=now()).count()
+            .filter(award_id=award.id, reveal_date__lte=now())
+            .count()
+        )
         response_content = {"federal_accounts": federal_account_count}
         return response_content
 
