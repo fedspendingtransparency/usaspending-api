@@ -1,3 +1,4 @@
+import uuid
 from unittest.mock import Mock, patch
 
 import pytest
@@ -10,7 +11,7 @@ from usaspending_api.llm.models.py_models import AITool
 @pytest.fixture
 def mock_session():
     session = Mock(spec=Session)
-    session.id = "123"
+    session.id = uuid.uuid4()
 
     # Track messages created during the test.
     session._test_messages = []
