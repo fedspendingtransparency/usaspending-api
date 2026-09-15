@@ -1,6 +1,7 @@
 import logging
 import os
 from typing import Any, Generator, Literal
+from uuid import UUID
 
 from django.http import StreamingHttpResponse
 from pydantic import BaseModel
@@ -65,13 +66,13 @@ class LLMBase(APIView):
         """
         return event.json(exclude_unset=True) + "\n"
 
-    def _error_response(self, message: str, search_id: str | int = None) -> StreamingHttpResponse:
+    def _error_response(self, message: str, search_id: str | UUID | None = None) -> StreamingHttpResponse:
         """
         Generate a streaming error response in newline-delimited JSON (NDJSON) format.
 
         Args:
             message: Error message to return to the client.
-            search_id: Optional session/search ID (ints will be converted to strings).
+            search_id: Optional session/search UUID (converted to a string in the response).
 
         Returns:
             StreamingHttpResponse with error event in NDJSON format.
