@@ -152,12 +152,6 @@ SELECT
   CAST("total_iija_obligation" * 100 AS BIGINT) AS total_iija_obligation_sort,
   CAST("total_iija_outlay" * 100 AS BIGINT) AS total_iija_outlay_sort,
   CAST("generated_pragmatic_obligation" * 100 AS BIGINT) AS generated_pragmatic_obligation_sort,
-  CAST("total_subaward_amount" * 100 AS BIGINT) AS total_subaward_amount_sort,
-  /*
-   Ratio sort uses a larger scale than dollar amounts so close floating-point ratios stay distinguishable.
-   */
-  CAST(
-    COALESCE("total_subaward_amount", 0) / NULLIF("award_amount", 0) * 100000000 AS BIGINT
-  ) as subaward_to_award_ratio_sort
+  CAST("total_subaward_amount" * 100 AS BIGINT) AS total_subaward_amount_sort
 FROM "award_search"
 WHERE "action_date" >= '2007-10-01';

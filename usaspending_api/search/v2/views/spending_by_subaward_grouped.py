@@ -54,7 +54,7 @@ API_REQUEST_FIELD_TO_ES_FIELD_MAPPER = {
     "subaward_count": "subaward_count",
     "subaward_obligation": "total_subaward_amount_sort",
     "award_obligation": "award_amount_sort",
-    "subaward_to_award_ratio": "subaward_to_award_ratio_sort",
+    "subaward_to_award_ratio": "subaward_to_award_ratio",
 }
 
 AMOUNT_QUANTIZE = Decimal(".01")
