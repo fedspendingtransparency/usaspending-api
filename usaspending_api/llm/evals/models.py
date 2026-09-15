@@ -16,6 +16,7 @@ class ToolCall:
             arguments={"recipient": "Clark Construction"},
         ),
     """
+
     name: str
     arguments: dict[str, Any] = field(default_factory=dict)
 
@@ -25,6 +26,7 @@ class ToolCall:
             "name": self.name,
             "arguments": self.arguments,
         }
+
 
 @dataclass(frozen=True)
 class ToolExpectation:
@@ -39,6 +41,7 @@ class ToolExpectation:
     This distinction seemed necessary because the ground truth spreadsheet defines tool names, but does not
     yet define tool argument expectations (or if there are any needed).
     """
+
     name: str
     arguments: dict[str, Any] | None = None
 
@@ -48,6 +51,7 @@ class ToolExpectation:
             "name": self.name,
             "arguments": self.arguments,
         }
+
 
 @dataclass(frozen=True)
 class EvalCase:
@@ -79,11 +83,13 @@ class EvalCase:
         expected_output: expected, final normalized filters
         metadata: tags, notes, approval status, and SME context
     """
+
     name: str
     input: dict[str, Any]
     expected_tool_calls: tuple[ToolExpectation, ...] = ()
     expected_output: dict[str, Any] = field(default_factory=dict)
     metadata: dict[str, Any] = field(default_factory=dict)
+
 
 @dataclass(frozen=True)
 class EvalObservation:
@@ -95,9 +101,11 @@ class EvalObservation:
 
     `tool_calls` should preserve the actual tool-call order.
     """
+
     output: dict[str, Any] = field(default_factory=dict)
     tool_calls: tuple[ToolCall, ...] = ()
     metadata: dict[str, Any] = field(default_factory=dict)
+
 
 @dataclass(frozen=True)
 class MatchResult:
@@ -108,11 +116,13 @@ class MatchResult:
         - One for tool correctness.
         - One for final filter/output correctness.
     """
+
     passed: bool
     score: float
     expected: Any
     actual: Any
     message: str
+
 
 @dataclass(frozen=True)
 class EvalResult:
@@ -126,12 +136,14 @@ class EvalResult:
 
     A failed output match with a successful tool match receives a score of 0.5.
     """
+
     case_name: str
     passed: bool
     score: float
     tool_call_match: MatchResult | None = None
     output_match: MatchResult | None = None
     details: dict[str, Any] = field(default_factory=dict)
+
 
 @dataclass(frozen=True)
 class EvalSummary:
@@ -143,6 +155,7 @@ class EvalSummary:
         - Produce JSON for CI.
         - Decide whether `--fail-under` should fail the run.
     """
+
     assistant: str
     dataset: str
     results: tuple[EvalResult, ...]

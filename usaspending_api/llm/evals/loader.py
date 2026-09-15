@@ -11,12 +11,12 @@ This is the only file within the Eval framework that understands the structure o
 import csv
 import json
 from pathlib import Path
-from typing import Any, Sequence
+from typing import Any
 
 from django.conf import settings
 
 from usaspending_api.llm.evals.exceptions import DatasetError
-from usaspending_api.llm.evals.models import EvalCase, ToolCall, ToolExpectation
+from usaspending_api.llm.evals.models import EvalCase, ToolExpectation
 
 # Every ground truth dataset must provide these headers. Requiring all headers keeps the dataset consistent and
 # makes it possible to preserve metadata.
@@ -79,10 +79,7 @@ def parse_approved(value: str, case_id: str) -> bool:
     if normalized_value in FALSE_VALUES:
         return False
 
-    raise DatasetError(
-        f"Case '{case_id}' has invalid approved value '{value}'. "
-        "Use yes/no, true/false, or 1/0."
-    )
+    raise DatasetError(f"Case '{case_id}' has invalid approved value '{value}'. Use yes/no, true/false, or 1/0.")
 
 
 def parse_scalar(value: str) -> Any:
@@ -138,9 +135,7 @@ def assign_nested_value(target: dict[str, Any], dotted_key: str, value: Any, cas
         if existing_value is None:
             current[key] = {}
         elif not isinstance(existing_value, dict):
-            raise DatasetError(
-                f"Case '{case_id}' has conflicting output paths for '{dotted_key}'."
-            )
+            raise DatasetError(f"Case '{case_id}' has conflicting output paths for '{dotted_key}'.")
 
         current = current[key]
 
@@ -236,10 +231,10 @@ def parse_tags(value: str) -> list[str]:
 
 
 def parse_csv_cases(
-        dataset_path: Path,
-        *,
-        include_unapproved: bool = False,
-        tags: set[str] | None = None,
+    dataset_path: Path,
+    *,
+    include_unapproved: bool = False,
+    tags: set[str] | None = None,
 ) -> list[EvalCase]:
     """
     Load a CSV file and return its selected cases.
@@ -258,13 +253,10 @@ def parse_csv_cases(
     try:
         with dataset_path.open(encoding="utf-8", newline="") as csv_file:
             reader = csv.DictReader(csv_file)
-            missing_columns  = REQUIRED_COLUMNS - set(reader.fieldnames or [])
+            missing_columns = REQUIRED_COLUMNS - set(reader.fieldnames or [])
 
             if missing_columns:
-                raise DatasetError(
-                    "Evaluation CSV is missing required columns: "
-                    f"{', '.join(sorted(missing_columns))}"
-                )
+                raise DatasetError(f"Evaluation CSV is missing required columns: {', '.join(sorted(missing_columns))}")
 
             for row_number, row in enumerate(reader, start=2):
                 case_id = (row.get("id") or "").strip()
@@ -310,9 +302,7 @@ def parse_csv_cases(
                             "approved": approved,
                             "tags": case_tags,
                             "notes": (row.get("notes") or "").strip(),
-                            "sme_validation_notes": (
-                                row.get("sme_validation_notes") or ""
-                            ).strip()
+                            "sme_validation_notes": (row.get("sme_validation_notes") or "").strip(),
                         },
                     )
                 )
@@ -323,11 +313,11 @@ def parse_csv_cases(
 
 
 def load_cases(
-        dataset_name: str,
-        *,
-        selected_case_names: set[str] | None = None,
-        include_unapproved: bool = False,
-        tags: set[str] | None = None,
+    dataset_name: str,
+    *,
+    selected_case_names: set[str] | None = None,
+    include_unapproved: bool = False,
+    tags: set[str] | None = None,
 ) -> list[EvalCase]:
     """
     Load all eligible cases, then optionally narrow them by case ID.

@@ -28,9 +28,7 @@ def register_eval(name: str) -> Callable[[EvalClass], EvalClass]:
 
     def decorator(evaluator_class: EvalClass) -> EvalClass:
         if normalized_name in EVAL_REGISTRY:
-            raise EvalRegistrationError(
-                f"An evaluator is already registered as '{normalized_name}'."
-            )
+            raise EvalRegistrationError(f"An evaluator is already registered as '{normalized_name}'.")
 
         EVAL_REGISTRY[normalized_name] = evaluator_class
         return evaluator_class
@@ -55,7 +53,7 @@ def load_builtin_evaluators() -> None:
 
     NOTE: Because this is not used anywhere in this file, it is ignored with noqa: F401.
     """
-    from llm.evals.assistants import filter_search # noqa: F401
+    from llm.evals.assistants import filter_search  # noqa: F401
 
 
 def get_eval_class(name: str) -> type[BaseEval]:

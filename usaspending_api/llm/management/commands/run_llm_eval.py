@@ -1,12 +1,12 @@
 import logging
 
 from django.core.management.base import BaseCommand, CommandError, CommandParser
-
 from llm.evals.exceptions import EvalError
 from llm.evals.registry import get_eval_class, registered_assistant_names
 from llm.evals.reporting import render_json, render_text
 
 logger = logging.getLogger(__name__)
+
 
 class Command(BaseCommand):
     """
@@ -17,6 +17,7 @@ class Command(BaseCommand):
             --assistant filter_search \
             --fail-under 1.0
     """
+
     help = "Run deterministic ground-truth evaluations for a configured LLM assistant."
 
     def add_arguments(self, parser: CommandParser) -> None:
@@ -40,12 +41,10 @@ class Command(BaseCommand):
             "--tags",
             action="append",
             dest="tags",
-            help="Run only cases containing a supplied tag. May be supplied more than once."
+            help="Run only cases containing a supplied tag. May be supplied more than once.",
         )
         parser.add_argument(
-            "--include-unapproved",
-            action="store_true",
-            help="Include draft cases whose approved value is false."
+            "--include-unapproved", action="store_true", help="Include draft cases whose approved value is false."
         )
         parser.add_argument(
             "--fail-under",
@@ -72,7 +71,7 @@ class Command(BaseCommand):
             help="Command output format.",
         )
 
-    def handle(self, *args, **options):
+    def handle(self, *args, **options) -> None:
         """
         Resolve the requested evaluator, execute it, print the report, and return a non-zero command result when
         the configured score threshold is not met.
@@ -92,9 +91,7 @@ class Command(BaseCommand):
         except (EvalError, ValueError) as exc:
             raise CommandError(str(exc)) from exc
 
-        output = (
-            render_json(summary) if options["format"] == "json" else render_text(summary)
-        )
+        output = render_json(summary) if options["format"] == "json" else render_text(summary)
 
         logger.info(output)
 

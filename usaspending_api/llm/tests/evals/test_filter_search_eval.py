@@ -2,7 +2,6 @@ from unittest.mock import Mock
 
 import pytest
 
-from search.tests.integration.spending_by_category.test_spending_by_recipient import test_recipient_search_text_uei
 from usaspending_api.llm.evals.assistants import filter_search
 from usaspending_api.llm.evals.assistants.filter_search import (
     FilterSearchEval,
@@ -15,13 +14,13 @@ from usaspending_api.llm.evals.models import EvalCase, EvalObservation, ToolCall
 
 
 def make_case(
-        *,
-        name: str = "1",
-        expected_tools: tuple[ToolExpectation, ...] = (
-            ToolExpectation(name="lookup_recipient"),
-            ToolExpectation(name="execute_filter"),
-        ),
-        expected_output: dict | None = None,
+    *,
+    name: str = "1",
+    expected_tools: tuple[ToolExpectation, ...] = (
+        ToolExpectation(name="lookup_recipient"),
+        ToolExpectation(name="execute_filter"),
+    ),
+    expected_output: dict | None = None,
 ) -> EvalCase:
     """Build a representative case using the actual Filter schema names."""
     return EvalCase(
@@ -114,8 +113,8 @@ def test_get_tool_calls_reads_tool_use_records_in_execution_order(monkeypatch):
     first_tool_use.tool_input = {"query": "Clark Construction"}
 
     second_tool_use = Mock()
-    second_tool_use.name = "execute_filter",
-    second_tool_use.tool_input = {"timePeriodType": "fy", "timePeriodFY": ["2025"]},
+    second_tool_use.name = ("execute_filter",)
+    second_tool_use.tool_input = ({"timePeriodType": "fy", "timePeriodFY": ["2025"]},)
 
     queryset = Mock()
     queryset.order_by.return_value = [
@@ -323,9 +322,7 @@ def test_run_eval_case_executes_assistant_and_returns_observation(monkeypatch):
 
     observation = run_eval_case(case)
 
-    assistant_instance.search.assert_called_once_with(
-        "How much did Clark Construction receive in contracts for FY25?"
-    )
+    assistant_instance.search.assert_called_once_with("How much did Clark Construction receive in contracts for FY25?")
     session.save.assert_called_once_with(update_fields=["ended_at"])
     assert observation.output == {
         "timePeriodType": "fy",

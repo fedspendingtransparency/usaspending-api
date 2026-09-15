@@ -4,6 +4,7 @@ from statistics import fmean
 from usaspending_api.llm.evals.loader import load_cases
 from usaspending_api.llm.evals.models import EvalCase, EvalObservation, EvalResult, EvalSummary
 
+
 class BaseEval(ABC):
     """
     Generic assistant-evaluation lifecycle class.
@@ -14,17 +15,18 @@ class BaseEval(ABC):
         - execute(): how to run the assistant.
         - evaluate(): what 'correctness' means for that assistant.
     """
+
     assistant_name: str
     default_dataset_name: str
 
     def __init__(
-            self,
-            *,
-            dataset_name: str | None = None,
-            selected_case_names: set[str] | None = None,
-            include_unapproved: bool = False,
-            tags: set[str] | None = None,
-            fail_under: float | None = None,
+        self,
+        *,
+        dataset_name: str | None = None,
+        selected_case_names: set[str] | None = None,
+        include_unapproved: bool = False,
+        tags: set[str] | None = None,
+        fail_under: float | None = None,
     ) -> None:
         if not self.assistant_name:
             raise ValueError("assistant_name must be defined.")
@@ -78,9 +80,7 @@ class BaseEval(ABC):
         cases = self.load_cases()
 
         if not cases:
-            raise ValueError(
-                f"Dataset `{self.dataset_name}` does not contain evaluation cases."
-            )
+            raise ValueError(f"Dataset `{self.dataset_name}` does not contain evaluation cases.")
 
         results = tuple(self.evaluate(case, self.execute(case)) for case in cases)
         score = fmean(result.score for result in results)

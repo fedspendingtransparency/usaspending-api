@@ -10,16 +10,18 @@ from usaspending_api.llm.evals.models import EvalCase, EvalObservation, ToolCall
 def write_dataset(tmp_path):
     """Create the dataset consumed by the command test."""
     dataset_path = tmp_path / "filter_search.csv"
-    dataset_path.write_text("""
-                                id,query,expected_output,expected_tools,tags,notes,approved,sme_validation_notes
-                                1,"How much did Clark Construction receive in contracts for FY25?","timePeriodType = fy
-                                timePeriodFy = [""2025""]
-                                selectedRecipients = [""Clark Construction""]", "lookup_recipient
-                                execute_filter","multi_filter
-                                temporal","Approved recipient and fiscal-year case",yes,"SME approved"
-                                2,"Show me all transactions for award PIID N0001917C0001","selectedAwardIDs = {""N0001917C0001"": {}}","execute_filter","single_filter","",yes,""
-                            """,
-                            encoding="utf-8",
+    dataset_path.write_text(
+        """
+        id,query,expected_output,expected_tools,tags,notes,approved,sme_validation_notes
+        1,"How much did Clark Construction receive in contracts for FY25?","timePeriodType = fy
+        timePeriodFy = [""2025""]
+        selectedRecipients = [""Clark Construction""]", "lookup_recipient
+        execute_filter","multi_filter
+        temporal","Approved recipient and fiscal-year case",yes,"SME approved"
+        2,"Show me all transactions for award PIID \
+N0001917C0001","selectedAwardIDs = {""N0001917C0001"": {}}","execute_filter","single_filter","",yes,""
+        """,
+        encoding="utf-8",
     )
     return dataset_path
 
@@ -162,9 +164,7 @@ def test_run_llm_eval_command_fails_when_score_is_below_threshold(tmp_path, monk
 
     def failing_observation(_: EvalCase) -> EvalObservation:
         return EvalObservation(
-            tool_calls=(
-                ToolCall(name="lookup_location"),
-            ),
+            tool_calls=(ToolCall(name="lookup_location"),),
             output={
                 "timePeriodType": "dr",
             },
@@ -189,6 +189,4 @@ def test_run_llm_eval_command_fails_when_score_is_below_threshold(tmp_path, monk
         except CommandError as exc:
             assert "below required threshold" in str(exc)
         else:
-            raise AssertionError(
-                "Expected run_llm_eval to fail below the threshold."
-            )
+            raise AssertionError("Expected run_llm_eval to fail below the threshold.")

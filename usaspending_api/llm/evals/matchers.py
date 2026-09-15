@@ -18,6 +18,7 @@ class ToolCallMatcher:
     NOTE: `allow_extra_actual_arguments` supports future argument-level ground truth data
     where expected arguments are a required subset rather than the complete actual argument mapping.
     """
+
     allow_extra_actual_arguments: bool = False
 
     def compare(self, expected: Sequence[ToolExpectation], actual: Sequence[ToolCall]) -> MatchResult:
@@ -33,7 +34,7 @@ class ToolCallMatcher:
                 message=f"Expected {len(expected)} tool call(s), received {len(actual)}.",
             )
 
-        for index, (expected_tool, actual_tool) in enumerate(zip(expected, actual)):
+        for index, (expected_tool, actual_tool) in enumerate(zip(expected, actual, strict=True)):
             if expected_tool.name != actual_tool.name:
                 return MatchResult(
                     passed=False,
@@ -72,6 +73,7 @@ class MappingSubsetMatcher:
     that does not need to be authored in every ground truth row to exist in production output without breaking
     the eval framework.
     """
+
     def compare(self, expected: Mapping[str, Any], actual: Mapping[str, Any]) -> MatchResult:
         differences = self._find_differences(expected=expected, actual=actual)
 
@@ -109,9 +111,7 @@ class MappingSubsetMatcher:
 
             if isinstance(expected_value, Mapping):
                 if not isinstance(actual_value, Mapping):
-                    differences.append(
-                        f"{current_path} (expected nested mapping)"
-                    )
+                    differences.append(f"{current_path} (expected nested mapping)")
                     continue
 
                 differences.extend(
@@ -124,9 +124,6 @@ class MappingSubsetMatcher:
                 continue
 
             if expected_value != actual_value:
-                differences.append(
-                    f"{current_path} "
-                    f"(expected {expected_value!r}, received {actual_value!r})"
-                )
+                differences.append(f"{current_path} (expected {expected_value!r}, received {actual_value!r})")
 
         return differences

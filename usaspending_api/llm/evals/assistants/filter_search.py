@@ -13,7 +13,6 @@ from usaspending_api.llm.tools.execute_filter import build_filter_request, execu
 from usaspending_api.llm.tools.lookup_location import lookup_location_tool
 from usaspending_api.llm.tools.lookup_recipient import lookup_recipient_tool
 
-
 FILTER_SEARCH_TOOLS = [
     lookup_location_tool,
     lookup_recipient_tool,
@@ -67,8 +66,7 @@ def get_final_filter_output(session: Session) -> dict[str, Any]:
     so the adapter reconstructs the same canonical FilterRequest used by the prod hash generation.
     """
     execute_filter_uses = ToolUse.objects.filter(
-        message__session=session,
-        name=FilterSearchAssistant.COMPLETION_TOOL_NAME
+        message__session=session, name=FilterSearchAssistant.COMPLETION_TOOL_NAME
     ).order_by(
         "message__order",
         "created_at",
@@ -147,6 +145,7 @@ def run_eval_case(case: EvalCase) -> EvalObservation:
 @register_eval("filter_search")
 class FilterSearchEval(BaseEval):
     """Evaluator for the Filter Search Assistant."""
+
     assistant_name = "filter_search"
     default_dataset_name = "filter_search"
 

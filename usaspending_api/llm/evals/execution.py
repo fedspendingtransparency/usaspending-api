@@ -143,9 +143,7 @@ def resolve_executor(assistant_name: str, override_path: str | None = None) -> A
     executor = import_string(executor_path)
 
     if not callable(executor):
-        raise ExecutionError(
-            f"Evaluation executor '{executor_path}' for '{assistant_name}' is not callable."
-        )
+        raise ExecutionError(f"Evaluation executor '{executor_path}' for '{assistant_name}' is not callable.")
 
     def execute(case: EvalCase) -> EvalObservation:
         """
@@ -159,8 +157,6 @@ def resolve_executor(assistant_name: str, override_path: str | None = None) -> A
         except ExecutionError as exc:
             raise ExecutionError(f"Execution failed for: {case.name}") from exc
         except Exception as exc:
-            raise ExecutionError(
-                f"Assistant '{assistant_name}' failed while evaluating case '{case.name}'."
-            ) from exc
+            raise ExecutionError(f"Assistant '{assistant_name}' failed while evaluating case '{case.name}'.") from exc
 
     return execute

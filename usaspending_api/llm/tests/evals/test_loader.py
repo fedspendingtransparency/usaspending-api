@@ -5,7 +5,6 @@ import pytest
 from usaspending_api.llm.evals.exceptions import DatasetError
 from usaspending_api.llm.evals.loader import parse_csv_cases
 
-
 SAMPLE_CASE = """
 id,query,expected_output,expected_tools,tags,notes,approved,sme_validation_notes
 1,"How much did Clark Construction receive in contracts for FY25?","timePeriodType = fy
@@ -104,7 +103,7 @@ def test_parse_csv_cases_rejects_conflicting_parent_path(tmp_path: Path):
         id,query,expected_output,expected_tools,tags,notes,approved,sme_validation_notes
         1,"Conflicting case","time_period = fy
         time_period.fiscal_year = 2025","execute_filter","","",yes,""
-        """
+        """,
     )
 
     with pytest.raises(DatasetError, match="conflicting output path"):
@@ -131,7 +130,7 @@ def test_parse_csv_cases_can_include_unapproved_cases(tmp_path: Path):
     """The --include-unapproved behavior is represented by passing include_unapproved=True to the loader."""
     dataset_path = write_dataset(
         tmp_path,
-"""
+        """
         id,query,expected_output,expected_tools,tags,notes,approved,sme_validation_notes
         1,"Approved query","award_id = N0001917C0001","execute_filter","award_id","",yes,""
         2,"Draft query","award_id = N0001917C0002","execute_filter","award_id",":",no,""
@@ -178,8 +177,7 @@ def test_parse_csv_cases_rejects_missing_required_header(tmp_path: Path):
     """A malformed CSV should fail during loading rather than producing incomplete eval cases."""
     dataset_path = tmp_path / "filter_search.csv"
     dataset_path.write_text(
-        "id,query,expected_output\n"
-        '1,"Query","award_id = N0001917C0001"\n',
+        'id,query,expected_output\n1,"Query","award_id = N0001917C0001"\n',
         encoding="utf-8",
     )
 

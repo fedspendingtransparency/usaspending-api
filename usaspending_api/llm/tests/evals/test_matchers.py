@@ -1,6 +1,7 @@
 from usaspending_api.llm.evals.matchers import MappingSubsetMatcher, ToolCallMatcher
 from usaspending_api.llm.evals.models import ToolCall, ToolExpectation
 
+
 def test_tool_call_matcher_matches_actual_production_tool_names():
     """The matcher compares names persisted in ToolUse.name."""
     result = ToolCallMatcher().compare(
@@ -39,9 +40,7 @@ def test_tool_call_matcher_requires_matching_call_count():
             ToolExpectation(name="lookup_recipient"),
             ToolExpectation(name="execute_filter"),
         ),
-        actual=(
-            ToolCall(name="lookup_recipient"),
-        ),
+        actual=(ToolCall(name="lookup_recipient"),),
     )
 
     assert result.passed is False
