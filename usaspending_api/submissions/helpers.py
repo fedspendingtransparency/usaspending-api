@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from functools import lru_cache
-from typing import List, Optional
+from typing import Optional
 
 from django.db import connection
 from django.db.models import Case, F, IntegerField, Max, Q, Value, When
@@ -173,7 +173,7 @@ def get_last_closed_month_relative_to_quarter(fiscal_year: int, fiscal_quarter: 
 @lru_cache(maxsize=50)
 def get_submission_ids_for_periods(
     fiscal_year: int, fiscal_quarter: Optional[int], fiscal_month: Optional[int]
-) -> List[int]:
+) -> list[int]:
     """
     Find quarterly submissions that match the quarter filter and monthly submissions that match the
     monthly filter.  The catch is that we need to account for agencies that fall in both.  For
@@ -242,7 +242,7 @@ def get_latest_submission_ids_for_fiscal_year(fiscal_year: int) -> list:
 
 
 def _get_latest_submission_ids_for_each_fiscal_quarter(
-    federal_account_id_filter_obj: str, fiscal_years: List[int], federal_account_id: int
+    federal_account_id_filter_obj: str, fiscal_years: list[int], federal_account_id: int
 ) -> list:
     filters = {"submission_window__submission_reveal_date__lte": now()}
     if len(fiscal_years) > 0:
@@ -269,7 +269,7 @@ def _get_latest_submission_ids_for_each_fiscal_quarter(
 
 
 def get_latest_submission_ids_for_each_fiscal_quarter_file_a(
-    fiscal_years: List[int] = None, federal_account_id: int = None
+    fiscal_years: list[int] | None = None, federal_account_id: int = None
 ) -> list:
     """
     Returns a list of submission_ids that consists of the latest submission_id containing file a data for each quarter
@@ -284,7 +284,7 @@ def get_latest_submission_ids_for_each_fiscal_quarter_file_a(
 
 
 def get_latest_submission_ids_for_each_fiscal_quarter_file_b(
-    fiscal_years: List[int] = None, federal_account_id: int = None
+    fiscal_years: list[int] | None = None, federal_account_id: int = None
 ) -> list:
     """
     Returns a list of submission_ids that consists of the latest submission_id containing file b data for each quarter
