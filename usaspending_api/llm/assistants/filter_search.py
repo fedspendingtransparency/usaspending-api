@@ -5,6 +5,7 @@ from typing import Any, Generator
 
 import boto3
 
+from usaspending_api.llm.guardrails.guardrail_manager import get_guardrail_config
 from usaspending_api.llm.models.db_models import AIModel, Message, Session, ToolUse
 from usaspending_api.llm.models.py_models import AITool
 
@@ -117,6 +118,21 @@ class FilterSearchAssistant:
             "stopSequences": [],
         }
 
+    @cached_property
+    def guardrail_config(self) -> dict | None:
+        """Bedrock guardrail config for converse(), or None if it can't be resolved (fail-open).
+
+        The guardrail is resolved (and created if missing) and cached per process by
+        get_guardrail_config(). If the Bedrock control plane is unavailable, log and return None so
+        search still runs without a guardrail rather than failing the request. Failures are not cached
+        at the module level, so this self-heals on a later request once the control plane recovers.
+        """
+        try:
+            return get_guardrail_config()
+        except Exception as e:
+            logger.error(f"Failed to resolve Bedrock guardrail; proceeding without it: {str(e)}", exc_info=True)
+            return None
+
     def search(self, query: str) -> Generator[dict[str, str], None, None]:
         yield {"search_id": str(self.session.id), "type": "search_start", "message": "Thinking..."}
 
@@ -138,6 +154,7 @@ class FilterSearchAssistant:
             toolConfig=self.tool_config,
             system=[{"text": self.system_message}],
             inferenceConfig=self.inference_config,
+            **({"guardrailConfig": self.guardrail_config} if self.guardrail_config else {}),
         )
         m = self._create_message_from_response(response)
         stop_reason = response["stopReason"]
@@ -175,6 +192,7 @@ class FilterSearchAssistant:
                 toolConfig=self.tool_config,
                 system=[{"text": self.system_message}],
                 inferenceConfig=self.inference_config,
+                **({"guardrailConfig": self.guardrail_config} if self.guardrail_config else {}),
             )
             m = self._create_message_from_response(response)
             stop_reason = response["stopReason"]
