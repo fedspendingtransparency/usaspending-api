@@ -1,6 +1,5 @@
 import logging
 
-from django.db.models import OuterRef, Subquery
 from rest_framework.exceptions import NotFound
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -11,7 +10,6 @@ from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.helpers.date_helper import now
 from usaspending_api.common.validator.award import get_internal_or_generated_award_id_model
 from usaspending_api.common.validator.tinyshield import TinyShield
-from usaspending_api.submissions.models.submission_attributes import SubmissionAttributes
 
 logger = logging.getLogger("console")
 
@@ -41,7 +39,7 @@ class FederalAccountCountRetrieveViewSet(APIView):
 
         federal_account_count = (
             FinancialAccountsByAwards.objects.filter(
-                award_id=award.id, 
+                award_id=award.id,
                 submission__submission_window__submission_reveal_date__lte=now()
             )
             .count()
