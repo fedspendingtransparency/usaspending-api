@@ -1,9 +1,10 @@
 import logging
 
 from django.core.management.base import BaseCommand, CommandError, CommandParser
-from llm.evals.exceptions import EvalError
-from llm.evals.registry import get_eval_class, registered_assistant_names
-from llm.evals.reporting import render_json, render_text
+
+from usaspending_api.llm.evals.exceptions import EvalError
+from usaspending_api.llm.evals.registry import get_eval_class, registered_assistant_names
+from usaspending_api.llm.evals.reporting import render_json, render_text
 
 logger = logging.getLogger(__name__)
 
@@ -29,7 +30,7 @@ class Command(BaseCommand):
         )
         parser.add_argument(
             "--dataset",
-            help="Dataset (ground-truth) file name without the .csv suffix. Defaults to the evaluator dataset.",
+            help="Dataset (ground-truth) file name without the .json suffix. Defaults to the evaluator dataset.",
         )
         parser.add_argument(
             "--case",
@@ -38,6 +39,7 @@ class Command(BaseCommand):
             help="Run only a named case. May be supplied more than once.",
         )
         parser.add_argument(
+            "--tag",
             "--tags",
             action="append",
             dest="tags",
@@ -50,12 +52,6 @@ class Command(BaseCommand):
             "--fail-under",
             type=float,
             help="Fail when aggregate score is below this value from 0.0 to 1.0.",
-        )
-        parser.add_argument(
-            "--executor",
-            help=(
-                "Dotted path to an execution adapter. Overrides the configured LLM_EVAL_EXECUTORS value for this run."
-            ),
         )
         parser.add_argument(
             "--allow-extra-tool-arguments",

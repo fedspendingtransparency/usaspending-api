@@ -12,10 +12,10 @@ class DatasetError(EvalError):
     Raised when there is an issue with the dataset (i.e., ground truth) used for evaluation.
 
     Examples:
-        - The CSV file does not exist.
-        - A required header is missing.
+        - The JSON file does not exist or is malformed.
+        - A required field is missing.
         - A case ID is duplicated.
-        - "expected_output" does not use the required "key = value" format.
+        - A case field has an invalid type or value.
     """
 
 

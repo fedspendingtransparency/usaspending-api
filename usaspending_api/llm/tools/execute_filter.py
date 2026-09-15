@@ -17,17 +17,12 @@ logger = logging.getLogger(__name__)
 
 def build_filter_request(filter_input: dict) -> dict:
     """
-    Function added to separate the execution of the filter from the construction of the filter request so the eval
-    framework can compare the same normalized filter payload used to produce the production hash.
-    """
-    try:
-        filters = Filters(**filter_input)
-    except ValidationError as exc:
-        return {
-            "error": str(exc),
-            "message": "The input parameters are invalid. Look at the error message and try again.",
-        }
+    Validate and canonicalize filter input before it is hashed or evaluated.
 
+    ValidationError is intentionally propagated so callers can preserve their
+    own error handling while sharing one canonical filter representation.
+    """
+    filters = Filters(**filter_input)
     filter_request = FilterRequest(filters=filters).model_dump(exclude_none=True)
 
     if "keyword" in filter_request["filters"]:
@@ -39,7 +34,14 @@ def build_filter_request(filter_input: dict) -> dict:
 def execute_filter(**kwargs) -> dict[str, str]:
     logger.info(f"Starting execute_filter with {len(kwargs)} filter parameter(s)", extra={"filter_count": len(kwargs)})
 
-    filter_request = build_filter_request(kwargs)
+    try:
+        filter_request = build_filter_request(kwargs)
+    except ValidationError as exc:
+        return {
+            "error": str(exc),
+            "message": "The input parameters are invalid. Look at the error message and try again.",
+        }
+
     logger.debug(f"Filter validation successful: {list(kwargs.keys())}")
 
     filter_json = json.dumps(filter_request, sort_keys=True)

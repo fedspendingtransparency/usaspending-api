@@ -38,8 +38,8 @@ class ToolExpectation:
     Whereas: `arguments={}` would mean:
         "This tool must be called with no arguments."
 
-    This distinction seemed necessary because the ground truth spreadsheet defines tool names, but does not
-    yet define tool argument expectations (or if there are any needed).
+    This distinction allows the JSON ground truth dataset to define tool names without requiring tool argument
+    expectations.
     """
 
     name: str
@@ -56,26 +56,25 @@ class ToolExpectation:
 @dataclass(frozen=True)
 class EvalCase:
     """
-    One ground truth case loaded from the ground truth spreadsheet.
+    One ground truth case loaded from the JSON dataset.
 
-    Example of a ground truth data row:
+    Example of a JSON ground truth case:
 
-        id: 1
-        query: How much did Clark Construction receive in contracts for FY25?
-        expected_tools:
-            - recipient
-            - time_period
-            - award_type
-        expected_output:
-            - recipient = Clark Construction
-            - time_period.fiscal_year = 2025
-            - award_type = Contracts
-        tags:
-            - multi_filter
-            - temporal
-        notes: "Similar query to NYT request, variating recipient against q2"
-        approved: "yes"
-        sme_validation_notes: ""
+        {
+            "id": 1,
+            "query": "How much did Clark Construction receive in contracts for FY25?",
+            "expected_tools": ["lookup_recipient", "execute_filter"],
+            "expected_output": {
+                "selectedRecipients": ["Clark Construction"],
+                "timePeriodType": "fy",
+                "timePeriodFY": ["2025"],
+                "awardType": ["Contracts"]
+            },
+            "tags": ["multi_filter", "temporal"],
+            "notes": "Similar query to NYT request, variating recipient against q2",
+            "approved": true,
+            "sme_validation_notes": ""
+        }
 
     Once loaded, it becomes an `EvalCase` with:
         input: the data supplied to the assistant

@@ -10,10 +10,12 @@ from usaspending_api.llm.evals.models import EvalCase, EvalObservation, EvalResu
 from usaspending_api.llm.evals.registry import register_eval
 from usaspending_api.llm.models.db_models import Assistant, Session, ToolUse
 from usaspending_api.llm.tools.execute_filter import build_filter_request, execute_filter_tool
+from usaspending_api.llm.tools.lookup_code import lookup_code_tool
 from usaspending_api.llm.tools.lookup_location import lookup_location_tool
 from usaspending_api.llm.tools.lookup_recipient import lookup_recipient_tool
 
 FILTER_SEARCH_TOOLS = [
+    lookup_code_tool,
     lookup_location_tool,
     lookup_recipient_tool,
     execute_filter_tool,
@@ -113,7 +115,7 @@ def run_eval_case(case: EvalCase) -> EvalObservation:
         raise ExecutionError(f"Filter Search execution failed for case '{case.name}'.") from exc
     finally:
         session.ended_at = timezone.now()
-        session.save(updated_fields=["ended_at"])
+        session.save(update_fields=["ended_at"])
 
     error_events = [event for event in events if event.get("type") == "search_error"]
 
@@ -147,16 +149,18 @@ class FilterSearchEval(BaseEval):
     """Evaluator for the Filter Search Assistant."""
 
     assistant_name = "filter_search"
-    default_dataset_name = "filter_search"
+    default_dataset_name = "ground_truth"
 
-    def __init__(self, **kwargs) -> None:
+    def __init__(self, *, allow_extra_tool_arguments: bool = False, **kwargs) -> None:
         super().__init__(**kwargs)
-        self.tool_call_matcher = ToolCallMatcher()
+        self.tool_call_matcher = ToolCallMatcher(
+            allow_extra_actual_arguments=allow_extra_tool_arguments,
+        )
         self.output_matcher = MappingSubsetMatcher()
 
     def execute(self, case: EvalCase) -> EvalObservation:
-        """Execute one actual Filter Search request through the configured adapter."""
-        return self.executor(case)
+        """Execute one actual Filter Search request through the concrete adapter."""
+        return run_eval_case(case)
 
     def evaluate(self, case: EvalCase, observation: EvalObservation) -> EvalResult:
         """Evaluates tool correctness and filter correctness independently."""

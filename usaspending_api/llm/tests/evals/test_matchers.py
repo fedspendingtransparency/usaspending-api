@@ -67,7 +67,7 @@ def test_tool_call_matcher_rejects_different_tool_order():
 
 def test_tool_call_matcher_ignores_arguments_when_not_in_ground_truth():
     """
-    The current ground truth CSV supplies tool names but not argument expectations.
+    The current JSON ground truth supplies tool names but not argument expectations.
     Actual arguments may therefore be present without causing a failure.
     """
     result = ToolCallMatcher().compare(
@@ -88,7 +88,7 @@ def test_tool_call_matcher_ignores_arguments_when_not_in_ground_truth():
 
 def test_tool_call_matcher_checks_arguments_when_expected():
     """Argument validation becomes active when ToolExpectation.arguments is explicitly populated."""
-    result = ToolCallMatcher().compmare(
+    result = ToolCallMatcher().compare(
         expected=(
             ToolExpectation(
                 name="lookup_recipient",
@@ -109,6 +109,26 @@ def test_tool_call_matcher_checks_arguments_when_expected():
 
     assert result.passed is False
     assert result.score == 0.0
+
+
+def test_tool_call_matcher_allows_extra_arguments_when_requested():
+    result = ToolCallMatcher(allow_extra_actual_arguments=True).compare(
+        expected=(
+            ToolExpectation(
+                name="lookup_recipient",
+                arguments={"query": "Clark Construction"},
+            ),
+        ),
+        actual=(
+            ToolCall(
+                name="lookup_recipient",
+                arguments={"query": "Clark Construction", "top_k": 10},
+            ),
+        ),
+    )
+
+    assert result.passed is True
+    assert result.score == 1.0
 
 
 def test_mapping_subset_matcher_supports_nested_output():

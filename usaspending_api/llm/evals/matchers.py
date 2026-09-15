@@ -13,7 +13,7 @@ class ToolCallMatcher:
         - Tool count must match.
         - Order must match.
         - Names must match.
-        - Arguments are checked only when the CSV eventually supplies them.
+        - Arguments are checked only when the JSON dataset supplies them.
 
     NOTE: `allow_extra_actual_arguments` supports future argument-level ground truth data
     where expected arguments are a required subset rather than the complete actual argument mapping.
@@ -24,42 +24,45 @@ class ToolCallMatcher:
     def compare(self, expected: Sequence[ToolExpectation], actual: Sequence[ToolCall]) -> MatchResult:
         expected_data = [tool.as_dict() for tool in expected]
         actual_data = [tool.as_dict() for tool in actual]
-
-        if len(expected) != len(actual):
-            return MatchResult(
-                passed=False,
-                score=0.0,
-                expected=expected_data,
-                actual=actual_data,
-                message=f"Expected {len(expected)} tool call(s), received {len(actual)}.",
-            )
-
-        for index, (expected_tool, actual_tool) in enumerate(zip(expected, actual, strict=True)):
-            if expected_tool.name != actual_tool.name:
-                return MatchResult(
-                    passed=False,
-                    score=0.0,
-                    expected=expected_data,
-                    actual=actual_data,
-                    message=f"Tool call {index} expected '{expected_tool.name}', received '{actual_tool.name}'.",
-                )
-
-            if expected_tool.arguments is not None and expected_tool.arguments != actual_tool.arguments:
-                return MatchResult(
-                    passed=False,
-                    score=0.0,
-                    expected=expected_data,
-                    actual=actual_data,
-                    message=f"Tool arguments differ for '{expected_tool.name}' at position '{index}'.",
-                )
+        mismatch = self._find_mismatch(expected, actual)
 
         return MatchResult(
-            passed=True,
-            score=1.0,
+            passed=mismatch is None,
+            score=1.0 if mismatch is None else 0.0,
             expected=expected_data,
             actual=actual_data,
-            message="Tool call sequence matches expected values.",
+            message=mismatch or "Tool call sequence matches expected values.",
         )
+
+    def _find_mismatch(
+        self,
+        expected: Sequence[ToolExpectation],
+        actual: Sequence[ToolCall],
+    ) -> str | None:
+        mismatch = None
+
+        if len(expected) != len(actual):
+            mismatch = f"Expected {len(expected)} tool call(s), received {len(actual)}."
+        else:
+            for index, (expected_tool, actual_tool) in enumerate(zip(expected, actual, strict=True)):
+                if expected_tool.name != actual_tool.name:
+                    mismatch = f"Tool call {index} expected '{expected_tool.name}', received '{actual_tool.name}'."
+                    break
+
+                if expected_tool.arguments is not None and not self._arguments_match(
+                    expected_tool.arguments,
+                    actual_tool,
+                ):
+                    mismatch = f"Tool arguments differ for '{expected_tool.name}' at position '{index}'."
+                    break
+
+        return mismatch
+
+    def _arguments_match(self, expected_arguments: Mapping[str, Any], actual: ToolCall) -> bool:
+        if self.allow_extra_actual_arguments:
+            return all(actual.arguments.get(key) == value for key, value in expected_arguments.items())
+
+        return expected_arguments == actual.arguments
 
 
 @dataclass(frozen=True)

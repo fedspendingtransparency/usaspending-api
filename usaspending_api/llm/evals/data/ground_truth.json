@@ -1,0 +1,56 @@
+[
+    {
+        "id": 1,
+        "query": "How much did Clark Construction receive in contracts for FY25?",
+        "expected_output": {
+            "selectedRecipients": [
+                "Clark Construction"
+            ],
+            "timePeriodType": "fy",
+            "timePeriodFY": [
+                "2025"
+            ],
+            "awardType": [
+                "Contracts"
+            ]
+        },
+        "expected_tools": [
+            "lookup_recipient",
+            "execute_filter"
+        ],
+        "tags": [
+            "multi_filter",
+            "temporal"
+        ],
+        "notes": "Similar query to NYT request, variating recipient against q2",
+        "approved": true,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 2,
+        "query": "Did Clark Construction LLC receive in contracts for FY25?",
+        "expected_output": {
+            "selectedRecipients": [
+                "Clark Construction LLC"
+            ],
+            "timePeriodType": "fy",
+            "timePeriodFY": [
+                "2025"
+            ],
+            "awardType": [
+                "Contracts"
+            ]
+        },
+        "expected_tools": [
+            "lookup_recipient",
+            "execute_filter"
+        ],
+        "tags": [
+            "multi_filter",
+            "temporal"
+        ],
+        "notes": "Similar query to NYT request, variating recipient against q1",
+        "approved": true,
+        "sme_validation_notes": ""
+    }
+]

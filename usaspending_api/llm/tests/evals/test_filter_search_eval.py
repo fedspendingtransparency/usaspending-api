@@ -38,6 +38,15 @@ def make_case(
     )
 
 
+def test_filter_search_eval_uses_the_same_tools_as_the_endpoint():
+    assert [tool.description.name for tool in filter_search.FILTER_SEARCH_TOOLS] == [
+        "lookup_codes",
+        "lookup_location",
+        "lookup_recipient",
+        "execute_filter",
+    ]
+
+
 def test_filter_search_eval_passes_when_tools_and_filters_match():
     """A matching tool sequence and matching final filter payload produce a full score of 1.0."""
     case = make_case()
@@ -113,8 +122,11 @@ def test_get_tool_calls_reads_tool_use_records_in_execution_order(monkeypatch):
     first_tool_use.tool_input = {"query": "Clark Construction"}
 
     second_tool_use = Mock()
-    second_tool_use.name = ("execute_filter",)
-    second_tool_use.tool_input = ({"timePeriodType": "fy", "timePeriodFY": ["2025"]},)
+    second_tool_use.name = "execute_filter"
+    second_tool_use.tool_input = {
+        "timePeriodType": "fy",
+        "timePeriodFY": ["2025"],
+    }
 
     queryset = Mock()
     queryset.order_by.return_value = [

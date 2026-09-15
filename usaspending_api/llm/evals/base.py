@@ -11,7 +11,7 @@ class BaseEval(ABC):
 
     Subclasses (placed in `llm/evals/assistants`) must define:
         - assistant_name: registry/command name.
-        - default_dataset_name: CSV dataset without file extension (currently hard-coded to only accept CSV).
+        - default_dataset_name: JSON dataset without file extension.
         - execute(): how to run the assistant.
         - evaluate(): what 'correctness' means for that assistant.
     """
@@ -32,8 +32,8 @@ class BaseEval(ABC):
             raise ValueError("assistant_name must be defined.")
         if not self.default_dataset_name:
             raise ValueError("default_dataset_name must be defined.")
-        if fail_under is not None and 0.0 <= fail_under <= 1.0:
-            raise ValueError("fail_under must be between 0 and 1.0.")
+        if fail_under is not None and not 0.0 <= fail_under <= 1.0:
+            raise ValueError("fail_under must be between 0.0 and 1.0.")
 
         self.dataset_name = dataset_name or self.default_dataset_name
         self.selected_case_names = selected_case_names

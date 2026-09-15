@@ -53,7 +53,7 @@ def load_builtin_evaluators() -> None:
 
     NOTE: Because this is not used anywhere in this file, it is ignored with noqa: F401.
     """
-    from llm.evals.assistants import filter_search  # noqa: F401
+    from usaspending_api.llm.evals.assistants import filter_search  # noqa: F401
 
 
 def get_eval_class(name: str) -> type[BaseEval]:
