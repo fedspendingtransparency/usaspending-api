@@ -1,3 +1,4 @@
+import itertools
 import uuid
 from unittest.mock import MagicMock, patch
 
@@ -62,8 +63,12 @@ def _make_agency(toptier_agency, subtier_agency=None, toptier_flag=True):
     )
 
 
+_award_id_counter = itertools.count(1)
+
+
 def _make_award_search(agency, cited_as="awarding", certified_date="2020-01-01"):
     kwargs = {
+        "award_id": next(_award_id_counter),
         "certified_date": certified_date,
         "generated_unique_award_id": f"TEST_AWARD_{uuid.uuid4()}",
     }
