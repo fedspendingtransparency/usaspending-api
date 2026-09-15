@@ -97,7 +97,7 @@ def _make_matview_row(
     underlying table data immediately with no refresh needed)."""
     toptier = _make_toptier_agency(toptier_code, toptier_name, toptier_abbreviation)
 
-    if subtier_name is not None:
+    if subtier_name is None:
         n = next(_subtier_counter)
         subtier_name = f"Placeholder Subtier {n}"
         subtier_abbreviation = subtier_abbreviation or f"PS{n}"
