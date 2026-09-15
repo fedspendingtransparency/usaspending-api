@@ -181,7 +181,7 @@ class SpendingBySubawardGroupedVisualizationViewSet(APIView):
         if es_response is None:
             raise Exception("Breaking generator, unable to reach cluster")
 
-        return [self.build_result(source["_source"]) for source in es_response["hits"]["hits"]]
+        return [self._build_result(source["_source"]) for source in es_response["hits"]["hits"]]
 
     @staticmethod
     def _build_result(source: dict[str, Any]) -> dict[str, Any]:
