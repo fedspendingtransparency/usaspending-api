@@ -230,7 +230,7 @@ class FilterSearchAssistant:
             yield {
                 "search_id": str(self.session.id),
                 "type": "tool_start",
-                "tool_use_id": t.id,
+                "tool_use_id": str(t.id),
                 "message": tool.logging(tool_use["input"]) + "\n",
             }
 
@@ -255,7 +255,12 @@ class FilterSearchAssistant:
                     },
                 )
 
-                yield {"search_id": str(self.session.id), "type": "tool_complete", "tool_use_id": t.id}
+                yield {
+                    "search_id": str(self.session.id),
+                    "type": "tool_complete",
+                    "tool_use_id": str(t.id),
+                    "message": "Success.",
+                }
                 tool_result = {"toolUseId": tool_use["toolUseId"], "content": [{"json": result}]}
                 tool_result_message["content"].append({"toolResult": tool_result})
             except Exception as e:
@@ -282,9 +287,14 @@ class FilterSearchAssistant:
                 yield {
                     "search_id": str(self.session.id),
                     "type": "tool_error",
-                    "tool_use_id": t.id,
-                    "message": f"Tool execution failed: {str(e)}",
+                    "tool_use_id": str(t.id),
+                    "message": "Tool execution failed.",
                 }
             if tool.description.name == self.COMPLETION_TOOL_NAME and "error" not in result:
-                yield {"search_id": str(self.session.id), "type": "search_complete", "result": result["hash"]}
+                yield {
+                    "search_id": str(self.session.id),
+                    "type": "search_complete",
+                    "result": result["hash"],
+                    "message": "Search complete.",
+                }
         self.messages.append(tool_result_message)

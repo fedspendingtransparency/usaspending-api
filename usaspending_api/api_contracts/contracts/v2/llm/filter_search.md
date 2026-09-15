@@ -49,19 +49,19 @@ This endpoint accepts a natural language query and returns a streaming response 
                 + `tool_start` - Indicates a tool execution has started
                 + `tool_complete` - Indicates a tool execution has completed
                 + `tool_error` - Indicates an error occurred during tool execution
-        + `message` (optional, string)
+        + `message` (required, string)
             Human-readable message describing the current event or status.
         + `result` (optional, object)
             Contains the hash of the filter search result. Present only with `search_complete` events.
 
     + Body
 
-            {"search_id": "a3e2c8f1-4b6d-4e9a-9c21-7f8b2d1e5a04", "type": "search_start", "message": "Thinking..."}
-            {"search_id": "a3e2c8f1-4b6d-4e9a-9c21-7f8b2d1e5a04", "tool_use_id": "12345", "type": "tool_start", "message": "Searching for location: California"}
-            {"search_id": "a3e2c8f1-4b6d-4e9a-9c21-7f8b2d1e5a04", "tool_use_id": "12345", "type": "tool_complete"}
-            {"search_id": "a3e2c8f1-4b6d-4e9a-9c21-7f8b2d1e5a04", "tool_use_id": "12346", "type": "tool_start", "message": "Applying filters based on contracts with an award amount greater than 3 million dollars in California for IT services in Fisacal Year 2023"}
-            {"search_id": "a3e2c8f1-4b6d-4e9a-9c21-7f8b2d1e5a04", "tool_use_id": "12346", "type": "tool_complete"}
-            {"search_id": "a3e2c8f1-4b6d-4e9a-9c21-7f8b2d1e5a04", "type": "search_complete", "message": "Showing results for contracts with an award amount greater than 3 million dollars in California for IT services in Fisacal Year 2023", "result": "16ebdca405791cb0f23d4c7120606fa1"}
+            {"search_id": "12345", "type": "search_start", "message": "Thinking..."}
+            {"search_id": "12345", "tool_use_id": "12345", "type": "tool_start", "message": "Searching for location: California"}
+            {"search_id": "12345", "tool_use_id": "12345", "type": "tool_complete", "message": "Finished searching for location."}
+            {"search_id": "12345", "tool_use_id": "12346", "type": "tool_start", "message": "Applying filters based on contracts with an award amount greater than 3 million dollars in California for IT services in Fisacal Year 2023"}
+            {"search_id": "12345", "tool_use_id": "12346", "type": "tool_complete", "message": "Finished applying filters."}
+            {"search_id": "12345", "type": "search_complete", "message": "Showing results for contracts with an award amount greater than 3 million dollars in California for IT services in Fiscal Year 2023", "result": "16ebdca405791cb0f23d4c7120606fa1"}
 
 # Data Structures
 
@@ -80,7 +80,7 @@ Represents a single chunk in the streaming response.
         + `tool_start`
         + `tool_error`
         + `tool_complete`
-+ `message` (optional, string)
++ `message` (required, string)
     Descriptive message about the current event.
 + `result` (optional, object)
     Contains results or output data when applicable.
