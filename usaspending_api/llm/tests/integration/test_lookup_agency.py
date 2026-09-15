@@ -79,6 +79,9 @@ def _make_award_search(agency, cited_as="awarding", certified_date="2020-01-01")
     return baker.make(AwardSearch, **kwargs)
 
 
+_subtier_counter = itertools.count(1)
+
+
 def _make_matview_row(
     toptier_code,
     toptier_name,
@@ -94,14 +97,18 @@ def _make_matview_row(
     underlying table data immediately with no refresh needed)."""
     toptier = _make_toptier_agency(toptier_code, toptier_name, toptier_abbreviation)
 
-    subtier = None
     if subtier_name is not None:
-        subtier = _make_subtier_agency(subtier_name, subtier_abbreviation)
+        n = next(_subtier_counter)
+        subtier_name = f"Placeholder Subtier {n}"
+        subtier_abbreviation = subtier_abbreviation or f"PS{n}"
+    subtier = _make_subtier_agency(subtier_name, subtier_abbreviation)
 
     agency = _make_agency(toptier, subtier_agency=subtier, toptier_flag=toptier_flag)
     _make_award_search(agency, cited_as=cited_as)
 
-    return AgencyAutocompleteMatview.objects.get(toptier_code=toptier_code, toptier_name=toptier_name)
+    return AgencyAutocompleteMatview.objects.get(
+        toptier_code=toptier_code, toptier_name=toptier_name, subtier_name=subtier_name
+    )
 
 
 @pytest.fixture
@@ -174,15 +181,15 @@ class TestLookupAgenciesExactAndPrefix:
         mock_embedding_generator.generate_embedding.assert_not_called()
 
     def test_results_ordered_toptier_first_then_alphabetically(self, tool, mock_embedding_generator):
-        _make_matview_row("200", "Zeta Bureau", subtier_name="Zeta Sub", toptier_flag=False)
-        _make_matview_row("200", "Alpha Department", toptier_flag=True)
-        _make_matview_row("200", "Beta Department", toptier_flag=True)
+        _make_matview_row("200", "Zeta Bureau", toptier_flag=False)
+        _make_matview_row("200", "Alpha Bureau", toptier_flag=True)
+        _make_matview_row("200", "Beta Bureau", toptier_flag=True)
 
-        result = tool.lookup_agencies("200")
+        result = tool.lookup_agencies("Bureau")
 
         names = [r["toptier_agency"]["name"] for r in result["results"]]
-        assert names[0] == "Alpha Department"
-        assert names[1] == "Beta Department"
+        assert names[0] == "Alpha Bureau"
+        assert names[1] == "Beta Bureau"
         assert names[-1] == "Zeta Bureau"
 
     def test_top_k_truncates_results(self, tool, mock_embedding_generator):
