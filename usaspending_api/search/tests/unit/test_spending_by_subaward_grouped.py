@@ -90,8 +90,8 @@ def test_build_result_zero_award_amount_gives_zero_ratio():
         "generated_unique_award_id": "CONT_AWD_ZERO",
     }
 
-    result = SpendingBySubawardGroupedVisualizationViewSet(source)
+    result = SpendingBySubawardGroupedVisualizationViewSet._build_result(source)
 
     assert result["award_obligation"] == 0.0
     assert result["subaward_obligation"] == Decimal("500.00")
-    assert result[("subaward_to_award_ratio") == 0.0]
+    assert result["subaward_to_award_ratio"] == 0.0

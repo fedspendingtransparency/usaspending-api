@@ -109,9 +109,12 @@ def test_spending_by_subaward_grouped_legacy_filter(
         data=json.dumps({"page": 1, "limit": 3, "sort": "award_id", "filters": legacy_filters()}),
     )
 
+    print(legacy_filters())
+    print(resp.json())
+
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()["page_metadata"]["page"] == 1
-    assert resp.json()["limit"] == 2
+    assert resp.json()["limit"] == 3
     assert len(resp.json()["results"]) == 3
     assert resp.json()["results"][0] == EXPECTED_F4103
     assert resp.json()["results"][1] == EXPECTED_F4102
