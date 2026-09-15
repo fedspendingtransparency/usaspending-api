@@ -56,12 +56,12 @@ This endpoint accepts a natural language query and returns a streaming response 
 
     + Body
 
-            {"search_id": "12345", "type": "search_start", "message": "Thinking..."}
-            {"search_id": "12345", "tool_use_id": "12345", "type": "tool_start", "message": "Searching for location: California"}
-            {"search_id": "12345", "tool_use_id": "12345", "type": "tool_complete", "message": "Finished searching for location."}
-            {"search_id": "12345", "tool_use_id": "12346", "type": "tool_start", "message": "Applying filters based on contracts with an award amount greater than 3 million dollars in California for IT services in Fisacal Year 2023"}
-            {"search_id": "12345", "tool_use_id": "12346", "type": "tool_complete", "message": "Finished applying filters."}
-            {"search_id": "12345", "type": "search_complete", "message": "Showing results for contracts with an award amount greater than 3 million dollars in California for IT services in Fiscal Year 2023", "result": "16ebdca405791cb0f23d4c7120606fa1"}
+            {"search_id": "a3e2c8f1-4b6d-4e9a-9c21-7f8b2d1e5a04", "type": "search_start", "message": "Thinking..."}
+            {"search_id": "a3e2c8f1-4b6d-4e9a-9c21-7f8b2d1e5a04", "tool_use_id": "12345", "type": "tool_start", "message": "Searching for location: California"}
+            {"search_id": "a3e2c8f1-4b6d-4e9a-9c21-7f8b2d1e5a04", "tool_use_id": "12345", "type": "tool_complete", "message": "Finished searching for location."}
+            {"search_id": "a3e2c8f1-4b6d-4e9a-9c21-7f8b2d1e5a04", "tool_use_id": "12346", "type": "tool_start", "message": "Applying filters based on contracts with an award amount greater than 3 million dollars in California for IT services in Fisacal Year 2023"}
+            {"search_id": "a3e2c8f1-4b6d-4e9a-9c21-7f8b2d1e5a04", "tool_use_id": "12346", "type": "tool_complete", "message": "Finished applying filters."}
+            {"search_id": "a3e2c8f1-4b6d-4e9a-9c21-7f8b2d1e5a04", "type": "search_complete", "message": "Showing results for contracts with an award amount greater than 3 million dollars in California for IT services in Fiscal Year 2023", "result": "16ebdca405791cb0f23d4c7120606fa1"}
 
 # Data Structures
 
