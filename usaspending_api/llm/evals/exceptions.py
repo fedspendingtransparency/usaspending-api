@@ -33,7 +33,7 @@ class ExecutionError(EvalError):
     Raised when an assistant cannot produce an evaluation observation.
 
     Examples:
-        - No execution adapter was configured in Django settings.
+        - No execution adapter was configured.
         - The configured dotted Python path cannot be imported.
         - The adapter returns an invalid observation object.
         - The assistant raises an unexpected exception during execution.
