@@ -5,18 +5,18 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from usaspending_api.awards.models import FinancialAccountsByAwards, Award
+from usaspending_api.awards.models import Award, FinancialAccountsByAwards
 from usaspending_api.common.cache_decorator import cache_response
-from usaspending_api.common.validator.tinyshield import TinyShield
+from usaspending_api.common.helpers.date_helper import now
 from usaspending_api.common.validator.award import get_internal_or_generated_award_id_model
-
+from usaspending_api.common.validator.tinyshield import TinyShield
 
 logger = logging.getLogger("console")
 
 
 class FederalAccountCountRetrieveViewSet(APIView):
     """
-    This route sends a request to the backend to retrieve the number of federal accounts associated with the requested award
+    Sends a request to the backend to retrieve the number of federal accounts associated with the requested award
     """
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/awards/count/federal_account/award_id.md"
@@ -27,7 +27,6 @@ class FederalAccountCountRetrieveViewSet(APIView):
         return TinyShield([models]).block(request_dict)
 
     def _business_logic(self, request_data: dict) -> list:
-
         award_id = request_data["award_id"]
 
         try:
@@ -36,9 +35,12 @@ class FederalAccountCountRetrieveViewSet(APIView):
             award = Award.objects.get(**award_filter)
         except Award.DoesNotExist:
             logger.info("No Award found with: '{}'".format(award_id))
-            raise NotFound("No Award found with: '{}'".format(award_id))
+            raise NotFound("No Award found with: '{}'".format(award_id)) from None
 
-        federal_account_count = FinancialAccountsByAwards.objects.filter(award_id=award.id).count()
+        federal_account_count = FinancialAccountsByAwards.objects.filter(
+            award_id=award.id, submission__submission_window__submission_reveal_date__lte=now()
+        ).count()
+
         response_content = {"federal_accounts": federal_account_count}
         return response_content
 
