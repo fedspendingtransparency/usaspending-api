@@ -37,9 +37,7 @@ def transform_workbook(workbook: WorkbookData) -> list[dict[str, Any]]:
 
 
 def _mapping_index(mappings: tuple[FilterMapping, ...]) -> dict[tuple[str, str], FilterMapping]:
-    return {
-        (mapping.mapping_type, mapping.source_name): mapping for mapping in mappings
-    }
+    return {(mapping.mapping_type, mapping.source_name): mapping for mapping in mappings}
 
 
 def _transform_output(value: Any, mappings: dict[tuple[str, str], FilterMapping], case_id: str) -> dict[str, Any]:
@@ -50,15 +48,11 @@ def _transform_output(value: Any, mappings: dict[tuple[str, str], FilterMapping]
     for source_name, source_value in _iter_filter_values(parsed, mappings):
         mapping = mappings.get(("filter", source_name))
         if mapping is None:
-            raise DatasetError(
-                f"Case '{case_id}' uses unmapped filter field '{source_name}'."
-            )
+            raise DatasetError(f"Case '{case_id}' uses unmapped filter field '{source_name}'.")
 
         target_name = mapping.target_name
         if target_name in transformed:
-            raise DatasetError(
-                f"Case '{case_id}' maps multiple fields to '{target_name}'."
-            )
+            raise DatasetError(f"Case '{case_id}' maps multiple fields to '{target_name}'.")
 
         transformed[target_name] = _apply_value_transform(
             source_value,
@@ -84,9 +78,7 @@ def _transform_tools(value: Any, mappings: dict[tuple[str, str], FilterMapping],
 
         mapping = mappings.get(("tool", source_name.strip()))
         if mapping is None:
-            raise DatasetError(
-                f"Case '{case_id}' uses unmapped tool '{source_name}'."
-            )
+            raise DatasetError(f"Case '{case_id}' uses unmapped tool '{source_name}'.")
 
         if isinstance(tool, dict):
             transformed.append({**tool, "name": mapping.target_name})
@@ -106,9 +98,7 @@ def _apply_value_transform(value: Any, mapping: FilterMapping, case_id: str) -> 
         values = value if isinstance(value, list) else [value]
         transformed = [str(item) for item in values]
     elif transform == "structured" and not isinstance(value, dict):
-        raise DatasetError(
-            f"Case '{case_id}' field '{mapping.source_name}' must be an object."
-        )
+        raise DatasetError(f"Case '{case_id}' field '{mapping.source_name}' must be an object.")
 
     return transformed
 

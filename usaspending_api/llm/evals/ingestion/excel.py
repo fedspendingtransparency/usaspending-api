@@ -50,10 +50,7 @@ def read_workbook(source: GroundTruthSource) -> WorkbookData:
 
     missing_sheets = REQUIRED_SHEETS - set(workbook.sheetnames)
     if missing_sheets:
-        raise DatasetError(
-            "Ground-truth workbook is missing worksheet(s): "
-            + ", ".join(sorted(missing_sheets))
-        )
+        raise DatasetError("Ground-truth workbook is missing worksheet(s): " + ", ".join(sorted(missing_sheets)))
 
     ground_truth_rows = _read_rows(workbook["Ground Truth"], REQUIRED_GROUND_TRUTH_COLUMNS, "Ground Truth")
     dictionary_rows = _read_rows(workbook["Filter Dictionary"], REQUIRED_DICTIONARY_COLUMNS, "Filter Dictionary")
@@ -82,10 +79,7 @@ def _read_rows(worksheet: Any, required_columns: set[str], sheet_name: str) -> l
 
     missing_columns = required_columns - set(headers)
     if missing_columns:
-        raise DatasetError(
-            f"Worksheet '{sheet_name}' is missing column(s): "
-            + ", ".join(sorted(missing_columns))
-        )
+        raise DatasetError(f"Worksheet '{sheet_name}' is missing column(s): " + ", ".join(sorted(missing_columns)))
 
     result = []
     for values in rows[1:]:
@@ -93,12 +87,7 @@ def _read_rows(worksheet: Any, required_columns: set[str], sheet_name: str) -> l
         if all(value is None or str(value).strip() == "" for value in values):
             continue
         # Collect non-empty rows.
-        result.append(
-            {
-                header: values[index] if index < len(values) else None
-                for index, header in enumerate(headers)
-            }
-        )
+        result.append({header: values[index] if index < len(values) else None for index, header in enumerate(headers)})
 
     return result
 
@@ -122,9 +111,7 @@ def _parse_mappings(rows: list[dict[str, Any]]) -> list[FilterMapping]:
         key = (mapping_type, source_name)
 
         if key in seen_keys:
-            raise DatasetError(
-                f"Filter Dictionary contains a duplicate Naming Convention '{source_name}'."
-            )
+            raise DatasetError(f"Filter Dictionary contains a duplicate Naming Convention '{source_name}'.")
         seen_keys.add(key)
 
         mappings.append(

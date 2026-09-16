@@ -175,9 +175,7 @@ def _parse_case(row: Any, case_number: int, seen_case_ids: set[str]) -> EvalCase
             "tags": case_tags,
             "notes": row["notes"].strip() if isinstance(row["notes"], str) else "",
             "sme_validation_notes": (
-                row["sme_validation_notes"].strip()
-                if isinstance(row["sme_validation_notes"], str)
-                else ""
+                row["sme_validation_notes"].strip() if isinstance(row["sme_validation_notes"], str) else ""
             ),
         },
     )
