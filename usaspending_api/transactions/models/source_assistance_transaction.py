@@ -23,8 +23,12 @@ class SourceAssistanceTransaction(models.Model):
     action_type_description = models.TextField(blank=True, null=True)
     assistance_type = models.TextField(blank=True, null=True)
     assistance_type_desc = models.TextField(blank=True, null=True)
+    award_amount_basis_code = models.TextField(blank=True, null=True)
+    award_amount_basis_name = models.TextField(blank=True, null=True)
     award_description = models.TextField(blank=True, null=True)
     award_modification_amendme = models.TextField(blank=True, null=True)
+    award_recipient_basis_code = models.TextField(blank=True, null=True)
+    award_recipient_basis_name = models.TextField(blank=True, null=True)
     awardee_or_recipient_legal = models.TextField(blank=True, null=True)
     awardee_or_recipient_uniqu = models.TextField(blank=True, null=True)
     awarding_agency_code = models.TextField(blank=True, null=True)
@@ -128,9 +132,9 @@ class SourceAssistanceTransaction(models.Model):
         indexes = [models.Index(fields=["awarding_office_code", "funding_office_code"])]
 
     @property
-    def table_name(self):
+    def table_name(self) -> str:
         return self._meta.db_table
 
     @property
-    def broker_source_table(self):
+    def broker_source_table(self) -> str:
         return "published_fabs"

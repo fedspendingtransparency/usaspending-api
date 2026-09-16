@@ -14,7 +14,8 @@ jobs:
     name: Setup Broker Branch
     runs-on: ${{ vars.RUNNER_VERSION }}
     outputs:
-      broker-branch: ${{ steps.determine-broker-branch.outputs.branch }}
+      broker-branch: "gsdm-1-2-fabs-updates"
+      # broker-branch: ${{ steps.determine-broker-branch.outputs.branch }}
     steps:
       - name: Determine Broker Branch
         id: determine-broker-branch
