@@ -92,8 +92,11 @@ FUNDING_SQL = SQL(
                 gfaba.object_class_id = oc.id
             left outer join ref_program_activity pa on
                 gfaba.program_activity_id = pa.id
-            left outer join submission_attributes sa on
+            inner join submission_attributes sa on
                 gfaba.submission_id = sa.submission_id
+            inner join dabs_submission_window_schedule dabs on
+                sa.submission_window_id = dabs.id and
+                dabs.submission_reveal_date <= now()
     {order_by}
     limit {limit} offset {offset};
 """
