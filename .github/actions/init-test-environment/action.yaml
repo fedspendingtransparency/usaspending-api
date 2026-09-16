@@ -36,9 +36,10 @@ runs:
       if: ${{ inputs.is-integration-test == 'true' }}
       shell: bash
       run: |
-        docker exec usaspending-s3 id
-        docker exec usaspending-s3 ls -ld /data
+        docker compose ps -a usaspending-s3
         docker compose logs usaspending-s3
+        docker exec usaspending-s3 id || true
+        docker exec usaspending-s3 ls -ld /data || true
 
     - name: Download broker docker image
       if: ${{ inputs.is-integration-test == 'true' }}
