@@ -34,6 +34,7 @@ runs:
 
     - name: Debug S3 permissions
       if: ${{ inputs.is-integration-test == 'true' }}
+      working-directory: ${{ inputs.working-directory }}
       shell: bash
       run: |
         docker compose ps -a usaspending-s3
