@@ -42,17 +42,10 @@ def test_jvm_sparksession(spark: SparkSession):
         sc = SparkContext._active_spark_context
         assert sc._jvm
         assert sc._jvm.SparkSession
-        assert (
-            not sc._jvm.SparkSession.getDefaultSession()
-            .get()
-            .sparkContext()
-            .isStopped()
-        )
+        assert not sc._jvm.SparkSession.getDefaultSession().get().sparkContext().isStopped()
 
 
-def test_hive_metastore_db(
-    spark: SparkSession, s3_unittest_data_bucket, hive_unittest_metastore_db
-):
+def test_hive_metastore_db(spark: SparkSession, s3_unittest_data_bucket, hive_unittest_metastore_db):
     """Ensure that schemas and tables created are tracked in the hive metastore_db"""
     test_schema = "my_delta_test_schema"
     test_table = "my_delta_test_table"
@@ -77,9 +70,7 @@ def test_hive_metastore_db(
     assert tables_in_test_schema[0]["tableName"] == test_table
 
 
-def test_tmp_hive_metastore_db_empty_on_test_start(
-    spark: SparkSession, hive_unittest_metastore_db
-):
+def test_tmp_hive_metastore_db_empty_on_test_start(spark: SparkSession, hive_unittest_metastore_db):
     """Test that when using the spark test fixture, the metastore_db is configured to live in a tmp directory,
     so that schemas and tables created while under-test only live or are known for the duration of a SINGLE test,
     not a test SESSION. And test that the metastore used for unit tests is empty on each test run (except for the
@@ -162,9 +153,7 @@ def test_spark_write_csv_app_run(spark: SparkSession, s3_unittest_data_bucket):
 
     df = spark.createDataFrame([Row(**data_row) for data_row in data])
     # NOTE! NOTE! NOTE! MinIO locally does not support a TRAILING SLASH after object (folder) name
-    df.write.option("header", True).csv(
-        f"s3a://{s3_unittest_data_bucket}/{CONFIG.DELTA_LAKE_S3_PATH}/write_to_s3"
-    )
+    df.write.option("header", True).csv(f"s3a://{s3_unittest_data_bucket}/{CONFIG.DELTA_LAKE_S3_PATH}/write_to_s3")
 
     # Verify there are *.csv part files in the chosen bucket
     s3_client = boto3.client(
@@ -212,9 +201,7 @@ def _transaction_and_award_test_data(db):
     assert TransactionFPDS.objects.all().count() == 1
 
 
-@mark.django_db(
-    transaction=True
-)  # must commit Django data for Spark to be able to read it
+@mark.django_db(transaction=True)  # must commit Django data for Spark to be able to read it
 def test_spark_write_to_s3_delta_from_db(
     _transaction_and_award_test_data,
     spark: SparkSession,
@@ -227,24 +214,18 @@ def test_spark_write_to_s3_delta_from_db(
     pg_uri = get_database_dsn_string()
     jdbc_url = get_jdbc_url_from_pg_uri(pg_uri)
     if not jdbc_url.startswith("jdbc:postgresql://"):
-        raise ValueError(
-            "JDBC URL given is not in postgres JDBC URL format (e.g. jdbc:postgresql://..."
-        )
+        raise ValueError("JDBC URL given is not in postgres JDBC URL format (e.g. jdbc:postgresql://...")
 
     schema_name = delta_lake_unittest_schema
 
     # ==== transaction_normalized ====
     table_name = "vw_transaction_normalized"
     logger.info(f"Reading db records for {table_name} from connection: {jdbc_url}")
-    df = spark.read.jdbc(
-        url=jdbc_url, table=table_name, properties=get_jdbc_connection_properties()
-    )
+    df = spark.read.jdbc(url=jdbc_url, table=table_name, properties=get_jdbc_connection_properties())
     # NOTE! NOTE! NOTE! MinIO locally does not support a TRAILING SLASH after object (folder) name
     path = f"s3a://{s3_unittest_data_bucket}/{CONFIG.DELTA_LAKE_S3_PATH}/{table_name}"
 
-    logger.info(
-        f"Loading {df.count()} rows from DB to Delta table named {schema_name}.{table_name} at path {path}"
-    )
+    logger.info(f"Loading {df.count()} rows from DB to Delta table named {schema_name}.{table_name} at path {path}")
 
     # Create table in the metastore using DataFrame's schema and write data to the table
     df.write.saveAsTable(
@@ -257,15 +238,11 @@ def test_spark_write_to_s3_delta_from_db(
     # ==== transaction_fabs ====
     table_name = "vw_transaction_fabs"
     logger.info(f"Reading db records for {table_name} from connection: {jdbc_url}")
-    df = spark.read.jdbc(
-        url=jdbc_url, table=table_name, properties=get_jdbc_connection_properties()
-    )
+    df = spark.read.jdbc(url=jdbc_url, table=table_name, properties=get_jdbc_connection_properties())
     # NOTE! NOTE! NOTE! MinIO locally does not support a TRAILING SLASH after object (folder) name
     path = f"s3a://{s3_unittest_data_bucket}/{CONFIG.DELTA_LAKE_S3_PATH}/{table_name}"
 
-    logger.info(
-        f"Loading {df.count()} rows from DB to Delta table named {schema_name}.{table_name} at path {path}"
-    )
+    logger.info(f"Loading {df.count()} rows from DB to Delta table named {schema_name}.{table_name} at path {path}")
 
     # Create table in the metastore using DataFrame's schema and write data to the table
     df.write.saveAsTable(
@@ -278,15 +255,11 @@ def test_spark_write_to_s3_delta_from_db(
     # ==== transaction_fpds ====
     table_name = "vw_transaction_fpds"
     logger.info(f"Reading db records for {table_name} from connection: {jdbc_url}")
-    df = spark.read.jdbc(
-        url=jdbc_url, table=table_name, properties=get_jdbc_connection_properties()
-    )
+    df = spark.read.jdbc(url=jdbc_url, table=table_name, properties=get_jdbc_connection_properties())
     # NOTE! NOTE! NOTE! MinIO locally does not support a TRAILING SLASH after object (folder) name
     path = f"s3a://{s3_unittest_data_bucket}/{CONFIG.DELTA_LAKE_S3_PATH}/{table_name}"
 
-    logger.info(
-        f"Loading {df.count()} rows from DB to Delta table named {schema_name}.{table_name} at path {path}"
-    )
+    logger.info(f"Loading {df.count()} rows from DB to Delta table named {schema_name}.{table_name} at path {path}")
 
     # Create table in the metastore using DataFrame's schema and write data to the table
     df.write.saveAsTable(
@@ -313,9 +286,7 @@ def test_spark_write_to_s3_delta_from_db(
     assert "vw_transaction_fpds" in table_names
 
     # Assert rows are present
-    assert (
-        spark.sql("select count(*) from vw_transaction_normalized").collect()[0][0] == 2
-    )
+    assert spark.sql("select count(*) from vw_transaction_normalized").collect()[0][0] == 2
     assert spark.sql("select count(*) from vw_transaction_fabs").collect()[0][0] == 1
     assert spark.sql("select count(*) from vw_transaction_fpds").collect()[0][0] == 1
 
@@ -337,9 +308,7 @@ def test_create_ref_temp_views(spark: SparkSession):
 
     # verify the data in the temp view matches the dummy data
     for rds_ref_table in _USAS_RDS_REF_TABLES:
-        spark_count = spark.sql(
-            f"select count(*) from global_temp.{rds_ref_table._meta.db_table}"
-        ).collect()[0][0]
+        spark_count = spark.sql(f"select count(*) from global_temp.{rds_ref_table._meta.db_table}").collect()[0][0]
         assert rds_ref_table.objects.count() == spark_count
 
     # Setup for testing the Broker table(s)
