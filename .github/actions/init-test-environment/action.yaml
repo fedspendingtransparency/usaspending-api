@@ -32,6 +32,14 @@ runs:
       shell: bash
       run: docker compose up -d usaspending-db usaspending-es usaspending-s3
 
+    - name: Debug S3 permissions
+      if: ${{ inputs.is-integration-test == 'true' }}
+      shell: bash
+      run: |
+        docker exec usaspending-s3 id
+        docker exec usaspending-s3 ls -ld /data
+        docker compose logs usaspending-s3
+
     - name: Download broker docker image
       if: ${{ inputs.is-integration-test == 'true' }}
       uses: actions/download-artifact@v4
