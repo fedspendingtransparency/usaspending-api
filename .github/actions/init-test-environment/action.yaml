@@ -24,23 +24,18 @@ runs:
     - name: Create directories needed for RustFS
       if: ${{ inputs.is-integration-test == 'true' }}
       shell: bash
-      run: mkdir -p "$HOME/Development/data/usaspending/docker/usaspending-s3"  # same value as .env.template
+      run: |
+        mkdir -p "$HOME/Development/data/usaspending/docker/usaspending-s3"  # same value as .env.template
+        # RustFS runs as a non-root user (UID/GID 10001) inside the container, so the bind-mounted
+        # host directory must be writable by it. This is a no-op on Windows/Mac Docker Desktop, where
+        # bind mounts don't enforce host-side POSIX permissions, but is required on native Linux hosts.
+        chmod -R 777 "$HOME/Development/data/usaspending/docker/usaspending-s3"
 
     - name: Build docker containers for DB, ES, and RustFS
       working-directory: ${{ inputs.working-directory }}
       if: ${{ inputs.is-integration-test == 'true' }}
       shell: bash
       run: docker compose up -d usaspending-db usaspending-es usaspending-s3
-
-    - name: Debug S3 permissions
-      if: ${{ inputs.is-integration-test == 'true' }}
-      working-directory: ${{ inputs.working-directory }}
-      shell: bash
-      run: |
-        docker compose ps -a usaspending-s3
-        docker compose logs usaspending-s3
-        docker exec usaspending-s3 id || true
-        docker exec usaspending-s3 ls -ld /data || true
 
     - name: Download broker docker image
       if: ${{ inputs.is-integration-test == 'true' }}
@@ -59,12 +54,13 @@ runs:
       shell: bash
       run: docker compose build usaspending-test
 
-    - name: Wait on DB and ES containers to be available
+    - name: Wait on DB, ES, and S3 containers to be available
       if: ${{ inputs.is-integration-test == 'true' }}
       shell: bash
       run: |
         ttl=30; container_name="usaspending-db"; echo "Wait for $container_name to be healthy for $ttl seconds"; until [ $ttl -le 0 ] || [ "$(docker inspect $container_name --format='{{.State.Health.Status}}')" = "healthy" ]; do echo $ttl; ((ttl--)); sleep 1; done; [ $ttl -gt 0 ]
         ttl=30; container_name="usaspending-es"; echo "Wait for $container_name to be healthy for $ttl seconds"; until [ $ttl -le 0 ] || [ "$(docker inspect $container_name --format='{{.State.Health.Status}}')" = "healthy" ]; do echo $ttl; ((ttl--)); sleep 1; done; [ $ttl -gt 0 ]
+        ttl=30; container_name="usaspending-s3"; echo "Wait for $container_name to be healthy for $ttl seconds"; until [ $ttl -le 0 ] || [ "$(docker inspect $container_name --format='{{.State.Health.Status}}')" = "healthy" ]; do echo $ttl; ((ttl--)); sleep 1; done; [ $ttl -gt 0 ]
 
     - name: Add DB users and set search_path
       if: ${{ inputs.is-integration-test == 'true' }}
