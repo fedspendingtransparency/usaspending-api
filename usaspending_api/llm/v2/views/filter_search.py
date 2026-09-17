@@ -10,9 +10,11 @@ from usaspending_api.common.validator.tinyshield import TinyShield
 from usaspending_api.llm.assistants.filter_search import FilterSearchAssistant
 from usaspending_api.llm.models.db_models import Assistant, Session
 from usaspending_api.llm.tools.execute_filter import execute_filter_tool
+from usaspending_api.llm.tools.lookup_agency import lookup_agency_tool
+from usaspending_api.llm.tools.lookup_code import lookup_code_tool
 from usaspending_api.llm.tools.lookup_location import lookup_location_tool
 from usaspending_api.llm.tools.lookup_recipient import lookup_recipient_tool
-from usaspending_api.llm.v2.views.llm_base import LLMBase
+from usaspending_api.llm.v2.views.llm_base import FilterSearchEvent, LLMBase
 
 logger = logging.getLogger(__name__)
 
@@ -28,6 +30,8 @@ class FilterSearchViewSet(LLMBase):
 
     # Define a list of allowed AI tools to pass to the assistant.
     tools = [
+        lookup_agency_tool,
+        lookup_code_tool,
         lookup_location_tool,
         lookup_recipient_tool,
         execute_filter_tool,
@@ -68,7 +72,7 @@ class FilterSearchViewSet(LLMBase):
             logger.info(
                 f"Filter search session initialized: session_id={session.id}, model={ai_model.name}",
                 extra={
-                    "session_id": session.id,
+                    "session_id": str(session.id),
                     "model_id": ai_model.model_id,
                     "model_name": ai_model.name,
                     "provider": ai_model.provider,
@@ -84,14 +88,14 @@ class FilterSearchViewSet(LLMBase):
             def event_stream() -> Generator[str, None, None]:
                 try:
                     for event in assistant.search(query):
-                        yield self._ndjson_format(event)
+                        yield self._ndjson_format(FilterSearchEvent(**event))
                 except Exception as e:
                     logger.error(f"Error during filter search: {str(e)}", exc_info=True)
-                    error_event = {
-                        "search_id": str(session.id),
-                        "type": "search_error",
-                        "message": "An error occurred.",
-                    }
+                    error_event = FilterSearchEvent(
+                        search_id=str(session.id),
+                        type="search_error",
+                        message="An error occurred.",
+                    )
                     yield self._ndjson_format(error_event)
                 finally:
                     # Update session end time when stream completes (success or error).
@@ -107,7 +111,7 @@ class FilterSearchViewSet(LLMBase):
                     logger.info(
                         f"Filter search session completed: session_id={session.id}, duration={duration_seconds:.3f}s",
                         extra={
-                            "session_id": session.id,
+                            "session_id": str(session.id),
                             "duration_seconds": duration_seconds,
                             "message_count": message_count,
                             "tool_use_count": tool_use_count,
