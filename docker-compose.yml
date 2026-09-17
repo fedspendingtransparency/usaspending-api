@@ -330,26 +330,47 @@ services:
     environment:
       RUSTFS_ACCESS_KEY: ${RUSTFS_ACCESS_KEY}
       RUSTFS_SECRET_KEY: ${RUSTFS_SECRET_KEY}
-    entrypoint: >
-      /bin/sh -c "
-        # Create the bucket within RustFS and file path for the data dict
-        mkdir -p data/dti-da-public-files-nonprod/user_reference_docs
-        # Create the bucket within RustFS used for endpoints that list generated downloads
-        mkdir -p data/bulk-download
-        # Create the bucket within RustFS used for monthly downloads
-        mkdir -p data/monthly-download
-        # Create the bucket for RustFS used for Spark
-        mkdir -p data/data/files
-        # Populate initial files in buckets
-        cp usaspending-api/usaspending_api/data/Data_Dictionary_Crosswalk.xlsx data/dti-da-public-files-nonprod/user_reference_docs/Data_Dictionary_Crosswalk.xlsx
-        cp usaspending-api/usaspending_api/data/COVID-19_download_readme.txt data/data/files/COVID-19_download_readme.txt
-        rustfs server --address ":10001" --console-address ":10002" /data
-      "
+    entrypoint: ["rustfs", "server", "--address", ":10001", "--console-address", ":10002", "/data"]
     healthcheck:
       test: ["CMD", "curl", "-f", "http://${RUSTFS_HOST}:${RUSTFS_PORT}/health/ready"]
       interval: 30s
       timeout: 20s
       retries: 3
+
+  # One-shot container that provisions the buckets and seed files RustFS needs for local dev/tests.
+  # RustFS (unlike MinIO) does not auto-discover buckets that are created by just placing directories/files directly
+  # on its backing filesystem, so this must go through the S3 API.
+  usaspending-s3-init:
+    profiles:
+      - s3
+      - spark
+      - test
+    image: rustfs/rc:v0.1.35
+    container_name: usaspending-s3-init
+    depends_on:
+      usaspending-s3:
+        condition: service_healthy
+    volumes:
+      - type: bind
+        source: .
+        target: /usaspending-api
+        read_only: true
+    environment:
+      RUSTFS_ACCESS_KEY: ${RUSTFS_ACCESS_KEY}
+      RUSTFS_SECRET_KEY: ${RUSTFS_SECRET_KEY}
+    entrypoint: ["/bin/sh", "-c"]
+    # NOTE: command must be a one-item list (not a bare string). Compose shell-splits a bare string into
+    # multiple argv entries, which get appended after entrypoint's "-c" as unused positional params ($1, $2, ...)
+    # instead of being part of the script passed to "-c" -- so only the first word ("rc") actually ran.
+    command:
+      - >
+        rc alias set local http://usaspending-s3:10001 "$$RUSTFS_ACCESS_KEY" "$$RUSTFS_SECRET_KEY" &&
+        (rc mb local/dti-da-public-files-nonprod || true) &&
+        (rc mb local/bulk-download || true) &&
+        (rc mb local/monthly-download || true) &&
+        (rc mb local/data || true) &&
+        rc cp /usaspending-api/usaspending_api/data/Data_Dictionary_Crosswalk.xlsx local/dti-da-public-files-nonprod/user_reference_docs/Data_Dictionary_Crosswalk.xlsx &&
+        rc cp /usaspending-api/usaspending_api/data/COVID-19_download_readme.txt local/data/files/COVID-19_download_readme.txt
 
   spark-master:
     profiles:
