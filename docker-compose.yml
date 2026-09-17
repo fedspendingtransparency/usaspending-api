@@ -359,9 +359,6 @@ services:
       RUSTFS_ACCESS_KEY: ${RUSTFS_ACCESS_KEY}
       RUSTFS_SECRET_KEY: ${RUSTFS_SECRET_KEY}
     entrypoint: ["/bin/sh", "-c"]
-    # NOTE: command must be a one-item list (not a bare string). Compose shell-splits a bare string into
-    # multiple argv entries, which get appended after entrypoint's "-c" as unused positional params ($1, $2, ...)
-    # instead of being part of the script passed to "-c" -- so only the first word ("rc") actually ran.
     command:
       - >
         rc alias set local http://usaspending-s3:10001 "$$RUSTFS_ACCESS_KEY" "$$RUSTFS_SECRET_KEY" &&
