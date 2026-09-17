@@ -62,7 +62,7 @@ runs:
         ttl=30; container_name="usaspending-es"; echo "Wait for $container_name to be healthy for $ttl seconds"; until [ $ttl -le 0 ] || [ "$(docker inspect $container_name --format='{{.State.Health.Status}}')" = "healthy" ]; do echo $ttl; ((ttl--)); sleep 1; done; [ $ttl -gt 0 ]
         ttl=30; container_name="usaspending-s3"; echo "Wait for $container_name to be healthy for $ttl seconds"; until [ $ttl -le 0 ] || [ "$(docker inspect $container_name --format='{{.State.Health.Status}}')" = "healthy" ]; do echo $ttl; ((ttl--)); sleep 1; done; [ $ttl -gt 0 ]
 
-    - name: Provision RustFS buckets and seed files
+    - name: Provision S3 buckets and seed files
       if: ${{ inputs.is-integration-test == 'true' }}
       working-directory: ${{ inputs.working-directory }}
       shell: bash
