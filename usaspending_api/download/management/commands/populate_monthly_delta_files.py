@@ -101,7 +101,6 @@ class Command(BaseCommand):
             source.queryset = source.queryset.annotate(
                 correction_delete_ind=Case(
                     When(etl_update_date__gt=generate_since, then=indicator_field),
-                    When(transactiondelta__isnull=False, then=Value("C")),
                     default=indicator_field,
                     output_field=CharField(),
                 )
@@ -111,7 +110,7 @@ class Command(BaseCommand):
         if self.debugging_end_date:
             update_date_filter &= Q(etl_update_date__lt=self.debugging_end_date)
 
-        source.queryset = source.queryset.filter(Q(update_date_filter | Q(transactiondelta__isnull=False)))
+        source.queryset = source.queryset.filter(update_date_filter)
 
         # Generate file using helper functions
         file_path = self.create_local_file(award_type, source, agency_code, generate_since)
