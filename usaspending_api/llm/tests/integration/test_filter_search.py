@@ -1,4 +1,5 @@
 import json
+import uuid
 from unittest.mock import Mock, patch
 
 import pytest
@@ -150,6 +151,7 @@ class TestFilterSearch:
 
         # Verify session has correct attributes.
         session = Session.objects.latest("started_at")
+        assert isinstance(session.id, uuid.UUID)
         assert session.ai_model == ai_model_data
         assert "lookup_location" in session.tools
         assert "lookup_recipient" in session.tools
@@ -180,6 +182,7 @@ class TestFilterSearch:
         assert "search_id" in first_event
         assert "type" in first_event
         assert first_event["type"] == "search_start"
+        uuid.UUID(first_event["search_id"])
 
     def test_endpoint_with_tool_execution(self, client, ai_model_data, mock_llm_api_key, mock_bedrock_client):
         """Test endpoint with tool execution in the response."""
@@ -384,8 +387,13 @@ class TestFilterSearch:
         lines = [line for line in content.strip().split("\n") if line]
         events = [json.loads(line) for line in lines]
 
-        # All events should have the same search_id (as strings).
+        # All events should have the same search_id (as UUID strings).
         search_ids = [e["search_id"] for e in events]
         assert len(set(search_ids)) == 1, "All events should share the same search_id"
-        # Verify all search_ids are strings (not mixed types).
+        # Verify all search_ids are UUID strings (not mixed types).
         assert all(isinstance(sid, str) for sid in search_ids), "All search_ids should be strings"
+        parsed_ids = [uuid.UUID(sid) for sid in search_ids]
+        assert len(set(parsed_ids)) == 1
+
+        session = Session.objects.latest("started_at")
+        assert parsed_ids[0] == session.id
