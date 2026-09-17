@@ -132,13 +132,24 @@ def run_eval_case(case: EvalCase) -> EvalObservation:
 
     output = get_final_filter_output(session)
 
+    inference_config = assistant_config.inference_config or {}
+
     return EvalObservation(
         tool_calls=tool_calls,
         output=output,
         metadata={
             "session_id": str(session.id),
+            "assistant": assistant_config.name,
             "assistant_id": assistant_config.id,
-            "model_id": assistant_config.ai_model.model_id,
+            "ai_model_id": assistant_config.ai_model.model_id,
+            "system_prompt_id": assistant_config.system_prompt_id,
+            "inference_config_temp": inference_config.get("temperature"),
+            "inference_config_top_p": inference_config.get("topP", inference_config.get("top_p")),
+            "inference_config_max_tokens": inference_config.get("maxTokens", inference_config.get("max_tokens")),
+            "inference_config_stop_sequences": inference_config.get(
+                "stopSequences",
+                inference_config.get("stop_sequences", []),
+            ),
             "tool_use_count": len(tool_calls),
         },
     )
@@ -181,6 +192,7 @@ class FilterSearchEval(BaseEval):
             output_match=output_match,
             details={
                 "case_metadata": case.metadata,
+                "case_input": case.input,
                 "execution_metadata": observation.metadata,
             },
         )

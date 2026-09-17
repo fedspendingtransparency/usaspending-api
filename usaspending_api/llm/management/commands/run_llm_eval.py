@@ -1,10 +1,11 @@
 import logging
+from pathlib import Path
 
 from django.core.management.base import BaseCommand, CommandError, CommandParser
 
 from usaspending_api.llm.evals.exceptions import EvalError
 from usaspending_api.llm.evals.registry import get_eval_class, registered_assistant_names
-from usaspending_api.llm.evals.reporting import render_json, render_text
+from usaspending_api.llm.evals.reporting import render_json, render_text, write_xlsx
 
 logger = logging.getLogger(__name__)
 
@@ -62,9 +63,17 @@ class Command(BaseCommand):
         )
         parser.add_argument(
             "--format",
-            choices=("text", "json"),
+            choices=("text", "json", "xlsx"),
             default="text",
             help="Command output format.",
+        )
+        parser.add_argument(
+            "--output",
+            type=Path,
+            help=(
+                "Write the report to this file. Required for xlsx; when omitted, "
+                "text and JSON reports are output as logging."
+            ),
         )
 
     def handle(self, *args, **options) -> None:
@@ -80,16 +89,34 @@ class Command(BaseCommand):
                 include_unapproved=options["include_unapproved"],
                 tags=set(options["tags"] or []),
                 fail_under=options["fail_under"],
-                executor_path=options["executor"],
                 allow_extra_tool_arguments=options["allow_extra_tool_arguments"],
             )
             summary = evaluator.run()
         except (EvalError, ValueError) as exc:
             raise CommandError(str(exc)) from exc
 
-        output = render_json(summary) if options["format"] == "json" else render_text(summary)
+        output_format = options["format"]
+        output_path = options["output"]
 
-        logger.info(output)
+        if output_format == "xlsx":
+            if output_path is None:
+                raise CommandError("--output is required when --format=xlsx.")
+            try:
+                write_xlsx(summary, output_path)
+            except EvalError as error:
+                raise CommandError(str(error)) from error
+            logger.info(f"Evaluation report written to {output_path}")
+        else:
+            output = render_json(summary) if output_format == "json" else render_text(summary)
+            if output_path is None:
+                logger.info(output)
+            else:
+                try:
+                    output_path.parent.mkdir(parents=True, exist_ok=True)
+                    output_path.write_text(output + "\n", encoding="utf-8")
+                except OSError as error:
+                    raise CommandError(f"Unable to write evaluation report '{output_path}': {error}") from error
+                logger.info(f"Evaluation report written to {output_path}")
 
         if not summary.passed:
             raise CommandError(

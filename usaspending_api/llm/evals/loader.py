@@ -1,11 +1,8 @@
 """
 This file loads the ground truth dataset into the application.
 
-It assumes the ground truth document is a UTF-8-formatted JSON file containing a list of cases.
-It is intended to provide flexibility around the location of the ground truth document in case it changes
-between environments.
-
-This is the only file within the Eval framework that understands the structure of the ground truth document.
+It assumes the ground truth document is a UTF-8-formatted JSON file containing a list of cases. This is the only
+file within the Eval framework that understands the structure of the ground truth document.
 """
 
 import json
@@ -36,7 +33,7 @@ DEFAULT_DATASET_DIR = Path(__file__).resolve().parent / "data"
 
 
 def dataset_directory() -> Path:
-    """Return the configured directory containing evaluation datasets."""
+    """Returns the configured directory containing evaluation datasets."""
     configured_dir = getattr(settings, "LLM_EVAL_DATASET_DIRECTORY", None) or getattr(
         settings,
         "LLM_EVAL_DATASET_DIR",
@@ -46,7 +43,7 @@ def dataset_directory() -> Path:
 
 
 def resolve_dataset_path(dataset_name: str) -> Path:
-    """Resolve a logical dataset name such as "ground_truth" to "ground_truth.json"."""
+    """Resolves a logical dataset name such as "ground_truth" to "ground_truth.json"."""
     dataset_path = dataset_directory() / f"{dataset_name}.json"
 
     if dataset_path.suffix != ".json":
@@ -60,7 +57,7 @@ def resolve_dataset_path(dataset_name: str) -> Path:
 
 
 def parse_approved(value: Any, case_id: str) -> bool:
-    """Parse the JSON ``approved`` field into a boolean."""
+    """Parses the JSON ``approved`` field into a boolean."""
     if isinstance(value, bool):
         return value
 
@@ -77,7 +74,7 @@ def parse_approved(value: Any, case_id: str) -> bool:
 
 
 def parse_expected_output(value: Any, case_id: str) -> dict[str, Any]:
-    """Validate and return the expected output object from a JSON case."""
+    """Validates and returns the expected output object from a JSON case."""
     if not isinstance(value, dict) or not value:
         raise DatasetError(f"Case '{case_id}' must define a non-empty expected_output object.")
 
@@ -88,7 +85,7 @@ def parse_expected_output(value: Any, case_id: str) -> dict[str, Any]:
 
 
 def parse_expected_tools(value: Any, case_id: str) -> tuple[ToolExpectation, ...]:
-    """Parse the expected tool definitions from a JSON array."""
+    """Parses the expected tool definitions from a JSON array."""
     if not isinstance(value, list) or not value:
         raise DatasetError(f"Case '{case_id}' must define at least one expected tool.")
 
@@ -108,7 +105,7 @@ def parse_expected_tools(value: Any, case_id: str) -> tuple[ToolExpectation, ...
 
 
 def parse_tags(value: Any, case_id: str) -> list[str]:
-    """Parse the metadata tags from a JSON array."""
+    """Parses the metadata tags from a JSON array."""
     if not isinstance(value, list) or not all(isinstance(tag, str) and tag.strip() for tag in value):
         raise DatasetError(f"Case '{case_id}' tags must be an array of non-empty strings.")
 
@@ -205,6 +202,14 @@ def parse_json_cases(
     return cases
 
 
+def load_all_cases(dataset_name: str) -> list[EvalCase]:
+    """Loads every validated case without approval, tag, or case filtering."""
+    return parse_json_cases(
+        resolve_dataset_path(dataset_name),
+        include_unapproved=True,
+    )
+
+
 def load_cases(
     dataset_name: str,
     *,
@@ -212,7 +217,7 @@ def load_cases(
     include_unapproved: bool = False,
     tags: set[str] | None = None,
 ) -> list[EvalCase]:
-    """Load all eligible cases, then optionally narrow them by case ID."""
+    """Loads all eligible cases, then optionally narrows them by case ID."""
     cases = parse_json_cases(
         resolve_dataset_path(dataset_name),
         include_unapproved=include_unapproved,

@@ -161,6 +161,8 @@ class EvalSummary:
     score: float
     passed: bool
     fail_under: float | None = None
+    unrun_cases: tuple[EvalCase, ...] = ()
+    unrun_reasons: dict[str, str] = field(default_factory=dict)
 
     @property
     def case_count(self) -> int:
@@ -176,3 +178,13 @@ class EvalSummary:
     def failed_count(self) -> int:
         """Returns the number of cases that did not fully pass."""
         return self.case_count - self.passed_count
+
+    @property
+    def unrun_count(self) -> int:
+        """Returns the number of loaded cases excluded from this run."""
+        return len(self.unrun_cases)
+
+    @property
+    def total_case_count(self) -> int:
+        """Returns executed plus excluded cases represented in the report."""
+        return self.case_count + self.unrun_count
