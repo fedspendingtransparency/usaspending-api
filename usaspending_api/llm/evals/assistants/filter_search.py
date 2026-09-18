@@ -160,7 +160,7 @@ class FilterSearchEval(BaseEval):
     """Evaluator for the Filter Search Assistant."""
 
     assistant_name = "filter_search"
-    default_dataset_name = "ground_truth"
+    default_dataset_name = "config"
 
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
