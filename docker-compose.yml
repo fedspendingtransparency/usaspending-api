@@ -314,7 +314,7 @@ services:
       - s3
       - spark
       - test
-    image: rustfs/rustfs:1.0.0-beta.10
+    image: rustfs/rustfs:1.0.0
     container_name: usaspending-s3
     volumes:
       - type: bind
