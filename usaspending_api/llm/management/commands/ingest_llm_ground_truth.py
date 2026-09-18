@@ -35,7 +35,7 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options) -> None:
-        provider = (LocalFileProvider() if options["source"] == "local" else HttpFileProvider())
+        provider = LocalFileProvider() if options["source"] == "local" else HttpFileProvider()
         output_path = options["output"] or dataset_directory() / "ground_truth.json"
 
         try:
