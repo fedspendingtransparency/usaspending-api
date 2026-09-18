@@ -10,11 +10,13 @@ from usaspending_api.llm.evals.models import EvalCase, EvalObservation, EvalResu
 from usaspending_api.llm.evals.registry import register_eval
 from usaspending_api.llm.models.db_models import Assistant, Session, ToolUse
 from usaspending_api.llm.tools.execute_filter import build_filter_request, execute_filter_tool
+from usaspending_api.llm.tools.lookup_agency import lookup_agency_tool
 from usaspending_api.llm.tools.lookup_code import lookup_code_tool
 from usaspending_api.llm.tools.lookup_location import lookup_location_tool
 from usaspending_api.llm.tools.lookup_recipient import lookup_recipient_tool
 
 FILTER_SEARCH_TOOLS = [
+    lookup_agency_tool,
     lookup_code_tool,
     lookup_location_tool,
     lookup_recipient_tool,
@@ -112,7 +114,9 @@ def run_eval_case(case: EvalCase) -> EvalObservation:
     try:
         events = list(assistant.search(case.input["query"]))
     except Exception as exc:
-        raise ExecutionError(f"Filter Search execution failed for case '{case.name}'.") from exc
+        raise ExecutionError(
+            f"Filter Search execution failed for case '{case.name}': {exc}"
+        ) from exc
     finally:
         session.ended_at = timezone.now()
         session.save(update_fields=["ended_at"])
