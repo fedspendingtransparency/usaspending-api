@@ -29,7 +29,7 @@ def build_psql_env(
     # Set optional PostgreSQL options
     if statement_timeout_hours or work_mem_mb:
         options = []
-        options.append("--statement-timeout=12h")
+        options.append("--statement-timeout=24h")
         if work_mem_mb:
             options.append(f"--work-mem={work_mem_mb}MB")
         env["PGOPTIONS"] = " ".join(options)
