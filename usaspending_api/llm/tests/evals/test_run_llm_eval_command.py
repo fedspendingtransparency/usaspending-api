@@ -61,9 +61,7 @@ def fake_eval_observation(case: EvalCase) -> EvalObservation:
         )
 
     return EvalObservation(
-        tool_calls=(
-            ToolCall(name="execute_filter"),
-        ),
+        tool_calls=(ToolCall(name="execute_filter"),),
         output={"selectedAwardIDs": {"N0001917C0001": {}}},
     )
 
