@@ -162,7 +162,7 @@ class LocationLookupTool:
 
     def _transform_results(self, response: Any) -> list[dict[str, Any]]:
         """Transform OpenSearch hits to SelectedLocation format."""
-        results = []
+        results = {}
         seen_identifiers = set()
 
         for hit in response.hits:
@@ -184,7 +184,7 @@ class LocationLookupTool:
                 seen_identifiers.add(identifier)
 
                 # Return in the format expected by selectedLocations
-                results.append({identifier: location_obj})
+                results[identifier] = location_obj
 
             except Exception as e:
                 logger.warning(
