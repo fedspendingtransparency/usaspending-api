@@ -10,8 +10,8 @@ def summary():
     tool_match = MatchResult(
         passed=True,
         score=1.0,
-        expected=[{"name": "execute_filter"}],
-        actual=[{"name": "execute_filter"}],
+        expected=["execute_filter"],
+        actual=["execute_filter"],
         message="Tool call sequence matches expected values.",
     )
     output_match = MatchResult(

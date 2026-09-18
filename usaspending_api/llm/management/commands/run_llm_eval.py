@@ -55,13 +55,6 @@ class Command(BaseCommand):
             help="Fail when aggregate score is below this value from 0.0 to 1.0.",
         )
         parser.add_argument(
-            "--allow-extra-tool-arguments",
-            action="store_true",
-            help=(
-                "Treat expected tool-call arguments as a required subset rather than requiring exact argument equality."
-            ),
-        )
-        parser.add_argument(
             "--format",
             choices=("text", "json", "xlsx"),
             default="text",
@@ -89,7 +82,6 @@ class Command(BaseCommand):
                 include_unapproved=options["include_unapproved"],
                 tags=set(options["tags"] or []),
                 fail_under=options["fail_under"],
-                allow_extra_tool_arguments=options["allow_extra_tool_arguments"],
             )
             summary = evaluator.run()
         except (EvalError, ValueError) as exc:

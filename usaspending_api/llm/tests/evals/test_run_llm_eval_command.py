@@ -50,15 +50,8 @@ def fake_eval_observation(case: EvalCase) -> EvalObservation:
     if case.name == "1":
         return EvalObservation(
             tool_calls=(
-                ToolCall(name="lookup_recipient", arguments={"query": "Clark Construction"}),
-                ToolCall(
-                    name="execute_filter",
-                    arguments={
-                        "timePeriodType": "fy",
-                        "timePeriodFY": ["2025"],
-                        "selectedRecipients": ["CLARK CONSTRUCTION"],
-                    },
-                ),
+                ToolCall(name="lookup_recipient"),
+                ToolCall(name="execute_filter"),
             ),
             output={
                 "timePeriodType": "fy",
@@ -69,10 +62,7 @@ def fake_eval_observation(case: EvalCase) -> EvalObservation:
 
     return EvalObservation(
         tool_calls=(
-            ToolCall(
-                name="execute_filter",
-                arguments={"selectedAwardIDs": {"N0001917C0001": {}}},
-            ),
+            ToolCall(name="execute_filter"),
         ),
         output={"selectedAwardIDs": {"N0001917C0001": {}}},
     )

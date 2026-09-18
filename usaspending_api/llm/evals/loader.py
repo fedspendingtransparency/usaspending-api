@@ -12,7 +12,7 @@ from typing import Any
 from django.conf import settings
 
 from usaspending_api.llm.evals.exceptions import DatasetError
-from usaspending_api.llm.evals.models import EvalCase, ToolExpectation
+from usaspending_api.llm.evals.models import EvalCase
 
 REQUIRED_FIELDS = {
     "id",
@@ -43,7 +43,7 @@ def dataset_directory() -> Path:
 
 
 def resolve_dataset_path(dataset_name: str) -> Path:
-    """Resolves a logical dataset name such as "ground_truth" to "ground_truth.json"."""
+    """Resolves a logical dataset name such as "ground_truth" to "config.json"."""
     dataset_path = dataset_directory() / f"{dataset_name}.json"
 
     if dataset_path.suffix != ".json":
@@ -84,22 +84,16 @@ def parse_expected_output(value: Any, case_id: str) -> dict[str, Any]:
     return value
 
 
-def parse_expected_tools(value: Any, case_id: str) -> tuple[ToolExpectation, ...]:
-    """Parses the expected tool definitions from a JSON array."""
+def parse_expected_tools(value: Any, case_id: str) -> tuple[str, ...]:
+    """Parses expected tool names from a JSON array."""
     if not isinstance(value, list) or not value:
         raise DatasetError(f"Case '{case_id}' must define at least one expected tool.")
 
     expected_tools = []
     for tool in value:
-        if isinstance(tool, str) and tool.strip():
-            expected_tools.append(ToolExpectation(name=tool.strip()))
-        elif isinstance(tool, dict) and isinstance(tool.get("name"), str) and tool["name"].strip():
-            arguments = tool.get("arguments")
-            if arguments is not None and not isinstance(arguments, dict):
-                raise DatasetError(f"Case '{case_id}' has invalid arguments for expected tool '{tool['name']}'.")
-            expected_tools.append(ToolExpectation(name=tool["name"].strip(), arguments=arguments))
-        else:
-            raise DatasetError(f"Case '{case_id}' contains an invalid expected tool definition.")
+        if not isinstance(tool, str) or not tool.strip():
+            raise DatasetError(f"Case '{case_id}' expected_tools must contain only non-empty tool names.")
+        expected_tools.append(tool.strip())
 
     return tuple(expected_tools)
 

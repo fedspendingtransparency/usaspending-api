@@ -57,15 +57,15 @@ def get_tool_calls(session: Session) -> tuple[ToolCall, ...]:
         "id",
     )
 
-    return tuple(ToolCall(name=tool_use.name, arguments=tool_use.tool_input) for tool_use in tool_uses)
+    return tuple(ToolCall(name=tool_use.name) for tool_use in tool_uses)
 
 
 def get_final_filter_output(session: Session) -> dict[str, Any]:
     """
     Return canonical filters from the last successful execute_filter call.
 
-    execute_filter only returns a hash. Its ToolUse record retains the original arguments sent by the model,
-    so the adapter reconstructs the same canonical FilterRequest used by the prod hash generation.
+    execute_filter only returns a hash. Its ToolUse record retains the filter payload used by the model,
+    so the adapter reconstructs the same canonical FilterRequest used by production hash generation.
     """
     execute_filter_uses = ToolUse.objects.filter(
         message__session=session, name=FilterSearchAssistant.COMPLETION_TOOL_NAME
@@ -162,11 +162,9 @@ class FilterSearchEval(BaseEval):
     assistant_name = "filter_search"
     default_dataset_name = "ground_truth"
 
-    def __init__(self, *, allow_extra_tool_arguments: bool = False, **kwargs) -> None:
+    def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
-        self.tool_call_matcher = ToolCallMatcher(
-            allow_extra_actual_arguments=allow_extra_tool_arguments,
-        )
+        self.tool_call_matcher = ToolCallMatcher()
         self.output_matcher = MappingSubsetMatcher()
 
     def execute(self, case: EvalCase) -> EvalObservation:

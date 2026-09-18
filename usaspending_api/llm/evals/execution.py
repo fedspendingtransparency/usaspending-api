@@ -36,9 +36,7 @@ def normalize_tool_calls(raw_tool_calls: Any) -> tuple[ToolCall, ...]:
     """
     Normalize tool-call data returned by an execution adapter.
 
-    The adapter may return:
-        - ToolCall objects, or
-        - Mappings with `name` and `arguments` keys.
+    The adapter may return ToolCall objects, tool-name strings, or mappings with a `name` key.
     """
     if raw_tool_calls is None:
         return ()
@@ -53,19 +51,17 @@ def normalize_tool_calls(raw_tool_calls: Any) -> tuple[ToolCall, ...]:
             normalized_calls.append(raw_call)
             continue
 
-        if not isinstance(raw_call, Mapping):
-            raise ExecutionError(f"tool_calls[{index}] must be a ToolCall or mapping.")
-
-        name = raw_call.get("name", {})
-        arguments = raw_call.get("arguments", {})
+        if isinstance(raw_call, str):
+            name = raw_call
+        elif isinstance(raw_call, Mapping):
+            name = raw_call.get("name")
+        else:
+            raise ExecutionError(f"tool_calls[{index}] must be a ToolCall, name, or mapping.")
 
         if not isinstance(name, str) or not name:
-            raise ExecutionError(f"tool_calls[{index}].name must be a non-empty string.")
+            raise ExecutionError(f"tool_calls[{index}] must contain a non-empty tool name.")
 
-        if not isinstance(arguments, Mapping):
-            raise ExecutionError(f"tool_calls[{index}].arguments must be a mapping.")
-
-        normalized_calls.append(ToolCall(name=name, arguments=dict(arguments)))
+        normalized_calls.append(ToolCall(name=name))
 
     return tuple(normalized_calls)
 
@@ -78,10 +74,7 @@ def normalize_observation(raw_result: Any) -> EvalObservation:
 
         {
             "tool_calls": [
-                {
-                    "name": "recipient",
-                    "arguments": {"recipient": "Clark Construction"},
-                },
+                "lookup_recipient",
             ],
             "output": {
                 "recipient": "Clark Construction",

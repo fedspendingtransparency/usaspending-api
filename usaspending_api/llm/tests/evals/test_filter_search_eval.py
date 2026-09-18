@@ -10,15 +10,15 @@ from usaspending_api.llm.evals.assistants.filter_search import (
     run_eval_case,
 )
 from usaspending_api.llm.evals.exceptions import ExecutionError
-from usaspending_api.llm.evals.models import EvalCase, EvalObservation, ToolCall, ToolExpectation
+from usaspending_api.llm.evals.models import EvalCase, EvalObservation, ToolCall
 
 
 def make_case(
     *,
     name: str = "1",
-    expected_tools: tuple[ToolExpectation, ...] = (
-        ToolExpectation(name="lookup_recipient"),
-        ToolExpectation(name="execute_filter"),
+    expected_tools: tuple[str, ...] = (
+        "lookup_recipient",
+        "execute_filter",
     ),
     expected_output: dict | None = None,
 ) -> EvalCase:
@@ -57,20 +57,8 @@ def test_filter_search_eval_passes_when_tools_and_filters_match():
 
     observation = EvalObservation(
         tool_calls=(
-            ToolCall(
-                name="lookup_recipient",
-                arguments={
-                    "query": "Clark Construction",
-                },
-            ),
-            ToolCall(
-                name="execute_filter",
-                arguments={
-                    "timePeriodType": "fy",
-                    "timePeriodFY": ["2025"],
-                    "selectedRecipients": ["CLARK CONSTRUCTION"],
-                },
-            ),
+            ToolCall(name="lookup_recipient"),
+            ToolCall(name="execute_filter"),
         ),
         output={
             "timePeriodType": "fy",
@@ -147,17 +135,8 @@ def test_get_tool_calls_reads_tool_use_records_in_execution_order(monkeypatch):
     calls = get_tool_calls(session)
 
     assert calls == (
-        ToolCall(
-            name="lookup_recipient",
-            arguments={"query": "Clark Construction"},
-        ),
-        ToolCall(
-            name="execute_filter",
-            arguments={
-                "timePeriodType": "fy",
-                "timePeriodFY": ["2025"],
-            },
-        ),
+        ToolCall(name="lookup_recipient"),
+        ToolCall(name="execute_filter"),
     )
 
     manager.filter.assert_called_once_with(
@@ -295,17 +274,8 @@ def test_run_eval_case_executes_assistant_and_returns_observation(monkeypatch):
         filter_search,
         "get_tool_calls",
         lambda value: (
-            ToolCall(
-                name="lookup_recipient",
-                arguments={"query": "Clark Construction"},
-            ),
-            ToolCall(
-                name="execute_filter",
-                arguments={
-                    "timePeriodType": "fy",
-                    "timePeriodFY": ["2025"],
-                },
-            ),
+            ToolCall(name="lookup_recipient"),
+            ToolCall(name="execute_filter"),
         ),
     )
     monkeypatch.setattr(
@@ -323,8 +293,8 @@ def test_run_eval_case_executes_assistant_and_returns_observation(monkeypatch):
             "query": "How much did Clark Construction receive in contracts for FY25?",
         },
         expected_tool_calls=(
-            ToolExpectation(name="lookup_recipient"),
-            ToolExpectation(name="execute_filter"),
+            "lookup_recipient",
+            "execute_filter",
         ),
         expected_output={
             "timePeriodType": "fy",

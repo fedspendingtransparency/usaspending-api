@@ -37,10 +37,10 @@ def test_parse_json_cases_builds_expected_case(tmp_path: Path):
 
     assert case.name == "1"
     assert case.input == {"query": SAMPLE_CASE["query"]}
-    assert [tool.name for tool in case.expected_tool_calls] == [
+    assert case.expected_tool_calls == (
         "lookup_recipient",
         "execute_filter",
-    ]
+    )
     assert case.expected_output == SAMPLE_CASE["expected_output"]
     assert case.metadata == {
         "approved": True,
@@ -50,25 +50,17 @@ def test_parse_json_cases_builds_expected_case(tmp_path: Path):
     }
 
 
-def test_parse_json_cases_supports_tool_argument_expectations(tmp_path: Path):
+def test_parse_json_cases_rejects_structured_tool_expectations(tmp_path: Path):
     case = {
         **SAMPLE_CASE,
         "expected_tools": [
-            {
-                "name": "lookup_recipient",
-                "arguments": {"query": "Clark Construction"},
-            },
+            {"name": "lookup_recipient"},
             "execute_filter",
         ],
     }
 
-    cases = parse_json_cases(write_dataset(tmp_path, [case]))
-
-    assert cases[0].expected_tool_calls[0].name == "lookup_recipient"
-    assert cases[0].expected_tool_calls[0].arguments == {
-        "query": "Clark Construction",
-    }
-    assert cases[0].expected_tool_calls[1].arguments is None
+    with pytest.raises(DatasetError, match="only non-empty tool names"):
+        parse_json_cases(write_dataset(tmp_path, [case]))
 
 
 def test_parse_json_cases_excludes_unapproved_cases_by_default(tmp_path: Path):

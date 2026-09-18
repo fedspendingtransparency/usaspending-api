@@ -1,30 +1,17 @@
 from dataclasses import dataclass
 from typing import Any, Mapping, Sequence
 
-from usaspending_api.llm.evals.models import MatchResult, ToolCall, ToolExpectation
+from usaspending_api.llm.evals.models import MatchResult, ToolCall
 
 
 @dataclass(frozen=True)
 class ToolCallMatcher:
-    """
-    Compares expected tool calls to actual observed tool calls.
+    """Compare expected and observed tool names in order."""
 
-    Initial behavior is intentionally strict:
-        - Tool count must match.
-        - Order must match.
-        - Names must match.
-        - Arguments are checked only when the JSON dataset supplies them.
-
-    NOTE: `allow_extra_actual_arguments` supports future argument-level ground truth data
-    where expected arguments are a required subset rather than the complete actual argument mapping.
-    """
-
-    allow_extra_actual_arguments: bool = False
-
-    def compare(self, expected: Sequence[ToolExpectation], actual: Sequence[ToolCall]) -> MatchResult:
-        expected_data = [tool.as_dict() for tool in expected]
-        actual_data = [tool.as_dict() for tool in actual]
-        mismatch = self._find_mismatch(expected, actual)
+    def compare(self, expected: Sequence[str], actual: Sequence[ToolCall]) -> MatchResult:
+        expected_data = list(expected)
+        actual_data = [tool.name for tool in actual]
+        mismatch = self._find_mismatch(expected_data, actual_data)
 
         return MatchResult(
             passed=mismatch is None,
@@ -34,48 +21,23 @@ class ToolCallMatcher:
             message=mismatch or "Tool call sequence matches expected values.",
         )
 
-    def _find_mismatch(
-        self,
-        expected: Sequence[ToolExpectation],
-        actual: Sequence[ToolCall],
-    ) -> str | None:
+    def _find_mismatch(self, expected: Sequence[str], actual: Sequence[str]) -> str | None:
         mismatch = None
 
         if len(expected) != len(actual):
             mismatch = f"Expected {len(expected)} tool call(s), received {len(actual)}."
         else:
-            for index, (expected_tool, actual_tool) in enumerate(zip(expected, actual, strict=True)):
-                if expected_tool.name != actual_tool.name:
-                    mismatch = f"Tool call {index} expected '{expected_tool.name}', received '{actual_tool.name}'."
-                    break
-
-                if expected_tool.arguments is not None and not self._arguments_match(
-                    expected_tool.arguments,
-                    actual_tool,
-                ):
-                    mismatch = f"Tool arguments differ for '{expected_tool.name}' at position '{index}'."
+            for index, (expected_name, actual_name) in enumerate(zip(expected, actual, strict=True)):
+                if expected_name != actual_name:
+                    mismatch = f"Tool call {index} expected '{expected_name}', received '{actual_name}'."
                     break
 
         return mismatch
 
-    def _arguments_match(self, expected_arguments: Mapping[str, Any], actual: ToolCall) -> bool:
-        if self.allow_extra_actual_arguments:
-            return all(actual.arguments.get(key) == value for key, value in expected_arguments.items())
-
-        return expected_arguments == actual.arguments
-
 
 @dataclass(frozen=True)
 class MappingSubsetMatcher:
-    """
-    Compares expected output to actual output as a recursive mapping subset.
-
-    Expected values must exist and match in actual output. Extra actual fields are allowed.
-
-    This should allow non-semantic details like request IDs, model metadata, or additional resolved filter data
-    that does not need to be authored in every ground truth row to exist in production output without breaking
-    the eval framework.
-    """
+    """Compare expected output to actual output as a recursive mapping subset."""
 
     def compare(self, expected: Mapping[str, Any], actual: Mapping[str, Any]) -> MatchResult:
         differences = self._find_differences(expected=expected, actual=actual)
@@ -93,14 +55,6 @@ class MappingSubsetMatcher:
         )
 
     def _find_differences(self, expected: Mapping[str, Any], actual: Mapping[str, Any], path: str = "") -> list[str]:
-        """
-        Recursively identifies missing or mismatched expected values.
-
-        Example failure:
-
-            time_period.fiscal_year
-            (expected 2025, received 2024)
-        """
         differences: list[str] = []
 
         for key, expected_value in expected.items():

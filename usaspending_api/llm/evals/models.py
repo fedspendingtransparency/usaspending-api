@@ -4,53 +4,13 @@ from typing import Any
 
 @dataclass(frozen=True)
 class ToolCall:
-    """
-    A tool call that was observed while an assistant ran.
-
-    Represents runtime behavior, so arguments are always a concrete dictionary.
-    Even a tool with no arguments is represented as {}.
-
-    Example:
-        ToolCall(
-            name="lookup_recipient",
-            arguments={"recipient": "Clark Construction"},
-        ),
-    """
+    """A tool name observed while an assistant ran."""
 
     name: str
-    arguments: dict[str, Any] = field(default_factory=dict)
 
-    def as_dict(self) -> dict[str, Any]:
-        """Convert the object to a JSON-compatible structure."""
-        return {
-            "name": self.name,
-            "arguments": self.arguments,
-        }
-
-
-@dataclass(frozen=True)
-class ToolExpectation:
-    """
-    A tool call expected by a ground truth case.
-
-    Example: `arguments=None` intentionally means:
-        "The tool name and position matter, but this dataset does not assert exact argument values."
-    Whereas: `arguments={}` would mean:
-        "This tool must be called with no arguments."
-
-    This distinction allows the JSON ground truth dataset to define tool names without requiring tool argument
-    expectations.
-    """
-
-    name: str
-    arguments: dict[str, Any] | None = None
-
-    def as_dict(self) -> dict[str, Any]:
-        """Convert the object to a JSON-compatible structure."""
-        return {
-            "name": self.name,
-            "arguments": self.arguments,
-        }
+    def as_dict(self) -> str:
+        """Return the runtime tool name for reports and comparisons."""
+        return self.name
 
 
 @dataclass(frozen=True)
@@ -85,7 +45,7 @@ class EvalCase:
 
     name: str
     input: dict[str, Any]
-    expected_tool_calls: tuple[ToolExpectation, ...] = ()
+    expected_tool_calls: tuple[str, ...] = ()
     expected_output: dict[str, Any] = field(default_factory=dict)
     metadata: dict[str, Any] = field(default_factory=dict)
 

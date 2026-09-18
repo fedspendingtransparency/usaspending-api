@@ -125,7 +125,7 @@ def result_to_dict(result: EvalResult) -> dict[str, Any]:
 
 def unrun_case_to_dict(summary: EvalSummary, case: EvalCase) -> dict[str, Any]:
     """Converts an excluded case into a row with explicit N/A actual fields."""
-    expected_tools = [tool.as_dict() for tool in case.expected_tool_calls]
+    expected_tools = list(case.expected_tool_calls)
     reason = summary.unrun_reasons.get(case.name, "case was not run")
 
     return {
