@@ -13,11 +13,19 @@ from pathlib import Path
 from typing import Optional, Tuple
 
 import psutil as ps
+from django import setup as django_setup
+from django.apps import apps as django_apps
 from django.conf import settings
 from django.db.models import QuerySet
 from django.db.models.expressions import Ref
 from opentelemetry import trace
 from opentelemetry.trace import SpanKind
+
+# execute_psql/split_and_zip_data_files are run via multiprocessing.get_context("spawn").Process, which
+# re-imports this module in a fresh interpreter with no prior Django configuration. Ensure Django is set
+# up before importing the Django models below (NOTE: DJANGO_SETTINGS_MODULE must already be set in the env).
+if not django_apps.ready:
+    django_setup()
 
 from usaspending_api.awards.v2.lookups.lookups import assistance_type_mapping, contract_type_mapping, idv_type_mapping
 from usaspending_api.common.csv_helpers import count_rows_in_delimited_file, partition_large_delimited_file
@@ -550,8 +558,15 @@ def parse_source(  # noqa: PLR0913
     start_time = time.perf_counter()
 
     try:
+        # Resolve the DSN in this (parent) process, not inside the spawned child: the child is a fresh
+        # interpreter that re-imports this module, so any test-time mock of retrieve_db_string() here
+        # would be lost if it were called from within execute_psql instead.
+        dsn = retrieve_db_string()
+
         # Create a separate process to run the PSQL command; wait
-        psql_process = multiprocessing.Process(target=execute_psql, args=(temp_file_path, source_path, download_job))
+        psql_process = multiprocessing.get_context("spawn").Process(
+            target=execute_psql, args=(temp_file_path, source_path, download_job, dsn)
+        )
         write_to_log(message=f"Running {source.file_name} using psql", download_job=download_job)
         psql_process.start()
         wait_for_process(psql_process, start_time, download_job)
@@ -571,7 +586,7 @@ def parse_source(  # noqa: PLR0913
         download_job.save()
 
         # Create a separate process to split the large data files into smaller file and write to zip; wait
-        zip_process = multiprocessing.Process(
+        zip_process = multiprocessing.get_context("spawn").Process(
             target=split_and_zip_data_files,
             args=(zip_file_path, source_path, data_file_name, file_format, download_job),
         )
@@ -698,6 +713,13 @@ def wait_for_process(process: multiprocessing.Process, start_time: float, downlo
             )
         else:
             # An error occurred in the process
+            exitcode = process.exitcode
+            signal_note = f" (killed by signal {-exitcode})" if exitcode is not None and exitcode < 0 else ""
+            write_to_log(
+                message=f"Process (pid {process.pid}) exited with code {exitcode}{signal_note}",
+                download_job=download_job,
+                is_error=True,
+            )
             e = Exception("Command failed. Please see the logs for details.")
 
         raise e
@@ -900,7 +922,7 @@ def _top_level_split(sql: str, splitter: str) -> str:
     raise ValueError(f"SQL string ${sql} cannot be split on ${splitter}")
 
 
-def execute_psql(temp_sql_file_path: str, source_path: str, download_job: DownloadJob) -> None:
+def execute_psql(temp_sql_file_path: str, source_path: str, download_job: DownloadJob, dsn: str) -> None:
     """Executes a single PSQL command within its own Subprocess"""
     download_sql = Path(temp_sql_file_path).read_text()
     if download_sql.startswith("\\COPY"):
@@ -938,7 +960,7 @@ def execute_psql(temp_sql_file_path: str, source_path: str, download_job: Downlo
 
             # Build PostgreSQL environment using helper
             psql_env = build_psql_env(
-                dsn=retrieve_db_string(),
+                dsn=dsn,
                 statement_timeout_hours=settings.DOWNLOAD_DB_TIMEOUT_IN_HOURS
                 if (download_job and not download_job.monthly_download)
                 else None,
@@ -972,6 +994,8 @@ def execute_psql(temp_sql_file_path: str, source_path: str, download_job: Downlo
             sql = subprocess.check_output(["cat", temp_sql_file_path]).decode()
             write_to_log(message=f"Faulty SQL: {sql}", is_error=True, download_job=download_job)
             raise e
+
+    write_to_log(message=f"execute_psql returning normally (pid={os.getpid()})", download_job=download_job)
 
 
 def retrieve_db_string() -> str:
