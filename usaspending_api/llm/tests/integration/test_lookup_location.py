@@ -79,7 +79,7 @@ class TestInputValidation:
     def test_empty_query_returns_error(self, location_tool):
         result = location_tool.lookup_location("")
         assert "error" in result
-        assert result["results"] == []
+        assert result["results"] == {}
 
     def test_invalid_location_type_returns_error(self, location_tool):
         result = location_tool.lookup_location("Texas", location_type="invalid")
@@ -110,7 +110,7 @@ class TestLocationTypes:
         result = location_tool.lookup_location("Texas")
 
         assert result["count"] == 1
-        location_obj = result["results"][0]["USA_TX"]
+        location_obj = result["results"]["USA_TX"]
         assert location_obj["identifier"] == "USA_TX"
         assert location_obj["filter"]["country"] == "USA"
         assert location_obj["filter"]["state"] == "TX"
@@ -129,7 +129,7 @@ class TestLocationTypes:
 
         result = location_tool.lookup_location("Chicago")
 
-        location_obj = result["results"][0]["USA_IL_CHICAGO"]
+        location_obj = result["results"]["USA_IL_CHICAGO"]
         assert location_obj["identifier"] == "USA_IL_CHICAGO"
         assert location_obj["filter"]["city"] == "CHICAGO"
         assert location_obj["filter"]["state"] == "IL"
@@ -154,7 +154,7 @@ class TestLocationTypes:
 
         result = location_tool.lookup_location("Jackson County")
 
-        location_obj = result["results"][0]["USA_MO_095"]
+        location_obj = result["results"]["USA_MO_095"]
         assert location_obj["identifier"] == "USA_MO_095"
         assert location_obj["filter"]["county"] == "095"
         assert location_obj["display"]["entity"] == "County"
@@ -167,7 +167,7 @@ class TestLocationTypes:
 
         result = location_tool.lookup_location("64198")
 
-        location_obj = result["results"][0]["USA_64198"]
+        location_obj = result["results"]["USA_64198"]
         assert location_obj["identifier"] == "USA_64198"
         assert location_obj["filter"]["zip"] == "64198"
         assert location_obj["display"]["entity"] == "Zip code"
@@ -183,7 +183,7 @@ class TestLocationTypes:
         ]
 
         result = location_tool.lookup_location("MO-04")
-        location_obj = result["results"][0]["USA_MO_04"]
+        location_obj = result["results"]["USA_MO_04"]
         assert location_obj["identifier"] == "USA_MO_04"
         assert location_obj["filter"]["district_current"] == "04"
         assert location_obj["display"]["entity"] == "Current congressional district"
@@ -200,7 +200,7 @@ class TestLocationTypes:
 
         result = location_tool.lookup_location("NY-12", location_type="original_cd")
 
-        location_obj = result["results"][0]["USA_NY_12"]
+        location_obj = result["results"]["USA_NY_12"]
         assert location_obj["filter"]["district_original"] == "12"
 
     def test_country_lookup(self, location_tool, mock_search):
@@ -211,7 +211,7 @@ class TestLocationTypes:
 
         result = location_tool.lookup_location("Germany")
 
-        location_obj = result["results"][0]["DEU"]
+        location_obj = result["results"]["DEU"]
         assert location_obj["identifier"] == "DEU"
         assert location_obj["filter"]["country"] == "DEU"
         assert location_obj["display"]["entity"] == "Country"
@@ -232,7 +232,7 @@ class TestFuzzyMatching:
         result = location_tool.lookup_location("Flordia")
 
         assert result["count"] == 1
-        assert "USA_FL" in result["results"][0]
+        assert "USA_FL" in result["results"]
 
     def test_partial_match(self, location_tool, mock_search):
         """AC: Fuzzy matching handles partial names."""
@@ -248,7 +248,7 @@ class TestFuzzyMatching:
         result = location_tool.lookup_location("Massa")
 
         assert result["count"] == 1
-        assert "USA_MA" in result["results"][0]
+        assert "USA_MA" in result["results"]
 
     def test_case_insensitive(self, location_tool, mock_search):
         """AC: Fuzzy matching is case insensitive."""
@@ -259,7 +259,7 @@ class TestFuzzyMatching:
         for query in ["texas", "TEXAS", "Texas", "tExAs"]:
             result = location_tool.lookup_location(query)
             assert result["count"] == 1
-            assert "USA_TX" in result["results"][0]
+            assert "USA_TX" in result["results"]
 
 
 class TestQueryBehavior:
@@ -310,7 +310,7 @@ class TestQueryBehavior:
 
         assert result["count"] == 2
         # Check both results present
-        identifiers = [list(loc.keys())[0] for loc in result["results"]]
+        identifiers = list(result["results"].keys())
         assert "USA_TX" in identifiers
         assert "USA_TX_TEXARKANA" in identifiers
 
@@ -326,7 +326,7 @@ class TestErrorHandling:
 
         assert "error" in result
         assert "OpenSearch query failed" in result["error"]
-        assert result["results"] == []
+        assert result["results"] == {}
 
     def test_malformed_json(self, location_tool, mock_search):
         """Test handling of malformed location_json."""
@@ -343,7 +343,7 @@ class TestErrorHandling:
         # Both results will be returned (implementation handles empty data gracefully)
         # If you want to skip bad results, update the implementation to raise an exception
         assert result["count"] == 2
-        assert "USA_TX" in result["results"][1]  # Second result is the valid one
+        assert "USA_TX" in result["results"]  # Second result is the valid one
 
     def test_empty_results(self, location_tool, mock_search):
         """Test handling when no results found."""
@@ -352,7 +352,7 @@ class TestErrorHandling:
         result = location_tool.lookup_location("NOTAREALPLACE123")
 
         assert result["count"] == 0
-        assert result["results"] == []
+        assert result["results"] == {}
         assert "error" not in result
 
 
@@ -366,7 +366,7 @@ class TestIntegrationWithFilters:
         ]
 
         result = location_tool.lookup_location("Texas")
-        location_dict = result["results"][0]
+        location_dict = result["results"]
 
         # Should be able to create Filters with this location
         filters = Filters(selectedLocations=location_dict)
@@ -386,7 +386,7 @@ class TestIntegrationWithFilters:
         ]
 
         result = location_tool.lookup_location("Chicago")
-        location_dict = result["results"][0]
+        location_dict = result["results"]
         identifier = list(location_dict.keys())[0]
         location_data = location_dict[identifier]
 
@@ -481,7 +481,7 @@ class TestResponseStructure:
         assert "location_type" in result
 
         # Result structure
-        location_dict = result["results"][0]
+        location_dict = result["results"]
         identifier = list(location_dict.keys())[0]
         location_obj = location_dict[identifier]
 
@@ -497,7 +497,7 @@ class TestResponseStructure:
         ]
 
         result = location_tool.lookup_location("Texas")
-        location_dict = result["results"][0]
+        location_dict = result["results"]
 
         # Key should match identifier
         key = list(location_dict.keys())[0]
@@ -549,7 +549,7 @@ class TestEdgeCases:
         result = location_tool.lookup_location("  Texas  ")
 
         assert result["count"] == 1
-        assert "USA_TX" in result["results"][0]
+        assert "USA_TX" in result["results"]
 
     def test_foreign_city_without_state(self, location_tool, mock_search):
         """Test foreign city lookup that doesn't have a state."""
@@ -559,7 +559,7 @@ class TestEdgeCases:
 
         result = location_tool.lookup_location("Istanbul")
 
-        location_obj = result["results"][0]["TUR_undefined_ISTANBUL"]
+        location_obj = result["results"]["TUR_undefined_ISTANBUL"]
         assert location_obj["filter"]["country"] == "TUR"
         assert location_obj["filter"]["city"] == "ISTANBUL"
         # No state in filter since it's not a US city
@@ -657,7 +657,7 @@ class TestRealWorldScenarios:
         result = location_tool.lookup_location("Kansas City")
 
         assert result["count"] == 2
-        identifiers = [list(loc.keys())[0] for loc in result["results"]]
+        identifiers = list(result["results"].keys())
         assert "USA_MO_KANSAS_CITY" in identifiers
         assert "USA_KS_KANSAS_CITY" in identifiers
 
@@ -673,7 +673,7 @@ class TestRealWorldScenarios:
 
         # Should get state, not city
         assert result["count"] == 1
-        assert "USA_WA" in result["results"][0]
+        assert "USA_WA" in result["results"]
 
     def test_top_k_limits_results(self, location_tool, mock_search):
         """Test that top_k properly limits number of results."""
