@@ -592,7 +592,6 @@ class Filters(BaseModel):
     treasuryAccounts: dict[str, Any] = Field(default_factory=dict)
     tasCodes: CodeLists = Field(default_factory=CodeLists)
     awardDescription: str = ""
-    searchedFilterValues: dict[str, Any] = Field(default_factory=dict)
     filterNewAwardsOnlySelected: bool = False
     filterNewAwardsOnlyActive: bool = False
     filterNaoActiveFromFyOrDateRange: bool = False
