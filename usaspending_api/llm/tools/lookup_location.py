@@ -96,7 +96,7 @@ class LocationLookupTool:
             )
         except Exception as e:
             logger.error(f"OpenSearch query failed for query='{query}': {str(e)}", exc_info=True)
-            return {"error": f"OpenSearch query failed: {str(e)}", "results": []}
+            return {"error": f"OpenSearch query failed: {str(e)}", "results": {}}
 
         # Transform results
         results = self._transform_results(response)
@@ -123,12 +123,12 @@ class LocationLookupTool:
     def _validate_inputs(self, query: str, location_type: str | None) -> dict[str, Any] | None:
         """Validate input parameters and return error dict if invalid, None otherwise."""
         if not query or not query.strip():
-            return {"error": "Query cannot be empty", "results": []}
+            return {"error": "Query cannot be empty", "results": {}}
 
         if location_type and location_type not in self.LOCATION_TYPES:
             return {
                 "error": f"Invalid location_type. Must be one of: {', '.join(sorted(self.LOCATION_TYPES))}",
-                "results": [],
+                "results": {},
             }
 
         return None
@@ -162,7 +162,7 @@ class LocationLookupTool:
 
     def _transform_results(self, response: Any) -> list[dict[str, Any]]:
         """Transform OpenSearch hits to SelectedLocation format."""
-        results = []
+        results = {}
         seen_identifiers = set()
 
         for hit in response.hits:
@@ -184,7 +184,7 @@ class LocationLookupTool:
                 seen_identifiers.add(identifier)
 
                 # Return in the format expected by selectedLocations
-                results.append({identifier: location_obj})
+                results[identifier] = location_obj
 
             except Exception as e:
                 logger.warning(
