@@ -96,7 +96,7 @@ class LocationLookupTool:
             )
         except Exception as e:
             logger.error(f"OpenSearch query failed for query='{query}': {str(e)}", exc_info=True)
-            return {"error": f"OpenSearch query failed: {str(e)}", "results": []}
+            return {"error": f"OpenSearch query failed: {str(e)}", "results": {}}
 
         # Transform results
         results = self._transform_results(response)
