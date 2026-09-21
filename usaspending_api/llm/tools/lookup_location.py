@@ -123,12 +123,12 @@ class LocationLookupTool:
     def _validate_inputs(self, query: str, location_type: str | None) -> dict[str, Any] | None:
         """Validate input parameters and return error dict if invalid, None otherwise."""
         if not query or not query.strip():
-            return {"error": "Query cannot be empty", "results": []}
+            return {"error": "Query cannot be empty", "results": {}}
 
         if location_type and location_type not in self.LOCATION_TYPES:
             return {
                 "error": f"Invalid location_type. Must be one of: {', '.join(sorted(self.LOCATION_TYPES))}",
-                "results": [],
+                "results": {},
             }
 
         return None
