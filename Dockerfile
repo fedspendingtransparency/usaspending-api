@@ -6,7 +6,7 @@
 
 # See docker-compose.yml file and README.md for docker compose information
 
-FROM python:3.10.12-slim-bullseye
+FROM python:3.10.12-slim-bookworm
 
 COPY --from=ghcr.io/astral-sh/uv:0.7.19 /uv /uvx /bin/
 
@@ -18,7 +18,13 @@ RUN apt update && apt install -y \
     gcc \
     libpq-dev \
     openssl \
-    postgresql-13
+    gnupg2 \
+    lsb-release
+
+RUN curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc | gpg --dearmor -o /etc/apt/trusted.gpg.d/postgresql.gpg && \
+    sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list' && \
+    apt update && \
+    apt install -y postgresql-16
 
 RUN update-ca-certificates
 
