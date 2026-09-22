@@ -379,7 +379,10 @@ class Filters(BaseModel):
     )
     selectedFundingAgencies: dict[str, Any] = Field(default_factory=dict)
     selectedAwardingAgencies: dict[str, SelectedAgency] = Field(default_factory=dict)
-    selectedRecipients: list[str] = Field(default_factory=list)
+    selectedRecipients: list[str] = Field(
+        default_factory=list,
+        json_schema_extra={"examples": [["BOEING"], ["APPLE INC", "MICROSOFT CORPORATION"]]},
+    )
     recipientDomesticForeign: Literal["all", "foreign"] = Field(
         default="all", description='Use "foreign" to search all foreign locations. Otherwise use "all"'
     )

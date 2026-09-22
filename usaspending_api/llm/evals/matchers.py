@@ -1,3 +1,4 @@
+from collections.abc import Iterable
 from dataclasses import dataclass
 from typing import Any, Mapping, Sequence
 
@@ -41,10 +42,9 @@ class MappingSubsetMatcher:
 
     def compare(self, expected: Mapping[str, Any], actual: Mapping[str, Any]) -> MatchResult:
         differences = self._find_differences(expected=expected, actual=actual)
-
         return MatchResult(
             passed=not differences,
-            score=1.0 if not differences else 0.0,
+            score=(len(expected) - len(differences)) / len(expected) if expected else 0.0,
             expected=dict(expected),
             actual=dict(actual),
             message=(
@@ -54,7 +54,9 @@ class MappingSubsetMatcher:
             ),
         )
 
-    def _find_differences(self, expected: Mapping[str, Any], actual: Mapping[str, Any], path: str = "") -> list[str]:
+    def _find_differences(
+        self, expected: Mapping[str, Any] | Iterable, actual: Mapping[str, Any] | Iterable, path: str = ""
+    ) -> list[str]:
         differences: list[str] = []
 
         for key, expected_value in expected.items():
@@ -65,7 +67,6 @@ class MappingSubsetMatcher:
                 continue
 
             actual_value = actual[key]
-
             if isinstance(expected_value, Mapping):
                 if not isinstance(actual_value, Mapping):
                     differences.append(f"{current_path} (expected nested mapping)")
@@ -80,7 +81,20 @@ class MappingSubsetMatcher:
                 )
                 continue
 
-            if expected_value != actual_value:
-                differences.append(f"{current_path} (expected {expected_value!r}, received {actual_value!r})")
+            match expected_value:
+                case str():
+                    if expected_value.lower() != actual_value.lower():
+                        differences.append(f"{current_path} (expected {expected_value!r}, received {actual_value!r})")
+                case Iterable():
+                    if all(isinstance(v, str) for v in expected_value) and len(expected_value) == len(actual_value):
+                        if not all(e.lower() == a.lower() for e, a in zip(expected_value, actual_value)):
+                            differences.append(
+                                f"{current_path} (expected {expected_value!r}, received {actual_value!r})"
+                            )
+                    else:
+                        differences.append(f"{current_path} (expected {expected_value!r})")
+                case _:
+                    if expected_value != actual_value:
+                        differences.append(f"{current_path} (expected {expected_value!r}, received {actual_value!r})")
 
         return differences

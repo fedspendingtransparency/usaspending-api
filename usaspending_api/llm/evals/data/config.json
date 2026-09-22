@@ -52,5 +52,4753 @@
         "notes": "Similar query to NYT request, variating recipient against q1",
         "approved": true,
         "sme_validation_notes": ""
+    },
+    {
+        "id": 3,
+        "query": "Show me all transactions for award PIID N0001917C0001",
+        "expected_output": {
+            "selectedAwardIDs": {
+                "N0001917C0001": {}
+            }
+        },
+        "expected_tools": [
+            "execute_filter"
+        ],
+        "tags": [
+            "single_filter"
+        ],
+        "notes": "Checking award id using PIID",
+        "approved": true,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 4,
+        "query": "How much funding did award DENA0003525 get?",
+        "expected_output": {
+            "selectedAwardIDs": {
+                "DENA0003525": {}
+            },
+            "timePeriodType": "fy",
+            "timePeriodFY": [
+                "2024"
+            ]
+        },
+        "expected_tools": [
+            "execute_filter"
+        ],
+        "tags": [
+            "multi_filter",
+            "temporal"
+        ],
+        "notes": "Using language \"how much funding... get\"",
+        "approved": true,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 5,
+        "query": "Who is the recipient for contract number DENA0003525 ?",
+        "expected_output": {
+            "selectedAwardIDs": {
+                "DENA0003525": {}
+            },
+            "timePeriodType": "fy",
+            "timePeriodFY": [
+                "2024"
+            ],
+            "awardType": [
+                "Contracts"
+            ]
+        },
+        "expected_tools": [
+            "execute_filter"
+        ],
+        "tags": [
+            "multi_filter"
+        ],
+        "notes": "Checking award id using Unique Award Key, seeing how responds to \"who is the recipient\"",
+        "approved": true,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 6,
+        "query": "Show me the award details for order number N0002417C2117",
+        "expected_output": {
+            "selectedAwardIDs": {
+                "N0002417C2117": {}
+            }
+        },
+        "expected_tools": [
+            "execute_filter"
+        ],
+        "tags": [
+            "single_filter"
+        ],
+        "notes": "Checking award id using PIID",
+        "approved": true,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 7,
+        "query": "How much did grant 55IH0402810 receive in the last year?",
+        "expected_output": {
+            "selectedAwardIDs": {
+                "55IH0402810": {}
+            },
+            "awardType": [
+                "Grants"
+            ]
+        },
+        "expected_tools": [
+            "execute_filter"
+        ],
+        "tags": [
+            "multi_filter",
+            "temporal"
+        ],
+        "notes": "Checking how responds without using money term, such as \"funding, money, etc\"",
+        "approved": true,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 8,
+        "query": "List all records under award B-18-DP-72-0002",
+        "expected_output": {
+            "selectedAwardIDs": {
+                "B-18-DP-72-0002": {}
+            }
+        },
+        "expected_tools": [
+            "execute_filter"
+        ],
+        "tags": [
+            "single_filter"
+        ],
+        "notes": "Using list all and records for award id",
+        "approved": true,
+        "sme_validation_notes": "Expected outputs could differ based on prime/subaward button"
+    },
+    {
+        "id": 9,
+        "query": "Find transactions for 80NSSC24K1441 awarded to Lockheed Martin",
+        "expected_output": {
+            "selectedAwardIDs": {
+                "80NSSC24K1441": {}
+            },
+            "selectedRecipients": [
+                "Lockheed Martin"
+            ]
+        },
+        "expected_tools": [
+            "lookup_recipient",
+            "execute_filter"
+        ],
+        "tags": [
+            "multi_filter"
+        ],
+        "notes": "",
+        "approved": true,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 11,
+        "query": "How much did Elon Musk's company receive in funding so far?",
+        "expected_output": {
+            "selectedRecipients": [
+                "Tesla",
+                "The Boring Company",
+                "X",
+                "SpaceX",
+                "Neuralink",
+                "xAI"
+            ]
+        },
+        "expected_tools": [
+            "lookup_recipient",
+            "execute_filter"
+        ],
+        "tags": [
+            "ambiguous",
+            "nice_to_have",
+            "multi_answer"
+        ],
+        "notes": "Implicit knowledge of Elon Musk's companies, nice to have",
+        "approved": true,
+        "sme_validation_notes": "Nice to have, check performance but dont hurt score"
+    },
+    {
+        "id": 12,
+        "query": "How many awards did Tesla receive?",
+        "expected_output": {
+            "selectedRecipients": [
+                "Tesla"
+            ]
+        },
+        "expected_tools": [
+            "lookup_recipient",
+            "execute_filter"
+        ],
+        "tags": [
+            "single_filter"
+        ],
+        "notes": "How many question",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 14,
+        "query": "How many awards has HR1JA12FSM63 received?",
+        "expected_output": {
+            "selectedRecipients": [
+                "HR1JA12FSM63"
+            ]
+        },
+        "expected_tools": [
+            "lookup_recipient",
+            "execute_filter"
+        ],
+        "tags": [
+            "single_filter"
+        ],
+        "notes": "Using UEI as a recipient",
+        "approved": true,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 15,
+        "query": "How much money was given to 963737366  last year by the DOD?",
+        "expected_output": {
+            "selectedRecipients": [
+                "963737366"
+            ],
+            "selectedAwardingAgencies": {
+                "1173_toptier": {
+                    "id": 1173,
+                    "agencyType": "toptier",
+                    "toptier_flag": true,
+                    "toptier_agency": {
+                        "id": 126,
+                        "toptier_code": "097",
+                        "abbreviation": "DOD",
+                        "name": "Department of Defense"
+                    }
+                }
+            }
+        },
+        "expected_tools": [
+            "lookup_recipient",
+            "lookup_agencies",
+            "execute_filter"
+        ],
+        "tags": [
+            "multi_filter",
+            "temporal"
+        ],
+        "notes": "Using DUNS as recipient and agency acronym",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 16,
+        "query": "List all recipients receiving money from Treasury last month",
+        "expected_output": {
+            "selectedAwardingAgencies": {
+                "456_toptier": {
+                    "id": 456,
+                    "agencyType": "toptier",
+                    "toptier_flag": true,
+                    "toptier_agency": {
+                        "id": 22,
+                        "toptier_code": "020",
+                        "abbreviation": "TREAS",
+                        "name": "Department of the Treasury"
+                    }
+                }
+            }
+        },
+        "expected_tools": [
+            "lookup_agencies",
+            "execute_filter"
+        ],
+        "tags": [
+            "multi_filter",
+            "temporal"
+        ],
+        "notes": "Using \"receiving money\" verbage to see how LLM reacts",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 17,
+        "query": "Show me all contracts for Lockheed, Boeing and General Dynamics",
+        "expected_output": {
+            "selectedRecipients": [
+                "Lockheed",
+                "Boeing",
+                "General Dynamics"
+            ],
+            "awardType": [
+                "Contracts"
+            ]
+        },
+        "expected_tools": [
+            "lookup_recipient",
+            "execute_filter"
+        ],
+        "tags": [
+            "multi_filter",
+            "multi_answer"
+        ],
+        "notes": "Multiple filter values for same filter",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 18,
+        "query": "Show me all awards over 1 million given to Humana",
+        "expected_output": {
+            "selectedRecipients": [
+                "Humana"
+            ],
+            "awardAmounts": {
+                "specific": [
+                    1000000,
+                    null
+                ]
+            }
+        },
+        "expected_tools": [
+            "lookup_recipient",
+            "execute_filter"
+        ],
+        "tags": [
+            "multi_filter",
+            "numerical"
+        ],
+        "notes": "Filtering award by amount",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 20,
+        "query": "How much is being spent on healthcare?",
+        "expected_output": {
+            "keyword": [
+                "healthcare"
+            ]
+        },
+        "expected_tools": [
+            "execute_filter"
+        ],
+        "tags": [
+            "single_filter",
+            "broad"
+        ],
+        "notes": "Using \"is being spent\" to see what is considered; using broad topic to trigger keyword",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 21,
+        "query": "How much is being spent on grants for healthcare?",
+        "expected_output": {
+            "selectedCFDA": {
+                "93.00A": {},
+                "93.078": {},
+                "93.226": {},
+                "93.391": {},
+                "93.428": {},
+                "93.440": {},
+                "93.450": {},
+                "93.457": {},
+                "93.691": {},
+                "93.717": {},
+                "93.720": {},
+                "93.801": {},
+                "93.835": {},
+                "93.968": {}
+            },
+            "awardType": [
+                "Grants"
+            ]
+        },
+        "expected_tools": [
+            "lookup_codes",
+            "execute_filter"
+        ],
+        "tags": [
+            "multi_filter",
+            "multi_answer"
+        ],
+        "notes": "",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 23,
+        "query": "List all loans given by DOJ between FY2023 and FY2025",
+        "expected_output": {
+            "awardType": [
+                "Loans"
+            ],
+            "selectedAwardingAgencies": {
+                "252_toptier": {
+                    "id": 252,
+                    "agencyType": "toptier",
+                    "toptier_flag": true,
+                    "toptier_agency": {
+                        "id": 17,
+                        "toptier_code": "015",
+                        "abbreviation": "DOJ",
+                        "name": "Department of Justice"
+                    }
+                }
+            },
+            "timePeriodType": "fy",
+            "timePeriodFY": [
+                "2023",
+                "2024",
+                "2025"
+            ]
+        },
+        "expected_tools": [
+            "lookup_agencies",
+            "execute_filter"
+        ],
+        "tags": [
+            "multi_answer",
+            "temporal",
+            "multi_filter"
+        ],
+        "notes": "Using range between FY",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 24,
+        "query": "How many awards were given to SpaceX in the last 5 years?",
+        "expected_output": {
+            "selectedRecipients": [
+                "SpaceX"
+            ]
+        },
+        "expected_tools": [
+            "lookup_recipient",
+            "execute_filter"
+        ],
+        "tags": [
+            "temporal",
+            "multi_filter"
+        ],
+        "notes": "Using last 5 years",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 25,
+        "query": "Total financial assistance awards for WA-02 in FY25",
+        "expected_output": {
+            "selectedLocations": {
+                "USA_WA_02": {
+                    "identifier": "USA_WA_02",
+                    "filter": {
+                        "country": "USA",
+                        "state": "WA",
+                        "district_current": "02"
+                    },
+                    "display": {
+                        "entity": "Current congressional district",
+                        "standalone": "WA-02",
+                        "title": "Washington's 2nd Congressional District"
+                    }
+                }
+            },
+            "awardType": [
+                "Grants",
+                "Direct Payments",
+                "Loans",
+                "Other"
+            ],
+            "timePeriodType": "fy",
+            "timePeriodFY": [
+                "2025"
+            ]
+        },
+        "expected_tools": [
+            "lookup_location",
+            "execute_filter"
+        ],
+        "tags": [
+            "temporal",
+            "multi_filter",
+            "location"
+        ],
+        "notes": "Congression district code with award type",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 26,
+        "query": "Total funding given to companies in Virginia last quarter?",
+        "expected_output": {
+            "recipientType": [
+                "business",
+                "minority_owned_business",
+                "woman_owned_business",
+                "veteran_owned_business",
+                "dot_certified_disadvantaged_business_enterprise",
+                "emerging_small_business",
+                "federally_funded_research_and_development_corp",
+                "historically_underutilized_business_firm",
+                "labor_surplus_area_firm",
+                "sba_certified_8a_joint_venture",
+                "self_certified_small_disadvanted_business",
+                "community_developed_corporation_owned_firm",
+                "us_owned_business",
+                "foreign_owned_and_us_located_business"
+            ],
+            "selectedRecipientLocations": {
+                "USA_VA": {
+                    "identifier": "USA_VA",
+                    "filter": {
+                        "country": "USA",
+                        "state": "VA"
+                    },
+                    "display": {
+                        "entity": "State",
+                        "standalone": "Virginia",
+                        "title": "Virginia"
+                    }
+                }
+            }
+        },
+        "expected_tools": [
+            "lookup_location",
+            "execute_filter"
+        ],
+        "tags": [
+            "temporal",
+            "multi_filter",
+            "multi_answer",
+            "location"
+        ],
+        "notes": "Using \"funding\" and \"quarter\"",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 27,
+        "query": "Total funding given to recipients in Virginia last quarter?",
+        "expected_output": {
+            "selectedLocations": {
+                "USA_VA": {
+                    "identifier": "USA_VA",
+                    "filter": {
+                        "country": "USA",
+                        "state": "VA"
+                    },
+                    "display": {
+                        "entity": "State",
+                        "standalone": "Virginia",
+                        "title": "Virginia"
+                    }
+                }
+            }
+        },
+        "expected_tools": [
+            "lookup_location",
+            "execute_filter"
+        ],
+        "tags": [
+            "temporal",
+            "multi_filter",
+            "location"
+        ],
+        "notes": "Using \"funding\" and \"quarter\"",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 28,
+        "query": "How many contracts given to companies in Florida?",
+        "expected_output": {
+            "selectedRecipientLocations": {
+                "USA_FL": {
+                    "identifier": "USA_FL",
+                    "filter": {
+                        "country": "USA",
+                        "state": "FL"
+                    },
+                    "display": {
+                        "entity": "State",
+                        "standalone": "Florida",
+                        "title": "Florida"
+                    }
+                }
+            },
+            "awardType": [
+                "Contracts"
+            ],
+            "recipientType": [
+                "business",
+                "minority_owned_business",
+                "woman_owned_business",
+                "veteran_owned_business",
+                "dot_certified_disadvantaged_business_enterprise",
+                "emerging_small_business",
+                "federally_funded_research_and_development_corp",
+                "historically_underutilized_business_firm",
+                "labor_surplus_area_firm",
+                "sba_certified_8a_joint_venture",
+                "self_certified_small_disadvanted_business",
+                "community_developed_corporation_owned_firm",
+                "us_owned_business",
+                "foreign_owned_and_us_located_business"
+            ]
+        },
+        "expected_tools": [
+            "lookup_location",
+            "execute_filter"
+        ],
+        "tags": [
+            "multi_filter",
+            "location",
+            "multi_answer"
+        ],
+        "notes": "Defaulting to recipient location",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 29,
+        "query": "How much money was spent on overseas companies?",
+        "expected_output": {
+            "recipientDomesticForeign": "foreign",
+            "recipientType": [
+                "business",
+                "minority_owned_business",
+                "woman_owned_business",
+                "veteran_owned_business",
+                "dot_certified_disadvantaged_business_enterprise",
+                "emerging_small_business",
+                "federally_funded_research_and_development_corp",
+                "historically_underutilized_business_firm",
+                "labor_surplus_area_firm",
+                "sba_certified_8a_joint_venture",
+                "self_certified_small_disadvanted_business",
+                "community_developed_corporation_owned_firm",
+                "us_owned_business",
+                "foreign_owned_and_us_located_business"
+            ]
+        },
+        "expected_tools": [
+            "execute_filter"
+        ],
+        "tags": [
+            "multi_filter",
+            "location",
+            "multi_answer"
+        ],
+        "notes": "Referring to foreign agencies",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 30,
+        "query": "How much funding did USAID give to overseas companies last fiscal year?",
+        "expected_output": {
+            "selectedFundingAgencies": {
+                "801_toptier": {
+                    "id": 801,
+                    "agencyType": "toptier",
+                    "toptier_flag": true,
+                    "toptier_agency": {
+                        "id": 65,
+                        "toptier_code": "072",
+                        "abbreviation": "USAID",
+                        "name": "Agency for International Development"
+                    }
+                }
+            },
+            "recipientDomesticForeign": "foreign",
+            "recipientType": [
+                "business",
+                "minority_owned_business",
+                "woman_owned_business",
+                "veteran_owned_business",
+                "dot_certified_disadvantaged_business_enterprise",
+                "emerging_small_business",
+                "federally_funded_research_and_development_corp",
+                "historically_underutilized_business_firm",
+                "labor_surplus_area_firm",
+                "sba_certified_8a_joint_venture",
+                "self_certified_small_disadvanted_business",
+                "community_developed_corporation_owned_firm",
+                "us_owned_business",
+                "foreign_owned_and_us_located_business"
+            ]
+        },
+        "expected_tools": [
+            "lookup_agencies",
+            "execute_filter"
+        ],
+        "tags": [
+            "multi_filter",
+            "temporal",
+            "location",
+            "multi_answer"
+        ],
+        "notes": "Referring to funding agency",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 31,
+        "query": "How much money was allocated to healthcare by HHS",
+        "expected_output": {
+            "selectedAwardingAgencies": {
+                "806_toptier": {
+                    "id": 806,
+                    "agencyType": "toptier",
+                    "toptier_flag": true,
+                    "toptier_agency": {
+                        "id": 68,
+                        "toptier_code": "075",
+                        "abbreviation": "HHS",
+                        "name": "Department of Health and Human Services"
+                    }
+                }
+            },
+            "keyword": [
+                "healthcare"
+            ]
+        },
+        "expected_tools": [
+            "lookup_agencies",
+            "execute_filter"
+        ],
+        "tags": [
+            "multi_filter"
+        ],
+        "notes": "Using \"allocated to\"",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 32,
+        "query": "How much did HHS invest in healthcare?",
+        "expected_output": {
+            "selectedAwardingAgencies": {
+                "806_toptier": {
+                    "id": 806,
+                    "agencyType": "toptier",
+                    "toptier_flag": true,
+                    "toptier_agency": {
+                        "id": 68,
+                        "toptier_code": "075",
+                        "abbreviation": "HHS",
+                        "name": "Department of Health and Human Services"
+                    }
+                }
+            },
+            "keyword": [
+                "healthcare"
+            ]
+        },
+        "expected_tools": [
+            "lookup_agencies",
+            "execute_filter"
+        ],
+        "tags": [
+            "multi_filter"
+        ],
+        "notes": "Using \"invest in\"",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 34,
+        "query": "How much did HHS spend on healthcare?",
+        "expected_output": {
+            "selectedAwardingAgencies": {
+                "806_toptier": {
+                    "id": 806,
+                    "agencyType": "toptier",
+                    "toptier_flag": true,
+                    "toptier_agency": {
+                        "id": 68,
+                        "toptier_code": "075",
+                        "abbreviation": "HHS",
+                        "name": "Department of Health and Human Services"
+                    }
+                }
+            },
+            "keyword": [
+                "healthcare"
+            ]
+        },
+        "expected_tools": [
+            "lookup_agencies",
+            "execute_filter"
+        ],
+        "tags": [
+            "multi_filter"
+        ],
+        "notes": "Using \"spend on\"",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 35,
+        "query": "How many awards over 1m were financed by DHS?",
+        "expected_output": {
+            "selectedFundingAgencies": {
+                "766_toptier": {
+                    "id": 766,
+                    "agencyType": "toptier",
+                    "toptier_flag": true,
+                    "toptier_agency": {
+                        "id": 63,
+                        "toptier_code": "070",
+                        "abbreviation": "DHS",
+                        "name": "Department of Homeland Security"
+                    }
+                }
+            },
+            "awardAmounts": {
+                "specific": [
+                    1000000,
+                    null
+                ]
+            }
+        },
+        "expected_tools": [
+            "lookup_agencies",
+            "execute_filter"
+        ],
+        "tags": [
+            "multi_filter",
+            "numerical"
+        ],
+        "notes": "Abbreviated 1 million, using \"financed by\"",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 36,
+        "query": "How much was contracted to Booz Allen for AI last month?",
+        "expected_output": {
+            "selectedRecipients": [
+                "Booz Allen"
+            ],
+            "awardType": [
+                "Contracts"
+            ],
+            "keyword": [
+                "AI"
+            ]
+        },
+        "expected_tools": [
+            "lookup_recipient",
+            "execute_filter"
+        ],
+        "tags": [
+            "multi_filter",
+            "temporal"
+        ],
+        "notes": "Using \"contracted\"",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 37,
+        "query": "What payments were made to nonprofits?",
+        "expected_output": {
+            "awardType": [
+                "Direct Payments"
+            ],
+            "recipientType": [
+                "nonprofit"
+            ]
+        },
+        "expected_tools": [
+            "execute_filter"
+        ],
+        "tags": [
+            "multi_filter"
+        ],
+        "notes": "Using \"payments\" to link to direct payments",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 38,
+        "query": "How many loans were given to small businesses by the SBA last year?",
+        "expected_output": {
+            "awardType": [
+                "Loans"
+            ],
+            "recipientType": [
+                "small_business"
+            ]
+        },
+        "expected_tools": [
+            "execute_filter"
+        ],
+        "tags": [
+            "multi_filter",
+            "temporal"
+        ],
+        "notes": "Refering to loans and small business recipient type",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 39,
+        "query": "How much aid was given to minority owned businesses",
+        "expected_output": {
+            "awardType": [
+                "Grants",
+                "Direct Payments",
+                "Loans"
+            ],
+            "recipientType": [
+                "minority_owned_business"
+            ]
+        },
+        "expected_tools": [
+            "execute_filter"
+        ],
+        "tags": [
+            "multi_filter",
+            "multi_answer"
+        ],
+        "notes": "Using \"aid\" to reflect financial assistance awards",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 40,
+        "query": "How much funding does the Virginia DMV get each year?",
+        "expected_output": {
+            "selectedRecipients": [
+                "Virginia DMV"
+            ]
+        },
+        "expected_tools": [
+            "lookup_recipient",
+            "execute_filter"
+        ],
+        "tags": [
+            "single_filter"
+        ],
+        "notes": "Referencing state government recipient",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 41,
+        "query": "How much was awarded by the city of Fairfax",
+        "expected_output": {
+            "selectedRecipients": [
+                "city of Fairfax"
+            ]
+        },
+        "expected_tools": [
+            "lookup_recipient",
+            "execute_filter"
+        ],
+        "tags": [
+            "single_filter"
+        ],
+        "notes": "Referencing city recipient",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 42,
+        "query": "How many contract idvs were given to companies in the DMV last year?",
+        "expected_output": {
+            "awardType": [
+                "Contract IDVs"
+            ],
+            "selectedRecipientLocations": {
+                "USA_DC": {
+                    "identifier": "USA_DC",
+                    "filter": {
+                        "country": "USA",
+                        "state": "DC"
+                    },
+                    "display": {
+                        "entity": "State",
+                        "standalone": "District of Columbia",
+                        "title": "District of Columbia"
+                    }
+                },
+                "USA_MD": {
+                    "identifier": "USA_MD",
+                    "filter": {
+                        "country": "USA",
+                        "state": "MD"
+                    },
+                    "display": {
+                        "entity": "State",
+                        "standalone": "Maryland",
+                        "title": "Maryland"
+                    }
+                },
+                "USA_VA": {
+                    "identifier": "USA_VA",
+                    "filter": {
+                        "country": "USA",
+                        "state": "VA"
+                    },
+                    "display": {
+                        "entity": "State",
+                        "standalone": "Virginia",
+                        "title": "Virginia"
+                    }
+                }
+            }
+        },
+        "expected_tools": [
+            "lookup_location",
+            "execute_filter"
+        ],
+        "tags": [
+            "multi_filter",
+            "multi_answer",
+            "temporal",
+            "location"
+        ],
+        "notes": "Referencing region that includes multiple states",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 43,
+        "query": "How much funding did CBP receive for this fiscal year?",
+        "expected_output": {
+            "selectedFundingAgencies": {
+                "778_subtier": {
+                    "id": 778,
+                    "agencyType": "subtier",
+                    "toptier_flag": false,
+                    "toptier_agency": {
+                        "id": 63,
+                        "toptier_code": "070",
+                        "abbreviation": "DHS",
+                        "name": "Department of Homeland Security"
+                    },
+                    "subtier_agency": {
+                        "abbreviation": "CBP",
+                        "name": "U.S. Customs and Border Protection"
+                    }
+                }
+            }
+        },
+        "expected_tools": [
+            "lookup_agencies",
+            "execute_filter"
+        ],
+        "tags": [
+            "multi_filter",
+            "temporal"
+        ],
+        "notes": "Referring to funding subtier agency",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 44,
+        "query": "Which state received the most funding for medicare last FY?",
+        "expected_output": {
+            "selectedCFDA": {
+                "93.071": {},
+                "93.518": {},
+                "93.626": {},
+                "93.628": {},
+                "93.634": {},
+                "93.773": {},
+                "93.770": {},
+                "93.774": {},
+                "93.777": {},
+                "93.779": {},
+                "93.783": {},
+                "93.829": {},
+                "93.986": {}
+            }
+        },
+        "expected_tools": [
+            "lookup_codes",
+            "execute_filter"
+        ],
+        "tags": [
+            "multi_filter",
+            "temporal"
+        ],
+        "notes": "Broad subject on medicare",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 45,
+        "query": "Which agencies financed construction contracts in Texas last month?",
+        "expected_output": {
+            "awardType": [
+                "Contracts"
+            ],
+            "selectedLocations": {
+                "USA_TX": {
+                    "identifier": "USA_TX",
+                    "filter": {
+                        "country": "USA",
+                        "state": "TX"
+                    },
+                    "display": {
+                        "entity": "State",
+                        "standalone": "Texas",
+                        "title": "Texas"
+                    }
+                }
+            }
+        },
+        "expected_tools": [
+            "lookup_location",
+            "execute_filter"
+        ],
+        "tags": [
+            "multi_filter",
+            "temporal",
+            "location"
+        ],
+        "notes": "Using \"financed\" for funding, referencing PoP over RL",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 46,
+        "query": "List all cooperative agreements given for immigration services in California",
+        "expected_output": {
+            "awardType": [
+                "Cooperative Agreements"
+            ],
+            "selectedLocations": {
+                "USA_CA": {
+                    "identifier": "USA_CA",
+                    "filter": {
+                        "country": "USA",
+                        "state": "CA"
+                    },
+                    "display": {
+                        "entity": "State",
+                        "standalone": "California",
+                        "title": "California"
+                    }
+                }
+            },
+            "selectedCFDA": {
+                "16.110": {}
+            }
+        },
+        "expected_tools": [
+            "lookup_codes",
+            "lookup_location",
+            "execute_filter"
+        ],
+        "tags": [
+            "multi_filter",
+            "location"
+        ],
+        "notes": "Testing \"immigraiton services\"",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 47,
+        "query": "What was the total amount of funding that went to black owned businesses last year?",
+        "expected_output": {
+            "awardType": [
+                "Grants",
+                "Direct Payments",
+                "Loans"
+            ],
+            "recipientType": [
+                "black_american_owned_business"
+            ]
+        },
+        "expected_tools": [
+            "execute_filter"
+        ],
+        "tags": [
+            "multi_filter",
+            "multi_answer",
+            "temporal"
+        ],
+        "notes": "Using \"black owned business\", reffering to sub business type",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 48,
+        "query": "How many disabled veteran business receive funding",
+        "expected_output": {
+            "awardType": [
+                "Grants",
+                "Direct Payments",
+                "Loans"
+            ],
+            "recipientType": [
+                "service_disabled_veteran_owned_business"
+            ]
+        },
+        "expected_tools": [
+            "execute_filter"
+        ],
+        "tags": [
+            "multi_filter",
+            "multi_answer"
+        ],
+        "notes": "Refering to sub business type",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 49,
+        "query": "How much funding was given to educational institutions?",
+        "expected_output": {
+            "awardType": [
+                "Grants",
+                "Direct Payments",
+                "Loans"
+            ],
+            "recipientType": [
+                "higher_education"
+            ]
+        },
+        "expected_tools": [
+            "execute_filter"
+        ],
+        "tags": [
+            "multi_filter",
+            "multi_answer"
+        ],
+        "notes": "Refering to \"education instituions\" to refer to Higher Education business types",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 50,
+        "query": "All awards that went to non-government recipients",
+        "expected_output": {
+            "recipientType": [
+                "business",
+                "minority_owned_business",
+                "woman_owned_business",
+                "veteran_owned_business",
+                "special_designations",
+                "nonprofit",
+                "higher_education",
+                "individuals"
+            ]
+        },
+        "expected_tools": [
+            "execute_filter"
+        ],
+        "tags": [
+            "single_filter",
+            "multi_answer"
+        ],
+        "notes": "Reverse filtering of business types",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 51,
+        "query": "All non-grants",
+        "expected_output": {
+            "awardType": [
+                "Contracts",
+                "Contract IDVs",
+                "Direct Payments",
+                "Loans"
+            ]
+        },
+        "expected_tools": [
+            "execute_filter"
+        ],
+        "tags": [
+            "single_filter",
+            "multi_answer"
+        ],
+        "notes": "Reverse filtering of award types",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 52,
+        "query": "All awards that are not grants",
+        "expected_output": {
+            "awardType": [
+                "Contracts",
+                "Contract IDVs",
+                "Direct Payments",
+                "Loans"
+            ]
+        },
+        "expected_tools": [
+            "execute_filter"
+        ],
+        "tags": [
+            "single_filter",
+            "multi_answer"
+        ],
+        "notes": "Reverse filtering of award types",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 53,
+        "query": "Give me all awards for nonprofits and minority owned businesses",
+        "expected_output": {
+            "recipientType": [
+                "nonprofit",
+                "minority_owned_business"
+            ]
+        },
+        "expected_tools": [
+            "execute_filter"
+        ],
+        "tags": [
+            "single_filter",
+            "multi_answer"
+        ],
+        "notes": "Multiple recipient types",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 54,
+        "query": "How many awards were given to businesses like Tesla?",
+        "expected_output": {
+            "recipientType": [
+                "business"
+            ]
+        },
+        "expected_tools": [
+            "execute_filter"
+        ],
+        "tags": [
+            "single_filter",
+            "nice_to_have",
+            "ambiguous"
+        ],
+        "notes": "\"Like Tesla\" can mean different things, such as business type, industry, culture, etc",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 56,
+        "query": "All contracts over $100000 awarded to small businesses, minority owned businesses and veteran owned businesses in Tennessee last year",
+        "expected_output": {
+            "recipientType": [
+                "small_business",
+                "minority_owned_business",
+                "veteran_owned_business"
+            ],
+            "awardType": [
+                "Contracts"
+            ],
+            "selectedRecipientLocations": {
+                "USA_TN": {
+                    "identifier": "USA_TN",
+                    "filter": {
+                        "country": "USA",
+                        "state": "TN"
+                    },
+                    "display": {
+                        "entity": "State",
+                        "standalone": "Tennessee",
+                        "title": "Tennessee"
+                    }
+                }
+            },
+            "awardAmounts": {
+                "specific": [
+                    100000,
+                    null
+                ]
+            }
+        },
+        "expected_tools": [
+            "lookup_location",
+            "execute_filter"
+        ],
+        "tags": [
+            "complex",
+            "multi_answer",
+            "temporal",
+            "numerical",
+            "location"
+        ],
+        "notes": "Multiple recipient types, incl. top and lower groups",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 57,
+        "query": "Show me all awards with award descriptions that contain covid research",
+        "expected_output": {
+            "awardDescription": "covid research"
+        },
+        "expected_tools": [
+            "execute_filter"
+        ],
+        "tags": [
+            "single_filter"
+        ],
+        "notes": "Referring to award description directly",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 58,
+        "query": "Show me all awards with covid research in the award description",
+        "expected_output": {
+            "awardDescription": "covid research"
+        },
+        "expected_tools": [
+            "execute_filter"
+        ],
+        "tags": [
+            "single_filter"
+        ],
+        "notes": "Referring to award description directly",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 59,
+        "query": "Show me all awards over $1 million",
+        "expected_output": {
+            "awardAmounts": {
+                "specific": [
+                    1000000,
+                    null
+                ]
+            }
+        },
+        "expected_tools": [
+            "execute_filter"
+        ],
+        "tags": [
+            "single_filter",
+            "numerical"
+        ],
+        "notes": "Number written with wording and currency symbol",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 60,
+        "query": "Show me all awards over $1,000,000",
+        "expected_output": {
+            "awardAmounts": {
+                "specific": [
+                    1000000,
+                    null
+                ]
+            }
+        },
+        "expected_tools": [
+            "execute_filter"
+        ],
+        "tags": [
+            "single_filter",
+            "numerical"
+        ],
+        "notes": "Number written in currency format",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 61,
+        "query": "Show me all awards over 7 figures",
+        "expected_output": {
+            "awardAmounts": {
+                "specific": [
+                    1000000,
+                    null
+                ]
+            }
+        },
+        "expected_tools": [
+            "execute_filter"
+        ],
+        "tags": [
+            "single_filter",
+            "numerical"
+        ],
+        "notes": "Number written in slang term",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 62,
+        "query": "How many micro purchases were done for award ABC?",
+        "expected_output": {
+            "awardAmounts": {
+                "specific": [
+                    null,
+                    15000
+                ]
+            },
+            "selectedAwardIDs": {
+                "ABC": {}
+            }
+        },
+        "expected_tools": [
+            "execute_filter"
+        ],
+        "tags": [
+            "multi_filter",
+            "numerical"
+        ],
+        "notes": "Using \"micro-purchases\" to define range which is up to $15,000 according to https://smartpay.gsa.gov/guidance-and-audits/smart-bulletins/002/",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 63,
+        "query": "How many large awards were given by HUD?",
+        "expected_output": {
+            "selectedAwardingAgencies": {
+                "882_toptier": {
+                    "id": 882,
+                    "agencyType": "toptier",
+                    "toptier_flag": true,
+                    "toptier_agency": {
+                        "id": 76,
+                        "toptier_code": "086",
+                        "abbreviation": "HUD",
+                        "name": "Department of Housing and Urban Development"
+                    }
+                }
+            }
+        },
+        "expected_tools": [
+            "lookup_agencies",
+            "execute_filter"
+        ],
+        "tags": [
+            "multi_filter",
+            "numerical",
+            "ambiguous"
+        ],
+        "notes": "Using broaD term for award amount size",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 64,
+        "query": "Find all grants between $100000 and $200000 last year",
+        "expected_output": {
+            "awardType": [
+                "Grants"
+            ],
+            "awardAmounts": {
+                "specific": [
+                    100000,
+                    200000
+                ]
+            }
+        },
+        "expected_tools": [
+            "execute_filter"
+        ],
+        "tags": [
+            "multi_filter",
+            "numerical",
+            "temporal"
+        ],
+        "notes": "Without referencing \"award amount\", between amount ranges",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 65,
+        "query": "How many contracts given under 10 grand",
+        "expected_output": {
+            "awardAmounts": {
+                "specific": [
+                    null,
+                    10000
+                ]
+            }
+        },
+        "expected_tools": [
+            "execute_filter"
+        ],
+        "tags": [
+            "single_filter",
+            "numerical"
+        ],
+        "notes": "Number written in slang term",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 67,
+        "query": "How many non-grants were awarded by DHS last year?",
+        "expected_output": {
+            "awardType": [
+                "Contracts",
+                "Contract IDVs",
+                "Direct Payments",
+                "Loans",
+                "Other"
+            ],
+            "selectedAwardingAgencies": {
+                "766_toptier": {
+                    "id": 766,
+                    "agencyType": "toptier",
+                    "toptier_flag": true,
+                    "toptier_agency": {
+                        "id": 63,
+                        "toptier_code": "070",
+                        "abbreviation": "DHS",
+                        "name": "Department of Homeland Security"
+                    }
+                }
+            }
+        },
+        "expected_tools": [
+            "lookup_agencies",
+            "execute_filter"
+        ],
+        "tags": [
+            "multi_filter",
+            "multi_answer",
+            "temporal"
+        ],
+        "notes": "Using negative filtering",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 68,
+        "query": "Grants for assistance listing 14.257",
+        "expected_output": {
+            "awardType": [
+                "Grants"
+            ],
+            "selectedCFDA": {
+                "14.257": {}
+            }
+        },
+        "expected_tools": [
+            "lookup_codes",
+            "execute_filter"
+        ],
+        "tags": [
+            "multi_filter"
+        ],
+        "notes": "Referring to assistance listing by number",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 69,
+        "query": "Grants for assistance listing Homelessness Prevention and Rapid Re-Housing Program",
+        "expected_output": {
+            "awardType": [
+                "Grants"
+            ],
+            "selectedCFDA": {
+                "Homelessness Prevention and Rapid Re-Housing Program": {}
+            }
+        },
+        "expected_tools": [
+            "lookup_codes",
+            "execute_filter"
+        ],
+        "tags": [
+            "multi_filter"
+        ],
+        "notes": "Referring to assistance listing by name",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 70,
+        "query": "Grants for assistance listings regarding homelessness",
+        "expected_output": {
+            "awardType": [
+                "Grants"
+            ],
+            "selectedCFDA": {
+                "14.020": {},
+                "14.235": {},
+                "14.257": {},
+                "14.260": {},
+                "14.261": {},
+                "14.262": {},
+                "14.276": {},
+                "14.277": {},
+                "17.805": {},
+                "64.024": {},
+                "84.196": {},
+                "84.383": {},
+                "84.387": {},
+                "93.150": {},
+                "93.224": {},
+                "93.550": {},
+                "93.557": {}
+            }
+        },
+        "expected_tools": [
+            "lookup_codes",
+            "execute_filter"
+        ],
+        "tags": [
+            "multi_filter"
+        ],
+        "notes": "Referring to assistance listing by broad name",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 71,
+        "query": "Find all awards under AL 14.257",
+        "expected_output": {
+            "awardType": [
+                "Grants",
+                "Direct Payments",
+                "Loans"
+            ],
+            "selectedCFDA": {
+                "14.257": {}
+            }
+        },
+        "expected_tools": [
+            "lookup_codes",
+            "execute_filter"
+        ],
+        "tags": [
+            "multi_filter",
+            "variation"
+        ],
+        "notes": "Referring to assistance listing by abbreviation",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 72,
+        "query": "Find all awards under ALN 14.257",
+        "expected_output": {
+            "awardType": [
+                "Grants",
+                "Direct Payments",
+                "Loans"
+            ],
+            "selectedCFDA": {
+                "14.257": {}
+            }
+        },
+        "expected_tools": [
+            "lookup_codes",
+            "execute_filter"
+        ],
+        "tags": [
+            "multi_filter",
+            "variation"
+        ],
+        "notes": "Referring to assistance listing by alternate term",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 73,
+        "query": "Find all awards under CFDA 14.257",
+        "expected_output": {
+            "awardType": [
+                "Grants",
+                "Direct Payments",
+                "Loans"
+            ],
+            "selectedCFDA": {
+                "14.257": {}
+            }
+        },
+        "expected_tools": [
+            "lookup_codes",
+            "execute_filter"
+        ],
+        "tags": [
+            "multi_filter",
+            "variation"
+        ],
+        "notes": "Referring to assistance listing by alternate term",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 75,
+        "query": "How many grants under AL 14",
+        "expected_output": {
+            "awardType": [
+                "Grants"
+            ],
+            "selectedCFDA": {
+                "14": {}
+            }
+        },
+        "expected_tools": [
+            "lookup_codes",
+            "execute_filter"
+        ],
+        "tags": [
+            "multi_filter"
+        ],
+        "notes": "Referencing range of assistance listings instead of specific one",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 76,
+        "query": "How many grants under AL 14 were given over 1k",
+        "expected_output": {
+            "awardType": [
+                "Grants"
+            ],
+            "selectedCFDA": {
+                "14": {}
+            },
+            "awardAmounts": {
+                "specific": [
+                    1000,
+                    null
+                ]
+            }
+        },
+        "expected_tools": [
+            "lookup_codes",
+            "execute_filter"
+        ],
+        "tags": [
+            "multi_filter",
+            "numerical"
+        ],
+        "notes": "Referencing range of assistance listings instead of specific one",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 77,
+        "query": "How much money was given under AL 14, 15, 16 to nonprofits",
+        "expected_output": {
+            "awardType": [
+                "Grants",
+                "Direct Payments",
+                "Loans"
+            ],
+            "selectedCFDA": {
+                "14": {},
+                "15": {},
+                "16": {}
+            },
+            "recipientType": [
+                "nonprofit"
+            ]
+        },
+        "expected_tools": [
+            "lookup_codes",
+            "execute_filter"
+        ],
+        "tags": [
+            "multi_filter",
+            "multi_answer"
+        ],
+        "notes": "Multiple range of assistance listings",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 78,
+        "query": "How many awards did SpaceX receive?",
+        "expected_output": {
+            "selectedRecipients": [
+                "SpaceX"
+            ]
+        },
+        "expected_tools": [
+            "lookup_recipient",
+            "execute_filter"
+        ],
+        "tags": [
+            "single_filter"
+        ],
+        "notes": "Checking recipient alone",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 79,
+        "query": "Find all awards to SpaceX",
+        "expected_output": {
+            "selectedRecipients": [
+                "SpaceX"
+            ]
+        },
+        "expected_tools": [
+            "lookup_recipient",
+            "execute_filter"
+        ],
+        "tags": [
+            "single_filter"
+        ],
+        "notes": "Checking recipient alone",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 81,
+        "query": "How many awards designated for Texas?",
+        "expected_output": {
+            "selectedLocations": {
+                "USA_TX": {
+                    "identifier": "USA_TX",
+                    "filter": {
+                        "country": "USA",
+                        "state": "TX"
+                    },
+                    "display": {
+                        "entity": "State",
+                        "standalone": "Texas",
+                        "title": "Texas"
+                    }
+                }
+            }
+        },
+        "expected_tools": [
+            "lookup_location",
+            "execute_filter"
+        ],
+        "tags": [
+            "single_filter"
+        ],
+        "notes": "Checking location pop alone",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 82,
+        "query": "How many awards has Treasury given?",
+        "expected_output": {
+            "selectedAwardingAgencies": {
+                "456_toptier": {
+                    "id": 456,
+                    "agencyType": "toptier",
+                    "toptier_flag": true,
+                    "toptier_agency": {
+                        "id": 22,
+                        "toptier_code": "020",
+                        "abbreviation": "TREAS",
+                        "name": "Department of the Treasury"
+                    }
+                }
+            }
+        },
+        "expected_tools": [
+            "lookup_agencies",
+            "execute_filter"
+        ],
+        "tags": [
+            "single_filter"
+        ],
+        "notes": "Checking awarding agency alone",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 83,
+        "query": "Give me all awards for nonprofits",
+        "expected_output": {
+            "recipientType": [
+                "nonprofit"
+            ]
+        },
+        "expected_tools": [
+            "execute_filter"
+        ],
+        "tags": [
+            "single_filter"
+        ],
+        "notes": "Checking recipient type alone",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 84,
+        "query": "List all awards that were exactly 1 million",
+        "expected_output": {
+            "awardAmounts": {
+                "specific": [
+                    1000000,
+                    1000000
+                ]
+            }
+        },
+        "expected_tools": [
+            "execute_filter"
+        ],
+        "tags": [
+            "single_filter",
+            "numerical"
+        ],
+        "notes": "Checking capacity to exactly match a number",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 85,
+        "query": "Show me awards with AL 12.103",
+        "expected_output": {
+            "selectedCFDA": {
+                "12.103": {}
+            }
+        },
+        "expected_tools": [
+            "lookup_codes",
+            "execute_filter"
+        ],
+        "tags": [
+            "single_filter"
+        ],
+        "notes": "Checking assistance listing alone",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 86,
+        "query": "Contracts to recipients that are labeled \"veteran owned businesses.\"",
+        "expected_output": {
+            "awardType": [
+                "Contracts"
+            ],
+            "recipientType": [
+                "veteran_owned_business"
+            ]
+        },
+        "expected_tools": [
+            "execute_filter"
+        ],
+        "tags": [
+            "multi_filter"
+        ],
+        "notes": "Other variation using \"labeled as\"",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 87,
+        "query": "List awards under NAICS 1111",
+        "expected_output": {
+            "naicsCodes": {
+                "require": [
+                    "1111"
+                ],
+                "exclude": [],
+                "counts": []
+            }
+        },
+        "expected_tools": [
+            "lookup_codes",
+            "execute_filter"
+        ],
+        "tags": [
+            "single_filter"
+        ],
+        "notes": "Checking NAICS code subgroup",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 88,
+        "query": "List awards with NAICS 111110",
+        "expected_output": {
+            "naicsCodes": {
+                "require": [
+                    "111110"
+                ],
+                "exclude": [],
+                "counts": []
+            }
+        },
+        "expected_tools": [
+            "lookup_codes",
+            "execute_filter"
+        ],
+        "tags": [
+            "single_filter"
+        ],
+        "notes": "Checking specific code NAICS",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 89,
+        "query": "Contracts for companies in mining industry",
+        "expected_output": {
+            "naicsCodes": {
+                "require": [
+                    "21"
+                ],
+                "exclude": [],
+                "counts": []
+            },
+            "awardType": [
+                "Contracts"
+            ]
+        },
+        "expected_tools": [
+            "lookup_codes",
+            "execute_filter"
+        ],
+        "tags": [
+            "multi_filter"
+        ],
+        "notes": "Checking NAICS description",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 90,
+        "query": "Contracts awarded to businesses working in underground coal mining",
+        "expected_output": {
+            "naicsCodes": {
+                "require": [
+                    "212115"
+                ],
+                "exclude": [],
+                "counts": []
+            },
+            "awardType": [
+                "Contracts"
+            ]
+        },
+        "expected_tools": [
+            "lookup_codes",
+            "execute_filter"
+        ],
+        "tags": [
+            "multi_filter"
+        ],
+        "notes": "Checking specific NAICS description",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 91,
+        "query": "Find awards with North American Industry Classification System 1121",
+        "expected_output": {
+            "naicsCodes": {
+                "require": [
+                    "1121"
+                ],
+                "exclude": [],
+                "counts": []
+            }
+        },
+        "expected_tools": [
+            "lookup_codes",
+            "execute_filter"
+        ],
+        "tags": [
+            "single_filter"
+        ],
+        "notes": "Long form of NAICS",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 92,
+        "query": "Awards with NAICS 111910, 111920 and 111930",
+        "expected_output": {
+            "naicsCodes": {
+                "require": [
+                    "111910",
+                    "111920",
+                    "111930"
+                ],
+                "exclude": [],
+                "counts": []
+            }
+        },
+        "expected_tools": [
+            "lookup_codes",
+            "execute_filter"
+        ],
+        "tags": [
+            "single_filter",
+            "multi_answer"
+        ],
+        "notes": "Multiple NAICS within same query",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 93,
+        "query": "How many awards with NAICS 111910 based in Alaska",
+        "expected_output": {
+            "naicsCodes": {
+                "require": [
+                    "111910"
+                ],
+                "exclude": [],
+                "counts": []
+            },
+            "selectedRecipientLocations": {
+                "USA_AK": {
+                    "identifier": "USA_AK",
+                    "filter": {
+                        "country": "USA",
+                        "state": "AK"
+                    },
+                    "display": {
+                        "entity": "State",
+                        "standalone": "Alaska",
+                        "title": "Alaska"
+                    }
+                }
+            }
+        },
+        "expected_tools": [
+            "lookup_codes",
+            "lookup_location",
+            "execute_filter"
+        ],
+        "tags": [
+            "multi_filter",
+            "location"
+        ],
+        "notes": "NAICS with location",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 94,
+        "query": "Awards with NAICS 111910 for last year",
+        "expected_output": {
+            "naicsCodes": {
+                "require": [
+                    "111910"
+                ],
+                "exclude": [],
+                "counts": []
+            }
+        },
+        "expected_tools": [
+            "lookup_codes",
+            "execute_filter"
+        ],
+        "tags": [
+            "multi_filter",
+            "temporal"
+        ],
+        "notes": "NAICS with time period",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 95,
+        "query": "Awards under PSC AA11",
+        "expected_output": {
+            "pscCodes": {
+                "require": [
+                    "AA11"
+                ],
+                "exclude": [],
+                "counts": []
+            }
+        },
+        "expected_tools": [
+            "lookup_codes",
+            "execute_filter"
+        ],
+        "tags": [
+            "single_filter"
+        ],
+        "notes": "Checking specific PSC",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 96,
+        "query": "List awards under PSC Agriculture R&D",
+        "expected_output": {
+            "pscCodes": {
+                "require": [
+                    "AA"
+                ],
+                "exclude": [],
+                "counts": []
+            }
+        },
+        "expected_tools": [
+            "lookup_codes",
+            "execute_filter"
+        ],
+        "tags": [
+            "single_filter"
+        ],
+        "notes": "Checking specific PSC description",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 97,
+        "query": "Find contracts for weapons",
+        "expected_output": {
+            "pscCodes": {
+                "require": [
+                    "10"
+                ],
+                "exclude": [],
+                "counts": []
+            },
+            "awardType": [
+                "Contracts"
+            ]
+        },
+        "expected_tools": [
+            "lookup_codes",
+            "execute_filter"
+        ],
+        "tags": [
+            "multi_filter"
+        ],
+        "notes": "Checking by PSC description",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 98,
+        "query": "How many contracts for research & development",
+        "expected_output": {
+            "pscCodes": {
+                "require": [
+                    "AC"
+                ],
+                "exclude": [],
+                "counts": []
+            },
+            "awardType": [
+                "Contracts"
+            ]
+        },
+        "expected_tools": [
+            "lookup_codes",
+            "execute_filter"
+        ],
+        "tags": [
+            "multi_filter"
+        ],
+        "notes": "Checking by PSC description",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 99,
+        "query": "Show me awards for Product and Service Code AA11",
+        "expected_output": {
+            "pscCodes": {
+                "require": [
+                    "AA11"
+                ],
+                "exclude": [],
+                "counts": []
+            }
+        },
+        "expected_tools": [
+            "lookup_codes",
+            "execute_filter"
+        ],
+        "tags": [
+            "single_filter"
+        ],
+        "notes": "Checking long form PSC",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 100,
+        "query": "Find all chemical weapons, torpedos and guns contracts",
+        "expected_output": {
+            "pscCodes": {
+                "require": [
+                    "1040",
+                    "1045",
+                    "1355",
+                    "1356",
+                    "4921",
+                    "1005",
+                    "1010",
+                    "1015",
+                    "1020",
+                    "1025",
+                    "1030",
+                    "1035"
+                ],
+                "exclude": [],
+                "counts": []
+            },
+            "awardType": [
+                "Contracts"
+            ]
+        },
+        "expected_tools": [
+            "lookup_codes",
+            "execute_filter"
+        ],
+        "tags": [
+            "multi_filter",
+            "multi_answer"
+        ],
+        "notes": "Multiple PSC within same query",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 101,
+        "query": "Contracts for chemical weapons last year",
+        "expected_output": {
+            "pscCodes": {
+                "require": [
+                    "1040"
+                ],
+                "exclude": [],
+                "counts": []
+            },
+            "awardType": [
+                "Contracts"
+            ]
+        },
+        "expected_tools": [
+            "lookup_codes",
+            "execute_filter"
+        ],
+        "tags": [
+            "multi_filter",
+            "temporal"
+        ],
+        "notes": "PSC with time period",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 102,
+        "query": "How many awards for COVID-19 Spending",
+        "expected_output": {
+            "defCodes": {
+                "require": [
+                    "L",
+                    "M",
+                    "N",
+                    "O",
+                    "P",
+                    "U",
+                    "V"
+                ],
+                "exclude": []
+            }
+        },
+        "expected_tools": [
+            "execute_filter"
+        ],
+        "tags": [
+            "single_filter"
+        ],
+        "notes": "DEFC description broad",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 103,
+        "query": "How many awards for infrastructure spending",
+        "expected_output": {
+            "defCodes": {
+                "require": [
+                    "Z",
+                    "1"
+                ],
+                "exclude": []
+            }
+        },
+        "expected_tools": [
+            "execute_filter"
+        ],
+        "tags": [
+            "single_filter"
+        ],
+        "notes": "DEFC description broad",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 104,
+        "query": "Find awards with DEFC N",
+        "expected_output": {
+            "defCodes": {
+                "require": [
+                    "N"
+                ],
+                "exclude": []
+            }
+        },
+        "expected_tools": [
+            "execute_filter"
+        ],
+        "tags": [
+            "single_filter"
+        ],
+        "notes": "Specific DEFC code",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 105,
+        "query": "Financial assistance awards with DEFC U and V",
+        "expected_output": {
+            "defCodes": {
+                "require": [
+                    "U",
+                    "V"
+                ],
+                "exclude": []
+            },
+            "awardType": [
+                "Grants",
+                "Direct Payments",
+                "Loans"
+            ]
+        },
+        "expected_tools": [
+            "execute_filter"
+        ],
+        "tags": [
+            "multi_filter",
+            "multi_answer"
+        ],
+        "notes": "MultipLe DEFC codes",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 106,
+        "query": "All assistance awards given out for COVID in 2020",
+        "expected_output": {
+            "defCodes": {
+                "require": [
+                    "L",
+                    "M",
+                    "N",
+                    "O",
+                    "P",
+                    "U",
+                    "V"
+                ],
+                "exclude": []
+            },
+            "awardType": [
+                "Grants",
+                "Direct Payments",
+                "Loans"
+            ],
+            "timePeriodType": "dr",
+            "time_period": [
+                {
+                    "start_date": "2020-01-01",
+                    "end_date": "2020-12-31"
+                }
+            ]
+        },
+        "expected_tools": [
+            "execute_filter"
+        ],
+        "tags": [
+            "multi_filter",
+            "temporal"
+        ],
+        "notes": "DEFC with time period",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 107,
+        "query": "All assistance awards given out for COVID in 2020 to recipients in California",
+        "expected_output": {
+            "defCodes": {
+                "require": [
+                    "L",
+                    "M",
+                    "N",
+                    "O",
+                    "P",
+                    "U",
+                    "V"
+                ],
+                "exclude": []
+            },
+            "awardType": [
+                "Grants",
+                "Direct Payments",
+                "Loans"
+            ],
+            "timePeriodType": "dr",
+            "time_period": [
+                {
+                    "start_date": "2020-01-01",
+                    "end_date": "2020-12-31"
+                }
+            ],
+            "selectedRecipientLocations": {
+                "USA_CA": {
+                    "identifier": "USA_CA",
+                    "filter": {
+                        "country": "USA",
+                        "state": "CA"
+                    },
+                    "display": {
+                        "entity": "State",
+                        "standalone": "California",
+                        "title": "California"
+                    }
+                }
+            }
+        },
+        "expected_tools": [
+            "lookup_location",
+            "execute_filter"
+        ],
+        "tags": [
+            "multi_filter",
+            "temporal",
+            "location"
+        ],
+        "notes": "DEFC with time period and location",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 108,
+        "query": "Awards with TAS 310-2012/2012-3200-000",
+        "expected_output": {
+            "tasCodes": {
+                "require": [
+                    "310-2012/2012-3200-000"
+                ],
+                "exclude": [],
+                "counts": []
+            }
+        },
+        "expected_tools": [
+            "lookup_codes",
+            "execute_filter"
+        ],
+        "tags": [
+            "single_filter"
+        ],
+        "notes": "Specific TAS",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 109,
+        "query": "Find all awards with Treasury Account Symbol 310-2012/2012-3200-000",
+        "expected_output": {
+            "tasCodes": {
+                "require": [
+                    "310-2012/2012-3200-000"
+                ],
+                "exclude": [],
+                "counts": []
+            }
+        },
+        "expected_tools": [
+            "lookup_codes",
+            "execute_filter"
+        ],
+        "tags": [
+            "single_filter"
+        ],
+        "notes": "Specific TAS",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 110,
+        "query": "How much spending under treasury account 3200",
+        "expected_output": {
+            "tasCodes": {
+                "require": [
+                    "3200"
+                ],
+                "exclude": [],
+                "counts": []
+            }
+        },
+        "expected_tools": [
+            "lookup_codes",
+            "execute_filter"
+        ],
+        "tags": [
+            "single_filter"
+        ],
+        "notes": "Specific component of TAS",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 111,
+        "query": "What awards are under federal account 3200",
+        "expected_output": {
+            "tasCodes": {
+                "require": [
+                    "3200"
+                ],
+                "exclude": [],
+                "counts": []
+            }
+        },
+        "expected_tools": [
+            "lookup_codes",
+            "execute_filter"
+        ],
+        "tags": [
+            "single_filter"
+        ],
+        "notes": "Specific component of TAS other naming",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 112,
+        "query": "Awards under budget account 3200",
+        "expected_output": {
+            "tasCodes": {
+                "require": [
+                    "3200"
+                ],
+                "exclude": [],
+                "counts": []
+            }
+        },
+        "expected_tools": [
+            "lookup_codes",
+            "execute_filter"
+        ],
+        "tags": [
+            "single_filter"
+        ],
+        "notes": "Specific component of TAS other naming",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 113,
+        "query": "How many awards from Access Board account for Salaries and Expenses",
+        "expected_output": {
+            "tasCodes": {
+                "require": [
+                    "310-3200"
+                ],
+                "exclude": [],
+                "counts": []
+            }
+        },
+        "expected_tools": [
+            "lookup_codes",
+            "execute_filter"
+        ],
+        "tags": [
+            "single_filter"
+        ],
+        "notes": "Group of TAS by account name",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 114,
+        "query": "Show me awards under treasury account",
+        "expected_output": {
+            "tasCodes": {
+                "require": [
+                    "020"
+                ],
+                "exclude": [],
+                "counts": []
+            }
+        },
+        "expected_tools": [
+            "lookup_codes",
+            "execute_filter"
+        ],
+        "tags": [
+            "single_filter"
+        ],
+        "notes": "Trick question to see if it confuses agency with TAS, should be TREAS federal account",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 115,
+        "query": "All DOE awards given from fossil energy and petroleum reserve accounts",
+        "expected_output": {
+            "tasCodes": {
+                "require": [
+                    "089-0213",
+                    "089-0218",
+                    "089-0219",
+                    "089-0233"
+                ],
+                "exclude": [],
+                "counts": []
+            }
+        },
+        "expected_tools": [
+            "lookup_codes",
+            "execute_filter"
+        ],
+        "tags": [
+            "single_filter",
+            "multi_answer"
+        ],
+        "notes": "Multiple TAS accounts",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 116,
+        "query": "All fixed price contracts",
+        "expected_output": {
+            "pricingType": [
+                "fixed price contracts"
+            ],
+            "awardType": [
+                "Contracts"
+            ]
+        },
+        "expected_tools": [
+            "execute_filter"
+        ],
+        "tags": [
+            "multi_filter"
+        ],
+        "notes": "Specific type of contract pricing",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 117,
+        "query": "List all fixed price and time and materials contracts awarded last month",
+        "expected_output": {
+            "pricingType": [
+                "Fixed Price Contracts",
+                "Time and Materials"
+            ],
+            "awardType": [
+                "Contracts"
+            ]
+        },
+        "expected_tools": [
+            "execute_filter"
+        ],
+        "tags": [
+            "multi_filter",
+            "multi_answer"
+        ],
+        "notes": "Multiple type of contract pricing with date",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 118,
+        "query": "Show me cost reimbursement contracts awarded to small businesses in Virginia last year for technology services",
+        "expected_output": {
+            "pricingType": [
+                "Cost Reimbursement Contracts"
+            ],
+            "recipientType": [
+                "small_business"
+            ],
+            "selectedRecipientLocations": {
+                "USA_VA": {
+                    "identifier": "USA_VA",
+                    "filter": {
+                        "country": "USA",
+                        "state": "VA"
+                    },
+                    "display": {
+                        "entity": "State",
+                        "standalone": "Virginia",
+                        "title": "Virginia"
+                    }
+                }
+            },
+            "pscCodes": {
+                "require": [
+                    "technology services"
+                ],
+                "exclude": [],
+                "counts": []
+            }
+        },
+        "expected_tools": [
+            "lookup_location",
+            "lookup_codes",
+            "execute_filter"
+        ],
+        "tags": [
+            "complex",
+            "location",
+            "temporal"
+        ],
+        "notes": "Complex query with 5 filters related to a specific contract type and service type",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 119,
+        "query": "Find all cost reimbursement contracts set aside for small businesses in Virginia last year for technology services",
+        "expected_output": {
+            "pricingType": [
+                "Cost Reimbursement Contracts"
+            ],
+            "setAside": [
+                "Small Disadvantaged Business and 8(a) Small Businesses"
+            ],
+            "selectedRecipientLocations": {
+                "USA_VA": {
+                    "identifier": "USA_VA",
+                    "filter": {
+                        "country": "USA",
+                        "state": "VA"
+                    },
+                    "display": {
+                        "entity": "State",
+                        "standalone": "Virginia",
+                        "title": "Virginia"
+                    }
+                }
+            },
+            "pscCodes": {
+                "require": [
+                    "R415",
+                    "R540",
+                    "R544",
+                    "W070",
+                    "B540",
+                    "D",
+                    "U012"
+                ],
+                "exclude": [],
+                "counts": []
+            }
+        },
+        "expected_tools": [
+            "lookup_location",
+            "lookup_codes",
+            "execute_filter"
+        ],
+        "tags": [
+            "complex",
+            "multi_answer",
+            "location",
+            "temporal"
+        ],
+        "notes": "Complex query with 5 filters related to a specific contract type and service type",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 120,
+        "query": "All contracts set aside for veteran owned businesses",
+        "expected_output": {
+            "setAside": [
+                "Veteran-Owned Businesses"
+            ],
+            "awardType": [
+                "Contracts"
+            ]
+        },
+        "expected_tools": [
+            "execute_filter"
+        ],
+        "tags": [
+            "multi_filter"
+        ],
+        "notes": "Specific set aside group",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 121,
+        "query": "How WOSB set asides were awarded?",
+        "expected_output": {
+            "setAside": [
+                "Women-Owned Small Businesses (WOSB)"
+            ],
+            "awardType": [
+                "Contracts"
+            ]
+        },
+        "expected_tools": [
+            "execute_filter"
+        ],
+        "tags": [
+            "multi_filter"
+        ],
+        "notes": "Specific set aside group with acronym",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 122,
+        "query": "All contracts available to Native American owned businesses",
+        "expected_output": {
+            "setAside": [
+                "Native American-Owned Businesses"
+            ],
+            "awardType": [
+                "Contracts"
+            ]
+        },
+        "expected_tools": [
+            "execute_filter"
+        ],
+        "tags": [
+            "multi_filter"
+        ],
+        "notes": "Specific set aside group",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 123,
+        "query": "Show me all awards available to Native American owned businesses",
+        "expected_output": {
+            "setAside": [
+                "Native American-Owned Businesses"
+            ]
+        },
+        "expected_tools": [
+            "execute_filter"
+        ],
+        "tags": [
+            "single_filter"
+        ],
+        "notes": "Specific set aside group",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 124,
+        "query": "Show me all contracts prioritized for Native American owned businesses",
+        "expected_output": {
+            "setAside": [
+                "Native American-Owned Businesses"
+            ],
+            "awardType": [
+                "Contracts"
+            ]
+        },
+        "expected_tools": [
+            "execute_filter"
+        ],
+        "tags": [
+            "multi_filter"
+        ],
+        "notes": "Specific set aside group",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 125,
+        "query": "How many fixed priced contracts set aside for veteran owned business last year for consulting services were there?",
+        "expected_output": {
+            "pricingType": [
+                "fixed price contracts"
+            ],
+            "setAside": [
+                "Veteran-Owned Businesses"
+            ],
+            "pscCodes": {
+                "require": [
+                    "consulting services"
+                ],
+                "exclude": [],
+                "counts": []
+            }
+        },
+        "expected_tools": [
+            "lookup_codes",
+            "execute_filter"
+        ],
+        "tags": [
+            "multi_filter",
+            "temporal"
+        ],
+        "notes": "Combination of type of set aside and contract pricing",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 126,
+        "query": "All contracts prioritized for Native American owned businesses in Montana",
+        "expected_output": {
+            "setAside": [
+                "Native American-Owned Businesses"
+            ],
+            "awardType": [
+                "Contracts"
+            ],
+            "selectedRecipientLocations": {
+                "USA_MT": {
+                    "identifier": "USA_MT",
+                    "filter": {
+                        "country": "USA",
+                        "state": "MT"
+                    },
+                    "display": {
+                        "entity": "State",
+                        "standalone": "Montana",
+                        "title": "Montana"
+                    }
+                }
+            }
+        },
+        "expected_tools": [
+            "lookup_location",
+            "execute_filter"
+        ],
+        "tags": [
+            "multi_filter",
+            "location"
+        ],
+        "notes": "Specific set aside group",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 127,
+        "query": "List all contracts not available for competition",
+        "expected_output": {
+            "extentCompeted": [
+                "Not Available for Competition"
+            ],
+            "awardType": [
+                "Contracts"
+            ]
+        },
+        "expected_tools": [
+            "execute_filter"
+        ],
+        "tags": [
+            "multi_filter"
+        ],
+        "notes": "Specific extent competed",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 128,
+        "query": "How many contracts available for competition",
+        "expected_output": {
+            "extentCompeted": [
+                "Available for Competition"
+            ],
+            "awardType": [
+                "Contracts"
+            ]
+        },
+        "expected_tools": [
+            "execute_filter"
+        ],
+        "tags": [
+            "multi_filter"
+        ],
+        "notes": "Specific extent competed",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 129,
+        "query": "All no bid contracts awarded last year for mining services",
+        "expected_output": {
+            "extentCompeted": [
+                "Not Available for Competition"
+            ],
+            "awardType": [
+                "Contracts"
+            ],
+            "pscCodes": {
+                "require": [
+                    "F011",
+                    "H138",
+                    "H238",
+                    "H338",
+                    "H938",
+                    "J038",
+                    "K038",
+                    "L038",
+                    "N038",
+                    "W038"
+                ],
+                "exclude": [],
+                "counts": []
+            }
+        },
+        "expected_tools": [
+            "lookup_codes",
+            "execute_filter"
+        ],
+        "tags": [
+            "multi_filter",
+            "variation",
+            "temporal",
+            "multi_answer"
+        ],
+        "notes": "Using \"no bid\" for not available for competition",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 130,
+        "query": "All fixed price contracts set aside for veteran owned business not available for competition",
+        "expected_output": {
+            "pricingType": [
+                "Fixed Price Contracts"
+            ],
+            "setAside": [
+                "Veteran-Owned Businesses"
+            ],
+            "extentCompeted": [
+                "Not Available for Competition"
+            ]
+        },
+        "expected_tools": [
+            "execute_filter"
+        ],
+        "tags": [
+            "multi_filter"
+        ],
+        "notes": "Using the 3 related contract filters together",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 131,
+        "query": "List all spending on immigration",
+        "expected_output": {
+            "keyword": [
+                "immigration"
+            ]
+        },
+        "expected_tools": [
+            "execute_filter"
+        ],
+        "tags": [
+            "single_filter",
+            "broad"
+        ],
+        "notes": "Broad topic fallback to keyword search",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 132,
+        "query": "List all awards for healthcare",
+        "expected_output": {
+            "keyword": [
+                "healthcare"
+            ]
+        },
+        "expected_tools": [
+            "execute_filter"
+        ],
+        "tags": [
+            "single_filter",
+            "broad"
+        ],
+        "notes": "Broad topic fallback to keyword search",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 133,
+        "query": "List all grants for mental health",
+        "expected_output": {
+            "selectedCFDA": {
+                "16.033": {},
+                "16.070": {},
+                "16.745": {},
+                "64.019": {},
+                "64.043": {},
+                "64.048": {},
+                "93.104": {},
+                "93.156": {},
+                "93.242": {},
+                "93.243": {},
+                "93.244": {},
+                "93.24C": {},
+                "93.24N": {},
+                "93.24R": {},
+                "93.24S": {},
+                "93.24T": {},
+                "93.24X": {},
+                "93.275": {},
+                "93.281": {},
+                "93.282": {},
+                "93.532": {},
+                "93.534": {},
+                "93.538": {},
+                "93.828": {},
+                "93.829": {},
+                "93.958": {},
+                "93.982": {}
+            },
+            "awardType": [
+                "Grants"
+            ]
+        },
+        "expected_tools": [
+            "lookup_codes",
+            "execute_filter"
+        ],
+        "tags": [
+            "multi_filter",
+            "multi_answer",
+            "broad"
+        ],
+        "notes": "More broad topic for AL",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 134,
+        "query": "List all grants for mental health clinics",
+        "expected_output": {
+            "selectedCFDA": {
+                "64.048": {},
+                "93.244": {}
+            },
+            "awardType": [
+                "Grants"
+            ]
+        },
+        "expected_tools": [
+            "lookup_codes",
+            "execute_filter"
+        ],
+        "tags": [
+            "multi_filter",
+            "multi_answer",
+            "broad"
+        ],
+        "notes": "Slightly more specific topic for AL",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 135,
+        "query": "Find all spending on defense",
+        "expected_output": {
+            "keyword": [
+                "defense"
+            ]
+        },
+        "expected_tools": [
+            "execute_filter"
+        ],
+        "tags": [
+            "single_filter",
+            "broad"
+        ],
+        "notes": "Broad topic fallback to keyword search",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 136,
+        "query": "Find all grants for national defense",
+        "expected_output": {
+            "selectedCFDA": {
+                "12.006": {}
+            },
+            "awardType": [
+                "Grants"
+            ]
+        },
+        "expected_tools": [
+            "lookup_codes",
+            "execute_filter"
+        ],
+        "tags": [
+            "multi_filter",
+            "variation",
+            "broad"
+        ],
+        "notes": "Checking if uses keyword or AL",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 137,
+        "query": "Find all contracts for national defense",
+        "expected_output": {
+            "pscCodes": {
+                "require": [
+                    "AC"
+                ],
+                "exclude": [],
+                "counts": []
+            },
+            "awardType": [
+                "Contracts"
+            ]
+        },
+        "expected_tools": [
+            "lookup_codes",
+            "execute_filter"
+        ],
+        "tags": [
+            "multi_filter",
+            "variation",
+            "broad"
+        ],
+        "notes": "Checking if uses keyword or PSC",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 138,
+        "query": "How many awards related to science & technology",
+        "expected_output": {
+            "keyword": [
+                "science and technology"
+            ]
+        },
+        "expected_tools": [
+            "execute_filter"
+        ],
+        "tags": [
+            "single_filter",
+            "broad"
+        ],
+        "notes": "Very broad topic",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 139,
+        "query": "All spending on the updates to the White house ball room this year",
+        "expected_output": {
+            "keyword": [
+                "updates to the White house ball room"
+            ]
+        },
+        "expected_tools": [
+            "execute_filter"
+        ],
+        "tags": [
+            "multi_filter",
+            "temporal",
+            "ambiguous"
+        ],
+        "notes": "Broad topic fallback to keyword search",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 140,
+        "query": "All contracts for construction on 123 Main St in Washington D.C.",
+        "expected_output": {
+            "keyword": [
+                "construction on 123 Main St in Washington D.C."
+            ],
+            "awardType": [
+                "Contracts"
+            ],
+            "selectedLocations": {
+                "USA_DC": {
+                    "identifier": "USA_DC",
+                    "filter": {
+                        "country": "USA",
+                        "state": "DC"
+                    },
+                    "display": {
+                        "entity": "State",
+                        "standalone": "DISTRICT OF COLUMBIA",
+                        "title": "DISTRICT OF COLUMBIA"
+                    }
+                }
+            }
+        },
+        "expected_tools": [
+            "lookup_location",
+            "execute_filter"
+        ],
+        "tags": [
+            "multi_filter",
+            "location"
+        ],
+        "notes": "Referring to specific address which can be sometimes found in award description",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 141,
+        "query": "All grants and contracts for immigration services",
+        "expected_output": {
+            "awardType": [
+                "Grants",
+                "Contracts"
+            ],
+            "keyword": [
+                "immigration services"
+            ]
+        },
+        "expected_tools": [
+            "execute_filter"
+        ],
+        "tags": [
+            "multi_filter",
+            "multi_answer",
+            "broad"
+        ],
+        "notes": "Using both grants and contracts to trigger keyword",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 142,
+        "query": "All the SpaceX contracts in Texas",
+        "expected_output": {
+            "selectedRecipients": [
+                "SpaceX"
+            ],
+            "selectedLocations": {
+                "USA_TX": {
+                    "identifier": "USA_TX",
+                    "filter": {
+                        "country": "USA",
+                        "state": "TX"
+                    },
+                    "display": {
+                        "entity": "State",
+                        "standalone": "TEXAS",
+                        "title": "TEXAS"
+                    }
+                }
+            }
+        },
+        "expected_tools": [
+            "lookup_recipient",
+            "lookup_location",
+            "execute_filter"
+        ],
+        "tags": [
+            "multi_filter"
+        ],
+        "notes": "Recipient and location together",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 143,
+        "query": "Spending for awards N0001923C0003 and N0001925C0070",
+        "expected_output": {
+            "selectedAwardIDs": {
+                "N0001923C0003": {},
+                "N0001925C0070": {}
+            }
+        },
+        "expected_tools": [
+            "execute_filter"
+        ],
+        "tags": [
+            "single_filter",
+            "multi_answer"
+        ],
+        "notes": "Multiple award ids",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 144,
+        "query": "Spending for awards N0001923C0003, N0001925C0070, N0001925C0070, HC102820F0032, W56KGU24F0010",
+        "expected_output": {
+            "selectedAwardIDs": {
+                "N0001923C0003": {},
+                "N0001925C0070": {},
+                "HC102820F0032": {},
+                "W56KGU24F0010": {}
+            }
+        },
+        "expected_tools": [
+            "execute_filter"
+        ],
+        "tags": [
+            "single_filter",
+            "multi_answer"
+        ],
+        "notes": "Many award ids",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 145,
+        "query": "Show me all awards for DoD and HHS",
+        "expected_output": {
+            "selectedAwardingAgencies": {
+                "1173_toptier": {
+                    "id": 1173,
+                    "agencyType": "toptier",
+                    "toptier_flag": true,
+                    "toptier_agency": {
+                        "id": 126,
+                        "toptier_code": "097",
+                        "abbreviation": "DOD",
+                        "name": "Department of Defense"
+                    }
+                },
+                "806_toptier": {
+                    "id": 806,
+                    "agencyType": "toptier",
+                    "toptier_flag": true,
+                    "toptier_agency": {
+                        "id": 68,
+                        "toptier_code": "075",
+                        "abbreviation": "HHS",
+                        "name": "Department of Health and Human Services"
+                    }
+                }
+            }
+        },
+        "expected_tools": [
+            "lookup_agencies",
+            "execute_filter"
+        ],
+        "tags": [
+            "single_filter",
+            "multi_answer"
+        ],
+        "notes": "Multiple agencies",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 146,
+        "query": "List all awards with jeep or toyota in the award description",
+        "expected_output": {
+            "awardDescription": "jeep,toyota"
+        },
+        "expected_tools": [
+            "execute_filter"
+        ],
+        "tags": [
+            "single_filter",
+            "multi_answer"
+        ],
+        "notes": "Testing how or works to show two different award description queries",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 147,
+        "query": "All contracts with 123 Main St. in the award description last year",
+        "expected_output": {
+            "awardDescription": "123 Main St.",
+            "awardType": [
+                "Contracts"
+            ]
+        },
+        "expected_tools": [
+            "execute_filter"
+        ],
+        "tags": [
+            "multi_filter",
+            "temporal"
+        ],
+        "notes": "Award description with multiple filters",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 148,
+        "query": "All contracts with 123 Main St. in the award description performed in North Carolina",
+        "expected_output": {
+            "awardDescription": "123 Main St.",
+            "awardType": [
+                "Contracts"
+            ],
+            "selectedLocations": {
+                "USA_NC": {
+                    "identifier": "USA_NC",
+                    "filter": {
+                        "country": "USA",
+                        "state": "NC"
+                    },
+                    "display": {
+                        "entity": "State",
+                        "standalone": "North Carolina",
+                        "title": "North Carolina"
+                    }
+                }
+            }
+        },
+        "expected_tools": [
+            "lookup_location",
+            "execute_filter"
+        ],
+        "tags": [
+            "multi_filter",
+            "location"
+        ],
+        "notes": "Award description with multiple filters",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 150,
+        "query": "Find all awards under 1,000 and over 1 billion",
+        "expected_output": {
+            "awardAmounts": {
+                "range-0": [
+                    null,
+                    1000000
+                ],
+                "range-4": [
+                    500000000,
+                    null
+                ]
+            }
+        },
+        "expected_tools": [
+            "execute_filter"
+        ],
+        "tags": [
+            "single_filter",
+            "multi_answer"
+        ],
+        "notes": "Multiple values for award amount",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 151,
+        "query": "All awards over 1 trillion last fiscal year",
+        "expected_output": {
+            "awardAmounts": {
+                "specific": [
+                    1000000000000,
+                    null
+                ]
+            }
+        },
+        "expected_tools": [
+            "execute_filter"
+        ],
+        "tags": [
+            "multi_filter",
+            "temporal"
+        ],
+        "notes": "Checking award amount with time period",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 152,
+        "query": "All grants over 1 billion awarded to ngos in New York",
+        "expected_output": {
+            "awardAmounts": {
+                "specific": [
+                    1000000000,
+                    null
+                ]
+            },
+            "awardType": [
+                "Grants"
+            ],
+            "selectedRecipientLocations": {
+                "USA_NY": {
+                    "identifier": "USA_NY",
+                    "filter": {
+                        "country": "USA",
+                        "state": "NY"
+                    },
+                    "display": {
+                        "entity": "State",
+                        "standalone": "New York",
+                        "title": "New York"
+                    }
+                }
+            },
+            "recipientType": [
+                "nonprofit"
+            ]
+        },
+        "expected_tools": [
+            "lookup_location",
+            "execute_filter"
+        ],
+        "tags": [
+            "multi_filter",
+            "location"
+        ],
+        "notes": "Checking award amount with location",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 153,
+        "query": "Show me all awards for assistance listing 16.014 last year",
+        "expected_output": {
+            "selectedCFDA": {
+                "16.014": {}
+            }
+        },
+        "expected_tools": [
+            "lookup_codes",
+            "execute_filter"
+        ],
+        "tags": [
+            "multi_filter",
+            "temporal"
+        ],
+        "notes": "Checking assistance listing with time period",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 154,
+        "query": "All awards for assistance listing 16.014 in Arizona",
+        "expected_output": {
+            "selectedCFDA": {
+                "16.014": {}
+            },
+            "selectedLocations": {
+                "USA_AZ": {
+                    "identifier": "USA_AZ",
+                    "filter": {
+                        "country": "USA",
+                        "state": "AZ"
+                    },
+                    "display": {
+                        "entity": "State",
+                        "standalone": "Arizona",
+                        "title": "Arizona"
+                    }
+                }
+            }
+        },
+        "expected_tools": [
+            "lookup_codes",
+            "lookup_location",
+            "execute_filter"
+        ],
+        "tags": [
+            "multi_filter",
+            "location"
+        ],
+        "notes": "Checking assistance listing with location",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 155,
+        "query": "List all spending under Treasury Account Symbol 310-2012/2012-3200-000 last fiscal year",
+        "expected_output": {
+            "tasCodes": {
+                "require": [
+                    "310-2012/2012-3200-000"
+                ],
+                "exclude": [],
+                "counts": []
+            }
+        },
+        "expected_tools": [
+            "lookup_codes",
+            "execute_filter"
+        ],
+        "tags": [
+            "multi_filter",
+            "temporal"
+        ],
+        "notes": "Specific TAS with time period",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 156,
+        "query": "All spending under federal accounts 310 and 302",
+        "expected_output": {
+            "tasCodes": {
+                "require": [
+                    "310",
+                    "302"
+                ],
+                "exclude": [],
+                "counts": []
+            }
+        },
+        "expected_tools": [
+            "lookup_codes",
+            "execute_filter"
+        ],
+        "tags": [
+            "single_filter",
+            "multi_answer"
+        ],
+        "notes": "Multiple tas",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 157,
+        "query": "List all overseas spending under TAS account 310 ",
+        "expected_output": {
+            "tasCodes": {
+                "require": [
+                    "310"
+                ],
+                "exclude": [],
+                "counts": []
+            },
+            "locationDomesticForeign": "foreign"
+        },
+        "expected_tools": [
+            "lookup_codes",
+            "execute_filter"
+        ],
+        "tags": [
+            "multi_filter",
+            "location"
+        ],
+        "notes": "TAS group with location",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 158,
+        "query": "All contracts set aside for Native American and Veteran Owned Businesses",
+        "expected_output": {
+            "setAside": [
+                "Native American-Owned Businesses",
+                "Veteran-Owned Businesses"
+            ]
+        },
+        "expected_tools": [
+            "execute_filter"
+        ],
+        "tags": [
+            "single_filter",
+            "multi_answer"
+        ],
+        "notes": "Multiple type of set aside",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 159,
+        "query": "Show me all awards with extent competed Competed under SAP and Competitive Delivery Order",
+        "expected_output": {
+            "extentCompeted": [
+                "Competed under SAP",
+                "Competitive Delivery Order"
+            ]
+        },
+        "expected_tools": [
+            "execute_filter"
+        ],
+        "tags": [
+            "single_filter",
+            "multi_answer"
+        ],
+        "notes": "Multiple extent competed",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 160,
+        "query": "All contracts that available for competition in Utah so far this year",
+        "expected_output": {
+            "extentCompeted": [
+                "Available for Competition"
+            ],
+            "awardType": [
+                "Contracts"
+            ],
+            "selectedLocations": {
+                "USA_UT": {
+                    "identifier": "USA_UT",
+                    "filter": {
+                        "country": "USA",
+                        "state": "UT"
+                    },
+                    "display": {
+                        "entity": "State",
+                        "standalone": "Utah",
+                        "title": "Utah"
+                    }
+                }
+            }
+        },
+        "expected_tools": [
+            "lookup_location",
+            "execute_filter"
+        ],
+        "tags": [
+            "multi_filter",
+            "location",
+            "temporal"
+        ],
+        "notes": "Extent competed with location and time period",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 161,
+        "query": "All spending for mental health or veterans",
+        "expected_output": {
+            "keyword": [
+                "mental health",
+                "veterans"
+            ]
+        },
+        "expected_tools": [
+            "execute_filter"
+        ],
+        "tags": [
+            "single_filter",
+            "multi_answer",
+            "broad"
+        ],
+        "notes": "Multiple keywords",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 162,
+        "query": "Show me all awards for space technology",
+        "expected_output": {
+            "keyword": [
+                "space technology"
+            ]
+        },
+        "expected_tools": [
+            "execute_filter"
+        ],
+        "tags": [
+            "single_filter",
+            "broad"
+        ],
+        "notes": "Testing keyword vs AL vs PSC vs NAICS",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 163,
+        "query": "Show me all grants for space technology",
+        "expected_output": {
+            "selectedCFDA": {
+                "43.012": {}
+            },
+            "awardType": [
+                "Grants"
+            ]
+        },
+        "expected_tools": [
+            "lookup_codes",
+            "execute_filter"
+        ],
+        "tags": [
+            "multi_filter"
+        ],
+        "notes": "Testing keyword vs AL vs PSC vs NAICS",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 164,
+        "query": "Show me all contracts for space technology",
+        "expected_output": {
+            "pscCodes": {
+                "require": [
+                    "AR1"
+                ],
+                "exclude": [],
+                "counts": []
+            },
+            "awardType": [
+                "Contracts"
+            ]
+        },
+        "expected_tools": [
+            "lookup_codes",
+            "execute_filter"
+        ],
+        "tags": [
+            "multi_filter"
+        ],
+        "notes": "Testing keyword vs AL vs PSC vs NAICS",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 165,
+        "query": "Show me all awards granted to space technology industry",
+        "expected_output": {
+            "naicsCodes": {
+                "require": [
+                    "9271"
+                ],
+                "exclude": [],
+                "counts": []
+            }
+        },
+        "expected_tools": [
+            "lookup_codes",
+            "execute_filter"
+        ],
+        "tags": [
+            "single_filter"
+        ],
+        "notes": "Testing keyword vs AL vs PSC vs NAICS",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 168,
+        "query": "Find all awards that took place in Florida",
+        "expected_output": {
+            "selectedLocations": {
+                "USA_FL": {
+                    "identifier": "USA_FL",
+                    "filter": {
+                        "country": "USA",
+                        "state": "FL"
+                    },
+                    "display": {
+                        "entity": "State",
+                        "standalone": "Florida",
+                        "title": "Florida"
+                    }
+                }
+            }
+        },
+        "expected_tools": [
+            "lookup_location",
+            "execute_filter"
+        ],
+        "tags": [
+            "location"
+        ],
+        "notes": "Basic location check - command",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 169,
+        "query": "Funding from DOD",
+        "expected_output": {
+            "selectedFundingAgencies": {
+                "1173_toptier": {
+                    "id": 1173,
+                    "agencyType": "toptier",
+                    "toptier_flag": true,
+                    "toptier_agency": {
+                        "id": 126,
+                        "toptier_code": "097",
+                        "abbreviation": "DOD",
+                        "name": "Department of Defense"
+                    }
+                }
+            }
+        },
+        "expected_tools": [
+            "lookup_agencies",
+            "execute_filter"
+        ],
+        "tags": [
+            "single_filter"
+        ],
+        "notes": "Fragment agency",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 170,
+        "query": "Show me all awards given to Nonprofits this year",
+        "expected_output": {
+            "recipientType": [
+                "nonprofit"
+            ]
+        },
+        "expected_tools": [
+            "execute_filter"
+        ],
+        "tags": [
+            "multi_filter",
+            "temporal"
+        ],
+        "notes": "Command for recipient type",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 174,
+        "query": "Boeing contracts",
+        "expected_output": {
+            "selectedRecipients": [
+                "Boeing"
+            ],
+            "awardType": [
+                "Contracts"
+            ]
+        },
+        "expected_tools": [
+            "lookup_recipient",
+            "execute_filter"
+        ],
+        "tags": [
+            "multi_filter"
+        ],
+        "notes": "Minimal fragment structure - tests extreme brevity",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 175,
+        "query": "How much taxpayer dollars went to defense contractors this year?",
+        "expected_output": {
+            "keyword": [
+                "defense"
+            ]
+        },
+        "expected_tools": [
+            "execute_filter"
+        ],
+        "tags": [
+            "multi_filter",
+            "temporal",
+            "broad"
+        ],
+        "notes": "Citizen/journalist perspective using \"taxpayer dollars\" colloquialism",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 177,
+        "query": "Show me federal grants to businesses",
+        "expected_output": {
+            "awardType": [
+                "Grants"
+            ],
+            "recipientType": [
+                "business",
+                "minority_owned_business",
+                "woman_owned_business",
+                "veteran_owned_business",
+                "dot_certified_disadvantaged_business_enterprise",
+                "emerging_small_business",
+                "federally_funded_research_and_development_corp",
+                "historically_underutilized_business_firm",
+                "labor_surplus_area_firm",
+                "sba_certified_8a_joint_venture",
+                "self_certified_small_disadvanted_business",
+                "community_developed_corporation_owned_firm",
+                "us_owned_business",
+                "foreign_owned_and_us_located_business"
+            ]
+        },
+        "expected_tools": [
+            "execute_filter"
+        ],
+        "tags": [
+            "multi_filter",
+            "multi_answer"
+        ],
+        "notes": "\"Federal grants\" redundant (all data is federal) - tests if system handles this gracefully",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 179,
+        "query": "Local government funding in California",
+        "expected_output": {
+            "recipientType": [
+                "local_government"
+            ],
+            "selectedLocations": {
+                "USA_CA": {
+                    "identifier": "USA_CA",
+                    "filter": {
+                        "country": "USA",
+                        "state": "CA"
+                    },
+                    "display": {
+                        "entity": "State",
+                        "standalone": "California",
+                        "title": "California"
+                    }
+                }
+            }
+        },
+        "expected_tools": [
+            "lookup_location",
+            "execute_filter"
+        ],
+        "tags": [
+            "multi_filter",
+            "location",
+            "multi_answer",
+            "ambiguous"
+        ],
+        "notes": "\"Local government\" = cities/counties, tests user understanding of recipient types",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 180,
+        "query": "Show me stimulus money",
+        "expected_output": {
+            "keyword": [
+                "stimulus"
+            ]
+        },
+        "expected_tools": [
+            "execute_filter"
+        ],
+        "tags": [
+            "single_filter",
+            "ambiguous",
+            "broad"
+        ],
+        "notes": "Colloquial term for emergency spending",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 181,
+        "query": "How much did we give to foreign aid last year?",
+        "expected_output": {
+            "locationDomesticForeign": "foreign"
+        },
+        "expected_tools": [
+            "execute_filter"
+        ],
+        "tags": [
+            "multi_filter",
+            "temporal",
+            "location"
+        ],
+        "notes": "\"Foreign aid\" colloquialism, uses \"we\" conversationally",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 182,
+        "query": "Show me grants to individuals",
+        "expected_output": {
+            "recipientType": [
+                "individuals"
+            ],
+            "awardType": [
+                "Grants"
+            ]
+        },
+        "expected_tools": [
+            "execute_filter"
+        ],
+        "tags": [
+            "multi_filter"
+        ],
+        "notes": "Tests Individuals recipient type",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 183,
+        "query": "8(a) contracts in the last year",
+        "expected_output": {
+            "setAside": [
+                "Small Disadvantaged Business and 8(a) Small Businesses"
+            ],
+            "awardType": [
+                "Contracts"
+            ]
+        },
+        "expected_tools": [
+            "execute_filter"
+        ],
+        "tags": [
+            "multi_filter",
+            "temporal"
+        ],
+        "notes": "Expert/contractor using program terminology",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 184,
+        "query": "How much R&D spending by DOD",
+        "expected_output": {
+            "pscCodes": {
+                "require": [
+                    "AC"
+                ],
+                "exclude": [],
+                "counts": []
+            },
+            "selectedAwardingAgencies": {
+                "1173_toptier": {
+                    "id": 1173,
+                    "agencyType": "toptier",
+                    "toptier_flag": true,
+                    "toptier_agency": {
+                        "id": 126,
+                        "toptier_code": "097",
+                        "abbreviation": "DOD",
+                        "name": "Department of Defense"
+                    }
+                }
+            }
+        },
+        "expected_tools": [
+            "lookup_codes",
+            "lookup_agencies",
+            "execute_filter"
+        ],
+        "tags": [
+            "multi_filter"
+        ],
+        "notes": "Tests R&D abbreviation",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 185,
+        "query": "What's the total spending on border wall construction from 2017 to 2020?",
+        "expected_output": {
+            "keyword": [
+                "border wall construction"
+            ],
+            "timePeriodType": "dr",
+            "time_period": [
+                {
+                    "start_date": "2017-01-01",
+                    "end_date": "2020-12-31"
+                }
+            ]
+        },
+        "expected_tools": [
+            "execute_filter"
+        ],
+        "tags": [
+            "multi_filter",
+            "temporal",
+            "broad"
+        ],
+        "notes": "Journalist investigating specific policy/project with date range",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 187,
+        "query": "Find all contracts awarded without competition to top 10 contractors",
+        "expected_output": {
+            "extentCompeted": [
+                "Not Available for Competition"
+            ],
+            "awardType": [
+                "Contracts"
+            ]
+        },
+        "expected_tools": [
+            "execute_filter"
+        ],
+        "tags": [
+            "multi_filter"
+        ],
+        "notes": "Journalist investigating procurement practices; \"top 10\" requires post-processing",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 188,
+        "query": "Which agencies spent the most on consulting in FY24?",
+        "expected_output": {
+            "keyword": [
+                "consulting"
+            ],
+            "timePeriodType": "fy",
+            "timePeriodFY": [
+                "2024"
+            ]
+        },
+        "expected_tools": [
+            "execute_filter"
+        ],
+        "tags": [
+            "multi_filter",
+            "temporal",
+            "broad"
+        ],
+        "notes": "Defaults to consulting due to no FA or Contract designation",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 190,
+        "query": "How much goes to climate change programs?",
+        "expected_output": {
+            "keyword": [
+                "climate change"
+            ]
+        },
+        "expected_tools": [
+            "execute_filter"
+        ],
+        "tags": [
+            "single_filter",
+            "broad"
+        ],
+        "notes": "Advocacy group tracking policy area spending",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 192,
+        "query": "Show me environmental cleanup awards in Michigan",
+        "expected_output": {
+            "keyword": [
+                "environmental cleanup"
+            ],
+            "selectedLocations": {
+                "USA_MI": {
+                    "identifier": "USA_MI",
+                    "filter": {
+                        "country": "USA",
+                        "state": "MI"
+                    },
+                    "display": {
+                        "entity": "State",
+                        "standalone": "Michigan",
+                        "title": "Michigan"
+                    }
+                }
+            }
+        },
+        "expected_tools": [
+            "lookup_location",
+            "execute_filter"
+        ],
+        "tags": [
+            "multi_filter",
+            "location",
+            "broad"
+        ],
+        "notes": "Advocacy group tracking environmental spending",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 193,
+        "query": "Awards from the Trump administration",
+        "expected_output": {
+            "timePeriodType": "fy",
+            "timePeriodFY": [
+                "2017",
+                "2018",
+                "2019",
+                "2020",
+                "2024",
+                "2025",
+                "2026"
+            ]
+        },
+        "expected_tools": [
+            "execute_filter"
+        ],
+        "tags": [
+            "single_filter",
+            "temporal",
+            "nice_to_have"
+        ],
+        "notes": "Tests political era as time reference (requires interpretation)",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 195,
+        "query": "List awards from Q2 FY2024",
+        "expected_output": {
+            "timePeriodType": "dr",
+            "time_period": [
+                {
+                    "start_date": "2024-01-01",
+                    "end_date": "2024-03-30"
+                }
+            ]
+        },
+        "expected_tools": [
+            "execute_filter"
+        ],
+        "tags": [
+            "single_filter",
+            "temporal"
+        ],
+        "notes": "Tests fiscal year quarter notation",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 196,
+        "query": "List awards from Q2 2024",
+        "expected_output": {
+            "timePeriodType": "dr",
+            "time_period": [
+                {
+                    "start_date": "2024-04-01",
+                    "end_date": "2024-06-30"
+                }
+            ]
+        },
+        "expected_tools": [
+            "execute_filter"
+        ],
+        "tags": [
+            "single_filter",
+            "temporal"
+        ],
+        "notes": "Tests calendar year quarter notation",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 197,
+        "query": "List awards from Q2 in calendar year 2024",
+        "expected_output": {
+            "timePeriodType": "dr",
+            "time_period": [
+                {
+                    "start_date": "2024-04-01",
+                    "end_date": "2024-06-30"
+                }
+            ]
+        },
+        "expected_tools": [
+            "execute_filter"
+        ],
+        "tags": [
+            "single_filter",
+            "temporal"
+        ],
+        "notes": "Tests calendar year quarter notation",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 198,
+        "query": "Awards from October to December 2024",
+        "expected_output": {
+            "timePeriodType": "dr",
+            "time_period": [
+                {
+                    "start_date": "2024-10-01",
+                    "end_date": "2024-12-31"
+                }
+            ]
+        },
+        "expected_tools": [
+            "execute_filter"
+        ],
+        "tags": [
+            "single_filter",
+            "temporal"
+        ],
+        "notes": "Tests calendar date range",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 201,
+        "query": "Contracts worth at least 5 million",
+        "expected_output": {
+            "awardAmounts": {
+                "specific": [
+                    5000000,
+                    null
+                ]
+            },
+            "awardType": [
+                "Contracts"
+            ]
+        },
+        "expected_tools": [
+            "execute_filter"
+        ],
+        "tags": [
+            "multi_filter",
+            "numerical"
+        ],
+        "notes": "Tests \"at least\" language with award type",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 202,
+        "query": "All awards with zero dollars",
+        "expected_output": {
+            "awardAmounts": {
+                "specific": [
+                    0,
+                    0
+                ]
+            }
+        },
+        "expected_tools": [
+            "execute_filter"
+        ],
+        "tags": [
+            "single_filter",
+            "numerical"
+        ],
+        "notes": "Tests edge case of $0 awards",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 203,
+        "query": "All awards with negative dollars",
+        "expected_output": {
+            "awardAmounts": {
+                "specific": [
+                    null,
+                    -1
+                ]
+            }
+        },
+        "expected_tools": [
+            "execute_filter"
+        ],
+        "tags": [
+            "single_filter",
+            "numerical"
+        ],
+        "notes": "Tests edge case of negative awards",
+        "approved": false,
+        "sme_validation_notes": ""
     }
 ]
