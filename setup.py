@@ -38,7 +38,7 @@ if __name__ == "__main__":
         ),
         long_description=(_PROJECT_ROOT_DIR / "README.md").read_text(encoding="utf-8"),
         long_description_content_type="text/markdown",
-        python_requires="==3.10.*",
+        python_requires="==3.12.14",
         license=(_PROJECT_ROOT_DIR / "LICENSE").read_text(encoding="utf-8"),
         packages=find_packages(),
         include_package_data=True,  # see MANIFEST.in for what is included
@@ -48,7 +48,7 @@ if __name__ == "__main__":
             "Development Status :: 5 - Production/Stable",
             "Programming Language :: Python",
             "Programming Language :: Python :: 3",
-            "Programming Language :: Python :: 3.10",
+            "Programming Language :: Python :: 3.12",
             "Programming Language :: Python :: 3 :: Only",
         ],
     )

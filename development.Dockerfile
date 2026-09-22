@@ -8,7 +8,7 @@ COPY --from=ghcr.io/astral-sh/uv:0.7.19 /uv /uvx /bin/
 
 # Build ARGs
 ARG PROJECT_LOG_DIR=/logs
-ARG PYTHON_VERSION=3.10.12
+ARG PYTHON_VERSION=3.12.14
 ARG SPARK_LOGGING_LEVEL=INFO
 
 # Install dependencies

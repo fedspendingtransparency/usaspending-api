@@ -28,7 +28,7 @@ _**If not using Docker, you'll need to install app components on your machine:**
     - Linux users already know their package manager (`yum`, `apt`, `pacman`, etc.)
 - [`PostgreSQL`](https://www.postgresql.org/download/) version 16.x (with a dedicated `data_store_api` database)
 - [`OpenSearch`](https://www.elastic.co/downloads/elasticsearch) version 2.9
-- `Python` version 3.10 environment
+- `Python` version 3.12 environment
   - Highly recommended to use a virtual environment. There are various tools and associated instructions depending on preferences
   - See [Required Python Libraries](#required-python-libraries) for an example using `uv`
 - [`uv`](https://github.com/astral-sh/uv) python package/project manager
@@ -198,7 +198,7 @@ This is useful for access to a python shell outside a container. However, it is 
 
 
 ```shell
-uv python install 3.10.12
+uv python install 3.12.14
 ```
 
 #### Sync uv project with lockfile
