@@ -272,7 +272,10 @@ def _upload_to_s3(download_job: DownloadJob, file_name: str) -> None:
                 "service": "aws.s3",
                 "span_type": "WEB",
                 "resource": ".".join(
-                    [multipart_upload.__module__, (multipart_upload.__qualname__ or multipart_upload.__name__)]
+                    [
+                        multipart_upload.__module__,
+                        (multipart_upload.__qualname__ or multipart_upload.__name__),
+                    ]
                 ),
             }
         )
@@ -946,7 +949,12 @@ def execute_psql(temp_sql_file_path: str, source_path: str, download_job: Downlo
 
             # Execute psql using helper
             run_psql_to_file(
-                sql_path=temp_sql_file_path, output_path=source_path, env=psql_env, quiet=True, on_error_stop=True
+                sql_path=temp_sql_file_path,
+                output_path=source_path,
+                env=psql_env,
+                job_id=download_job.download_job_id,
+                quiet=True,
+                on_error_stop=True,
             )
 
             duration = time.perf_counter() - log_time
