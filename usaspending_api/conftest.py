@@ -663,13 +663,17 @@ def elasticsearch_location_index(
         except IntegrityError:
             pass
     create_ref_temp_views(spark)
-    index_name = f"{uuid.uuid4()}-test-locations"
+    index_name = f"test-{uuid.uuid4()}-locations"
     client = instantiate_elasticsearch_client()
     try:
         call_command(
             "elasticsearch_indexer_for_spark", create_new_index=True, load_type="location", index_name=index_name
         )
-        yield client
+        with override_settings(
+            ES_LOCATIONS_QUERY_ALIAS_PREFIX=index_name,
+            ES_LOCATIONS_WRITE_ALIAS=f"{index_name}-load-alias",
+        ):
+            yield client
     except Exception as e:
         raise e
     finally:
