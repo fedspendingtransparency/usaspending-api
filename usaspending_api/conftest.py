@@ -656,6 +656,7 @@ def elasticsearch_location_index(
     spark,
     s3_unittest_data_bucket,
     hive_unittest_metastore_db,
+    monkeypatch,
 ):
     for rds_ref_table in _USAS_RDS_REF_TABLES:
         try:
@@ -670,6 +671,10 @@ def elasticsearch_location_index(
             ES_LOCATIONS_QUERY_ALIAS_PREFIX=index_name,
             ES_LOCATIONS_WRITE_ALIAS=f"{index_name}-load-alias",
         ):
+            monkeypatch.setattr(
+                "usaspending_api.common.elasticsearch.search_wrappers.LocationSearch._index_name",
+                settings.ES_LOCATIONS_QUERY_ALIAS_PREFIX,
+            )
             call_command(
                 "elasticsearch_indexer_for_spark", create_new_index=True, load_type="location", index_name=index_name
             )
