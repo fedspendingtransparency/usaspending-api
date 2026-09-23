@@ -55,7 +55,7 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 # Make sure uv environment is active
 ENV PATH="/usr/local/.venv/bin:$PATH"
 
-# Set Python 3.10.12 as the default Python for PySpark
+# Set Python 3.12.14 as the default Python for PySpark
 ENV PYSPARK_PYTHON=/usr/local/.venv/bin/python3
 ENV PYSPARK_DRIVER_PYTHON=/usr/local/.venv/bin/python3
 
