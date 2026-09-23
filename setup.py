@@ -6,6 +6,7 @@ See:
 """
 
 import pathlib
+
 from setuptools import find_packages, setup
 
 # Project paths
