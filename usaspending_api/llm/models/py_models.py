@@ -1,6 +1,9 @@
 from typing import Annotated, Any, Callable, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+
+from usaspending_api.awards.v2.lookups.lookups import all_awards_types_to_category
+from usaspending_api.common.helpers.orm_helpers import award_types_are_valid_groups
 
 
 class InferenceConfig(BaseModel):
@@ -392,7 +395,14 @@ class Filters(BaseModel):
         json_schema_extra={"examples": [["small_business"], ["woman_owned_business", "minority_owned_business"]]},
     )
     selectedRecipientLocations: dict[str, Any] = Field(default_factory=dict)
-    awardType: list[str] = Field(default_factory=list)
+    awardType: list[str] = Field(
+        default_factory=list,
+        description=(
+            "Award-type code filter (e.g. contracts, grants, loans, IDVs). Call list_award_type_codes "
+            "for all valid codes grouped by category."
+        ),
+        json_schema_extra={"examples": [["02", "03", "04", "05"], ["A", "B", "C", "D"], ["07", "08"]]},
+    )
     selectedAwardIDs: dict[str, Any] = Field(default_factory=dict)
     awardAmounts: dict[str, list[int | None]] = Field(
         default_factory=dict,
@@ -449,6 +459,23 @@ class Filters(BaseModel):
     filterNewAwardsOnlySelected: bool = False
     filterNewAwardsOnlyActive: bool = False
     filterNaoActiveFromFyOrDateRange: bool = False
+
+    @field_validator("awardType")
+    @classmethod
+    def validate_award_type(cls, value: list[str]) -> list[str]:
+        """Validate award-type codes: each must be a known code, and all must share one award group.
+
+        Mirrors the API's `raise_if_award_types_not_valid_subset` rule so the model can't build a
+        filter the search endpoint would reject.
+        """
+        if not value:
+            return value
+        unknown = [code for code in value if code not in all_awards_types_to_category]
+        if unknown:
+            raise ValueError(f"Invalid award type code(s): {unknown}. Call list_award_type_codes for valid codes.")
+        if not award_types_are_valid_groups(value):
+            raise ValueError("'award_type_codes' must only contain types from one group.")
+        return value
 
     @model_validator(mode="after")
     def validate_time_period_consistency(self) -> "Filters":

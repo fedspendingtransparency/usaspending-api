@@ -1,6 +1,5 @@
 from usaspending_api.llm.models.py_models import AITool, AIToolDescription
 
-
 RECIPIENT_TYPES: dict[str, list[dict[str, str]]] = {
     "General business": [
         {"value": "business", "label": "Any business entity"},

@@ -487,6 +487,75 @@ class TestRecipientType:
         assert len(filters.recipientType) == len(all_types)
 
 
+class TestAwardType:
+    """Tests for the awardType single-group validation on the Filters model"""
+
+    def test_award_type_default_empty_list(self):
+        filters = Filters()
+
+        assert filters.awardType == []
+        assert isinstance(filters.awardType, list)
+
+    def test_award_type_accepts_all_contracts(self):
+        types = ["A", "B", "C", "D"]
+        filters = Filters(awardType=types)
+
+        assert filters.awardType == types
+
+    def test_award_type_accepts_all_grants(self):
+        types = ["02", "03", "04", "05"]
+        filters = Filters(awardType=types)
+
+        assert filters.awardType == types
+
+    def test_award_type_accepts_loans(self):
+        filters = Filters(awardType=["07", "08"])
+
+        assert filters.awardType == ["07", "08"]
+
+    def test_award_type_accepts_idvs(self):
+        types = ["IDV_A", "IDV_B_A", "IDV_C"]
+        filters = Filters(awardType=types)
+
+        assert filters.awardType == types
+
+    def test_award_type_accepts_single_code(self):
+        filters = Filters(awardType=["D"])
+
+        assert filters.awardType == ["D"]
+
+    def test_award_type_rejects_mixed_groups(self):
+        """Contracts (A) and grants (02) cannot be combined."""
+        with pytest.raises(ValidationError) as exc_info:
+            Filters(awardType=["A", "02"])
+
+        assert "must only contain types from one group" in str(exc_info.value)
+
+    def test_award_type_rejects_contract_mixed_with_loan(self):
+        with pytest.raises(ValidationError) as exc_info:
+            Filters(awardType=["D", "07"])
+
+        assert "must only contain types from one group" in str(exc_info.value)
+
+    def test_award_type_rejects_unknown_code(self):
+        with pytest.raises(ValidationError) as exc_info:
+            Filters(awardType=["NOT_A_REAL_CODE"])
+
+        assert "Invalid award type code" in str(exc_info.value)
+
+    def test_award_type_unknown_code_reported_even_within_one_group(self):
+        """A bogus code mixed with valid same-group codes still trips the 'invalid code' message."""
+        with pytest.raises(ValidationError) as exc_info:
+            Filters(awardType=["A", "B", "NOPE"])
+
+        assert "Invalid award type code" in str(exc_info.value)
+
+    def test_award_type_empty_list_is_valid(self):
+        filters = Filters(awardType=[])
+
+        assert filters.awardType == []
+
+
 class TestRecipientDomesticForeign:
     """Tests for recipientDomesticForeign field in Filters model"""
 
