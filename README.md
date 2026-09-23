@@ -198,7 +198,7 @@ This is useful for access to a python shell outside a container. However, it is 
 
 
 ```shell
-uv python install 3.12.14
+uv python install 3.12.11
 ```
 
 #### Sync uv project with lockfile
