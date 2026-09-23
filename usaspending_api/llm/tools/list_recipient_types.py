@@ -106,7 +106,7 @@ def list_recipient_types() -> dict[str, list[dict[str, str]]]:
 
 list_recipient_types_tool = AITool(
     function=list_recipient_types,
-    logging=lambda tool_input: "Listing recipient types.",
+    logging=lambda _: "Listing recipient types.",
     description=AIToolDescription(
         name="list_recipient_types",
         description=(

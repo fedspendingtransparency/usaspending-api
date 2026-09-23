@@ -10,6 +10,7 @@ from usaspending_api.common.validator.tinyshield import TinyShield
 from usaspending_api.llm.assistants.filter_search import FilterSearchAssistant
 from usaspending_api.llm.models.db_models import Assistant, Session
 from usaspending_api.llm.tools.execute_filter import execute_filter_tool
+from usaspending_api.llm.tools.list_defc_codes import list_defc_codes_tool
 from usaspending_api.llm.tools.list_recipient_types import list_recipient_types_tool
 from usaspending_api.llm.tools.lookup_agency import lookup_agency_tool
 from usaspending_api.llm.tools.lookup_code import lookup_code_tool
@@ -36,6 +37,7 @@ class FilterSearchViewSet(LLMBase):
         lookup_location_tool,
         lookup_recipient_tool,
         list_recipient_types_tool,
+        list_defc_codes_tool,
         execute_filter_tool,
     ]
 
