@@ -94,6 +94,9 @@ class EvalResult:
         - Both must pass for the full case to pass.
 
     A failed output match with a successful tool match receives a score of 0.5.
+
+    When execution fails (error is not None), the case receives a score of 0.0
+    and is marked as failed, but the run continues to preserve all other results.
     """
 
     case_name: str
@@ -102,6 +105,7 @@ class EvalResult:
     tool_call_match: MatchResult | None = None
     output_match: MatchResult | None = None
     details: dict[str, Any] = field(default_factory=dict)
+    error: str | None = None
 
 
 @dataclass(frozen=True)

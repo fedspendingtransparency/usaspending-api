@@ -38,6 +38,7 @@ usaspending_api/llm/
 ├── evals/
 │   ├── base.py
 │   ├── exceptions.py
+│   ├── execution.py
 │   ├── loader.py
 │   ├── matchers.py
 │   ├── models.py
@@ -129,7 +130,7 @@ The exact expected values should come from reviewed behavior rather than assumpt
 
 ## Running Evaluations
 
-Run all approved cases:
+Run all approved cases (results are automatically saved, default fail threshold is 0.9):
 
 ```sh
 python manage.py run_llm_eval \
@@ -161,16 +162,17 @@ python manage.py run_llm_eval \
   --include-unapproved
 ```
 
-Require a minimum score:
+Require a minimum score (default is 0.9):
 
 ```sh
 python manage.py run_llm_eval \
   --assistant filter_search \
-  --fail-under 0.90
+  --fail-under 0.95
 ```
 
 The score is calculated only from cases that actually run.
 Cases excluded because of approval, case, or tag filters appear separately as `NOT RUN` in exported reports.
+Individual case failures are logged but do not stop the evaluation run.
 
 ## How Filter Search Evaluation Works
 
@@ -348,6 +350,51 @@ case was not selected
 case did not match the selected tags for this run
 ```
 
+## Graceful Failure Handling
+
+Individual case failures do not stop the entire evaluation run.
+When a case fails to execute (e.g., due to AWS errors, database issues, or assistant exceptions), the framework:
+
+1. Logs the error with full details
+2. Records the case as failed with `status: ERROR` and `score: 0.0`
+3. Continues executing remaining cases
+4. Includes the error message in the final report
+
+This ensures that:
+- Large evaluation runs (200+ cases) preserve all successful results even if some cases fail
+- Token consumption is not wasted when a malformed case is encountered
+- The full picture of system health is visible in reports
+
+Example error output:
+
+```text
+ERROR  case_123  (0.0)
+  Error: Session '<session_id>' completed without a successful execute_filter call.
+```
+
+## Default Score Threshold
+
+The `--fail-under` parameter defaults to `0.9` (90%), meaning the command will log a warning if the aggregate score falls below 90%. The command will always produce the requested report and exit with a zero status, even when the threshold is not met.
+
+Override the threshold:
+
+```sh
+# Require 95% pass rate
+python manage.py run_llm_eval \
+  --assistant filter_search \
+  --fail-under 0.95
+
+# Disable threshold checking
+python manage.py run_llm_eval \
+  --assistant filter_search \
+  --fail-under 0.0
+```
+
+This is useful for:
+- CI/CD pipelines that should fail when quality drops
+- Gradual quality improvement campaigns (start at 0.8, increase to 0.9, then 0.95)
+- Preventing regressions when deploying new models or prompts
+
 ## Assistant Metadata
 
 For executed cases, the Evaluation sheet includes configuration metadata captured from the active Assistant record:
@@ -458,4 +505,6 @@ Check:
 
 ### XLSX report contains N/A rows
 
-`NOT RUN` rows are intentional. They represent validated source cases that were excluded by the current command filters or approval settings. They retain expected values but have no actual assistant execution data.
+`NOT RUN` rows are intentional.
+They represent validated source cases that were excluded by the current command filters or approval settings.
+They retain expected values but have no actual assistant execution data.

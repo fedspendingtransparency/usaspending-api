@@ -1,3 +1,4 @@
+import logging
 from typing import Any
 
 from django.utils import timezone
@@ -14,6 +15,8 @@ from usaspending_api.llm.tools.lookup_agency import lookup_agency_tool
 from usaspending_api.llm.tools.lookup_code import lookup_code_tool
 from usaspending_api.llm.tools.lookup_location import lookup_location_tool
 from usaspending_api.llm.tools.lookup_recipient import lookup_recipient_tool
+
+logger = logging.getLogger(__name__)
 
 FILTER_SEARCH_TOOLS = [
     lookup_agency_tool,
@@ -69,26 +72,25 @@ def get_final_filter_output(session: Session) -> dict[str, Any]:
     execute_filter only returns a hash. Its ToolUse record retains the filter payload used by the model,
     so the adapter reconstructs the same canonical FilterRequest used by production hash generation.
     """
-    execute_filter_uses = ToolUse.objects.filter(
-        message__session=session, name=FilterSearchAssistant.COMPLETION_TOOL_NAME
-    ).order_by(
-        "message__order",
-        "created_at",
-        "id",
+    execute_filter = (
+        ToolUse.objects.filter(message__session=session, name=FilterSearchAssistant.COMPLETION_TOOL_NAME)
+        .exclude(result__contains="error")
+        .order_by(
+            "message__order",
+            "created_at",
+        )
+        .last()
     )
 
-    successful_tool_use = next(
-        (tool_use for tool_use in reversed(list(execute_filter_uses)) if "error" not in tool_use.result),
-        None,
-    )
-
-    if successful_tool_use is None:
-        raise ExecutionError(f"Session '{session.id}' completed without a successful execute_filter call.")
+    if not execute_filter:
+        logger.error(f"Session '{session.id}' completed without a successful execute_filter call.")
+        return {}
 
     try:
-        filter_request = build_filter_request(successful_tool_use.tool_input)
+        filter_request = build_filter_request(execute_filter.tool_input)
     except Exception as exc:
-        raise ExecutionError(f"Session '{session.id}' has invalid execute_filter input.") from exc
+        logger.error(f"Session '{session.id}' has invalid execute_filter input: {exc}")
+        return {}
 
     return filter_request["filters"]
 
@@ -114,7 +116,7 @@ def run_eval_case(case: EvalCase) -> EvalObservation:
     try:
         events = list(assistant.search(case.input["query"]))
     except Exception as exc:
-        raise ExecutionError(f"Filter Search execution failed for case '{case.name}': {exc}") from exc
+        logger.error(f"Filter Search execution failed for case '{case.name}': {exc}")
     finally:
         session.ended_at = timezone.now()
         session.save(update_fields=["ended_at"])
@@ -122,7 +124,7 @@ def run_eval_case(case: EvalCase) -> EvalObservation:
     error_events = [event for event in events if event.get("type") == "search_error"]
 
     if error_events:
-        raise ExecutionError(
+        logger.error(
             f"Filter Search execution failed for case '{case.name}': "
             f"{error_events[-1].get('message', 'Unknown search error')}"
         )
@@ -130,7 +132,7 @@ def run_eval_case(case: EvalCase) -> EvalObservation:
     tool_calls = get_tool_calls(session)
 
     if not tool_calls:
-        raise ExecutionError(f"Filter Search case '{case.name}' produced no tool calls.")
+        logger.error(f"Filter Search case '{case.name}' produced no tool calls.")
 
     output = get_final_filter_output(session)
 

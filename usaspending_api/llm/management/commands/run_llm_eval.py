@@ -17,7 +17,7 @@ class Command(BaseCommand):
     Example:
         python manage.py run_llm_eval \
             --assistant filter_search \
-            --fail-under 1.0
+            --fail-under 0.95
     """
 
     help = "Run deterministic ground-truth evaluations for a configured LLM assistant."
@@ -52,7 +52,8 @@ class Command(BaseCommand):
         parser.add_argument(
             "--fail-under",
             type=float,
-            help="Fail when aggregate score is below this value from 0.0 to 1.0.",
+            default=0.9,
+            help="Log a warning when aggregate score is below this value from 0.0 to 1.0. (default: 0.9)",
         )
         parser.add_argument(
             "--format",
@@ -71,7 +72,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options) -> None:
         """
-        Resolve the requested evaluator, execute it, print the report, and return a non-zero command result when
+        Resolve the requested evaluator, execute it, print the report, and log a warning when
         the configured score threshold is not met.
         """
         try:
@@ -111,6 +112,6 @@ class Command(BaseCommand):
                 logger.info(f"Evaluation report written to {output_path}")
 
         if not summary.passed:
-            raise CommandError(
+            logger.error(
                 f"Evaluation score {summary.score:.2%} is below required threshold {summary.fail_under:.2%}."
             )

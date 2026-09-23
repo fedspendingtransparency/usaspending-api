@@ -45,6 +45,9 @@ CASE_FIELDS = (
     "inference_config_top_p",
     "inference_config_max_tokens",
     "inference_config_stop_sequences",
+    "input_tokens",
+    "output_tokens",
+    "latencyMs",
 )
 TAG_FIELDS = (
     "tag",
@@ -87,11 +90,50 @@ def _execution_fields(metadata: dict[str, Any]) -> dict[str, Any]:
             "inference_config_stop_sequences",
             NOT_RUN,
         ),
+        "input_tokens": metadata.get("input_tokens", NOT_RUN),
+        "output_tokens": metadata.get("output_tokens", NOT_RUN),
+        "latencyMs": metadata.get("latencyMs", NOT_RUN),
     }
 
 
 def result_to_dict(result: EvalResult) -> dict[str, Any]:
     """Converts one executed case result to a detailed evaluation row."""
+    # Handle execution errors
+    if result.error:
+        return {
+            "case_name": result.case_name,
+            "case_id": result.case_name,
+            "query": result.details.get("case_input", {}).get("query", NOT_RUN),
+            "status": "ERROR",
+            "passed": False,
+            "score": 0.0,
+            "tool_call_match": NOT_RUN,
+            "output_match": NOT_RUN,
+            "tool_passed": NOT_RUN,
+            "tool_score": NOT_RUN,
+            "tool_message": result.error,
+            "expected_tools": NOT_RUN,
+            "actual_tools": NOT_RUN,
+            "output_passed": NOT_RUN,
+            "output_score": NOT_RUN,
+            "output_message": result.error,
+            "expected_output": NOT_RUN,
+            "actual_output": NOT_RUN,
+            "case_metadata": result.details.get("case_metadata", {}),
+            "execution_metadata": NOT_RUN,
+            "assistant": NOT_RUN,
+            "assistant_id": NOT_RUN,
+            "ai_model_id": NOT_RUN,
+            "system_prompt_id": NOT_RUN,
+            "inference_config_temp": NOT_RUN,
+            "inference_config_top_p": NOT_RUN,
+            "inference_config_max_tokens": NOT_RUN,
+            "inference_config_stop_sequences": NOT_RUN,
+            "input_tokens": NOT_RUN,
+            "output_tokens": NOT_RUN,
+            "latencyMs": NOT_RUN,
+        }
+
     tool_match = match_dict(result.tool_call_match)
     output_match = match_dict(result.output_match)
     case_metadata = result.details.get("case_metadata", {})
@@ -129,7 +171,6 @@ def unrun_case_to_dict(summary: EvalSummary, case: EvalCase) -> dict[str, Any]:
     reason = summary.unrun_reasons.get(case.name, "case was not run")
 
     return {
-        "case_name": case.name,
         "case_id": case.name,
         "query": case.input.get("query", ""),
         "status": "NOT RUN",
@@ -157,6 +198,9 @@ def unrun_case_to_dict(summary: EvalSummary, case: EvalCase) -> dict[str, Any]:
         "inference_config_top_p": NOT_RUN,
         "inference_config_max_tokens": NOT_RUN,
         "inference_config_stop_sequences": NOT_RUN,
+        "input_tokens": NOT_RUN,
+        "output_tokens": NOT_RUN,
+        "latencyMs": NOT_RUN,
     }
 
 
@@ -195,7 +239,7 @@ def tag_rows(summary: EvalSummary, rows: list[dict[str, Any]] | None = None) -> 
 
     results = []
     for tag, tag_cases in sorted(grouped.items()):
-        executed = [case for case in tag_cases if case["status"] in {"PASS", "FAIL"}]
+        executed = [case for case in tag_cases if case["status"] in {"PASS", "FAIL", "ERROR"}]
         passed = sum(case["status"] == "PASS" for case in executed)
         scores = [case["score"] for case in executed if isinstance(case["score"], (int, float))]
         results.append(
@@ -317,7 +361,9 @@ def render_text(summary: EvalSummary) -> str:
 
     for row in case_rows(summary):
         lines.append(f"{row['status']}  {row['case_name']}  ({_display_value(row['score'])})")
-        if row["status"] == "FAIL":
+        if row["status"] == "ERROR":
+            lines.append(f"  Error: {row['tool_message']}")
+        elif row["status"] == "FAIL":
             if row["tool_passed"] is False:
                 lines.append(f"  Tool calls: {row['tool_message']}")
             if row["output_passed"] is False:

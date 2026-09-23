@@ -1,8 +1,12 @@
+import logging
 from abc import ABC, abstractmethod
 from statistics import fmean
 
+from usaspending_api.llm.evals.exceptions import ExecutionError
 from usaspending_api.llm.evals.loader import load_all_cases, load_cases
 from usaspending_api.llm.evals.models import EvalCase, EvalObservation, EvalResult, EvalSummary
+
+logger = logging.getLogger(__name__)
 
 
 class BaseEval(ABC):
@@ -66,12 +70,43 @@ class BaseEval(ABC):
     def evaluate(self, case: EvalCase, observation: EvalObservation) -> EvalResult:
         """Compares one observed execution against its ground truth."""
 
+    def _execute_case_safely(self, case: EvalCase) -> EvalResult:
+        """
+        Execute and evaluate one case, catching errors gracefully.
+
+        If execution or evaluation fails, return a failed EvalResult with error details
+        rather than propagating the exception. This allows the run to continue and
+        preserve results from all other cases.
+        """
+        try:
+            observation = self.execute(case)
+            return self.evaluate(case, observation)
+        except ExecutionError as exc:
+            logger.error(f"Execution failed for case '{case.name}': {exc}")
+            return EvalResult(
+                case_name=case.name,
+                passed=False,
+                score=0.0,
+                error=str(exc),
+            )
+        except Exception as exc:
+            logger.exception(f"Unexpected error evaluating case '{case.name}'")
+            return EvalResult(
+                case_name=case.name,
+                passed=False,
+                score=0.0,
+                error=f"Unexpected error: {type(exc).__name__}: {exc}",
+            )
+
     def run(self) -> EvalSummary:
         """
         Executes selected cases while retaining excluded cases for reporting.
 
         The summary score is calculated only from cases that actually ran.
         Excluded cases are represented separately as unrun_cases.
+
+        Individual case failures are caught and recorded as failed results with
+        error messages, allowing the run to continue and preserve all results.
         """
         all_cases = load_all_cases(self.dataset_name)
         cases = self.load_cases()
@@ -79,7 +114,7 @@ class BaseEval(ABC):
         if not cases:
             raise ValueError(f"Dataset `{self.dataset_name}` does not contain evaluation cases.")
 
-        results = tuple(self.evaluate(case, self.execute(case)) for case in cases)
+        results = tuple(self._execute_case_safely(case) for case in cases)
         run_case_names = {case.name for case in cases}
         unrun_cases = tuple(case for case in all_cases if case.name not in run_case_names)
         unrun_reasons = {
