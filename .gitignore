@@ -61,6 +61,7 @@ __pycache__
 \.cache
 .devcontainer/
 tempo-data/
+*.override.yml
 *.override.yaml
 
 # Global overrides -- KEEP AT THE BOTTOM (must be below their ignores)
