@@ -674,12 +674,14 @@ class AccountDownloadValidator(DownloadValidatorBase):
 
         bf_code = self._json_request["filters"].get("budget_function")
         bsf_code = self._json_request["filters"].get("budget_subfunction")
-        has_func = bf_code and bf_code.lower() != "all"
+        has_bf = bf_code and bf_code.lower() != "all"
+        found_bf = TreasuryAppropriationAccount.objects.filter(budget_function_code=bf_code).exists()
         has_subfunc = bsf_code and bsf_code.lower() != "all"
-        if has_func and not TreasuryAppropriationAccount.objects.filter(budget_function_code=bf_code).exists():
+        found_sbf = TreasuryAppropriationAccount.objects.filter(budget_subfunction_code=bsf_code).exists()
+        if has_bf and not found_bf:
             raise InvalidParameterException(f"No accounts were found with Budget Function Code {bf_code}")
-        if has_subfunc and not TreasuryAppropriationAccount.objects.filter(budget_subfunction_code=bsf_code).exists():
-            raise InvalidParameterException(f"No accounts were found with Budget SubFunction Code {bsf_code}")
+        if has_subfunc and not found_sbf:
+            raise InvalidParameterException(f"No accounts were found with Budget Subfunction Code {bsf_code}")
 
         fed_account_id = self._json_request["filters"].get("federal_account")
         has_fed_account = fed_account_id and fed_account_id.lower() != "all"

@@ -146,13 +146,20 @@ def download_test_data(db):
     fa1 = baker.make(FederalAccount, id=10, account_title="TEST_FED_ACCOUNT")
 
     # Create TreasuryAppropriationAccount
-    taa1 = baker.make(TreasuryAppropriationAccount, treasury_account_identifier=100, federal_account=fa1)
+    taa1 = baker.make(
+        TreasuryAppropriationAccount,
+        treasury_account_identifier=100,
+        federal_account=fa1,
+        budget_function_code="050",
+        budget_subfunction_code="051",
+    )
 
     # Create FinancialAccountsByAwards
     baker.make(
         FinancialAccountsByAwards,
         financial_accounts_by_awards_id=1000,
-        award=award1, treasury_account=taa1,
+        award=award1,
+        treasury_account=taa1,
         program_activity_reporting_key=park1,
     )
 
@@ -349,6 +356,7 @@ def test_federal_account_filter_failure(client, download_test_data):
     )
 
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
+    assert resp.json()["detail"] == "No Federal Accounts with ID -1 were found"
 
 
 @pytest.mark.django_db(databases=[settings.DOWNLOAD_DB_ALIAS, settings.DEFAULT_DB_ALIAS])
@@ -473,9 +481,9 @@ def test_empty_submission_types_enum_fail(client, download_test_data):
     )
 
     assert resp.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
-    assert (
-        "Field 'filters|submission_types' value '[]' is below min '1' items" in resp.json()["detail"]
-    ), "Incorrect error message"
+    assert "Field 'filters|submission_types' value '[]' is below min '1' items" in resp.json()["detail"], (
+        "Incorrect error message"
+    )
 
 
 @pytest.mark.django_db(databases=[settings.DOWNLOAD_DB_ALIAS, settings.DEFAULT_DB_ALIAS])
@@ -495,9 +503,86 @@ def test_empty_array_filter_fail(client, download_test_data):
     )
 
     assert resp.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
-    assert (
-        "Field 'filters|def_codes' value '[]' is below min '1' items" in resp.json()["detail"]
-    ), "Incorrect error message"
+    assert "Field 'filters|def_codes' value '[]' is below min '1' items" in resp.json()["detail"], (
+        "Incorrect error message"
+    )
+
+
+@pytest.mark.django_db(databases=[settings.DOWNLOAD_DB_ALIAS, settings.DEFAULT_DB_ALIAS])
+def test_budget_function_fail(client, download_test_data):
+    download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
+
+    resp = client.post(
+        "/api/v2/download/accounts/",
+        content_type="application/json",
+        data=json.dumps(
+            {
+                "account_level": "treasury_account",
+                "filters": {
+                    "submission_types": ["account_balances"],
+                    "fy": "2017",
+                    "quarter": "3",
+                    "budget_function": "1000",
+                },
+                "file_format": "csv",
+            }
+        ),
+    )
+
+    assert resp.status_code == status.HTTP_400_BAD_REQUEST
+    assert "No accounts were found with Budget Function Code 1000" in resp.json()["detail"], "Incorrect error message"
+
+
+@pytest.mark.django_db(databases=[settings.DOWNLOAD_DB_ALIAS, settings.DEFAULT_DB_ALIAS])
+def test_budget_subfunction_fail(client, download_test_data):
+    download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
+
+    resp = client.post(
+        "/api/v2/download/accounts/",
+        content_type="application/json",
+        data=json.dumps(
+            {
+                "account_level": "treasury_account",
+                "filters": {
+                    "submission_types": ["account_balances"],
+                    "fy": "2017",
+                    "quarter": "3",
+                    "budget_function": "1000",
+                },
+                "file_format": "csv",
+            }
+        ),
+    )
+
+    assert resp.status_code == status.HTTP_400_BAD_REQUEST
+    assert "No accounts were found with Budget Subfunction Code 1000" in resp.json()["detail"], (
+        "Incorrect error message"
+    )
+
+
+@pytest.mark.django_db(databases=[settings.DOWNLOAD_DB_ALIAS, settings.DEFAULT_DB_ALIAS])
+def test_budget_functions_success(client, download_test_data):
+    download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
+
+    resp = client.post(
+        "/api/v2/download/accounts/",
+        content_type="application/json",
+        data=json.dumps(
+            {
+                "account_level": "treasury_account",
+                "filters": {
+                    "submission_types": ["account_balances"],
+                    "fy": "2017",
+                    "quarter": "3",
+                    "budget_function": "050",
+                    "budget_subfunction": "051",
+                },
+                "file_format": "csv",
+            }
+        ),
+    )
+
+    assert resp.status_code == status.HTTP_200_OK
 
 
 @pytest.mark.django_db(databases=[settings.DOWNLOAD_DB_ALIAS, settings.DEFAULT_DB_ALIAS])
