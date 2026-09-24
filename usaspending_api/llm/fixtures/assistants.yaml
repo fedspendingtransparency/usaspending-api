@@ -3,7 +3,7 @@
   fields:
     name: filter-search
     ai_model: 4  # nova micro model
-    system_prompt: 2  # filter-preference prompt
+    system_prompt: 3  # filter-preference-slim prompt
     inference_config:
       temperature: 0.0
       topP: 1.0
