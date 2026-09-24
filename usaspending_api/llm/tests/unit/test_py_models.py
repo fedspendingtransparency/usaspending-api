@@ -3,7 +3,7 @@
 import pytest
 from pydantic import ValidationError
 
-from usaspending_api.llm.models.py_models import Filters, InferenceConfig
+from usaspending_api.llm.models.py_models import AwardAmounts, Filters, InferenceConfig
 
 
 class TestInferenceConfig:
@@ -554,6 +554,87 @@ class TestAwardType:
         filters = Filters(awardType=[])
 
         assert filters.awardType == []
+
+
+class TestAwardAmounts:
+    """Tests for the AwardAmounts range-vs-specific validation on the Filters model"""
+
+    def test_award_amounts_default_empty(self):
+        filters = Filters()
+
+        assert filters.awardAmounts.root == {}
+        assert filters.model_dump()["awardAmounts"] == {}
+
+    def test_award_amounts_accepts_single_range(self):
+        filters = Filters(awardAmounts={"range-1": [1000000, 25000000]})
+
+        assert filters.awardAmounts.root == {"range-1": [1000000, 25000000]}
+
+    def test_award_amounts_accepts_multiple_combinable_ranges(self):
+        amounts = {"range-0": [None, 1000000], "range-2": [25000000, 100000000]}
+        filters = Filters(awardAmounts=amounts)
+
+        assert filters.awardAmounts.root == amounts
+
+    def test_award_amounts_accepts_specific_alone(self):
+        filters = Filters(awardAmounts={"specific": [5000000, 50000000]})
+
+        assert filters.awardAmounts.root == {"specific": [5000000, 50000000]}
+
+    def test_award_amounts_accepts_open_ended_bounds(self):
+        """A None bound means the range is open on that end."""
+        filters = Filters(awardAmounts={"range-4": [500000000, None]})
+
+        assert filters.awardAmounts.root == {"range-4": [500000000, None]}
+
+    def test_award_amounts_rejects_specific_combined_with_range(self):
+        with pytest.raises(ValidationError) as exc_info:
+            Filters(awardAmounts={"specific": [1, 2], "range-1": [1000000, 25000000]})
+
+        assert "must be the only key" in str(exc_info.value)
+
+    def test_award_amounts_rejects_noncanonical_range_bounds(self):
+        """A range bucket must carry its fixed bounds; custom values belong in 'specific'."""
+        with pytest.raises(ValidationError) as exc_info:
+            Filters(awardAmounts={"range-1": [1000000, 20000000]})
+
+        assert "use the 'specific' key" in str(exc_info.value)
+
+    def test_award_amounts_rejects_unknown_key(self):
+        with pytest.raises(ValidationError) as exc_info:
+            Filters(awardAmounts={"range-9": [0, 1]})
+
+        assert "Invalid award amount key" in str(exc_info.value)
+
+    def test_award_amounts_rejects_wrong_length_pair(self):
+        with pytest.raises(ValidationError) as exc_info:
+            Filters(awardAmounts={"specific": [1000000]})
+
+        assert "must be a [min, max] pair" in str(exc_info.value)
+
+    def test_award_amounts_rejects_max_less_than_min(self):
+        with pytest.raises(ValidationError) as exc_info:
+            Filters(awardAmounts={"specific": [100, 10]})
+
+        assert "greater than or equal to min" in str(exc_info.value)
+
+    def test_award_amounts_rejects_negative_bound(self):
+        with pytest.raises(ValidationError) as exc_info:
+            Filters(awardAmounts={"specific": [-5, 100]})
+
+        assert "non-negative" in str(exc_info.value)
+
+    def test_award_amounts_serialization_preserves_frontend_shape(self):
+        """The persisted blob must keep the exact frontend key/pair shape (e.g. 'range-1': [min, max])."""
+        filters = Filters(awardAmounts={"range-1": [1000000, 25000000]})
+
+        dumped = filters.model_dump()["awardAmounts"]
+        assert dumped == {"range-1": [1000000, 25000000]}
+
+    def test_award_amounts_model_can_be_used_directly(self):
+        model = AwardAmounts({"range-3": [100000000, 500000000]})
+
+        assert model.root == {"range-3": [100000000, 500000000]}
 
 
 class TestRecipientDomesticForeign:

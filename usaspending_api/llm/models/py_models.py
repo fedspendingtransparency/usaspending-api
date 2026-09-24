@@ -1,6 +1,6 @@
 from typing import Annotated, Any, Callable, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, RootModel, field_validator, model_validator
 
 from usaspending_api.awards.v2.lookups.lookups import all_awards_types_to_category
 from usaspending_api.common.helpers.orm_helpers import award_types_are_valid_groups
@@ -278,6 +278,63 @@ class DEFCodeLists(BaseModel):
     exclude: list[DEFCode] = Field(default_factory=list)
 
 
+# The frontend's predefined award-amount buckets and their fixed bounds (see
+# https://github.com/fedspendingtransparency/usaspending-website/blob/master/src/js/dataMapping/search/awardAmount.js).
+# None means the bound is open ended. Buckets may be combined with each other (OR semantics); a custom range instead
+# uses the single 'specific' key.
+AWARD_AMOUNT_RANGES: dict[str, list[int | None]] = {
+    "range-0": [None, 1000000],
+    "range-1": [1000000, 25000000],
+    "range-2": [25000000, 100000000],
+    "range-3": [100000000, 500000000],
+    "range-4": [500000000, None],
+}
+AWARD_AMOUNT_KEYS = set(AWARD_AMOUNT_RANGES) | {"specific"}
+
+
+class AwardAmounts(RootModel[dict[str, list[int | None]]]):
+    """Validation model for the award-amount filter blob.
+
+    The frontend stores award-amount filters as a dict of {key: [min, max]}, where a None bound is open
+    ended. A key is either one or more of the predefined range buckets (range-0 .. range-4) — each of which
+    carries fixed bounds — or the single 'specific' key holding a custom [min, max], which must stand alone.
+    """
+
+    @model_validator(mode="after")
+    def validate_amounts(self) -> "AwardAmounts":
+        amounts = self.root
+
+        unknown = [key for key in amounts if key not in AWARD_AMOUNT_KEYS]
+        if unknown:
+            raise ValueError(f"Invalid award amount key(s): {unknown}. Valid keys are {sorted(AWARD_AMOUNT_KEYS)}.")
+
+        if "specific" in amounts and len(amounts) > 1:
+            raise ValueError("'specific' award amount must be the only key; it cannot be combined with range buckets.")
+
+        for key, bounds in amounts.items():
+            if key in AWARD_AMOUNT_RANGES:
+                # Range buckets have fixed bounds; a custom range must use 'specific' instead.
+                if bounds != AWARD_AMOUNT_RANGES[key]:
+                    raise ValueError(
+                        f"Award amount '{key}' must be {AWARD_AMOUNT_RANGES[key]}; use the 'specific' key "
+                        f"for a custom range."
+                    )
+                continue
+
+            # 'specific': a free-form [min, max] pair.
+            if len(bounds) != 2:
+                raise ValueError(f"Award amount '{key}' must be a [min, max] pair; got {bounds}.")
+            lower, upper = bounds
+            if lower is not None and lower < 0:
+                raise ValueError(f"Award amount '{key}' min must be non-negative; got {lower}.")
+            if upper is not None and upper < 0:
+                raise ValueError(f"Award amount '{key}' max must be non-negative; got {upper}.")
+            if lower is not None and upper is not None and upper < lower:
+                raise ValueError(f"Award amount '{key}' max ({upper}) must be greater than or equal to min ({lower}).")
+
+        return self
+
+
 class Filters(BaseModel):
     """Validation model for all filter criteria and the persisted FilterHash blob."""
 
@@ -297,7 +354,7 @@ class Filters(BaseModel):
     selectedRecipientLocations: dict[str, Any] = Field(default_factory=dict)
     awardType: list[str] = Field(default_factory=list)
     selectedAwardIDs: dict[str, Any] = Field(default_factory=dict)
-    awardAmounts: dict[str, list[int | None]] = Field(default_factory=dict)
+    awardAmounts: AwardAmounts = Field(default_factory=lambda: AwardAmounts({}))
     selectedCFDA: dict[str, Any] = Field(default_factory=dict)
     naicsCodes: CodeLists = Field(default_factory=CodeLists)
     pscCodes: CodeLists = Field(default_factory=CodeLists)
@@ -450,9 +507,10 @@ class ExecuteFilterInput(BaseModel):
     awardAmounts: dict[str, list[int | None]] = Field(
         default_factory=dict,
         description=(
-            "Award amount ranges as {key: [min, max]}; None = unbounded. Standard keys (combinable): "
-            "range-0 [,1M], range-1 [1M,25M], range-2 [25M,100M], range-3 [100M,500M], range-4 [500M,]. "
-            "Or 'specific': [min, max], which must be the only key."
+            "Award amount ranges as {key: [min, max]}; None = unbounded. Predefined buckets have fixed "
+            "bounds and are combinable: range-0 [,1M], range-1 [1M,25M], range-2 [25M,100M], "
+            "range-3 [100M,500M], range-4 [500M,]. For a custom range use 'specific': [min, max], which "
+            "must be the only key."
         ),
         json_schema_extra={
             "examples": [

@@ -588,6 +588,35 @@ class TestRealWorldScenarios:
 
         assert "hash" in result
 
+    def test_award_amounts_range_filter(self, mock_filter_hash):
+        """A valid award-amount range blob is accepted and hashed."""
+        mock_filter_hash.objects.get.side_effect = FilterHash.DoesNotExist
+        mock_instance = MagicMock()
+        mock_filter_hash.return_value = mock_instance
+
+        result = execute_filter(awardAmounts={"range-1": [1000000, 25000000]})
+
+        assert "hash" in result
+        saved_filter = mock_filter_hash.call_args[1]["filter"]
+        assert saved_filter["filters"]["awardAmounts"] == {"range-1": [1000000, 25000000]}
+
+    def test_award_amounts_specific_filter(self, mock_filter_hash):
+        """A valid 'specific' award-amount blob is accepted."""
+        mock_filter_hash.objects.get.side_effect = FilterHash.DoesNotExist
+        mock_instance = MagicMock()
+        mock_filter_hash.return_value = mock_instance
+
+        result = execute_filter(awardAmounts={"specific": [5000000, None]})
+
+        assert "hash" in result
+
+    def test_award_amounts_invalid_returns_error(self):
+        """Combining 'specific' with a range bucket is rejected before any DB access."""
+        result = execute_filter(awardAmounts={"specific": [1, 2], "range-1": [1000000, 25000000]})
+
+        assert "error" in result
+        assert "message" in result
+
     def test_filter_reuse_returns_same_hash(self, mock_filter_hash):
         """Test that reusing same filters returns same hash."""
         # First call creates hash
