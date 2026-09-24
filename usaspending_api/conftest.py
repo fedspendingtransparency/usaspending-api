@@ -48,6 +48,7 @@ from usaspending_api.conftest_helpers import (
     remove_unittest_queue_data_files,
     transform_xdist_worker_id_to_django_test_db_id,
 )
+from usaspending_api.etl.management.commands.elasticsearch_indexer import set_config
 
 # Compose ALL fixtures from conftest_spark
 from usaspending_api.tests.conftest_spark import *  # noqa
@@ -673,10 +674,35 @@ def elasticsearch_location_index(
         ):
             monkeypatch.setattr(
                 "usaspending_api.common.elasticsearch.search_wrappers.LocationSearch._index_name",
-                settings.ES_LOCATIONS_QUERY_ALIAS_PREFIX,
+                index_name,
+            )
+            opensearch_indexer_config = set_config(["load_type"], {"load_type": "location", "verbosity": 1})
+            opensearch_indexer_config.update(
+                {
+                    "create_new_index": True,
+                    "drop_db_view": False,
+                    "index_name": index_name,
+                    "partition_size": 10_000,
+                    "process_deletes": False,
+                    "deletes_only": False,
+                    "processes": 10,
+                    "skip_counts": True,
+                    "skip_delete_index": True,
+                    "skip_date_check": True,
+                    "starting_date": opensearch_indexer_config["initial_datetime"],
+                    "is_incremental_load": False,
+                }
+            )
+            monkeypatch.setattr(
+                "usaspending_api.etl.management.commands.elasticsearch_indexer.parse_cli_args",
+                lambda options, es_client: opensearch_indexer_config,
             )
             call_command(
-                "elasticsearch_indexer_for_spark", create_new_index=True, load_type="location", index_name=index_name
+                "elasticsearch_indexer_for_spark",
+                create_new_index=True,
+                load_type="location",
+                index_name=index_name,
+                skip_delete_index=True,
             )
             yield client
     except Exception as e:
