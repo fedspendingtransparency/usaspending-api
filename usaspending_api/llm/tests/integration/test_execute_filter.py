@@ -1,8 +1,9 @@
+import json
 from unittest.mock import MagicMock, patch
 
 import pytest
 
-from usaspending_api.llm.models.py_models import Filters
+from usaspending_api.llm.models.py_models import ExecuteFilterInput, Filters
 from usaspending_api.llm.tools.execute_filter import execute_filter, execute_filter_tool
 from usaspending_api.references.models import FilterHash
 
@@ -335,12 +336,37 @@ class TestAIToolImplementation:
         assert len(desc.description) > 50
         assert "filter" in desc.description.lower()
 
-    def test_tool_input_schema_matches_filters_model(self):
-        """Test that input schema matches Filters model."""
+    def test_tool_input_schema_is_decoupled_from_filter_model(self):
+        """The ExecuteFilterInput schema is decoupled from the full Filters model."""
         schema = execute_filter_tool.description.input_schema
-        filters_schema = Filters.model_json_schema()
 
-        assert schema == filters_schema
+        assert schema == ExecuteFilterInput.model_json_schema()
+        assert schema != Filters.model_json_schema()
+
+    def test_execute_filter_input_exposes_every_filter_field(self):
+        """The assistant must be able to see and set every Filters field, and no more.
+
+        Field-set equality is the drift guard in both directions: a Filters-only field would be a
+        filter the assistant can't set, and an ExecuteFilterInput-only field would be rejected by
+        Filters(**kwargs) at runtime (extra='forbid').
+        """
+        assert set(ExecuteFilterInput.model_fields) == set(Filters.model_fields)
+
+    def test_execute_filter_input_omits_the_large_enums(self):
+        """ExecuteFilterInput carries loose str types for recipientType/DEFC instead of the big enums.
+
+        This reduces the payload; the 68-value recipient-type and 46-value DEFC enums are looked up
+        via tools, not inlined into the schema sent on every converse call.
+        """
+        efi = ExecuteFilterInput.model_json_schema()
+        efi_json = json.dumps(efi)
+
+        # recipientType is a plain list[str] here; the enum values are not inlined.
+        assert efi["properties"]["recipientType"]["items"] == {"type": "string"}
+        assert "corporate_entity_tax_exempt" not in efi_json
+
+        # The validation model, by contrast, does pin the enum.
+        assert "corporate_entity_tax_exempt" in json.dumps(Filters.model_json_schema())
 
     def test_logging_function_formats_filters(self):
         """Test that logging function formats filters properly."""
@@ -440,10 +466,11 @@ class TestEdgeCases:
         mock_instance = MagicMock()
         mock_filter_hash.return_value = mock_instance
 
-        # Create large filter set
-        large_codes = [f"CODE_{i}" for i in range(100)]
+        # Create large filter set (keyword accepts arbitrary strings; awardType is validated
+        # against a known code set, so use keyword to exercise raw payload size here).
+        large_keywords = [f"term_{i}" for i in range(100)]
 
-        result = execute_filter(awardType=large_codes)
+        result = execute_filter(keyword=large_keywords)
 
         assert "hash" in result
 

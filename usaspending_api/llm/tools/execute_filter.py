@@ -6,6 +6,7 @@ from pydantic import ValidationError
 from usaspending_api.llm.models.py_models import (
     AITool,
     AIToolDescription,
+    ExecuteFilterInput,
     FilterRequest,
     Filters,
 )
@@ -68,6 +69,6 @@ execute_filter_tool = AITool(
             Filters are combined with an AND operator.
             Awards will only appear if they meet all of the filter conditions.
         """,
-        input_schema=Filters.model_json_schema(),
+        input_schema=ExecuteFilterInput.model_json_schema(),
     ),
 )

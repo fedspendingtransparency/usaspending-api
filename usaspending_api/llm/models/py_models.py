@@ -272,184 +272,36 @@ RecipientType = Literal[
 
 
 class DEFCodeLists(BaseModel):
-    """Base Model for code lists"""
+    """Validation model for DEFC code lists"""
 
-    require: Annotated[
-        list[DEFCode],
-        Field(
-            default_factory=list,
-            description="List of codes that must be present.",
-            json_schema_extra={"examples": [["A", "AAB"]]},
-        ),
-    ]
-    exclude: Annotated[
-        list[DEFCode],
-        Field(
-            default_factory=list, description="List of codes to exclude", json_schema_extra={"examples": [["336413"]]}
-        ),
-    ]
+    require: list[DEFCode] = Field(default_factory=list)
+    exclude: list[DEFCode] = Field(default_factory=list)
 
 
 class Filters(BaseModel):
-    """Model for all filter criteria"""
+    """Validation model for all filter criteria and the persisted FilterHash blob."""
 
     model_config = ConfigDict(extra="forbid")
 
-    keyword: list[str] = Field(
-        default_factory=list, description="List of keywords. Use query fan out to expand user query to 2-3 synonyms"
-    )
-    timePeriodType: Annotated[
-        Literal["fy", "dr"],
-        Field(
-            description=(
-                "Time period type selector:\n"
-                "- 'fy' (fiscal year): Use timePeriodFY field with year strings like '2023', '2024'\n"
-                "- 'dr' (date range): Use time_period field with TimePeriod objects containing "
-                "start_date and end_date\n\n"
-                "IMPORTANT: Only populate the field that matches this type."
-            )
-        ),
-    ] = "fy"
-    timePeriodFY: Annotated[
-        list[str],
-        Field(
-            description=(
-                "ONLY use when timePeriodType='fy'. "
-                "List of fiscal years as four-digit strings (e.g., ['2023', '2024']). "
-                "Leave empty if using date ranges (timePeriodType='dr')."
-            ),
-            json_schema_extra={"examples": [["2023", "2024", "2025"]], "pattern": "^\\d{4}$"},
-        ),
-    ] = []
-    time_period: Annotated[
-        list[TimePeriod],
-        Field(
-            default_factory=list,
-            description=(
-                "ONLY use when timePeriodType='dr'. "
-                "List of custom date ranges with start_date and end_date in YYYY-MM-DD format. "
-                "Leave empty if using fiscal years (timePeriodType='fy')."
-            ),
-            json_schema_extra={
-                "examples": [
-                    [
-                        {"start_date": "2019-07-01", "end_date": "2021-06-30"},
-                        {"start_date": "2022-01-01", "end_date": "2022-12-31"},
-                    ]
-                ]
-            },
-        ),
-    ]
-    selectedLocations: Annotated[
-        dict[str, SelectedLocation],
-        Field(
-            default_factory=dict,
-            description=(
-                "Dictionary of selected locations keyed by their identifier. "
-                "The key MUST match the 'identifier' field in the SelectedLocation value. "
-                "\n\n"
-                "IMPORTANT: Use the lookup_location tool to get properly formatted location objects. "
-                "Do not construct these manually.\n\n"
-                "Structure patterns:\n"
-                "- Country only: 'DEU' → {country: 'DEU'}\n"
-                "- State: 'USA_MO' → {country: 'USA', state: 'MO'}\n"
-                "- County: 'USA_MO_095' → {country: 'USA', state: 'MO', county: '095'}\n"
-                "- City: 'USA_MO_KANSAS CITY' → {country: 'USA', state: 'MO', city: 'KANSAS CITY'}\n"
-                "- District: 'USA_MO_04' → {country: 'USA', state: 'MO', district_current: '04'}\n"
-                "- Zip: 'USA_64198' → {country: 'USA', zip: '64198'}\n"
-                "- Foreign city: 'TUR_undefined_ISTANBUL' → {country: 'TUR', city: 'ISTANBUL'}"
-            ),
-            json_schema_extra={
-                "examples": [
-                    {
-                        "USA_TX": {
-                            "identifier": "USA_TX",
-                            "filter": {"country": "USA", "state": "TX"},
-                            "display": {"entity": "State", "standalone": "TEXAS", "title": "TEXAS"},
-                        },
-                        "USA_IL_CHICAGO": {
-                            "identifier": "USA_IL_CHICAGO",
-                            "filter": {"country": "USA", "state": "IL", "city": "CHICAGO"},
-                            "display": {"entity": "City", "standalone": "CHICAGO", "title": "CHICAGO, ILLINOIS"},
-                        },
-                    }
-                ]
-            },
-        ),
-    ]
-    locationDomesticForeign: Literal["all", "foreign"] = Field(
-        default="all", description='Use "foreign" to search all foreign locations. Otherwise use "all"'
-    )
+    keyword: list[str] = Field(default_factory=list)
+    timePeriodType: Literal["fy", "dr"] = "fy"
+    timePeriodFY: list[str] = []
+    time_period: list[TimePeriod] = Field(default_factory=list)
+    selectedLocations: dict[str, SelectedLocation] = Field(default_factory=dict)
+    locationDomesticForeign: Literal["all", "foreign"] = "all"
     selectedFundingAgencies: dict[str, Any] = Field(default_factory=dict)
     selectedAwardingAgencies: dict[str, SelectedAgency] = Field(default_factory=dict)
     selectedRecipients: list[str] = Field(default_factory=list)
-    recipientDomesticForeign: Literal["all", "foreign"] = Field(
-        default="all", description='Use "foreign" to search all foreign locations. Otherwise use "all"'
-    )
-    recipientType: list[RecipientType] = Field(
-        default_factory=list,
-        description=(
-            "Business/organization type filter for award recipients (e.g. 'small_business', "
-            "'woman_owned_business'). Call list_recipient_types for all valid values grouped by category."
-        ),
-        json_schema_extra={"examples": [["small_business"], ["woman_owned_business", "minority_owned_business"]]},
-    )
+    recipientDomesticForeign: Literal["all", "foreign"] = "all"
+    recipientType: list[RecipientType] = Field(default_factory=list)
     selectedRecipientLocations: dict[str, Any] = Field(default_factory=dict)
-    awardType: list[str] = Field(
-        default_factory=list,
-        description=(
-            "Award-type code filter (e.g. contracts, grants, loans, IDVs). Call list_award_type_codes "
-            "for all valid codes grouped by category."
-        ),
-        json_schema_extra={"examples": [["02", "03", "04", "05"], ["A", "B", "C", "D"], ["07", "08"]]},
-    )
+    awardType: list[str] = Field(default_factory=list)
     selectedAwardIDs: dict[str, Any] = Field(default_factory=dict)
-    awardAmounts: dict[str, list[int | None]] = Field(
-        default_factory=dict,
-        description=(
-            "Dictionary of award amount ranges for filtering. "
-            "Each value is a two-element list: [min_amount, max_amount]. "
-            "Use `None` for unbounded ranges.\n\n"
-            "TWO MUTUALLY EXCLUSIVE MODES:\n\n"
-            "MODE 1 - STANDARD RANGES (can select multiple):\n"
-            "- 'range-0': [None, 1000000] - Awards up to $1M\n"
-            "- 'range-1': [1000000, 25000000] - Awards $1M to $25M\n"
-            "- 'range-2': [25000000, 100000000] - Awards $25M to $100M\n"
-            "- 'range-3': [100000000, 500000000] - Awards $100M to $500M\n"
-            "- 'range-4': [500000000, None] - Awards over $500M\n\n"
-            "MODE 2 - SPECIFIC RANGE (must be alone):\n"
-            "- 'specific': [min, max] - Specify exact dollar amounts\n\n"
-            "CRITICAL RULES:\n"
-            "1. You can use multiple standard ranges together (range-0 through range-4)\n"
-            "2. You can use ONE specific range with specific min/max values\n"
-            "3. NEVER mix standard ranges with specific range\n"
-            "4. When using 'specific', it must be the ONLY key in the dictionary"
-        ),
-        json_schema_extra={
-            "examples": [
-                # Example 1: Multiple standard ranges
-                {"range-0": [None, 1000000], "range-2": [25000000, 100000000]},
-                # Example 2: Single standard range
-                {"range-3": [100000000, 500000000]},
-                # Example 3: Custom range with both bounds
-                {"specific": [5000000, 50000000]},
-                # Example 4: Custom range unbounded above
-                {"specific": [10000000, None]},
-                # Example 5: Custom range unbounded below
-                {"specific": [None, 75000000]},
-            ]
-        },
-    )
+    awardAmounts: dict[str, list[int | None]] = Field(default_factory=dict)
     selectedCFDA: dict[str, Any] = Field(default_factory=dict)
     naicsCodes: CodeLists = Field(default_factory=CodeLists)
     pscCodes: CodeLists = Field(default_factory=CodeLists)
-    defCodes: DEFCodeLists = Field(
-        default_factory=DEFCodeLists,
-        description=(
-            "Disaster/Emergency Fund Codes (DEFC) filter with 'require' and 'exclude' code lists (e.g. COVID-19, "
-            "Infrastructure, or Ukraine aid spending). Call list_defc_codes for all valid codes grouped by event."
-        ),
-    )
+    defCodes: DEFCodeLists = Field(default_factory=DEFCodeLists)
     pricingType: list[str] = Field(default_factory=list)
     setAside: list[str] = Field(default_factory=list)
     extentCompeted: list[str] = Field(default_factory=list)
@@ -463,11 +315,7 @@ class Filters(BaseModel):
     @field_validator("awardType")
     @classmethod
     def validate_award_type(cls, value: list[str]) -> list[str]:
-        """Validate award-type codes: each must be a known code, and all must share one award group.
-
-        Mirrors the API's `raise_if_award_types_not_valid_subset` rule so the model can't build a
-        filter the search endpoint would reject.
-        """
+        """Validate award-type codes: each must be a known code, and all must share one award group."""
         if not value:
             return value
         unknown = [code for code in value if code not in all_awards_types_to_category]
@@ -493,6 +341,154 @@ class Filters(BaseModel):
                 )
 
         return self
+
+
+class DEFCodeListsWithoutEnum(BaseModel):
+    """Version of DEFCodeLists with loose ``str`` codes instead of the DEFCode enum.
+    This reduces the payload send to the llm with every call."""
+
+    require: Annotated[
+        list[str],
+        Field(
+            default_factory=list,
+            description="DEFC codes that must be present. Call list_defc_codes for valid codes.",
+            json_schema_extra={"examples": [["L", "M", "N"]]},
+        ),
+    ]
+    exclude: Annotated[
+        list[str],
+        Field(
+            default_factory=list,
+            description="DEFC codes to exclude.",
+            json_schema_extra={"examples": [["A"]]},
+        ),
+    ]
+
+
+class ExecuteFilterInput(BaseModel):
+    """Model for the input schema for the execute_filter tool
+
+    This model is decoupled form the Filter model above.  the Filter model provides comprehensive validation.  This
+    model is a lighter version that excludes the enumerated values in order to reduce the payload sent to the llm with
+    every call.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    keyword: list[str] = Field(
+        default_factory=list,
+        description="Free-text keywords. Only for terms with no matching structured filter.",
+        json_schema_extra={"examples": [["bridge", "repair"]]},
+    )
+    timePeriodType: Literal["fy", "dr"] = Field(
+        default="fy",
+        description="Time period mode: 'fy' populates timePeriodFY; 'dr' populates time_period. Populate only one.",
+    )
+    timePeriodFY: Annotated[
+        list[str],
+        Field(
+            description="Fiscal years as four-digit strings. Only when timePeriodType='fy'.",
+            json_schema_extra={"examples": [["2023", "2024"]], "pattern": "^\\d{4}$"},
+        ),
+    ] = []
+    time_period: Annotated[
+        list[TimePeriod],
+        Field(
+            default_factory=list,
+            description="Custom date ranges (YYYY-MM-DD). Only when timePeriodType='dr'.",
+            json_schema_extra={"examples": [[{"start_date": "2023-01-01", "end_date": "2023-12-31"}]]},
+        ),
+    ]
+    selectedLocations: Annotated[
+        dict[str, SelectedLocation],
+        Field(
+            default_factory=dict,
+            description=(
+                "Selected locations keyed by identifier. Use the lookup_location tool to build these; "
+                "do not construct them manually."
+            ),
+        ),
+    ]
+    locationDomesticForeign: Literal["all", "foreign"] = Field(
+        default="all", description='Use "foreign" to search all foreign locations. Otherwise use "all".'
+    )
+    selectedFundingAgencies: dict[str, Any] = Field(
+        default_factory=dict, description="Funding agencies keyed by id. Use the lookup_agency tool to build these."
+    )
+    selectedAwardingAgencies: dict[str, SelectedAgency] = Field(
+        default_factory=dict, description="Awarding agencies keyed by id. Use the lookup_agency tool to build these."
+    )
+    selectedRecipients: list[str] = Field(
+        default_factory=list, description="Recipient names. Use the lookup_recipient tool to resolve these."
+    )
+    recipientDomesticForeign: Literal["all", "foreign"] = Field(
+        default="all", description='Use "foreign" to search all foreign recipient locations. Otherwise use "all".'
+    )
+    recipientType: list[str] = Field(
+        default_factory=list,
+        description=(
+            "Business/organization type filter for award recipients (e.g. 'small_business'). "
+            "Call list_recipient_types for all valid values grouped by category."
+        ),
+        json_schema_extra={"examples": [["small_business"], ["woman_owned_business", "minority_owned_business"]]},
+    )
+    selectedRecipientLocations: dict[str, Any] = Field(
+        default_factory=dict,
+        description="Recipient locations keyed by identifier. Use the lookup_location tool to build these.",
+    )
+    awardType: list[str] = Field(
+        default_factory=list,
+        description=(
+            "Award-type code filter (e.g. contracts, grants, loans, IDVs). Call list_award_type_codes "
+            "for all valid codes grouped by category. May only contain codes from a single group."
+        ),
+        json_schema_extra={"examples": [["02", "03", "04", "05"], ["A", "B", "C", "D"], ["07", "08"]]},
+    )
+    selectedAwardIDs: dict[str, Any] = Field(
+        default_factory=dict, description="Award ID (PIID/FAIN/URI) filter keyed by identifier."
+    )
+    awardAmounts: dict[str, list[int | None]] = Field(
+        default_factory=dict,
+        description=(
+            "Award amount ranges as {key: [min, max]}; None = unbounded. Standard keys (combinable): "
+            "range-0 [,1M], range-1 [1M,25M], range-2 [25M,100M], range-3 [100M,500M], range-4 [500M,]. "
+            "Or 'specific': [min, max], which must be the only key."
+        ),
+        json_schema_extra={
+            "examples": [
+                {"range-0": [None, 1000000], "range-2": [25000000, 100000000]},
+                {"specific": [5000000, 50000000]},
+            ]
+        },
+    )
+    selectedCFDA: dict[str, Any] = Field(
+        default_factory=dict,
+        description="CFDA / Assistance Listing filter keyed by program number. Use the lookup_code tool.",
+    )
+    naicsCodes: CodeLists = Field(default_factory=CodeLists)
+    pscCodes: CodeLists = Field(default_factory=CodeLists)
+    defCodes: DEFCodeListsWithoutEnum = Field(
+        default_factory=DEFCodeListsWithoutEnum,
+        description=(
+            "Disaster/Emergency Fund Codes (DEFC) filter with 'require'/'exclude' lists (e.g. COVID-19, "
+            "Infrastructure, or Ukraine aid). Call list_defc_codes for all valid codes grouped by event."
+        ),
+    )
+    pricingType: list[str] = Field(default_factory=list, description="Contract pricing type codes (e.g. 'A', 'B').")
+    setAside: list[str] = Field(default_factory=list, description="Type-of-set-aside codes (e.g. 'SBA', 'SDVOSBC').")
+    extentCompeted: list[str] = Field(default_factory=list, description="Extent-competed codes (e.g. 'A', 'D').")
+    treasuryAccounts: dict[str, Any] = Field(
+        default_factory=dict, description="Treasury Account Symbol (TAS) filter keyed by identifier."
+    )
+    tasCodes: CodeLists = Field(default_factory=CodeLists)
+    awardDescription: str = Field(default="", description="Free-text award description search term.")
+    filterNewAwardsOnlySelected: bool = Field(default=False, description="When true, limit results to new awards only.")
+    filterNewAwardsOnlyActive: bool = Field(
+        default=False, description="When true, the new-awards-only filter is active."
+    )
+    filterNaoActiveFromFyOrDateRange: bool = Field(
+        default=False, description="When true, derive the new-awards-only window from the selected FY or date range."
+    )
 
 
 class FilterRequest(BaseModel):
