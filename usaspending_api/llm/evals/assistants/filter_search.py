@@ -116,7 +116,7 @@ def run_eval_case(case: EvalCase) -> EvalObservation:
     try:
         events = list(assistant.search(case.input["query"]))
     except Exception as exc:
-        logger.error(f"Filter Search execution failed for case '{case.name}': {exc}")
+        logger.exception(f"Filter Search execution failed for case '{case.name}': {exc}")
     finally:
         session.ended_at = timezone.now()
         session.save(update_fields=["ended_at"])
