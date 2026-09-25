@@ -16,30 +16,14 @@ from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
 
 @pytest.fixture
 def award_data_fixture(db):
-    baker.make(
-        "search.TransactionSearch", transaction_id=210210210, action_date="2013-09-17"
-    )
-    baker.make(
-        "search.TransactionSearch", transaction_id=321032103, action_date="2013-09-17"
-    )
-    baker.make(
-        "search.TransactionSearch", transaction_id=432104321, action_date="2013-09-17"
-    )
-    baker.make(
-        "search.TransactionSearch", transaction_id=543210543, action_date="2013-09-17"
-    )
-    baker.make(
-        "search.TransactionSearch", transaction_id=654321065, action_date="2013-09-17"
-    )
-    baker.make(
-        "search.TransactionSearch", transaction_id=765432107, action_date="2013-09-17"
-    )
-    baker.make(
-        "search.TransactionSearch", transaction_id=876543210, action_date="2013-09-17"
-    )
-    baker.make(
-        "search.TransactionSearch", transaction_id=987654321, action_date="2013-09-17"
-    )
+    baker.make("search.TransactionSearch", transaction_id=210210210, action_date="2013-09-17")
+    baker.make("search.TransactionSearch", transaction_id=321032103, action_date="2013-09-17")
+    baker.make("search.TransactionSearch", transaction_id=432104321, action_date="2013-09-17")
+    baker.make("search.TransactionSearch", transaction_id=543210543, action_date="2013-09-17")
+    baker.make("search.TransactionSearch", transaction_id=654321065, action_date="2013-09-17")
+    baker.make("search.TransactionSearch", transaction_id=765432107, action_date="2013-09-17")
+    baker.make("search.TransactionSearch", transaction_id=876543210, action_date="2013-09-17")
+    baker.make("search.TransactionSearch", transaction_id=987654321, action_date="2013-09-17")
 
     ref_program_activity1 = baker.make(
         "references.RefProgramActivity",
@@ -386,9 +370,7 @@ def test_spending_by_award_subaward_success(
 
 
 @pytest.mark.django_db
-def test_spending_by_award_legacy_filters(
-    client, monkeypatch, elasticsearch_award_index
-):
+def test_spending_by_award_legacy_filters(client, monkeypatch, elasticsearch_award_index):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
 
     resp = client.post(
@@ -637,9 +619,7 @@ def test_date_range_search_with_one_range(
     )
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.data["results"]) == 1
-    assert resp.data["results"] == [
-        {"Award ID": "abcdefg1", "internal_id": 1, "generated_internal_id": "AWARD_1"}
-    ]
+    assert resp.data["results"] == [{"Award ID": "abcdefg1", "internal_id": 1, "generated_internal_id": "AWARD_1"}]
 
     # Test with no award showing
     request_for_no_awards = {
@@ -773,9 +753,7 @@ def test_date_range_search_with_two_ranges(
 
 
 @pytest.mark.django_db
-def test_date_range_with_date_signed(
-    client, monkeypatch, elasticsearch_award_index, awards_over_different_date_ranges
-):
+def test_date_range_with_date_signed(client, monkeypatch, elasticsearch_award_index, awards_over_different_date_ranges):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
 
     contract_type_list = all_award_types_mappings["contracts"]
@@ -834,9 +812,7 @@ def test_date_range_with_date_signed(
 
 
 @pytest.mark.django_db
-def test_messages_not_nested(
-    client, monkeypatch, elasticsearch_award_index, awards_over_different_date_ranges
-):
+def test_messages_not_nested(client, monkeypatch, elasticsearch_award_index, awards_over_different_date_ranges):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
 
     contract_type_list = all_award_types_mappings["contracts"]
@@ -900,9 +876,7 @@ def test_success_with_all_filters(client, monkeypatch, elasticsearch_award_index
 
 
 @pytest.mark.django_db
-def test_inclusive_naics_code(
-    client, monkeypatch, spending_by_award_test_data, elasticsearch_award_index
-):
+def test_inclusive_naics_code(client, monkeypatch, spending_by_award_test_data, elasticsearch_award_index):
     """
     Verify use of built query_string boolean logic for NAICS code inclusions/exclusions executes as expected on ES
     """
@@ -916,9 +890,7 @@ def test_inclusive_naics_code(
                 "filters": {
                     "award_type_codes": ["A", "B", "C", "D"],
                     "naics_codes": {"require": ["1122"]},
-                    "time_period": [
-                        {"start_date": "2007-10-01", "end_date": "2020-09-30"}
-                    ],
+                    "time_period": [{"start_date": "2007-10-01", "end_date": "2020-09-30"}],
                 },
                 "fields": ["Award ID"],
                 "page": 1,
@@ -940,9 +912,7 @@ def test_inclusive_naics_code(
                 "filters": {
                     "award_type_codes": ["A", "B", "C", "D"],
                     "naics_codes": ["1122"],
-                    "time_period": [
-                        {"start_date": "2007-10-01", "end_date": "2020-09-30"}
-                    ],
+                    "time_period": [{"start_date": "2007-10-01", "end_date": "2020-09-30"}],
                 },
                 "fields": ["Award ID"],
                 "page": 1,
@@ -958,9 +928,7 @@ def test_inclusive_naics_code(
 
 
 @pytest.mark.django_db
-def test_exclusive_naics_code(
-    client, monkeypatch, spending_by_award_test_data, elasticsearch_award_index
-):
+def test_exclusive_naics_code(client, monkeypatch, spending_by_award_test_data, elasticsearch_award_index):
     """
     Verify use of built query_string boolean logic for NAICS code inclusions/exclusions executes as expected on ES
     """
@@ -974,9 +942,7 @@ def test_exclusive_naics_code(
                 "filters": {
                     "award_type_codes": ["A", "B", "C", "D"],
                     "naics_codes": {"require": ["999990"]},
-                    "time_period": [
-                        {"start_date": "2007-10-01", "end_date": "2020-09-30"}
-                    ],
+                    "time_period": [{"start_date": "2007-10-01", "end_date": "2020-09-30"}],
                 },
                 "fields": ["Award ID"],
                 "page": 1,
@@ -992,9 +958,7 @@ def test_exclusive_naics_code(
 
 
 @pytest.mark.django_db
-def test_mixed_naics_codes(
-    client, monkeypatch, spending_by_award_test_data, elasticsearch_award_index
-):
+def test_mixed_naics_codes(client, monkeypatch, spending_by_award_test_data, elasticsearch_award_index):
     """
     Verify use of built query_string boolean logic for NAICS code inclusions/exclusions executes as expected on ES
     """
@@ -1037,9 +1001,7 @@ def test_mixed_naics_codes(
                         "require": ["112233", "222233"],
                         "exclude": ["112233"],
                     },
-                    "time_period": [
-                        {"start_date": "2007-10-01", "end_date": "2020-09-30"}
-                    ],
+                    "time_period": [{"start_date": "2007-10-01", "end_date": "2020-09-30"}],
                 },
                 "fields": ["Award ID"],
                 "page": 1,
@@ -1059,9 +1021,7 @@ def test_mixed_naics_codes(
     ]
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.json().get("results")) == 1
-    assert resp.json().get("results") == expected_result, (
-        "Keyword filter does not match expected result"
-    )
+    assert resp.json().get("results") == expected_result, "Keyword filter does not match expected result"
 
 
 @pytest.mark.django_db
@@ -1140,9 +1100,7 @@ def _test_correct_response_for_keywords(client):
     ]
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.json().get("results")) == 2
-    assert resp.json().get("results") == expected_result, (
-        "Keyword filter does not match expected result"
-    )
+    assert resp.json().get("results") == expected_result, "Keyword filter does not match expected result"
 
 
 def _test_correct_response_for_time_period(client):
@@ -1153,9 +1111,7 @@ def _test_correct_response_for_time_period(client):
             {
                 "filters": {
                     "award_type_codes": ["A"],
-                    "time_period": [
-                        {"start_date": "2014-01-01", "end_date": "2008-12-31"}
-                    ],
+                    "time_period": [{"start_date": "2014-01-01", "end_date": "2008-12-31"}],
                 },
                 "fields": ["Award ID"],
                 "page": 1,
@@ -1175,9 +1131,7 @@ def _test_correct_response_for_time_period(client):
     ]
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.json().get("results")) == 1
-    assert resp.json().get("results") == expected_result, (
-        "Time Period filter does not match expected result"
-    )
+    assert resp.json().get("results") == expected_result, "Time Period filter does not match expected result"
 
 
 def _test_correct_response_for_award_type_codes(client):
@@ -1188,9 +1142,7 @@ def _test_correct_response_for_award_type_codes(client):
             {
                 "filters": {
                     "award_type_codes": ["A", "B", "C", "D"],
-                    "time_period": [
-                        {"start_date": "2007-10-01", "end_date": "2020-09-30"}
-                    ],
+                    "time_period": [{"start_date": "2007-10-01", "end_date": "2020-09-30"}],
                 },
                 "fields": ["Award ID"],
                 "page": 1,
@@ -1240,9 +1192,7 @@ def _test_correct_response_for_award_type_codes(client):
     ]
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.json().get("results")) == 7
-    assert resp.json().get("results") == expected_result, (
-        "Award Type Codes filter does not match expected result"
-    )
+    assert resp.json().get("results") == expected_result, "Award Type Codes filter does not match expected result"
 
 
 def _test_correct_response_for_award_type_codes_loans(client):
@@ -1253,9 +1203,7 @@ def _test_correct_response_for_award_type_codes_loans(client):
             {
                 "filters": {
                     "award_type_codes": ["F003"],
-                    "time_period": [
-                        {"start_date": "2007-10-01", "end_date": "2020-09-30"}
-                    ],
+                    "time_period": [{"start_date": "2007-10-01", "end_date": "2020-09-30"}],
                 },
                 "fields": ["Award ID"],
                 "page": 1,
@@ -1275,9 +1223,7 @@ def _test_correct_response_for_award_type_codes_loans(client):
     ]
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.json().get("results")) == 1
-    assert resp.json().get("results") == expected_result, (
-        "Award Type Codes filter does not match expected result"
-    )
+    assert resp.json().get("results") == expected_result, "Award Type Codes filter does not match expected result"
 
 
 def _test_correct_response_for_agencies(client):
@@ -1300,9 +1246,7 @@ def _test_correct_response_for_agencies(client):
                             "name": "SUBTIER AGENCY 1",
                         },
                     ],
-                    "time_period": [
-                        {"start_date": "2007-10-01", "end_date": "2020-09-30"}
-                    ],
+                    "time_period": [{"start_date": "2007-10-01", "end_date": "2020-09-30"}],
                 },
                 "fields": ["Award ID"],
                 "page": 1,
@@ -1322,9 +1266,7 @@ def _test_correct_response_for_agencies(client):
     ]
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.json().get("results")) == 1
-    assert resp.json().get("results") == expected_result, (
-        "Agency filter does not match expected result"
-    )
+    assert resp.json().get("results") == expected_result, "Agency filter does not match expected result"
 
 
 def _test_correct_response_for_tas_components(client):
@@ -1336,9 +1278,7 @@ def _test_correct_response_for_tas_components(client):
                 "filters": {
                     "award_type_codes": ["A", "B", "C", "D"],
                     "tas_codes": [{"aid": "097", "main": "4930"}],
-                    "time_period": [
-                        {"start_date": "2007-10-01", "end_date": "2020-09-30"}
-                    ],
+                    "time_period": [{"start_date": "2007-10-01", "end_date": "2020-09-30"}],
                 },
                 "fields": ["Award ID"],
                 "page": 1,
@@ -1363,9 +1303,7 @@ def _test_correct_response_for_tas_components(client):
     ]
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.json().get("results")) == 2
-    assert resp.json().get("results") == expected_result, (
-        "TAS Codes filter does not match expected result"
-    )
+    assert resp.json().get("results") == expected_result, "TAS Codes filter does not match expected result"
 
 
 def _test_correct_response_for_pop_location(client):
@@ -1376,12 +1314,8 @@ def _test_correct_response_for_pop_location(client):
             {
                 "filters": {
                     "award_type_codes": ["A", "B", "C", "D"],
-                    "place_of_performance_locations": [
-                        {"country": "USA", "state": "VA", "county": "014"}
-                    ],
-                    "time_period": [
-                        {"start_date": "2007-10-01", "end_date": "2020-09-30"}
-                    ],
+                    "place_of_performance_locations": [{"country": "USA", "state": "VA", "county": "014"}],
+                    "time_period": [{"start_date": "2007-10-01", "end_date": "2020-09-30"}],
                 },
                 "fields": ["Award ID"],
                 "page": 1,
@@ -1401,9 +1335,7 @@ def _test_correct_response_for_pop_location(client):
     ]
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.json().get("results")) == 1
-    assert resp.json().get("results") == expected_result, (
-        "Place of Performance filter does not match expected result"
-    )
+    assert resp.json().get("results") == expected_result, "Place of Performance filter does not match expected result"
 
 
 def _test_correct_response_for_recipient_location(client):
@@ -1418,9 +1350,7 @@ def _test_correct_response_for_recipient_location(client):
                         {"country": "USA", "state": "VA", "county": "012"},
                         {"country": "USA", "state": "VA", "city": "Arlington"},
                     ],
-                    "time_period": [
-                        {"start_date": "2007-10-01", "end_date": "2020-09-30"}
-                    ],
+                    "time_period": [{"start_date": "2007-10-01", "end_date": "2020-09-30"}],
                 },
                 "fields": ["Award ID"],
                 "page": 1,
@@ -1445,9 +1375,7 @@ def _test_correct_response_for_recipient_location(client):
     ]
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.json().get("results")) == 2
-    assert resp.json().get("results") == expected_result, (
-        "Recipient Location filter does not match expected result"
-    )
+    assert resp.json().get("results") == expected_result, "Recipient Location filter does not match expected result"
 
 
 def _test_correct_response_for_recipient_search_text(client):
@@ -1459,9 +1387,7 @@ def _test_correct_response_for_recipient_search_text(client):
                 "filters": {
                     "award_type_codes": ["02", "03", "04", "05"],
                     "recipient_search_text": ["recipient_name_for_award_1001"],
-                    "time_period": [
-                        {"start_date": "2007-10-01", "end_date": "2020-09-30"}
-                    ],
+                    "time_period": [{"start_date": "2007-10-01", "end_date": "2020-09-30"}],
                 },
                 "fields": ["Award ID"],
                 "page": 1,
@@ -1481,9 +1407,7 @@ def _test_correct_response_for_recipient_search_text(client):
     ]
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.json().get("results")) == 1
-    assert resp.json().get("results") == expected_result, (
-        "Recipient Search Text filter does not match expected result"
-    )
+    assert resp.json().get("results") == expected_result, "Recipient Search Text filter does not match expected result"
 
     # Test the results when searching for a recipient name that ends with a period
     # A search for `ACME INC` should include ACME INC, ACME INC. and ACME INC.XYZ
@@ -1495,9 +1419,7 @@ def _test_correct_response_for_recipient_search_text(client):
                 "filters": {
                     "award_type_codes": ["A", "B", "C", "D"],
                     "recipient_search_text": ["ACME INC"],
-                    "time_period": [
-                        {"start_date": "2007-10-01", "end_date": "2020-09-30"}
-                    ],
+                    "time_period": [{"start_date": "2007-10-01", "end_date": "2020-09-30"}],
                 },
                 "fields": ["Award ID", "Recipient Name"],
                 "page": 1,
@@ -1531,9 +1453,7 @@ def _test_correct_response_for_recipient_search_text(client):
 
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.json().get("results")) == len(expected_result)
-    assert resp.json().get("results") == expected_result, (
-        "Recipient Search Text filter does not match expected result"
-    )
+    assert resp.json().get("results") == expected_result, "Recipient Search Text filter does not match expected result"
 
     # A search for `ACME INC.` should include ACME INC. and ACME INC.XYZ but not ACME INC
     resp = client.post(
@@ -1544,9 +1464,7 @@ def _test_correct_response_for_recipient_search_text(client):
                 "filters": {
                     "award_type_codes": ["A", "B", "C", "D"],
                     "recipient_search_text": ["ACME INC."],
-                    "time_period": [
-                        {"start_date": "2007-10-01", "end_date": "2020-09-30"}
-                    ],
+                    "time_period": [{"start_date": "2007-10-01", "end_date": "2020-09-30"}],
                 },
                 "fields": ["Award ID", "Recipient Name"],
                 "page": 1,
@@ -1574,9 +1492,7 @@ def _test_correct_response_for_recipient_search_text(client):
 
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.json().get("results")) == len(expected_result)
-    assert resp.json().get("results") == expected_result, (
-        "Recipient Search Text filter does not match expected result"
-    )
+    assert resp.json().get("results") == expected_result, "Recipient Search Text filter does not match expected result"
 
 
 def _test_correct_response_for_recipient_type_names(client):
@@ -1591,9 +1507,7 @@ def _test_correct_response_for_recipient_type_names(client):
                         "business_category_1_3",
                         "business_category_2_8",
                     ],
-                    "time_period": [
-                        {"start_date": "2007-10-01", "end_date": "2020-09-30"}
-                    ],
+                    "time_period": [{"start_date": "2007-10-01", "end_date": "2020-09-30"}],
                 },
                 "fields": ["Award ID"],
                 "page": 1,
@@ -1618,9 +1532,7 @@ def _test_correct_response_for_recipient_type_names(client):
     ]
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.json().get("results")) == 2
-    assert resp.json().get("results") == expected_result, (
-        "Recipient Type Names filter does not match expected result"
-    )
+    assert resp.json().get("results") == expected_result, "Recipient Type Names filter does not match expected result"
 
 
 def _test_correct_response_for_award_amounts(client):
@@ -1635,9 +1547,7 @@ def _test_correct_response_for_award_amounts(client):
                         {"upper_bound": 1000000},
                         {"lower_bound": 9013, "upper_bound": 9017},
                     ],
-                    "time_period": [
-                        {"start_date": "2007-10-01", "end_date": "2020-09-30"}
-                    ],
+                    "time_period": [{"start_date": "2007-10-01", "end_date": "2020-09-30"}],
                 },
                 "fields": ["Award ID"],
                 "page": 1,
@@ -1667,9 +1577,7 @@ def _test_correct_response_for_award_amounts(client):
     ]
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.json().get("results")) == 3
-    assert resp.json().get("results") == expected_result, (
-        "Award Amounts filter does not match expected result"
-    )
+    assert resp.json().get("results") == expected_result, "Award Amounts filter does not match expected result"
 
 
 def _test_correct_response_for_cfda_program(client):
@@ -1681,9 +1589,7 @@ def _test_correct_response_for_cfda_program(client):
                 "filters": {
                     "award_type_codes": ["02", "03", "04", "05"],
                     "program_numbers": ["10.331"],
-                    "time_period": [
-                        {"start_date": "2007-10-01", "end_date": "2020-09-30"}
-                    ],
+                    "time_period": [{"start_date": "2007-10-01", "end_date": "2020-09-30"}],
                 },
                 "fields": ["Award ID"],
                 "page": 1,
@@ -1703,9 +1609,7 @@ def _test_correct_response_for_cfda_program(client):
     ]
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.json().get("results")) == 1
-    assert resp.json().get("results") == expected_result, (
-        "CFDA Program filter does not match expected result"
-    )
+    assert resp.json().get("results") == expected_result, "CFDA Program filter does not match expected result"
 
 
 def _test_correct_response_for_cfda_program_subawards(client):
@@ -1717,9 +1621,7 @@ def _test_correct_response_for_cfda_program_subawards(client):
                 "filters": {
                     "award_type_codes": ["02", "03", "04", "05"],
                     "program_numbers": ["10.331"],
-                    "time_period": [
-                        {"start_date": "2007-10-01", "end_date": "2020-09-30"}
-                    ],
+                    "time_period": [{"start_date": "2007-10-01", "end_date": "2020-09-30"}],
                 },
                 "fields": ["Sub-Award ID"],
                 "page": 1,
@@ -1740,9 +1642,7 @@ def _test_correct_response_for_cfda_program_subawards(client):
     ]
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.json().get("results")) == 1
-    assert resp.json().get("results") == expected_result, (
-        "CFDA Program filter does not match expected result"
-    )
+    assert resp.json().get("results") == expected_result, "CFDA Program filter does not match expected result"
 
 
 def _test_correct_response_for_naics_codes(client):
@@ -1754,9 +1654,7 @@ def _test_correct_response_for_naics_codes(client):
                 "filters": {
                     "award_type_codes": ["A", "B", "C", "D"],
                     "naics_codes": {"require": ["1122"], "exclude": ["112244"]},
-                    "time_period": [
-                        {"start_date": "2007-10-01", "end_date": "2020-09-30"}
-                    ],
+                    "time_period": [{"start_date": "2007-10-01", "end_date": "2020-09-30"}],
                 },
                 "fields": ["Award ID"],
                 "page": 1,
@@ -1776,9 +1674,7 @@ def _test_correct_response_for_naics_codes(client):
     ]
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.json().get("results")) == 1
-    assert resp.json().get("results") == expected_result, (
-        "NAICS Code filter does not match expected result"
-    )
+    assert resp.json().get("results") == expected_result, "NAICS Code filter does not match expected result"
 
 
 def _test_correct_response_for_naics_codes_subawards(client):
@@ -1790,9 +1686,7 @@ def _test_correct_response_for_naics_codes_subawards(client):
                 "filters": {
                     "award_type_codes": ["A", "B", "C", "D"],
                     "naics_codes": {"require": ["112233", "112244"]},
-                    "time_period": [
-                        {"start_date": "2007-10-01", "end_date": "2020-09-30"}
-                    ],
+                    "time_period": [{"start_date": "2007-10-01", "end_date": "2020-09-30"}],
                 },
                 "fields": ["Sub-Award ID"],
                 "page": 1,
@@ -1819,9 +1713,7 @@ def _test_correct_response_for_naics_codes_subawards(client):
     ]
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.json().get("results")) == 2
-    assert resp.json().get("results") == expected_result, (
-        "NAICS Code filter does not match expected result"
-    )
+    assert resp.json().get("results") == expected_result, "NAICS Code filter does not match expected result"
 
 
 def _test_correct_response_for_psc_code_list(client):
@@ -1833,9 +1725,7 @@ def _test_correct_response_for_psc_code_list(client):
                 "filters": {
                     "award_type_codes": ["A", "B", "C", "D"],
                     "psc_codes": ["PSC1"],
-                    "time_period": [
-                        {"start_date": "2007-10-01", "end_date": "2020-09-30"}
-                    ],
+                    "time_period": [{"start_date": "2007-10-01", "end_date": "2020-09-30"}],
                 },
                 "fields": ["Award ID"],
                 "page": 1,
@@ -1855,9 +1745,7 @@ def _test_correct_response_for_psc_code_list(client):
     ]
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.json().get("results")) == 1
-    assert resp.json().get("results") == expected_result, (
-        "PSC Code filter does not match expected result"
-    )
+    assert resp.json().get("results") == expected_result, "PSC Code filter does not match expected result"
 
 
 def _test_correct_response_for_psc_code_object(client):
@@ -1872,9 +1760,7 @@ def _test_correct_response_for_psc_code_object(client):
                         "require": [["Service", "P", "PSC", "PSC1"]],
                         "exclude": [["Service", "P", "PSC", "PSC0"]],
                     },
-                    "time_period": [
-                        {"start_date": "2007-10-01", "end_date": "2020-09-30"}
-                    ],
+                    "time_period": [{"start_date": "2007-10-01", "end_date": "2020-09-30"}],
                 },
                 "fields": ["Award ID"],
                 "page": 1,
@@ -1894,9 +1780,7 @@ def _test_correct_response_for_psc_code_object(client):
     ]
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.json().get("results")) == 1
-    assert resp.json().get("results") == expected_result, (
-        "PSC Code filter does not match expected result"
-    )
+    assert resp.json().get("results") == expected_result, "PSC Code filter does not match expected result"
 
 
 def _test_correct_response_for_psc_code_list_subawards(client):
@@ -1909,9 +1793,7 @@ def _test_correct_response_for_psc_code_list_subawards(client):
                 "filters": {
                     "award_type_codes": ["A", "B", "C", "D"],
                     "psc_codes": ["PSC2"],
-                    "time_period": [
-                        {"start_date": "2007-10-01", "end_date": "2020-09-30"}
-                    ],
+                    "time_period": [{"start_date": "2007-10-01", "end_date": "2020-09-30"}],
                 },
                 "fields": ["Sub-Award ID"],
                 "page": 1,
@@ -1932,9 +1814,7 @@ def _test_correct_response_for_psc_code_list_subawards(client):
     ]
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.json().get("results")) == 1
-    assert resp.json().get("results") == expected_result, (
-        "PSC Code filter does not match expected result"
-    )
+    assert resp.json().get("results") == expected_result, "PSC Code filter does not match expected result"
 
 
 def _test_correct_response_for_psc_code_object_subawards(client):
@@ -1950,9 +1830,7 @@ def _test_correct_response_for_psc_code_object_subawards(client):
                         "require": [["Service", "P", "PSC", "PSC2"]],
                         "exclude": [["Service", "P", "PSC", "PSC0"]],
                     },
-                    "time_period": [
-                        {"start_date": "2007-10-01", "end_date": "2020-09-30"}
-                    ],
+                    "time_period": [{"start_date": "2007-10-01", "end_date": "2020-09-30"}],
                 },
                 "fields": ["Sub-Award ID"],
                 "page": 1,
@@ -1973,9 +1851,7 @@ def _test_correct_response_for_psc_code_object_subawards(client):
     ]
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.json().get("results")) == 1
-    assert resp.json().get("results") == expected_result, (
-        "PSC Code filter does not match expected result"
-    )
+    assert resp.json().get("results") == expected_result, "PSC Code filter does not match expected result"
 
 
 def _test_more_sophisticated_eclipsed_psc_code_1(client):
@@ -1990,9 +1866,7 @@ def _test_more_sophisticated_eclipsed_psc_code_1(client):
                         "require": [["Service"], ["Service", "P", "PSC"]],
                         "exclude": [["Service", "P"], ["Service", "P", "PSC", "PSC1"]],
                     },
-                    "time_period": [
-                        {"start_date": "2007-10-01", "end_date": "2020-09-30"}
-                    ],
+                    "time_period": [{"start_date": "2007-10-01", "end_date": "2020-09-30"}],
                 },
                 "fields": ["Award ID"],
                 "page": 1,
@@ -2019,9 +1893,7 @@ def _test_more_sophisticated_eclipsed_psc_code_2(client):
                         "require": [["Service", "P"], ["Service", "P", "PSC", "PSC1"]],
                         "exclude": [["Service"], ["Service", "P", "PSC"]],
                     },
-                    "time_period": [
-                        {"start_date": "2007-10-01", "end_date": "2020-09-30"}
-                    ],
+                    "time_period": [{"start_date": "2007-10-01", "end_date": "2020-09-30"}],
                 },
                 "fields": ["Award ID"],
                 "page": 1,
@@ -2045,9 +1917,7 @@ def _test_correct_response_for_contract_pricing_type_codes(client):
                 "filters": {
                     "award_type_codes": ["A", "B", "C", "D"],
                     "contract_pricing_type_codes": ["contract_pricing_test"],
-                    "time_period": [
-                        {"start_date": "2007-10-01", "end_date": "2020-09-30"}
-                    ],
+                    "time_period": [{"start_date": "2007-10-01", "end_date": "2020-09-30"}],
                 },
                 "fields": ["Award ID"],
                 "page": 1,
@@ -2081,9 +1951,7 @@ def _test_correct_response_for_set_aside_type_codes(client):
                 "filters": {
                     "award_type_codes": ["A", "B", "C", "D"],
                     "set_aside_type_codes": ["type_set_aside_test"],
-                    "time_period": [
-                        {"start_date": "2007-10-01", "end_date": "2020-09-30"}
-                    ],
+                    "time_period": [{"start_date": "2007-10-01", "end_date": "2020-09-30"}],
                 },
                 "fields": ["Award ID"],
                 "page": 1,
@@ -2103,9 +1971,7 @@ def _test_correct_response_for_set_aside_type_codes(client):
     ]
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.json().get("results")) == 1
-    assert resp.json().get("results") == expected_result, (
-        "Set Aside Type Codes filter does not match expected result"
-    )
+    assert resp.json().get("results") == expected_result, "Set Aside Type Codes filter does not match expected result"
 
 
 def _test_correct_response_for_set_extent_competed_type_codes(client):
@@ -2117,9 +1983,7 @@ def _test_correct_response_for_set_extent_competed_type_codes(client):
                 "filters": {
                     "award_type_codes": ["A", "B", "C", "D"],
                     "extent_competed_type_codes": ["extent_competed_test"],
-                    "time_period": [
-                        {"start_date": "2007-10-01", "end_date": "2020-09-30"}
-                    ],
+                    "time_period": [{"start_date": "2007-10-01", "end_date": "2020-09-30"}],
                 },
                 "fields": ["Award ID"],
                 "page": 1,
@@ -2153,9 +2017,7 @@ def _test_correct_response_for_recipient_id(client):
                 "filters": {
                     "award_type_codes": ["02", "03", "04", "05"],
                     "recipient_id": "51c7c0ad-a793-de3f-72ba-be5c2895a9ca",
-                    "time_period": [
-                        {"start_date": "2007-10-01", "end_date": "2020-09-30"}
-                    ],
+                    "time_period": [{"start_date": "2007-10-01", "end_date": "2020-09-30"}],
                 },
                 "fields": ["Award ID"],
                 "page": 1,
@@ -2173,9 +2035,7 @@ def _test_correct_response_for_recipient_id(client):
     }
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.json().get("results")) == 7
-    assert resp.json().get("results")[-1] == expected_result, (
-        "Recipient ID filter does not match expected result"
-    )
+    assert resp.json().get("results")[-1] == expected_result, "Recipient ID filter does not match expected result"
 
 
 def _test_correct_response_for_def_codes(client):
@@ -2187,9 +2047,7 @@ def _test_correct_response_for_def_codes(client):
                 "filters": {
                     "award_type_codes": ["A", "B", "C", "D"],
                     "def_codes": ["L", "Q"],
-                    "time_period": [
-                        {"start_date": "2007-10-01", "end_date": "2020-09-30"}
-                    ],
+                    "time_period": [{"start_date": "2007-10-01", "end_date": "2020-09-30"}],
                 },
                 "fields": ["Award ID"],
                 "page": 1,
@@ -2214,9 +2072,7 @@ def _test_correct_response_for_def_codes(client):
     ]
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.json().get("results")) == 2
-    assert resp.json().get("results") == expected_result, (
-        "DEFC filter does not match expected result"
-    )
+    assert resp.json().get("results") == expected_result, "DEFC filter does not match expected result"
 
     resp = client.post(
         "/api/v2/search/spending_by_award",
@@ -2226,9 +2082,7 @@ def _test_correct_response_for_def_codes(client):
                 "filters": {
                     "award_type_codes": ["A", "B", "C", "D"],
                     "def_codes": ["J"],
-                    "time_period": [
-                        {"start_date": "2007-10-01", "end_date": "2020-09-30"}
-                    ],
+                    "time_period": [{"start_date": "2007-10-01", "end_date": "2020-09-30"}],
                 },
                 "fields": ["Award ID"],
                 "page": 1,
@@ -2242,9 +2096,7 @@ def _test_correct_response_for_def_codes(client):
     expected_result = []
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.json().get("results")) == 0
-    assert resp.json().get("results") == expected_result, (
-        "DEFC filter does not match expected result"
-    )
+    assert resp.json().get("results") == expected_result, "DEFC filter does not match expected result"
 
 
 def _test_correct_response_for_def_codes_subaward(client):
@@ -2256,9 +2108,7 @@ def _test_correct_response_for_def_codes_subaward(client):
                 "filters": {
                     "award_type_codes": ["A", "B", "C", "D"],
                     "def_codes": ["L"],
-                    "time_period": [
-                        {"start_date": "2007-10-01", "end_date": "2020-09-30"}
-                    ],
+                    "time_period": [{"start_date": "2007-10-01", "end_date": "2020-09-30"}],
                 },
                 "fields": ["Sub-Award ID"],
                 "page": 1,
@@ -2291,9 +2141,7 @@ def _test_correct_response_for_def_codes_subaward(client):
     ]
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.json().get("results")) == 3
-    assert resp.json().get("results") == expected_result, (
-        "DEFC subaward filter does not match expected result"
-    )
+    assert resp.json().get("results") == expected_result, "DEFC subaward filter does not match expected result"
 
     resp = client.post(
         "/api/v2/search/spending_by_award",
@@ -2303,9 +2151,7 @@ def _test_correct_response_for_def_codes_subaward(client):
                 "filters": {
                     "award_type_codes": ["A", "B", "C", "D"],
                     "def_codes": ["J"],
-                    "time_period": [
-                        {"start_date": "2007-10-01", "end_date": "2020-09-30"}
-                    ],
+                    "time_period": [{"start_date": "2007-10-01", "end_date": "2020-09-30"}],
                 },
                 "fields": ["Sub-Award ID"],
                 "page": 1,
@@ -2319,9 +2165,7 @@ def _test_correct_response_for_def_codes_subaward(client):
     expected_result = []
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.json().get("results")) == 0
-    assert resp.json().get("results") == expected_result, (
-        "DEFC subaward filter does not match expected result"
-    )
+    assert resp.json().get("results") == expected_result, "DEFC subaward filter does not match expected result"
 
 
 @pytest.mark.django_db
@@ -2352,10 +2196,7 @@ def test_failure_with_invalid_filters(client, monkeypatch, elasticsearch_award_i
         ),
     )
     assert resp.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
-    assert (
-        resp.json().get("detail")
-        == "Missing value: 'filters|award_type_codes' is a required field"
-    )
+    assert resp.json().get("detail") == "Missing value: 'filters|award_type_codes' is a required field"
 
     # fails with empty field
     resp = client.post(
@@ -2365,9 +2206,7 @@ def test_failure_with_invalid_filters(client, monkeypatch, elasticsearch_award_i
             {
                 "fields": [],
                 "filters": {
-                    "time_period": [
-                        {"start_date": "2007-10-01", "end_date": "2020-09-30"}
-                    ],
+                    "time_period": [{"start_date": "2007-10-01", "end_date": "2020-09-30"}],
                     "award_type_codes": ["A", "B", "C", "D"],
                 },
                 "page": 1,
@@ -2377,15 +2216,11 @@ def test_failure_with_invalid_filters(client, monkeypatch, elasticsearch_award_i
         ),
     )
     assert resp.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
-    assert (
-        resp.json().get("detail") == "Field 'fields' value '[]' is below min '1' items"
-    )
+    assert resp.json().get("detail") == "Field 'fields' value '[]' is below min '1' items"
 
 
 @pytest.mark.django_db
-def test_search_after(
-    client, monkeypatch, spending_by_award_test_data, elasticsearch_award_index
-):
+def test_search_after(client, monkeypatch, spending_by_award_test_data, elasticsearch_award_index):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
 
     resp = client.post(
@@ -2439,15 +2274,11 @@ def test_search_after(
     ]
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.json().get("results")) == len(expected_result)
-    assert resp.json().get("results") == expected_result, (
-        "Award Type Code filter does not match expected result"
-    )
+    assert resp.json().get("results") == expected_result, "Award Type Code filter does not match expected result"
 
 
 @pytest.mark.django_db
-def test_no_0_covid_amounts(
-    client, monkeypatch, spending_by_award_test_data, elasticsearch_award_index
-):
+def test_no_0_covid_amounts(client, monkeypatch, spending_by_award_test_data, elasticsearch_award_index):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
 
     resp = client.post(
@@ -2458,9 +2289,7 @@ def test_no_0_covid_amounts(
                 "filters": {
                     "award_type_codes": ["A", "B", "C", "D"],
                     "def_codes": ["L"],
-                    "time_period": [
-                        {"start_date": "2007-10-01", "end_date": "2020-09-30"}
-                    ],
+                    "time_period": [{"start_date": "2007-10-01", "end_date": "2020-09-30"}],
                 },
                 "fields": ["Award ID"],
                 "page": 1,
@@ -2480,15 +2309,11 @@ def test_no_0_covid_amounts(
     ]
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.json().get("results")) == 1
-    assert resp.json().get("results") == expected_result, (
-        "DEFC filter does not match expected result"
-    )
+    assert resp.json().get("results") == expected_result, "DEFC filter does not match expected result"
 
 
 @pytest.mark.django_db
-def test_uei_keyword_filter(
-    client, monkeypatch, spending_by_award_test_data, elasticsearch_award_index
-):
+def test_uei_keyword_filter(client, monkeypatch, spending_by_award_test_data, elasticsearch_award_index):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
 
     resp = client.post(
@@ -2499,9 +2324,7 @@ def test_uei_keyword_filter(
                 "filters": {
                     "award_type_codes": ["A", "B", "C", "D"],
                     "keywords": ["testuei"],
-                    "time_period": [
-                        {"start_date": "2007-10-01", "end_date": "2020-09-30"}
-                    ],
+                    "time_period": [{"start_date": "2007-10-01", "end_date": "2020-09-30"}],
                 },
                 "fields": ["Award ID"],
                 "page": 1,
@@ -2521,15 +2344,11 @@ def test_uei_keyword_filter(
     ]
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.json().get("results")) == 1
-    assert resp.json().get("results") == expected_result, (
-        "UEI filter does not match expected result"
-    )
+    assert resp.json().get("results") == expected_result, "UEI filter does not match expected result"
 
 
 @pytest.mark.django_db
-def test_parent_uei_keyword_filter(
-    client, monkeypatch, spending_by_award_test_data, elasticsearch_award_index
-):
+def test_parent_uei_keyword_filter(client, monkeypatch, spending_by_award_test_data, elasticsearch_award_index):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
 
     resp = client.post(
@@ -2540,9 +2359,7 @@ def test_parent_uei_keyword_filter(
                 "filters": {
                     "award_type_codes": ["A", "B", "C", "D"],
                     "keywords": ["test_parent_uei"],
-                    "time_period": [
-                        {"start_date": "2007-10-01", "end_date": "2020-09-30"}
-                    ],
+                    "time_period": [{"start_date": "2007-10-01", "end_date": "2020-09-30"}],
                 },
                 "fields": ["Award ID"],
                 "page": 1,
@@ -2562,9 +2379,7 @@ def test_parent_uei_keyword_filter(
     ]
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.json().get("results")) == 1
-    assert resp.json().get("results") == expected_result, (
-        "UEI filter does not match expected result"
-    )
+    assert resp.json().get("results") == expected_result, "UEI filter does not match expected result"
 
 
 @pytest.mark.django_db
@@ -2584,9 +2399,7 @@ def test_uei_recipient_filter_subaward(
         data=json.dumps(
             {
                 "filters": {
-                    "time_period": [
-                        {"start_date": "2007-10-01", "end_date": "2022-09-30"}
-                    ],
+                    "time_period": [{"start_date": "2007-10-01", "end_date": "2022-09-30"}],
                     "award_type_codes": [
                         "A",
                         "B",
@@ -2622,9 +2435,7 @@ def test_uei_recipient_filter_subaward(
     ]
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.json().get("results")) == 1
-    assert resp.json().get("results") == expected_result, (
-        "UEI Recipient subaward filter does not match expected result"
-    )
+    assert resp.json().get("results") == expected_result, "UEI Recipient subaward filter does not match expected result"
 
 
 @pytest.mark.django_db
@@ -2733,9 +2544,7 @@ def test_spending_by_award_program_activity_subawards(
     )
 
     assert resp.status_code == status.HTTP_200_OK
-    assert expected_response == resp.json().get("results"), (
-        "Unexpected or missing content!"
-    )
+    assert expected_response == resp.json().get("results"), "Unexpected or missing content!"
 
     test_payload = {
         "spending_level": "subawards",
@@ -2762,9 +2571,7 @@ def test_spending_by_award_program_activity_subawards(
     )
 
     assert resp.status_code == status.HTTP_200_OK
-    assert expected_response == resp.json().get("results"), (
-        "Unexpected or missing content!"
-    )
+    assert expected_response == resp.json().get("results"), "Unexpected or missing content!"
 
     test_payload = {
         "spending_level": "subawards",
@@ -2784,15 +2591,11 @@ def test_spending_by_award_program_activity_subawards(
     )
 
     assert resp.status_code == status.HTTP_200_OK
-    assert expected_response == resp.json().get("results"), (
-        "Unexpected or missing content!"
-    )
+    assert expected_response == resp.json().get("results"), "Unexpected or missing content!"
 
 
 @pytest.mark.django_db
-def test_spending_by_award_program_activity(
-    client, monkeypatch, elasticsearch_award_index, award_data_fixture
-):
+def test_spending_by_award_program_activity(client, monkeypatch, elasticsearch_award_index, award_data_fixture):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
 
     # Program Activites filter test
@@ -2820,9 +2623,7 @@ def test_spending_by_award_program_activity(
     )
 
     assert resp.status_code == status.HTTP_200_OK
-    assert expected_response == resp.json().get("results"), (
-        "Unexpected or missing content!"
-    )
+    assert expected_response == resp.json().get("results"), "Unexpected or missing content!"
 
     test_payload = {
         "spending_level": "awards",
@@ -2842,9 +2643,7 @@ def test_spending_by_award_program_activity(
     )
 
     assert resp.status_code == status.HTTP_200_OK
-    assert expected_response == resp.json().get("results"), (
-        "Unexpected or missing content!"
-    )
+    assert expected_response == resp.json().get("results"), "Unexpected or missing content!"
 
     test_payload = {
         "spending_level": "awards",
@@ -2870,9 +2669,7 @@ def test_spending_by_award_program_activity(
     )
 
     assert resp.status_code == status.HTTP_200_OK
-    assert expected_response == resp.json().get("results"), (
-        "Unexpected or missing content!"
-    )
+    assert expected_response == resp.json().get("results"), "Unexpected or missing content!"
 
     test_payload = {
         "spending_level": "awards",
@@ -2898,15 +2695,11 @@ def test_spending_by_award_program_activity(
     )
 
     assert resp.status_code == status.HTTP_200_OK
-    assert expected_response == resp.json().get("results"), (
-        "Unexpected or missing content!"
-    )
+    assert expected_response == resp.json().get("results"), "Unexpected or missing content!"
 
 
 @pytest.mark.django_db
-def test_spending_by_award_object_classes(
-        client, monkeypatch, elasticsearch_award_index, award_data_fixture
-):
+def test_spending_by_award_object_classes(client, monkeypatch, elasticsearch_award_index, award_data_fixture):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
 
     # matching object class returns the award
@@ -2931,9 +2724,7 @@ def test_spending_by_award_object_classes(
         data=json.dumps(test_payload),
     )
     assert resp.status_code == status.HTTP_200_OK
-    assert expected_response == resp.json().get("results"), (
-        "Unexpected or missing content!"
-    )
+    assert expected_response == resp.json().get("results"), "Unexpected or missing content!"
 
     # non-matching object class returns nothing
     test_payload = {
@@ -3016,9 +2807,7 @@ def test_spending_by_award_subawards_award_id_filter(
     )
 
     assert resp.status_code == status.HTTP_200_OK
-    assert expected_response == resp.json().get("results"), (
-        "Unexpected or missing content!"
-    )
+    assert expected_response == resp.json().get("results"), "Unexpected or missing content!"
 
     # Test finding a Subaward by it's `award_piid_fain`
     payload = {
@@ -3044,9 +2833,51 @@ def test_spending_by_award_subawards_award_id_filter(
     )
 
     assert resp.status_code == status.HTTP_200_OK
-    assert expected_response == resp.json().get("results"), (
-        "Unexpected or missing content!"
-    )
+    assert expected_response == resp.json().get("results"), "Unexpected or missing content!"
+
+
+@pytest.mark.django_db
+def test_spending_by_award_award_id_filter_regex_operator_injection(
+    client, monkeypatch, spending_by_award_test_data, elasticsearch_award_index
+):
+    """DEV-16216: `award_ids` is turned into a `regexp` query when the value is not quoted.
+    Regexp-operator characters like `@` (match any string) and `.` (match any single
+    character) must be sanitized so a malicious/unexpected value can't be used to match
+    every award instead of the intended one.
+    """
+    setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
+
+    def get_award_ids(award_ids_filter_value):
+        payload = {
+            "spending_level": "awards",
+            "fields": ["Award ID"],
+            "filters": {
+                "award_type_codes": ["A", "B", "C", "D"],
+                "award_ids": [award_ids_filter_value],
+            },
+        }
+        resp = client.post(
+            "/api/v2/search/spending_by_award/",
+            content_type="application/json",
+            data=json.dumps(payload),
+        )
+        assert resp.status_code == status.HTTP_200_OK
+        return resp.json().get("results")
+
+    # Control: a real, exact award id should only match that one award.
+    assert get_award_ids("abc111") == [
+        {"internal_id": 1, "Award ID": "abc111", "generated_internal_id": "CONT_AWD_TESTING_1"}
+    ]
+
+    # `@` is the Lucene/ES regexp "match any string" operator. None of the
+    # award ids in the test data contain a literal `@`, so this should not
+    # match anything once sanitized (previously it matched every award).
+    assert get_award_ids("@") == []
+
+    # `.` is the regexp "match any single character" operator. None of the
+    # award ids in the test data are exactly one character long, so this
+    # should not match anything once sanitized either.
+    assert get_award_ids(".") == []
 
 
 @pytest.mark.django_db
@@ -3083,9 +2914,7 @@ def test_spending_by_award_unique_id_award(
     )
 
     assert resp.status_code == status.HTTP_200_OK
-    assert expected_response == resp.json().get("results"), (
-        "Unexpected or missing content!"
-    )
+    assert expected_response == resp.json().get("results"), "Unexpected or missing content!"
 
     # Test with an undefined award_unique_id
     test_payload = {
@@ -3104,9 +2933,7 @@ def test_spending_by_award_unique_id_award(
     )
 
     assert resp.status_code == status.HTTP_200_OK
-    assert expected_response == resp.json().get("results"), (
-        "Unexpected or missing content!"
-    )
+    assert expected_response == resp.json().get("results"), "Unexpected or missing content!"
 
 
 @pytest.mark.django_db
@@ -3150,9 +2977,7 @@ def test_spending_by_award_unique_id_subaward(
     )
 
     assert resp.status_code == status.HTTP_200_OK
-    assert expected_response == resp.json().get("results"), (
-        "Unexpected or missing content!"
-    )
+    assert expected_response == resp.json().get("results"), "Unexpected or missing content!"
 
     # Test with a single subaward
     test_payload = {
@@ -3178,9 +3003,7 @@ def test_spending_by_award_unique_id_subaward(
     )
 
     assert resp.status_code == status.HTTP_200_OK
-    assert expected_response == resp.json().get("results"), (
-        "Unexpected or missing content!"
-    )
+    assert expected_response == resp.json().get("results"), "Unexpected or missing content!"
 
     # Test with no subawards
     test_payload = {
@@ -3199,9 +3022,7 @@ def test_spending_by_award_unique_id_subaward(
     )
 
     assert resp.status_code == status.HTTP_200_OK
-    assert expected_response == resp.json().get("results"), (
-        "Unexpected or missing content!"
-    )
+    assert expected_response == resp.json().get("results"), "Unexpected or missing content!"
 
 
 def test_spending_by_award_description_specificity(
@@ -3237,9 +3058,7 @@ def test_spending_by_award_description_specificity(
     )
 
     assert resp.status_code == status.HTTP_200_OK
-    assert expected_response == resp.json().get("results"), (
-        "Unexpected or missing content!"
-    )
+    assert expected_response == resp.json().get("results"), "Unexpected or missing content!"
 
     # get subaward with description "the test test test" and not "the description for test"
     test_payload = {
@@ -3265,9 +3084,7 @@ def test_spending_by_award_description_specificity(
     )
 
     assert resp.status_code == status.HTTP_200_OK
-    assert expected_response == resp.json().get("results"), (
-        "Unexpected or missing content!"
-    )
+    assert expected_response == resp.json().get("results"), "Unexpected or missing content!"
 
     # ensure only queries for text in the correct order
     test_payload = {
@@ -3286,9 +3103,7 @@ def test_spending_by_award_description_specificity(
     )
 
     assert resp.status_code == status.HTTP_200_OK
-    assert expected_response == resp.json().get("results"), (
-        "Unexpected or missing content!"
-    )
+    assert expected_response == resp.json().get("results"), "Unexpected or missing content!"
 
 
 def test_spending_by_award_keyword_specificity(
@@ -3321,9 +3136,7 @@ def test_spending_by_award_keyword_specificity(
     )
 
     assert resp.status_code == status.HTTP_200_OK
-    assert expected_response == resp.json().get("results"), (
-        "Unexpected or missing content!"
-    )
+    assert expected_response == resp.json().get("results"), "Unexpected or missing content!"
 
     # get subaward with product_or_service_description "the test test test" and not
     # "the description for test"
@@ -3347,9 +3160,7 @@ def test_spending_by_award_keyword_specificity(
     )
 
     assert resp.status_code == status.HTTP_200_OK
-    assert expected_response == resp.json().get("results"), (
-        "Unexpected or missing content!"
-    )
+    assert expected_response == resp.json().get("results"), "Unexpected or missing content!"
 
     # ensure only queries for text in the correct order
     test_payload = {
@@ -3365,9 +3176,7 @@ def test_spending_by_award_keyword_specificity(
     )
 
     assert resp.status_code == status.HTTP_200_OK
-    assert expected_response == resp.json().get("results"), (
-        "Unexpected or missing content!"
-    )
+    assert expected_response == resp.json().get("results"), "Unexpected or missing content!"
 
 
 def test_spending_by_award_new_subcontract_fields(
@@ -3443,9 +3252,7 @@ def test_spending_by_award_new_subcontract_fields(
     )
 
     assert resp.status_code == status.HTTP_200_OK
-    assert expected_response == resp.json().get("results"), (
-        "Unexpected or missing content!"
-    )
+    assert expected_response == resp.json().get("results"), "Unexpected or missing content!"
 
 
 def test_spending_by_award_new_subgrant_fields(
@@ -3522,9 +3329,7 @@ def test_spending_by_award_new_subgrant_fields(
     )
 
     assert resp.status_code == status.HTTP_200_OK
-    assert expected_response == resp.json().get("results"), (
-        "Unexpected or missing content!"
-    )
+    assert expected_response == resp.json().get("results"), "Unexpected or missing content!"
 
 
 def test_spending_by_award_new_contract_fields(
@@ -3595,9 +3400,7 @@ def test_spending_by_award_new_contract_fields(
     )
 
     assert resp.status_code == status.HTTP_200_OK
-    assert expected_response == resp.json().get("results"), (
-        "Unexpected or missing content!"
-    )
+    assert expected_response == resp.json().get("results"), "Unexpected or missing content!"
 
 
 def test_spending_by_award_new_assistance_fields(
@@ -3676,9 +3479,7 @@ def test_spending_by_award_new_assistance_fields(
     )
 
     assert resp.status_code == status.HTTP_200_OK
-    assert expected_response == resp.json().get("results"), (
-        "Unexpected or missing content!"
-    )
+    assert expected_response == resp.json().get("results"), "Unexpected or missing content!"
 
 
 def test_spending_by_award_sort_recipient_location(
@@ -4212,10 +4013,7 @@ def test_spending_by_award_sort_sub_recipient_locations(
     assert results[0]["Sub-Recipient Location"]["city_name"] == "ARLINGTON"
     assert results[0]["Sub-Recipient Location"]["address_line1"] == "1 Memorial Drive"
     assert results[1]["Sub-Recipient Location"]["city_name"] == "ARLINGTON"
-    assert (
-        results[1]["Sub-Recipient Location"]["address_line1"]
-        == "600 CALIFORNIA STREET FL 18"
-    )
+    assert results[1]["Sub-Recipient Location"]["address_line1"] == "600 CALIFORNIA STREET FL 18"
     assert results[2]["Sub-Recipient Location"]["city_name"] == "SAN FRANCISCO"
     assert results[3]["Sub-Recipient Location"]["state_code"] == "CA"
     assert results[3]["Sub-Recipient Location"]["city_name"] is None
@@ -4248,10 +4046,7 @@ def test_spending_by_award_sort_sub_recipient_locations(
     assert len(results) == 7
     assert results[0]["Sub-Recipient Location"]["city_name"] == "SAN FRANCISCO"
     assert results[1]["Sub-Recipient Location"]["city_name"] == "ARLINGTON"
-    assert (
-        results[1]["Sub-Recipient Location"]["address_line1"]
-        == "600 CALIFORNIA STREET FL 18"
-    )
+    assert results[1]["Sub-Recipient Location"]["address_line1"] == "600 CALIFORNIA STREET FL 18"
     assert results[2]["Sub-Recipient Location"]["city_name"] == "ARLINGTON"
     assert results[2]["Sub-Recipient Location"]["address_line1"] == "1 Memorial Drive"
     assert results[3]["Sub-Recipient Location"]["state_code"] == "NE"
@@ -4290,29 +4085,17 @@ def test_spending_by_award_sort_sub_pop_location(
     assert resp.status_code == status.HTTP_200_OK
     results = resp.json().get("results")
     assert len(results) == 7
-    assert (
-        results[0]["Sub-Award Primary Place of Performance"]["city_name"] == "ARLINGTON"
-    )
-    assert (
-        results[1]["Sub-Award Primary Place of Performance"]["city_name"] == "ARLINGTON"
-    )
-    assert (
-        results[2]["Sub-Award Primary Place of Performance"]["city_name"]
-        == "LOS ANGELES"
-    )
+    assert results[0]["Sub-Award Primary Place of Performance"]["city_name"] == "ARLINGTON"
+    assert results[1]["Sub-Award Primary Place of Performance"]["city_name"] == "ARLINGTON"
+    assert results[2]["Sub-Award Primary Place of Performance"]["city_name"] == "LOS ANGELES"
     assert results[3]["Sub-Award Primary Place of Performance"]["city_name"] is None
     assert results[3]["Sub-Award Primary Place of Performance"]["state_code"] == "IL"
     assert results[4]["Sub-Award Primary Place of Performance"]["city_name"] is None
     assert results[4]["Sub-Award Primary Place of Performance"]["state_code"] == "VA"
     assert results[5]["Sub-Award Primary Place of Performance"]["state_code"] is None
-    assert (
-        results[5]["Sub-Award Primary Place of Performance"]["country_name"] == "LAOS"
-    )
+    assert results[5]["Sub-Award Primary Place of Performance"]["country_name"] == "LAOS"
     assert results[6]["Sub-Award Primary Place of Performance"]["state_code"] is None
-    assert (
-        results[6]["Sub-Award Primary Place of Performance"]["country_name"]
-        == "UNITED STATES"
-    )
+    assert results[6]["Sub-Award Primary Place of Performance"]["country_name"] == "UNITED STATES"
 
     test_payload = {
         "spending_level": "subawards",
@@ -4334,25 +4117,13 @@ def test_spending_by_award_sort_sub_pop_location(
     assert resp.status_code == status.HTTP_200_OK
     results = resp.json().get("results")
     assert len(results) == 7
-    assert (
-        results[0]["Sub-Award Primary Place of Performance"]["city_name"]
-        == "LOS ANGELES"
-    )
-    assert (
-        results[1]["Sub-Award Primary Place of Performance"]["city_name"] == "ARLINGTON"
-    )
-    assert (
-        results[2]["Sub-Award Primary Place of Performance"]["city_name"] == "ARLINGTON"
-    )
+    assert results[0]["Sub-Award Primary Place of Performance"]["city_name"] == "LOS ANGELES"
+    assert results[1]["Sub-Award Primary Place of Performance"]["city_name"] == "ARLINGTON"
+    assert results[2]["Sub-Award Primary Place of Performance"]["city_name"] == "ARLINGTON"
     assert results[3]["Sub-Award Primary Place of Performance"]["state_code"] == "VA"
     assert results[4]["Sub-Award Primary Place of Performance"]["state_code"] == "IL"
-    assert (
-        results[5]["Sub-Award Primary Place of Performance"]["country_name"]
-        == "UNITED STATES"
-    )
-    assert (
-        results[6]["Sub-Award Primary Place of Performance"]["country_name"] == "LAOS"
-    )
+    assert results[5]["Sub-Award Primary Place of Performance"]["country_name"] == "UNITED STATES"
+    assert results[6]["Sub-Award Primary Place of Performance"]["country_name"] == "LAOS"
 
 
 def test_spending_by_award_sort_sub_assistance_listing(
@@ -4725,9 +4496,7 @@ def test_spending_by_subaward_new_sort_fields(
 
 
 @pytest.mark.django_db
-def test_covid_and_iija_values(
-    client, monkeypatch, elasticsearch_award_index, award_data_fixture
-):
+def test_covid_and_iija_values(client, monkeypatch, elasticsearch_award_index, award_data_fixture):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
     request_body = {
         "spending_level": "awards",
@@ -4917,10 +4686,10 @@ def test_spending_by_award_sort_recipient_uei(
 
 
 def test_spending_by_award_sort_award_type(
-        client,
-        monkeypatch,
-        elasticsearch_award_index,
-        spending_by_award_test_data,
+    client,
+    monkeypatch,
+    elasticsearch_award_index,
+    spending_by_award_test_data,
 ):
     """Test sorting by Award Type for assistance awards"""
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
@@ -5006,10 +4775,10 @@ def test_spending_by_award_sort_award_type(
 
 
 def test_spending_by_award_sort_award_type_loans(
-        client,
-        monkeypatch,
-        elasticsearch_award_index,
-        spending_by_award_test_data,
+    client,
+    monkeypatch,
+    elasticsearch_award_index,
+    spending_by_award_test_data,
 ):
     """Test sorting by Award Type for loan awards"""
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
@@ -5077,10 +4846,10 @@ def test_spending_by_award_sort_award_type_loans(
 
 
 def test_spending_by_award_sort_contract_award_type_enhanced(
-        client,
-        monkeypatch,
-        elasticsearch_award_index,
-        spending_by_award_test_data,
+    client,
+    monkeypatch,
+    elasticsearch_award_index,
+    spending_by_award_test_data,
 ):
     """Test sorting by Contract Award Type"""
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)

@@ -36,6 +36,21 @@ def es_sanitize(input_string: str) -> str:
     return processed_string
 
 
+def es_sanitize_regex(input_string: str) -> str:
+    """Escapes reserved elasticsearch characters, including those with special
+    meaning in a `regexp` query (e.g. `.` matches any character and `@` matches
+    any string), and removes characters when necessary.
+
+    This should only be used for filters that are turned into `regexp` queries.
+    Regular (non-regexp) queries should continue to use `es_sanitize` since `.`
+    and `@` have no special meaning outside of a `regexp` query.
+    """
+    processed_string = es_sanitize(input_string)
+    processed_string = re.sub(r"[.]", r"\.", processed_string)
+    processed_string = re.sub(r"[@]", r"\@", processed_string)
+    return processed_string
+
+
 def es_minimal_sanitize(keyword: Any) -> str:
     keyword = concat_if_array(keyword)
     """Remove Lucene special characters and escapes when needed"""
