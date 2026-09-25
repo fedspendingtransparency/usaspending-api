@@ -171,6 +171,7 @@ def unrun_case_to_dict(summary: EvalSummary, case: EvalCase) -> dict[str, Any]:
     reason = summary.unrun_reasons.get(case.name, "case was not run")
 
     return {
+        "case_name": case.name,
         "case_id": case.name,
         "query": case.input.get("query", ""),
         "status": "NOT RUN",

@@ -83,14 +83,12 @@ def get_final_filter_output(session: Session) -> dict[str, Any]:
     )
 
     if not execute_filter:
-        logger.error(f"Session '{session.id}' completed without a successful execute_filter call.")
-        return {}
+        raise ExecutionError(f"Session '{session.id}' completed without a successful execute_filter call.")
 
     try:
         filter_request = build_filter_request(execute_filter.tool_input)
     except Exception as exc:
-        logger.error(f"Session '{session.id}' has invalid execute_filter input: {exc}")
-        return {}
+        raise ExecutionError(f"Session '{session.id}' has invalid execute_filter input.") from exc
 
     return filter_request["filters"]
 

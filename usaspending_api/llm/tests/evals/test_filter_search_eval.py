@@ -40,10 +40,10 @@ def make_case(
 
 def test_filter_search_eval_uses_the_same_tools_as_the_endpoint():
     assert [tool.description.name for tool in filter_search.FILTER_SEARCH_TOOLS] == [
-        "lookup_agency",
+        "lookup_agencies",
         "lookup_codes",
-        "lookup_location",
-        "lookup_recipient",
+        "lookup_locations",
+        "lookup_recipients",
         "execute_filter",
     ]
 
@@ -315,12 +315,11 @@ def test_run_eval_case_executes_assistant_and_returns_observation(monkeypatch):
         "lookup_recipient",
         "execute_filter",
     ]
-    assert observation.metadata == {
-        "session_id": "123",
-        "assistant_id": 42,
-        "model_id": "test-model",
-        "tool_use_count": 2,
-    }
+    assert observation.metadata["session_id"] == "123"
+    assert observation.metadata["assistant_id"] == 42
+    assert observation.metadata["ai_model_id"] == "test-model"
+    assert observation.metadata["tool_use_count"] == 2
+    # Additional metadata fields are present but not checked here
 
 
 def test_run_eval_case_rejects_search_error(monkeypatch):

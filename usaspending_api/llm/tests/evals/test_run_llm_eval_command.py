@@ -10,7 +10,7 @@ from usaspending_api.llm.evals.models import EvalCase, EvalObservation, ToolCall
 
 
 def write_dataset(tmp_path):
-    dataset_path = tmp_path / "ground_truth.json"
+    dataset_path = tmp_path / "config.json"
     dataset_path.write_text(
         json.dumps(
             [
@@ -77,6 +77,7 @@ def test_run_llm_eval_command_outputs_json(tmp_path, monkeypatch, capsys):
             case_names=["1"],
             fail_under=1.0,
             format="json",
+            no_save=True,
         )
 
     result = json.loads(capsys.readouterr().out)
