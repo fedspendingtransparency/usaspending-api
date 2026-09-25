@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 def _get_boto3(method_name: str, *args, region_name: str = CONFIG.AWS_REGION, **kwargs) -> Any:
     """
-    A wrapper for attributes of boto3 that creates a session to support Minio when running in a local dev
+    A wrapper for attributes of boto3 that creates a session to support RustFS when running in a local dev
     environment. For non-local environments this will function similarly to a normal call to boto3.
     For example:
         - OLD: boto3.client('s3')  # This would require handling of the session for local development
