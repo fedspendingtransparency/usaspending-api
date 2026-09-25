@@ -547,7 +547,7 @@ def test_budget_subfunction_fail(client, download_test_data):
                     "submission_types": ["account_balances"],
                     "fy": "2017",
                     "quarter": "3",
-                    "budget_function": "1000",
+                    "budget_subfunction": "1000",
                 },
                 "file_format": "csv",
             }
