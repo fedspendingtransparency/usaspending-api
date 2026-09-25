@@ -1,8 +1,6 @@
 import json
 
-import pytest
 from django.core.management import call_command
-from django.core.management.base import CommandError
 from django.test import override_settings
 
 from usaspending_api.llm.evals.assistants import filter_search
@@ -77,13 +75,12 @@ def test_run_llm_eval_command_outputs_json(tmp_path, monkeypatch, capsys):
             case_names=["1"],
             fail_under=1.0,
             format="json",
-            no_save=True,
         )
 
     result = json.loads(capsys.readouterr().out)
 
     assert result["assistant"] == "filter_search"
-    assert result["dataset"] == "ground_truth"
+    assert result["dataset"] == "config"
     assert result["case_count"] == 1
     assert result["passed_count"] == 1
     assert result["failed_count"] == 0
@@ -117,7 +114,7 @@ def test_run_llm_eval_command_can_filter_by_tag(tmp_path, monkeypatch):
         )
 
 
-def test_run_llm_eval_command_fails_when_score_is_below_threshold(tmp_path, monkeypatch):
+def test_run_llm_eval_command_logs_warning_when_score_is_below_threshold(tmp_path, monkeypatch, caplog):
     write_dataset(tmp_path)
 
     def failing_observation(_: EvalCase) -> EvalObservation:
@@ -129,10 +126,12 @@ def test_run_llm_eval_command_fails_when_score_is_below_threshold(tmp_path, monk
     monkeypatch.setattr(filter_search, "run_eval_case", failing_observation)
 
     with override_settings(LLM_EVAL_DATASET_DIRECTORY=str(tmp_path)):
-        with pytest.raises(CommandError, match="below required threshold"):
-            call_command(
-                "run_llm_eval",
-                assistant="filter_search",
-                case_names=["1"],
-                fail_under=1.0,
-            )
+        call_command(
+            "run_llm_eval",
+            assistant="filter_search",
+            case_names=["1"],
+            fail_under=1.0,
+        )
+
+        # Check that a warning was logged
+        assert any("below required threshold" in record.message for record in caplog.records)

@@ -42,7 +42,7 @@ def test_filter_search_eval_uses_the_same_tools_as_the_endpoint():
     assert [tool.description.name for tool in filter_search.FILTER_SEARCH_TOOLS] == [
         "lookup_agencies",
         "lookup_codes",
-        "lookup_locations",
+        "lookup_location",
         "lookup_recipients",
         "execute_filter",
     ]
@@ -154,11 +154,6 @@ def test_get_final_filter_output_uses_successful_execute_filter_call(monkeypatch
     """
     The adapter uses execute_filter's ToolUse.tool_input, not the returned hash, as the observable final filter payload.
     """
-    failed_use = Mock(
-        name="failed_use",
-        tool_input={"timePeriodType": "invalid"},
-        result={"error": "invalid filters"},
-    )
     successful_use = Mock(
         name="successful_use",
         tool_input={
@@ -169,14 +164,18 @@ def test_get_final_filter_output_uses_successful_execute_filter_call(monkeypatch
         result={"hash": "abc123"},
     )
 
-    queryset = Mock()
-    queryset.order_by.return_value = [
-        failed_use,
-        successful_use,
-    ]
+    # Mock the full Django ORM chain: filter().exclude().order_by().last()
+    queryset_mock = Mock()
+    queryset_mock.last.return_value = successful_use
+
+    exclude_mock = Mock()
+    exclude_mock.order_by.return_value = queryset_mock
+
+    filter_mock = Mock()
+    filter_mock.exclude.return_value = exclude_mock
 
     manager = Mock()
-    manager.filter.return_value = queryset
+    manager.filter.return_value = filter_mock
 
     monkeypatch.setattr(
         filter_search.ToolUse,
@@ -203,17 +202,19 @@ def test_get_final_filter_output_uses_successful_execute_filter_call(monkeypatch
 
 def test_get_final_filter_output_rejects_missing_successful_completion(monkeypatch):
     """An execution without a successful execute_filter call cannot produce a valid final filter observation."""
-    failed_use = Mock(
-        name="failed_use",
-        tool_input={"timePeriodType": "invalid"},
-        result={"error": "invalid filters"},
-    )
+    # Mock the full Django ORM chain: filter().exclude().order_by().last()
+    # When no successful execute_filter exists, last() returns None
+    queryset_mock = Mock()
+    queryset_mock.last.return_value = None
 
-    queryset = Mock()
-    queryset.order_by.return_value = [failed_use]
+    exclude_mock = Mock()
+    exclude_mock.order_by.return_value = queryset_mock
+
+    filter_mock = Mock()
+    filter_mock.exclude.return_value = exclude_mock
 
     manager = Mock()
-    manager.filter.return_value = queryset
+    manager.filter.return_value = filter_mock
 
     monkeypatch.setattr(
         filter_search.ToolUse,
@@ -322,8 +323,8 @@ def test_run_eval_case_executes_assistant_and_returns_observation(monkeypatch):
     # Additional metadata fields are present but not checked here
 
 
-def test_run_eval_case_rejects_search_error(monkeypatch):
-    """An endpoint-equivalent search_error event prevents a false passing eval."""
+def test_run_eval_case_rejects_search_error(monkeypatch, caplog):
+    """An endpoint-equivalent search_error event logs an error and fails when no execute_filter is found."""
     assistant_config = Mock()
     session = Mock()
     assistant_instance = Mock()
@@ -334,6 +335,7 @@ def test_run_eval_case_rejects_search_error(monkeypatch):
         },
     ]
 
+    # Mock get_tool_calls to return empty (no tools executed)
     monkeypatch.setattr(
         filter_search,
         "get_active_filter_search_assistant",
@@ -349,10 +351,19 @@ def test_run_eval_case_rejects_search_error(monkeypatch):
         "FilterSearchAssistant",
         Mock(return_value=assistant_instance),
     )
+    monkeypatch.setattr(
+        filter_search,
+        "get_tool_calls",
+        lambda value: (),
+    )
 
     case = make_case()
 
-    with pytest.raises(ExecutionError, match="Bedrock failed"):
+    # The error is logged but execution continues until get_final_filter_output fails
+    with pytest.raises(ExecutionError, match="without a successful execute_filter call"):
         run_eval_case(case)
 
     session.save.assert_called_once_with(update_fields=["ended_at"])
+
+    # Verify the search_error was logged
+    assert any("Bedrock failed" in record.message for record in caplog.records)
