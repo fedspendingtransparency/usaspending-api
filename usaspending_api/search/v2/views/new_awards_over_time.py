@@ -13,7 +13,11 @@ from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.elasticsearch.aggregation_helpers import create_count_aggregation
 from usaspending_api.common.elasticsearch.search_wrappers import AwardSearch
 from usaspending_api.common.exceptions import InvalidParameterException
-from usaspending_api.common.helpers.fiscal_year_helpers import generate_fiscal_year
+from usaspending_api.common.helpers.fiscal_year_helpers import (
+    generate_fiscal_month,
+    generate_fiscal_quarter,
+    generate_fiscal_year,
+)
 from usaspending_api.common.helpers.generic_helper import get_generic_filters_message
 from usaspending_api.common.query_with_filters import QueryWithFilters
 from usaspending_api.common.validator.award_filter import AWARD_FILTER
@@ -88,14 +92,12 @@ class NewAwardsOverTimeVisualizationViewSet(APIView):
                 "range", **{"date_signed": {"gte": filters["time_period"][i]["start_date"]}}
             )
         search = AwardSearch().filter(filter_query)
-        if self.group == "month":
-            time_period_field = "month"
-        elif self.group == "quarter":
-            time_period_field = "quarter"
-        elif self.group == "fiscal_year":
-            time_period_field = "year"
-
-        group_by_time = A("date_histogram", field="date_signed", interval=time_period_field)
+        # Always bucket by month on the raw calendar date. Fiscal year/quarter/month are
+        # derived from each bucket's key in format_results using the fiscal_year_helpers.
+        # Bucketing directly by "year"/"quarter" collapses the day/month before the
+        # calendar->fiscal conversion can occur, which incorrectly groups the final calendar
+        # quarter (Oct-Dec) into the wrong fiscal year.
+        group_by_time = A("date_histogram", field="date_signed", interval="month")
         search.aggs.bucket("time_period", group_by_time).metric("award_count", create_count_aggregation("award_id"))
         search.update_from_dict({"size": 0})
         response = search.handle_execute()
@@ -141,25 +143,29 @@ class NewAwardsOverTimeVisualizationViewSet(APIView):
         return results
 
     def format_results(self, es_results: Response) -> list:
-        results = []
-        time_change = datetime.timedelta(days=92)
+        # Aggregate monthly buckets into the requested fiscal grouping. The date_histogram
+        # buckets on the raw calendar date (monthly), so each bucket key still carries the
+        # real month/day and can be converted to fiscal periods correctly.
+        aggregated = {}
         for x in es_results.aggs.to_dict().get("time_period", {}).get("buckets", []):
             date = datetime.datetime.strptime(x.get("key_as_string"), "%Y-%m-%d")
-            date = date + time_change
+            count = x.get("award_count", {}).get("value", 0)
+            fiscal_year = generate_fiscal_year(date)
             if self.group == "month":
-                time_period = {"fiscal_year": f"{date.year}", self.group: f"{date.month}"}
+                key = (fiscal_year, generate_fiscal_month(date))
+                time_period = {"fiscal_year": f"{fiscal_year}", self.group: f"{key[1]}"}
             elif self.group == "quarter":
-                time_period = {
-                    "fiscal_year": f"{date.year}", self.group: f"{int(date.month / 3) + (date.month % 3 > 0)}"
-                }
+                key = (fiscal_year, generate_fiscal_quarter(date))
+                time_period = {"fiscal_year": f"{fiscal_year}", self.group: f"{key[1]}"}
             else:
-                time_period = {"fiscal_year": f"{date.year}"}
-            results.append(
-                {
-                    "new_award_count_in_period": x.get("award_count", {}).get("value", 0),
-                    "time_period": time_period,
-                }
-            )
+                key = (fiscal_year,)
+                time_period = {"fiscal_year": f"{fiscal_year}"}
+
+            if key not in aggregated:
+                aggregated[key] = {"new_award_count_in_period": 0, "time_period": time_period}
+            aggregated[key]["new_award_count_in_period"] += count
+
+        results = list(aggregated.values())
         results = self.complete_missing_periods(results)
         return results
 
