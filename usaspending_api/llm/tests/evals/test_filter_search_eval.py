@@ -43,7 +43,7 @@ def test_filter_search_eval_uses_the_same_tools_as_the_endpoint():
         "lookup_agencies",
         "lookup_codes",
         "lookup_location",
-        "lookup_recipients",
+        "lookup_recipient",
         "execute_filter",
     ]
 
@@ -355,6 +355,16 @@ def test_run_eval_case_rejects_search_error(monkeypatch, caplog):
         filter_search,
         "get_tool_calls",
         lambda value: (),
+    )
+
+    # Mock get_final_filter_output to raise the expected error
+    def mock_get_final_filter_output(session):
+        raise ExecutionError(f"Session '{session.id}' completed without a successful execute_filter call.")
+
+    monkeypatch.setattr(
+        filter_search,
+        "get_final_filter_output",
+        mock_get_final_filter_output,
     )
 
     case = make_case()

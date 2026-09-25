@@ -77,7 +77,9 @@ def test_run_llm_eval_command_outputs_json(tmp_path, monkeypatch, capsys):
             format="json",
         )
 
-    result = json.loads(capsys.readouterr().out)
+    # JSON output goes to stderr via logger.info
+    captured = capsys.readouterr()
+    result = json.loads(captured.err)
 
     assert result["assistant"] == "filter_search"
     assert result["dataset"] == "config"
@@ -115,6 +117,8 @@ def test_run_llm_eval_command_can_filter_by_tag(tmp_path, monkeypatch):
 
 
 def test_run_llm_eval_command_logs_warning_when_score_is_below_threshold(tmp_path, monkeypatch, caplog):
+    import logging
+
     write_dataset(tmp_path)
 
     def failing_observation(_: EvalCase) -> EvalObservation:
@@ -125,6 +129,9 @@ def test_run_llm_eval_command_logs_warning_when_score_is_below_threshold(tmp_pat
 
     monkeypatch.setattr(filter_search, "run_eval_case", failing_observation)
 
+    # Ensure we capture WARNING level logs
+    caplog.set_level(logging.WARNING)
+
     with override_settings(LLM_EVAL_DATASET_DIRECTORY=str(tmp_path)):
         call_command(
             "run_llm_eval",
@@ -133,5 +140,5 @@ def test_run_llm_eval_command_logs_warning_when_score_is_below_threshold(tmp_pat
             fail_under=1.0,
         )
 
-        # Check that a warning was logged
-        assert any("below required threshold" in record.message for record in caplog.records)
+    # Check that a warning was logged
+    assert any("below required threshold" in record.message for record in caplog.records)
