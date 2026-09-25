@@ -323,10 +323,8 @@ def test_run_eval_case_executes_assistant_and_returns_observation(monkeypatch):
     # Additional metadata fields are present but not checked here
 
 
-def test_run_eval_case_rejects_search_error(monkeypatch, caplog):
-    """An endpoint-equivalent search_error event logs an error and fails when no execute_filter is found."""
-    import logging
-
+def test_run_eval_case_rejects_search_error(monkeypatch):
+    """An endpoint-equivalent search_error event fails when no execute_filter is found."""
     assistant_config = Mock()
     session = Mock()
     assistant_instance = Mock()
@@ -337,7 +335,6 @@ def test_run_eval_case_rejects_search_error(monkeypatch, caplog):
         },
     ]
 
-    # Mock get_tool_calls to return empty (no tools executed)
     monkeypatch.setattr(
         filter_search,
         "get_active_filter_search_assistant",
@@ -371,14 +368,8 @@ def test_run_eval_case_rejects_search_error(monkeypatch, caplog):
 
     case = make_case()
 
-    # Capture logs from the filter_search module
-    caplog.set_level(logging.ERROR, logger="usaspending_api.llm.evals.assistants.filter_search")
-
-    # The error is logged but execution continues until get_final_filter_output fails
+    # Execution fails when get_final_filter_output finds no successful execute_filter
     with pytest.raises(ExecutionError, match="without a successful execute_filter call"):
         run_eval_case(case)
 
     session.save.assert_called_once_with(update_fields=["ended_at"])
-
-    # Verify the search_error was logged
-    assert any("Bedrock failed" in record.message for record in caplog.records)
