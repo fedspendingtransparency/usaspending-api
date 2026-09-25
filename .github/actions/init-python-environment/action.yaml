@@ -3,7 +3,7 @@ name: Initialize Python Environment
 inputs:
   python-version:
     description: Version of Python to use in the environment and install dependencies with
-    default: "3.10.12"
+    default: "3.12.11"
   working-directory:
     description: Directory where the requirements can be found; used when multiple repos are checked out
     default: ""

@@ -12,7 +12,7 @@ description = """
 readme = 'README.md'
 license = "CC0-1.0"
 license-files = ["LICENSE"]
-requires-python = '== 3.10.12'
+requires-python = '== 3.12.11'
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Programming Language :: Python",
@@ -132,7 +132,7 @@ server = [
     "supervisor==4.1.0",
     "uwsgi==2.0.23",
 ]
-ansible = ["ansible==2.9.*"]
+ansible = ["ansible==14.4.*"]
 awscli = ["awscli==1.34.*"]
 
 [project.urls]
