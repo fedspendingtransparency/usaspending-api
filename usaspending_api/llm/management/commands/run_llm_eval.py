@@ -112,6 +112,4 @@ class Command(BaseCommand):
                 logger.info(f"Evaluation report written to {output_path}")
 
         if not summary.passed:
-            logger.error(
-                f"Evaluation score {summary.score:.2%} is below required threshold {summary.fail_under:.2%}."
-            )
+            logger.error(f"Evaluation score {summary.score:.2%} is below required threshold {summary.fail_under:.2%}.")
