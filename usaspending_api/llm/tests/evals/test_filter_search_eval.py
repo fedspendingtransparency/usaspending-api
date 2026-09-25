@@ -325,6 +325,8 @@ def test_run_eval_case_executes_assistant_and_returns_observation(monkeypatch):
 
 def test_run_eval_case_rejects_search_error(monkeypatch, caplog):
     """An endpoint-equivalent search_error event logs an error and fails when no execute_filter is found."""
+    import logging
+
     assistant_config = Mock()
     session = Mock()
     assistant_instance = Mock()
@@ -368,6 +370,9 @@ def test_run_eval_case_rejects_search_error(monkeypatch, caplog):
     )
 
     case = make_case()
+
+    # Capture logs from the filter_search module
+    caplog.set_level(logging.ERROR, logger="usaspending_api.llm.evals.assistants.filter_search")
 
     # The error is logged but execution continues until get_final_filter_output fails
     with pytest.raises(ExecutionError, match="without a successful execute_filter call"):

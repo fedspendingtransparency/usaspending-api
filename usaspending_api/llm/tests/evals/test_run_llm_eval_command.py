@@ -64,9 +64,14 @@ def fake_eval_observation(case: EvalCase) -> EvalObservation:
     )
 
 
-def test_run_llm_eval_command_outputs_json(tmp_path, monkeypatch, capsys):
+def test_run_llm_eval_command_outputs_json(tmp_path, monkeypatch, caplog):
+    import logging
+
     write_dataset(tmp_path)
     monkeypatch.setattr(filter_search, "run_eval_case", fake_eval_observation)
+
+    # Capture INFO level logs from the management command
+    caplog.set_level(logging.INFO, logger="usaspending_api.llm.management.commands.run_llm_eval")
 
     with override_settings(LLM_EVAL_DATASET_DIRECTORY=str(tmp_path)):
         call_command(
@@ -77,9 +82,15 @@ def test_run_llm_eval_command_outputs_json(tmp_path, monkeypatch, capsys):
             format="json",
         )
 
-    # JSON output goes to stderr via logger.info
-    captured = capsys.readouterr()
-    result = json.loads(captured.err)
+    # Find the JSON output in the captured logs
+    json_output = None
+    for record in caplog.records:
+        if record.levelname == "INFO" and record.message.strip().startswith("{"):
+            json_output = record.message
+            break
+
+    assert json_output is not None, "No JSON output found in logs"
+    result = json.loads(json_output)
 
     assert result["assistant"] == "filter_search"
     assert result["dataset"] == "config"
@@ -129,8 +140,8 @@ def test_run_llm_eval_command_logs_warning_when_score_is_below_threshold(tmp_pat
 
     monkeypatch.setattr(filter_search, "run_eval_case", failing_observation)
 
-    # Ensure we capture WARNING level logs
-    caplog.set_level(logging.WARNING)
+    # Capture WARNING level logs from the management command
+    caplog.set_level(logging.WARNING, logger="usaspending_api.llm.management.commands.run_llm_eval")
 
     with override_settings(LLM_EVAL_DATASET_DIRECTORY=str(tmp_path)):
         call_command(
