@@ -177,7 +177,7 @@ def configure_spark_session(  # noqa: C901,PLR0912,PLR0913,PLR0915
     conf.set("spark.databricks.delta.merge.materializeSource", "none")
 
     if not CONFIG.USE_AWS:  # i.e. running in a "local" [development] environment
-        # Set configs to allow the S3AFileSystem to work against a local MinIO object storage proxy
+        # Set configs to allow the S3AFileSystem to work against a local RustFS object storage proxy
         conf.set("spark.hadoop.fs.s3a.connection.ssl.enabled", "false")
         # "Enable S3 path style access ie disabling the default virtual hosting behaviour.
         # Useful for S3A-compliant storage providers as it removes the need to set up DNS for virtual hosting."

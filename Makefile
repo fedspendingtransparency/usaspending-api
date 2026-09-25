@@ -127,7 +127,7 @@ docker-compose-up-usaspending: ## Deploy containerized version of this app on th
 	docker compose --profile usaspending --project-directory . --file ${docker_compose_file} up ${args}
 
 .PHONY: docker-compose-up-s3
-docker-compose-up-s3: ## Deploy minio container on the local machine using docker compose, which acts as a look-alike AWS S3 service
+docker-compose-up-s3: ## Deploy RustFS container on the local machine using docker compose, which acts as a look-alike AWS S3 service
 	# NOTE: [See NOTE in docker compose rule about .env file]
 	echo "docker compose --profile s3 --project-directory . --file ${docker_compose_file} up ${args}"
 	docker compose --profile s3 --project-directory . --file ${docker_compose_file} up ${args}
