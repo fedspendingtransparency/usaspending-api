@@ -86,3 +86,7 @@ jobs:
           # dredd-hooks (unmaintained since 2018) imports the `imp` module, removed in Python 3.12; patches/imp.py shims it
           PYTHONPATH: patches
         run: dredd > dredd-results.txt && echo '! grep -E "^[warn:|error:]" dredd-results.txt' | bash
+
+      - name: Run uv audit
+        run: uv audit --frozen
+        continue-on-error: true

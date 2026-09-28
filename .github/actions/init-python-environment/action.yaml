@@ -11,14 +11,17 @@ inputs:
 runs:
   using: composite
   steps:
-    - name: Install Python
-      uses: actions/setup-python@v5
+    - name: Install uv
+      uses: astral-sh/setup-uv@v10.2.0
       with:
         python-version: ${{ inputs.python-version }}
-        cache: "pip"
-        cache-dependency-path: setup.py
+        enable-cache: true
 
     - name: Install dev dependencies
       working-directory: ${{ inputs.working-directory }}
       shell: bash
-      run: pip install ".[dev]"
+      run: uv sync --extra dev
+
+    - name: Add venv to PATH
+      shell: bash
+      run: echo "${{ inputs.working-directory }}.venv/bin" >> "$GITHUB_PATH"
