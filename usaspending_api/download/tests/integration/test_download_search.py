@@ -297,6 +297,90 @@ def test_download_search_single_spending_level_in_response(
 
 
 @pytest.mark.django_db(databases=[settings.DOWNLOAD_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
+@pytest.mark.parametrize(
+    "spending_level,expected_prefix",
+    [
+        pytest.param(["awards"], "PrimeAwardSummaries", id="awards"),
+        pytest.param(["transactions"], "PrimeTransactions", id="transactions"),
+        pytest.param(["subawards"], "SubawardSummaries", id="subawards"),
+        pytest.param(["awards", "subawards"], "PrimeAwardSummariesAndSubawards", id="awards-and-subawards"),
+        pytest.param(["subawards", "transactions"], "PrimeTransactionsAndSubawards", id="transactions-and-subawards"),
+        pytest.param(["awards", "transactions"], "PrimeAwardSummariesAndTransactions", id="awards-and-transactions"),
+        pytest.param(
+            ["awards", "transactions", "subawards"], "PrimeAwardTransactionsAndSubawards", id="all-three-levels"
+        ),
+    ],
+)
+def test_download_search_file_name_matches_requested_spending_level(
+    client,
+    monkeypatch,
+    download_test_data,
+    elasticsearch_award_index,
+    elasticsearch_transaction_index,
+    elasticsearch_subaward_index,
+    spending_level,
+    expected_prefix,
+):
+    """
+    Regression test for a bug where the downloaded file name was always hardcoded as
+    "PrimeAwardTransactionsAndSubawards" regardless of the spending_level(s) actually
+    requested, implying a Subaward file was included even when it was not selected.
+
+    Exercises the full request/response cycle through the "/api/v2/download/search/"
+    endpoint (validation -> BaseDownloadViewSet.post -> create_unique_filename) to
+    confirm the file name prefix correlates with the requested spending_level, per
+    the acceptance criteria.
+    """
+    setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
+    setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
+    setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
+    download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string(settings.DOWNLOAD_DB_ALIAS))
+
+    resp = client.post(
+        "/api/v2/download/search/",
+        content_type="application/json",
+        data=json.dumps({"filters": {"award_type_codes": ["A"]}, "spending_level": spending_level}),
+    )
+
+    assert resp.status_code == status.HTTP_200_OK
+    response_data = resp.json()
+
+    assert response_data["file_name"].startswith(f"{expected_prefix}_")
+    assert response_data["file_name"].endswith(".zip")
+    assert response_data["file_url"].endswith(response_data["file_name"])
+    assert response_data["download_request"]["spending_level"] == spending_level
+
+
+@pytest.mark.django_db(databases=[settings.DOWNLOAD_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
+def test_download_search_file_name_defaults_to_all_three_levels_without_spending_level(
+    client,
+    monkeypatch,
+    download_test_data,
+    elasticsearch_award_index,
+    elasticsearch_transaction_index,
+    elasticsearch_subaward_index,
+):
+    """When spending_level is omitted entirely, the request/response and file name should
+    default to all three spending levels combined."""
+    setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
+    setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
+    setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
+    download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string(settings.DOWNLOAD_DB_ALIAS))
+
+    resp = client.post(
+        "/api/v2/download/search/",
+        content_type="application/json",
+        data=json.dumps({"filters": {"award_type_codes": ["A"]}}),
+    )
+
+    assert resp.status_code == status.HTTP_200_OK
+    response_data = resp.json()
+
+    assert response_data["file_name"].startswith("PrimeAwardTransactionsAndSubawards_")
+    assert response_data["download_request"]["spending_level"] == ["awards", "transactions", "subawards"]
+
+
+@pytest.mark.django_db(databases=[settings.DOWNLOAD_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
 def test_download_search_duplicate_spending_level_deduplicated(
     client,
     monkeypatch,
