@@ -1,0 +1,27 @@
+name: Build USA Spending Docker Image for Test
+
+on:
+  workflow_call:
+
+jobs:
+  Run:
+    name: Run
+    runs-on: ${{ vars.RUNNER_VERSION }}
+    steps:
+      - name: Checkout Source Repository
+        uses: actions/checkout@v4
+
+      - name: Create .env for docker compose
+        run: cp .env.template .env
+
+      - name: Build usaspending-development Image
+        run: docker compose build usaspending-test
+
+      - name: Save Image
+        run: docker save usaspending-development:latest -o /tmp/usaspending-development.tar
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: usaspending-development-image
+          path: /tmp/usaspending-development.tar

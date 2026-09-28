@@ -49,10 +49,15 @@ runs:
       if: ${{ inputs.is-integration-test == 'true' }}
       run: docker load --input /tmp/dataact-broker-backend.tar
 
-    - name: Build the usaspending-development image
-      working-directory: ${{ inputs.working-directory }}
+    - name: Download USAspending Docker Image
+      uses: actions/download-artifact@v4
+      with:
+        name: usaspending-development-image
+        path: /tmp
+
+    - name: Load USAspending Docker Image
       shell: bash
-      run: docker compose build usaspending-test
+      run: docker load --input /tmp/usaspending-development.tar
 
     - name: Wait on DB, ES, and S3 containers to be available
       if: ${{ inputs.is-integration-test == 'true' }}

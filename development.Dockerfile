@@ -29,7 +29,8 @@ RUN dnf update \
 RUN wget -P /usr/lib/spark/jars/ https://jdbc.postgresql.org/download/postgresql-42.7.5.jar
 
 # Install Dredd
-RUN npm install --global dredd@13.1.2
+RUN npm install --global dredd@13.1.2 && \
+    npm cache clean --force
 
 WORKDIR /usaspending-api
 
