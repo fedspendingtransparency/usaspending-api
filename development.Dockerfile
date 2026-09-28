@@ -4,7 +4,7 @@ FROM public.ecr.aws/emr-serverless/spark/emr-7.12.0:latest
 USER root
 
 # Copy UV from uv image
-COPY --from=ghcr.io/astral-sh/uv:0.7.19 /uv /uvx /bin/
+COPY --from=ghcr.io/astral-sh/uv:0.12.18 /uv /uvx /bin/
 
 # Build ARGs
 ARG PROJECT_LOG_DIR=/logs
