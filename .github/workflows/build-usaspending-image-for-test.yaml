@@ -14,11 +14,22 @@ jobs:
       - name: Create .env for docker compose
         run: cp .env.template .env
 
-      - name: Build usaspending-development Image
-        run: docker compose build usaspending-test
+      - name: Export build args from .env
+        run: grep -E '^(PROJECT_LOG_DIR|SPARK_LOGGING_LEVEL)=' .env >> "$GITHUB_ENV"
 
-      - name: Save Image
-        run: docker save usaspending-development:latest -o /tmp/usaspending-development.tar
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker Image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./development.Dockerfile
+          tags: usaspending-development:latest
+          build-args: |
+            PROJECT_LOG_DIR=${{ env.PROJECT_LOG_DIR }}
+            SPARK_LOGGING_LEVEL=${{ env.SPARK_LOGGING_LEVEL }}
+          outputs: type=docker,dest=/tmp/usaspending-development.tar
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
