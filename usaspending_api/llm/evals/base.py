@@ -1,5 +1,6 @@
 import logging
 from abc import ABC, abstractmethod
+from pathlib import Path
 from statistics import fmean
 
 from usaspending_api.llm.evals.exceptions import ExecutionError

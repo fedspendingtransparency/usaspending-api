@@ -6,10 +6,6 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from django.conf import settings
-
-from usaspending_api.common.helpers.s3_helpers import multipart_upload
-from usaspending_api.config import CONFIG
 from usaspending_api.llm.evals.exceptions import EvalError
 from usaspending_api.llm.evals.models import EvalCase, EvalResult, EvalSummary
 
