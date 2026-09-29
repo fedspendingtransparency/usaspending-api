@@ -168,3 +168,51 @@ def test_mapping_subset_matcher_gives_partial_credit():
     assert result.score == 0.5
     assert "awardType" in result.message
     assert "selectedRecipients (missing)" in result.message
+
+
+def test_mapping_subset_matcher_is_case_insensitive_by_default():
+    """Test that string comparisons are case-insensitive by default."""
+    result = MappingSubsetMatcher().compare(
+        expected={
+            "recipient": "Clark Construction",
+            "awardType": ["Contracts"],
+        },
+        actual={
+            "recipient": "CLARK CONSTRUCTION",  # Different case
+            "awardType": ["contracts"],  # Different case in list
+        },
+    )
+
+    assert result.passed is True
+    assert result.score == 1.0
+
+
+def test_mapping_subset_matcher_can_be_case_sensitive():
+    """Test that case-sensitive mode can be enabled."""
+    result = MappingSubsetMatcher(case_sensitive=True).compare(
+        expected={
+            "recipient": "Clark Construction",
+        },
+        actual={
+            "recipient": "CLARK CONSTRUCTION",  # Different case
+        },
+    )
+
+    assert result.passed is False
+    assert result.score == 0.0
+    assert "recipient" in result.message
+
+
+def test_mapping_subset_matcher_handles_mixed_case_in_lists():
+    """Test that case-insensitive comparison works for lists of strings."""
+    result = MappingSubsetMatcher().compare(
+        expected={
+            "recipients": ["Clark Construction", "Boeing"],
+        },
+        actual={
+            "recipients": ["CLARK CONSTRUCTION", "boeing"],
+        },
+    )
+
+    assert result.passed is True
+    assert result.score == 1.0

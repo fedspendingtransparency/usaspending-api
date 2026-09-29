@@ -168,7 +168,11 @@ class MappingSubsetMatcher:
     Scoring is based on the percentage of expected leaf fields that match correctly.
     Both missing fields and incorrect values count as mismatches.
     Extra unexpected fields also count as mismatches.
+
+    String comparisons are case-insensitive to handle variations in capitalization.
     """
+
+    case_sensitive: bool = False
 
     def compare(self, expected: Mapping[str, Any], actual: Mapping[str, Any]) -> MatchResult:
         differences = self._find_differences(expected=expected, actual=actual)
@@ -247,7 +251,7 @@ class MappingSubsetMatcher:
                 )
                 continue
 
-            if expected_value != actual_value:
+            if not self._values_match(expected_value, actual_value):
                 differences.append(f"{current_path} (expected {expected_value!r}, received {actual_value!r})")
 
         # Check for unexpected extra keys in actual.
@@ -257,3 +261,29 @@ class MappingSubsetMatcher:
                 differences.append(f"{current_path} (unexpected)")
 
         return differences
+
+    def _values_match(self, expected: Any, actual: Any) -> bool:
+        """
+        Compare two values for equality, with case-insensitive string comparison.
+
+        Handles:
+        - Strings: case-insensitive comparison (unless case_sensitive=True)
+        - Lists: element-wise comparison with case-insensitive strings
+        - Other types: direct equality
+        """
+        # If case-sensitive mode or not strings/lists, use direct equality.
+        if self.case_sensitive:
+            match = expected == actual
+        elif isinstance(expected, str) and isinstance(actual, str):
+            # Case-insensitive string comparison.
+            match = expected.lower() == actual.lower()
+        elif isinstance(expected, list) and isinstance(actual, list):
+            # Case-insensitive list comparison.
+            match = len(expected) == len(actual) and all(
+                self._values_match(e, a) for e, a in zip(expected, actual, strict=True)
+            )
+        else:
+            # For all other types, use direct equality.
+            match = expected == actual
+
+        return match
