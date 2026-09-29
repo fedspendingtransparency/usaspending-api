@@ -6,9 +6,9 @@
 
 # See docker-compose.yml file and README.md for docker compose information
 
-FROM python:3.10.12-slim-bookworm
+FROM python:3.12.11-slim-trixie
 
-COPY --from=ghcr.io/astral-sh/uv:0.7.19 /uv /uvx /bin/
+COPY --from=ghcr.io/astral-sh/uv:0.12.18 /uv /uvx /bin/
 
 WORKDIR /usaspending-api
 
