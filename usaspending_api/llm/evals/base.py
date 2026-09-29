@@ -31,6 +31,7 @@ class BaseEval(ABC):
         include_unapproved: bool = False,
         tags: set[str] | None = None,
         fail_under: float | None = None,
+        incremental_output: Path | None = None,
     ) -> None:
         if not self.assistant_name:
             raise ValueError("assistant_name must be defined.")
@@ -44,6 +45,7 @@ class BaseEval(ABC):
         self.include_unapproved = include_unapproved
         self.tags = tags
         self.fail_under = fail_under
+        self.incremental_output = incremental_output
 
     def load_cases(self) -> list[EvalCase]:
         """
@@ -65,10 +67,12 @@ class BaseEval(ABC):
     @abstractmethod
     def execute(self, case: EvalCase) -> EvalObservation:
         """Runs the assistant and returns a normalized observation."""
+        pass
 
     @abstractmethod
     def evaluate(self, case: EvalCase, observation: EvalObservation) -> EvalResult:
         """Compares one observed execution against its ground truth."""
+        pass
 
     def _execute_case_safely(self, case: EvalCase) -> EvalResult:
         """
@@ -98,6 +102,30 @@ class BaseEval(ABC):
                 error=f"Unexpected error: {type(exc).__name__}: {exc}",
             )
 
+    def _write_incremental_result(self, index: int, total: int, case: EvalCase, result: EvalResult) -> None:
+        """Write a single case result to the incremental output file."""
+        try:
+            with self.incremental_output.open("a", encoding="utf-8") as f:
+                f.write(f"[{index}/{total}] Case: {case.name}\n")
+                f.write(f"  Status: {'PASS' if result.passed else ('ERROR' if result.error else 'FAIL')}\n")
+                f.write(f"  Score: {result.score:.4f}\n")
+
+                if result.error:
+                    f.write(f"  Error: {result.error}\n")
+                else:
+                    if result.tool_call_match:
+                        f.write(f"  Tool Score: {result.tool_call_match.score:.4f}\n")
+                        if not result.tool_call_match.passed:
+                            f.write(f"  Tool Message: {result.tool_call_match.message}\n")
+                    if result.output_match:
+                        f.write(f"  Output Score: {result.output_match.score:.4f}\n")
+                        if not result.output_match.passed:
+                            f.write(f"  Output Message: {result.output_match.message}\n")
+
+                f.write("\n")
+        except Exception as exc:
+            logger.warning(f"Failed to write incremental result for case '{case.name}': {exc}")
+
     def run(self) -> EvalSummary:
         """
         Executes selected cases while retaining excluded cases for reporting.
@@ -107,6 +135,8 @@ class BaseEval(ABC):
 
         Individual case failures are caught and recorded as failed results with
         error messages, allowing the run to continue and preserve all results.
+
+        Progress is logged incrementally so results are not lost if the run fails.
         """
         all_cases = load_all_cases(self.dataset_name)
         cases = self.load_cases()
@@ -114,7 +144,42 @@ class BaseEval(ABC):
         if not cases:
             raise ValueError(f"Dataset `{self.dataset_name}` does not contain evaluation cases.")
 
-        results = tuple(self._execute_case_safely(case) for case in cases)
+        logger.info(f"Starting evaluation: {len(cases)} case(s) to run")
+
+        # Prepare incremental output file if specified
+        if self.incremental_output:
+            self.incremental_output.parent.mkdir(parents=True, exist_ok=True)
+            # Write header
+            with self.incremental_output.open("w", encoding="utf-8") as f:
+                f.write(f"# Incremental evaluation results for {self.assistant_name}\n")
+                f.write(f"# Dataset: {self.dataset_name}\n")
+                f.write(f"# Total cases: {len(cases)}\n\n")
+
+        # Execute cases one by one with progress logging
+        results = []
+        for i, case in enumerate(cases, start=1):
+            logger.info(f"[{i}/{len(cases)}] Running case: {case.name}")
+            result = self._execute_case_safely(case)
+
+            # Log immediate result
+            status = "PASS" if result.passed else ("ERROR" if result.error else "FAIL")
+            logger.info(f"[{i}/{len(cases)}] Case '{case.name}': {status} (score: {result.score:.2f})")
+
+            if result.error:
+                logger.error(f"  Error: {result.error}")
+            elif not result.passed:
+                if result.tool_call_match and not result.tool_call_match.passed:
+                    logger.warning(f"  Tool calls: {result.tool_call_match.message}")
+                if result.output_match and not result.output_match.passed:
+                    logger.warning(f"  Output: {result.output_match.message}")
+
+            results.append(result)
+
+            # Write incremental result to file
+            if self.incremental_output:
+                self._write_incremental_result(i, len(cases), case, result)
+
+        results = tuple(results)
         run_case_names = {case.name for case in cases}
         unrun_cases = tuple(case for case in all_cases if case.name not in run_case_names)
         unrun_reasons = {
@@ -128,6 +193,8 @@ class BaseEval(ABC):
         }
         score = fmean(result.score for result in results)
         passed = self.fail_under is None or score >= self.fail_under
+
+        logger.info(f"Evaluation complete: {len(results)} case(s) run, score: {score:.2%}")
 
         return EvalSummary(
             assistant=self.assistant_name,

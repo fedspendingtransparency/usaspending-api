@@ -20,9 +20,7 @@ REQUIRED_FIELDS = {
     "expected_output",
     "expected_tools",
     "tags",
-    "notes",
     "approved",
-    "sme_validation_notes",
 }
 
 TRUE_VALUES = {"1", "true", "yes"}
@@ -164,10 +162,6 @@ def _parse_case(row: Any, case_number: int, seen_case_ids: set[str]) -> EvalCase
         metadata={
             "approved": approved,
             "tags": case_tags,
-            "notes": row["notes"].strip() if isinstance(row["notes"], str) else "",
-            "sme_validation_notes": (
-                row["sme_validation_notes"].strip() if isinstance(row["sme_validation_notes"], str) else ""
-            ),
         },
     )
 

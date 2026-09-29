@@ -22,9 +22,7 @@
             "multi_filter",
             "temporal"
         ],
-        "notes": "Similar query to NYT request, variating recipient against q2",
-        "approved": true,
-        "sme_validation_notes": ""
+        "approved": true
     },
     {
         "id": 2,
@@ -49,8 +47,6 @@
             "multi_filter",
             "temporal"
         ],
-        "notes": "Similar query to NYT request, variating recipient against q1",
-        "approved": true,
-        "sme_validation_notes": ""
+        "approved": true
     }
 ]

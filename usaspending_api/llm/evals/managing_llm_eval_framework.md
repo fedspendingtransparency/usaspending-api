@@ -71,7 +71,7 @@ Changes should be visible in code review so the team can see:
 - which expected tools changed;
 - which expected filters changed;
 - which cases became approved;
-- which tags or stakeholder notes changed.
+- which tags changed.
 
 ## Runtime `config.json` Format
 
@@ -104,9 +104,7 @@ Example:
       "multi_filter",
       "temporal"
     ],
-    "notes": "Stakeholder context",
-    "approved": true,
-    "sme_validation_notes": "Reviewed by SME"
+    "approved": true
   }
 ]
 ```

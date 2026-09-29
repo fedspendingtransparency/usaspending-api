@@ -1,11 +1,19 @@
+import csv
 import json
+import logging
 from collections import defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from django.conf import settings
+
+from usaspending_api.common.helpers.s3_helpers import multipart_upload
+from usaspending_api.config import CONFIG
 from usaspending_api.llm.evals.exceptions import EvalError
 from usaspending_api.llm.evals.models import EvalCase, EvalResult, EvalSummary
+
+logger = logging.getLogger(__name__)
 
 SUMMARY_FIELDS = (
     "assistant",
@@ -340,6 +348,25 @@ def write_xlsx(summary: EvalSummary, output_path: Path) -> None:
         workbook.save(output_path)
     except OSError as error:
         raise EvalError(f"Unable to write XLSX evaluation report '{output_path}': {error}") from error
+
+
+def write_csv(summary: EvalSummary, output_path: Path) -> None:
+    """Exports evaluation results to a CSV file."""
+    rows = case_rows(summary)
+
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        with output_path.open("w", newline="", encoding="utf-8") as csvfile:
+            writer = csv.DictWriter(csvfile, fieldnames=CASE_FIELDS, extrasaction="ignore")
+            writer.writeheader()
+
+            for row in rows:
+                # Convert all values to display format for CSV
+                csv_row = {field: _display_value(row.get(field)) for field in CASE_FIELDS}
+                writer.writerow(csv_row)
+
+    except OSError as error:
+        raise EvalError(f"Unable to write CSV evaluation report '{output_path}': {error}") from error
 
 
 def render_text(summary: EvalSummary) -> str:

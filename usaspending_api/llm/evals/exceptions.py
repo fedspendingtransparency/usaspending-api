@@ -6,6 +6,8 @@ class EvalError(Exception):
     every evaluation failure type individually.
     """
 
+    pass
+
 
 class DatasetError(EvalError):
     """
@@ -18,6 +20,8 @@ class DatasetError(EvalError):
         - A case field has an invalid type or value.
     """
 
+    pass
+
 
 class EvalRegistrationError(EvalError):
     """
@@ -26,6 +30,8 @@ class EvalRegistrationError(EvalError):
     Example:
         - python manage.py run_llm_eval --assistant some_unknown_assistant
     """
+
+    pass
 
 
 class ExecutionError(EvalError):
@@ -38,3 +44,5 @@ class ExecutionError(EvalError):
         - The adapter returns an invalid observation object.
         - The assistant raises an unexpected exception during execution.
     """
+
+    pass

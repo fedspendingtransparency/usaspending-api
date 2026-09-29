@@ -265,3 +265,134 @@ def test_unexpected_exception_is_caught(test_cases, monkeypatch):
     assert failed_results[0].error is not None
     assert "ValueError" in failed_results[0].error
     assert "Unexpected error!" in failed_results[0].error
+
+
+def test_incremental_output_writes_results_as_cases_complete(test_cases, monkeypatch, tmp_path):
+    """Test that incremental output file is written as each case completes."""
+
+    def mock_load_cases(*args, **kwargs):
+        return test_cases
+
+    def mock_load_all_cases(*args, **kwargs):
+        return test_cases
+
+    monkeypatch.setattr("usaspending_api.llm.evals.base.load_cases", mock_load_cases)
+    monkeypatch.setattr("usaspending_api.llm.evals.base.load_all_cases", mock_load_all_cases)
+
+    incremental_file = tmp_path / "incremental_results.txt"
+
+    # Create evaluator with incremental output
+    evaluator = MockEval(fail_on_cases={"case_2"}, fail_under=0.5, incremental_output=incremental_file)
+    summary = evaluator.run()
+
+    # Verify evaluation completed with expected results
+    assert summary.case_count == 3
+    assert summary.passed_count == 2
+    assert summary.failed_count == 1
+
+    # Verify the incremental file was created
+    assert incremental_file.exists()
+
+    # Read and verify the incremental file contents
+    content = incremental_file.read_text()
+
+    # Should have header
+    assert "# Incremental evaluation results for test_assistant" in content
+    assert "# Dataset: test" in content
+    assert "# Total cases: 3" in content
+
+    # Should have all three cases
+    assert "[1/3] Case: case_1" in content
+    assert "[2/3] Case: case_2" in content
+    assert "[3/3] Case: case_3" in content
+
+    # Should show status for each case
+    assert "Status: PASS" in content
+    assert "Status: ERROR" in content
+
+    # Should show the error for case_2
+    assert "Error: Simulated execution failure for case_2" in content
+
+    # Should show scores
+    assert "Score: 1.0000" in content
+    assert "Score: 0.0000" in content
+
+
+def test_incremental_output_includes_match_details(test_cases, monkeypatch, tmp_path):
+    """Test that incremental output includes tool and output match details."""
+
+    def mock_load_cases(*args, **kwargs):
+        return test_cases
+
+    def mock_load_all_cases(*args, **kwargs):
+        return test_cases
+
+    monkeypatch.setattr("usaspending_api.llm.evals.base.load_cases", mock_load_cases)
+    monkeypatch.setattr("usaspending_api.llm.evals.base.load_all_cases", mock_load_all_cases)
+
+    incremental_file = tmp_path / "incremental_results.txt"
+
+    # Create evaluator that doesn't fail
+    evaluator = MockEval(fail_on_cases=set(), incremental_output=incremental_file)
+    summary = evaluator.run()
+
+    # Verify evaluation completed successfully
+    assert summary.case_count == 3
+    assert summary.passed_count == 3
+
+    # Read the incremental file
+    content = incremental_file.read_text()
+
+    # Should include tool and output scores
+    assert "Tool Score: 1.0000" in content
+    assert "Output Score: 1.0000" in content
+
+
+def test_incremental_output_handles_write_failures_gracefully(test_cases, monkeypatch, tmp_path):
+    """Test that failures writing incremental output don't stop the evaluation."""
+
+    def mock_load_cases(*args, **kwargs):
+        return test_cases
+
+    def mock_load_all_cases(*args, **kwargs):
+        return test_cases
+
+    monkeypatch.setattr("usaspending_api.llm.evals.base.load_cases", mock_load_cases)
+    monkeypatch.setattr("usaspending_api.llm.evals.base.load_all_cases", mock_load_all_cases)
+
+    # Use a path that will fail to write (directory doesn't exist and we won't create it)
+    bad_path = tmp_path / "nonexistent_dir" / "subdir" / "file.txt"
+
+    # Create evaluator with bad incremental output path
+    evaluator = MockEval(fail_on_cases=set(), incremental_output=bad_path)
+
+    # Should not raise an exception - evaluation should complete
+    summary = evaluator.run()
+
+    # Evaluation should succeed
+    assert summary.case_count == 3
+    assert summary.passed_count == 3
+
+
+def test_no_incremental_output_when_not_specified(test_cases, monkeypatch, tmp_path):
+    """Test that no incremental file is created when incremental_output is None."""
+
+    def mock_load_cases(*args, **kwargs):
+        return test_cases
+
+    def mock_load_all_cases(*args, **kwargs):
+        return test_cases
+
+    monkeypatch.setattr("usaspending_api.llm.evals.base.load_cases", mock_load_cases)
+    monkeypatch.setattr("usaspending_api.llm.evals.base.load_all_cases", mock_load_all_cases)
+
+    # Create evaluator without incremental output
+    evaluator = MockEval(fail_on_cases=set(), fail_under=0.9)
+    summary = evaluator.run()
+
+    # Evaluation should succeed
+    assert summary.case_count == 3
+    assert summary.passed_count == 3
+
+    # No incremental file should be created in tmp_path
+    assert not any(tmp_path.iterdir())

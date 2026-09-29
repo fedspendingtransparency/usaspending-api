@@ -16,9 +16,7 @@ SAMPLE_CASE = {
     },
     "expected_tools": ["lookup_recipient", "execute_filter"],
     "tags": ["multi_filter", "temporal"],
-    "notes": "Approved recipient and fiscal-year case",
     "approved": True,
-    "sme_validation_notes": "SME approved",
 }
 
 
@@ -45,8 +43,6 @@ def test_parse_json_cases_builds_expected_case(tmp_path: Path):
     assert case.metadata == {
         "approved": True,
         "tags": ["multi_filter", "temporal"],
-        "notes": "Approved recipient and fiscal-year case",
-        "sme_validation_notes": "SME approved",
     }
 
 
@@ -129,9 +125,9 @@ def test_parse_json_cases_rejects_invalid_case_fields(tmp_path: Path, field, val
 
 
 def test_parse_json_cases_rejects_missing_required_field(tmp_path: Path):
-    invalid_case = {key: value for key, value in SAMPLE_CASE.items() if key != "sme_validation_notes"}
+    invalid_case = {key: value for key, value in SAMPLE_CASE.items() if key != "approved"}
 
-    with pytest.raises(DatasetError, match="missing required fields: sme_validation_notes"):
+    with pytest.raises(DatasetError, match="missing required fields: approved"):
         parse_json_cases(write_dataset(tmp_path, [invalid_case]))
 
 

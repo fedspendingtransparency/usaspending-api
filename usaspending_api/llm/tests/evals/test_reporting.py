@@ -1,9 +1,10 @@
+import csv
 import json
 
 from openpyxl import load_workbook
 
 from usaspending_api.llm.evals.models import EvalCase, EvalResult, EvalSummary, MatchResult
-from usaspending_api.llm.evals.reporting import report_to_dict, write_xlsx
+from usaspending_api.llm.evals.reporting import report_to_dict, write_csv, write_xlsx
 
 
 def summary():
@@ -35,7 +36,6 @@ def summary():
                 details={
                     "case_metadata": {
                         "tags": ["temporal"],
-                        "notes": "Example case",
                     },
                     "execution_metadata": {
                         "session_id": "123",
@@ -112,3 +112,31 @@ def test_write_xlsx_creates_summary_and_case_results_sheets(tmp_path):
     assert workbook["Evaluation"]["A3"].value == "2"
     assert workbook["Evaluation"]["D3"].value == "NOT RUN"
     assert workbook["Evaluation"]["O3"].value == "N/A"
+
+
+def test_write_csv_creates_case_results_file(tmp_path):
+    output_path = tmp_path / "evaluation_report.csv"
+
+    write_csv(summary(), output_path)
+
+    with output_path.open("r", encoding="utf-8") as csvfile:
+        reader = csv.DictReader(csvfile)
+        rows = list(reader)
+
+    assert len(rows) == 2
+
+    # Check first row (executed case)
+    assert rows[0]["case_name"] == "1"
+    assert rows[0]["status"] == "FAIL"
+    assert rows[0]["score"] == "0.5"
+    assert rows[0]["tool_passed"] == "True"
+    assert rows[0]["output_passed"] == "False"
+    assert rows[0]["query"] == "N/A"
+
+    # Check second row (unrun case)
+    assert rows[1]["case_name"] == "2"
+    assert rows[1]["status"] == "NOT RUN"
+    assert rows[1]["score"] == ""
+    assert rows[1]["query"] == "Unrun query"
+    assert rows[1]["tool_message"] == "case is not approved"
+    assert rows[1]["actual_output"] == "N/A"

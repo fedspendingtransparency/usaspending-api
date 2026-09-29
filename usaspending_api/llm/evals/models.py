@@ -31,16 +31,14 @@ class EvalCase:
                 "awardType": ["Contracts"]
             },
             "tags": ["multi_filter", "temporal"],
-            "notes": "Similar query to NYT request, variating recipient against q2",
-            "approved": true,
-            "sme_validation_notes": ""
+            "approved": true
         }
 
     Once loaded, it becomes an `EvalCase` with:
         input: the data supplied to the assistant
         expected_tool_calls: expected execution behavior
         expected_output: expected, final normalized filters
-        metadata: tags, notes, approval status, and SME context
+        metadata: tags and approval status
     """
 
     name: str

@@ -22,8 +22,10 @@ def test_tool_call_matcher_requires_matching_call_count():
     )
 
     assert result.passed is False
-    assert result.score == 0.0
-    assert "Expected 2 tool call(s)" in result.message
+    # Score: 1 matched tool + 0 position bonus (execute_filter not called) / 3 total points
+    assert result.score == 1 / 3
+    assert "Missing tools: ['execute_filter']" in result.message
+    assert "execute_filter not called" in result.message
 
 
 def test_tool_call_matcher_rejects_different_tool_order():
@@ -36,7 +38,9 @@ def test_tool_call_matcher_rejects_different_tool_order():
     )
 
     assert result.passed is False
-    assert result.score == 0.0
+    # Score: 2 matched tools + 0 position bonus (execute_filter not last) / 3 total points
+    assert result.score == 2 / 3
+    assert "execute_filter not in correct position" in result.message
 
 
 def test_mapping_subset_matcher_supports_nested_output():
@@ -51,10 +55,6 @@ def test_mapping_subset_matcher_supports_nested_output():
             "time_period": {
                 "start_date": "2024-10-01",
                 "end_date": "2025-09-30",
-                "date_type": "custom",
-            },
-            "metadata": {
-                "request_id": "request-123",
             },
         },
     )
@@ -94,3 +94,49 @@ def test_mapping_subset_matcher_rejects_wrong_nested_value():
     assert result.passed is False
     assert result.score == 0.0
     assert "timePeriodFY" in result.message
+
+
+def test_mapping_subset_matcher_rejects_unexpected_keys():
+    """Test that extra keys in actual are detected as unexpected."""
+    result = MappingSubsetMatcher().compare(
+        expected={
+            "timePeriodType": "fy",
+            "timePeriodFY": ["2025"],
+        },
+        actual={
+            "timePeriodType": "fy",
+            "timePeriodFY": ["2025"],
+            "extraField": "unexpected",
+        },
+    )
+
+    assert result.passed is False
+    assert result.score == 0.0
+    assert "extraField (unexpected)" in result.message
+
+
+def test_mapping_subset_matcher_rejects_unexpected_nested_keys():
+    """Test that extra keys in nested objects are detected as unexpected."""
+    result = MappingSubsetMatcher().compare(
+        expected={
+            "time_period": {
+                "start_date": "2024-10-01",
+                "end_date": "2025-09-30",
+            },
+        },
+        actual={
+            "time_period": {
+                "start_date": "2024-10-01",
+                "end_date": "2025-09-30",
+                "date_type": "custom",
+            },
+            "metadata": {
+                "request_id": "request-123",
+            },
+        },
+    )
+
+    assert result.passed is False
+    assert result.score == 0.0
+    assert "time_period.date_type (unexpected)" in result.message
+    assert "metadata (unexpected)" in result.message

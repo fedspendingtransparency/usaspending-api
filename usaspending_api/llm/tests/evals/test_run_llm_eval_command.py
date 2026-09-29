@@ -22,9 +22,7 @@ def write_dataset(tmp_path):
                     },
                     "expected_tools": ["lookup_recipient", "execute_filter"],
                     "tags": ["multi_filter", "temporal"],
-                    "notes": "",
                     "approved": True,
-                    "sme_validation_notes": "",
                 },
                 {
                     "id": 2,
@@ -34,9 +32,7 @@ def write_dataset(tmp_path):
                     },
                     "expected_tools": ["execute_filter"],
                     "tags": ["single_filter"],
-                    "notes": "",
                     "approved": True,
-                    "sme_validation_notes": "",
                 },
             ]
         ),

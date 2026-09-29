@@ -10,21 +10,12 @@ from usaspending_api.llm.evals.matchers import MappingSubsetMatcher, ToolCallMat
 from usaspending_api.llm.evals.models import EvalCase, EvalObservation, EvalResult, ToolCall
 from usaspending_api.llm.evals.registry import register_eval
 from usaspending_api.llm.models.db_models import Assistant, Session, ToolUse
-from usaspending_api.llm.tools.execute_filter import build_filter_request, execute_filter_tool
-from usaspending_api.llm.tools.lookup_agency import lookup_agency_tool
-from usaspending_api.llm.tools.lookup_code import lookup_code_tool
-from usaspending_api.llm.tools.lookup_location import lookup_location_tool
-from usaspending_api.llm.tools.lookup_recipient import lookup_recipient_tool
+from usaspending_api.llm.tools.execute_filter import build_filter_request
+from usaspending_api.llm.v2.views.filter_search import FilterSearchViewSet
 
 logger = logging.getLogger(__name__)
 
-FILTER_SEARCH_TOOLS = [
-    lookup_agency_tool,
-    lookup_code_tool,
-    lookup_location_tool,
-    lookup_recipient_tool,
-    execute_filter_tool,
-]
+FILTER_SEARCH_TOOLS = FilterSearchViewSet.tools
 
 
 def get_active_filter_search_assistant() -> Assistant:
