@@ -504,7 +504,11 @@ class Command(BaseCommand):
             f"get listing of contents of Bucket={spark_s3_bucket_name} with Prefix={csv_path}"
         )
 
-        gzipped_csv_files = [f.key for f in s3_bucket.objects.filter(Prefix=csv_path) if f.key.endswith(".csv.gz")]
+        # Capture each file's size alongside its key so batches can be balanced by total bytes (see below).
+        gzipped_csv_files_with_size = [
+            (f.key, f.size) for f in s3_bucket.objects.filter(Prefix=csv_path) if f.key.endswith(".csv.gz")
+        ]
+        gzipped_csv_files = [key for key, _ in gzipped_csv_files_with_size]
         file_count = len(gzipped_csv_files)
         logger.info(f"LOAD: Finished dumping {file_count} CSV files in {s3_bucket_with_csv_path}")
 
@@ -530,7 +534,25 @@ class Command(BaseCommand):
         # connections writing to Postgres at once, to not overtax it nor oversaturate the number of allowed connections
         # Observations have shown that in production infrastructure, more concurrent connections just lead to I/O
         # throttling
-        rdd = spark.sparkContext.parallelize(gzipped_csv_files, partitions)
+        # Balance files across partitions by total bytes rather than letting parallelize() slice a flat file list
+        # contiguously. Delta-produced CSV files vary in size, so a size-blind slice yields skewed partitions where
+        # one COPY batch does far more work than others (observed as a 32min-to-3h task-duration spread). A greedy
+        # longest-processing-time bin-packing assigns the largest files first to the currently-emptiest batch,
+        # keeping per-batch byte totals roughly even.
+        #
+        # Each balanced batch is parallelized as a single RDD element (numSlices == number of batches), so every RDD
+        # partition holds exactly one batch. This guarantees the intended balance survives, unlike parallelizing a
+        # flattened key list where parallelize()'s index-range slicing would only preserve batches of equal length.
+        # The mapped function then iterates the one batch (a list of keys) it receives, preserving the primitive-only
+        # argument contract required for cloudpickle (see WARNING below).
+        balanced_batches: List[List[str]] = [[] for _ in range(partitions)]
+        batch_sizes = [0] * partitions
+        for key, size in sorted(gzipped_csv_files_with_size, key=lambda kv: kv[1], reverse=True):
+            target = min(range(partitions), key=lambda idx: batch_sizes[idx])
+            balanced_batches[target].append(key)
+            batch_sizes[target] += size
+
+        rdd = spark.sparkContext.parallelize(balanced_batches, partitions)
 
         # WARNING: rdd.map needs to use cloudpickle to pickle the mapped function, its arguments, and in-turn any
         # imported dependencies from either of those two as well as from the module from which the function is
@@ -539,10 +561,10 @@ class Command(BaseCommand):
         # One way to help is to resolve all arguments to primitive types (int, string) that can be passed
         # to the mapped function
         rdd.mapPartitionsWithIndex(
-            lambda partition_idx, s3_obj_keys: copy_csvs_from_s3_to_pg(
+            lambda partition_idx, batch_iter: copy_csvs_from_s3_to_pg(
                 batch_num=partition_idx,
                 s3_bucket_name=s3_bucket_name,
-                s3_obj_keys=s3_obj_keys,
+                s3_obj_keys=[key for batch in batch_iter for key in batch],
                 db_dsn=db_dsn,
                 target_pg_table=temp_table,
                 ordered_col_names=ordered_col_names,
