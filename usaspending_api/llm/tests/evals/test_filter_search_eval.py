@@ -77,7 +77,7 @@ def test_filter_search_eval_passes_when_tools_and_filters_match():
 
 
 def test_filter_search_eval_returns_partial_score_when_filters_are_wrong():
-    """Correct tool usage with incorrect final filters receives a score of 0.5."""
+    """Correct tool usage with incorrect final filters receives partial credit."""
     case = make_case()
 
     evaluator = FilterSearchEval.__new__(FilterSearchEval)
@@ -99,9 +99,13 @@ def test_filter_search_eval_returns_partial_score_when_filters_are_wrong():
     result = evaluator.evaluate(case, observation)
 
     assert result.passed is False
-    assert result.score == 0.5
+    # Tool score: 1.0 (perfect), Output score: 2/3 (2 correct out of 3 fields)
+    # Final score: (1.0 + 2/3) / 2 = 5/6 ≈ 0.833
+    assert result.score == (1.0 + 2 / 3) / 2
     assert result.tool_call_match.passed is True
+    assert result.tool_call_match.score == 1.0
     assert result.output_match.passed is False
+    assert result.output_match.score == 2 / 3
 
 
 def test_get_tool_calls_reads_tool_use_records_in_execution_order(monkeypatch):
