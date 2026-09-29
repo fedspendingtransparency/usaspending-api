@@ -8,6 +8,7 @@ from pyspark.sql.types import (
 )
 
 from usaspending_api.awards.v2.lookups.lookups import award_type_mapping, loan_type_mapping
+from usaspending_api.config import CONFIG
 from usaspending_api.recipient.v2.lookups import SPECIAL_CASES
 from usaspending_api.search.delta_models.dataframes.abstract_search import (
     AbstractSearch,
@@ -16,6 +17,13 @@ from usaspending_api.search.delta_models.dataframes.abstract_search import (
 )
 
 ALL_AWARD_TYPES = list(award_type_mapping.keys())
+
+# Number of range partitions (and therefore roughly the number of Delta parquet files) to produce when writing the
+# transaction_search table. Chosen to keep per-file row counts near CONFIG.SPARK_PARTITION_ROWS (~10k) for the
+# current transaction_search row count (~100M+), while avoiding an extra full pass over the join DAG that a dynamic
+# df.count() would require. Tune this if the table's total row count changes materially. maxRecordsPerFile still acts
+# as a per-file backstop, so an under-estimate here degrades gracefully into more, smaller files rather than skew.
+_TRANSACTION_SEARCH_WRITE_PARTITIONS = 10000
 
 
 class TransactionSearch(AbstractSearch):
@@ -955,7 +963,19 @@ class TransactionSearch(AbstractSearch):
 
 def load_transaction_search(spark: SparkSession, destination_database: str, destination_table_name: str) -> None:
     df = TransactionSearch(spark).dataframe
-    df.write.saveAsTable(
+
+    # Control the number and size of the Delta parquet files this write produces. A plain saveAsTable lets the
+    # multi-join physical plan decide the final partitioning, which yields skewed, non-uniform files (observed
+    # downstream as a 32min-to-3h spread across COPY batches when this table is exported and loaded to Postgres).
+    #
+    # repartitionByRange on the unique key (transaction_id) produces evenly sized, range-ordered partitions -> files,
+    # so no single file is disproportionately large. A static partition count (_TRANSACTION_SEARCH_WRITE_PARTITIONS)
+    # is used to avoid the extra full pass over the join DAG that a dynamic df.count() would trigger.
+    # maxRecordsPerFile then hard-caps rows per file as a backstop, so even if a range partition is heavier than
+    # expected it is still split into similarly sized files on disk.
+    df.repartitionByRange(_TRANSACTION_SEARCH_WRITE_PARTITIONS, "transaction_id").write.option(
+        "maxRecordsPerFile", CONFIG.SPARK_PARTITION_ROWS
+    ).saveAsTable(
         f"{destination_database}.{destination_table_name}",
         mode="overwrite",
         format="delta",
