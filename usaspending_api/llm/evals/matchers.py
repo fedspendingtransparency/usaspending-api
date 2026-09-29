@@ -162,14 +162,44 @@ class ToolCallMatcher:
 
 @dataclass(frozen=True)
 class MappingSubsetMatcher:
-    """Compare expected output to actual output as a recursive mapping subset."""
+    """
+    Compare expected output to actual output with partial credit scoring.
+
+    Scoring is based on the percentage of expected leaf fields that match correctly.
+    Both missing fields and incorrect values count as mismatches.
+    Extra unexpected fields also count as mismatches.
+    """
 
     def compare(self, expected: Mapping[str, Any], actual: Mapping[str, Any]) -> MatchResult:
         differences = self._find_differences(expected=expected, actual=actual)
 
+        # Count total expected leaf fields and actual leaf fields.
+        expected_leaf_count = self._count_leaf_fields(expected)
+        actual_leaf_count = self._count_leaf_fields(actual)
+
+        # Calculate score based on differences.
+        if expected_leaf_count == 0 and actual_leaf_count == 0:
+            # Both empty: perfect match.
+            score = 1.0
+        elif expected_leaf_count == 0:
+            # Expected empty but actual has fields: all wrong.
+            score = 0.0
+        else:
+            # Calculate how many fields are correct.
+            # Total possible points: expected fields + penalty for extra fields.
+            total_expected = expected_leaf_count
+            total_actual = actual_leaf_count
+            max_fields = max(total_expected, total_actual)
+
+            # Each difference is a mismatch.
+            mismatches = len(differences)
+            correct_fields = max_fields - mismatches
+
+            score = max(0.0, correct_fields / max_fields) if max_fields > 0 else 0.0
+
         return MatchResult(
             passed=not differences,
-            score=1.0 if not differences else 0.0,
+            score=score,
             expected=dict(expected),
             actual=dict(actual),
             message=(
@@ -178,6 +208,18 @@ class MappingSubsetMatcher:
                 else f"Output differs at: {', '.join(differences)}"
             ),
         )
+
+    def _count_leaf_fields(self, mapping: Mapping[str, Any], path: str = "") -> int:
+        """Count the number of leaf (non-mapping) fields in a nested mapping."""
+        count = 0
+        for key, value in mapping.items():
+            if isinstance(value, Mapping):
+                # Recurse into nested mappings.
+                count += self._count_leaf_fields(value, f"{path}.{key}" if path else key)
+            else:
+                # This is a leaf field.
+                count += 1
+        return count
 
     def _find_differences(self, expected: Mapping[str, Any], actual: Mapping[str, Any], path: str = "") -> list[str]:
         differences: list[str] = []

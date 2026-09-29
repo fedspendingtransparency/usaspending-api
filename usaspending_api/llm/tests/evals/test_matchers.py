@@ -75,7 +75,8 @@ def test_mapping_subset_matcher_rejects_missing_nested_output():
     )
 
     assert result.passed is False
-    assert result.score == 0.0
+    # Score: 1 correct field (timePeriodType) out of 2 expected = 0.5
+    assert result.score == 0.5
     assert "timePeriodFY (missing)" in result.message
 
 
@@ -92,7 +93,8 @@ def test_mapping_subset_matcher_rejects_wrong_nested_value():
     )
 
     assert result.passed is False
-    assert result.score == 0.0
+    # Score: 1 correct field (timePeriodType) out of 2 total = 0.5
+    assert result.score == 0.5
     assert "timePeriodFY" in result.message
 
 
@@ -111,7 +113,8 @@ def test_mapping_subset_matcher_rejects_unexpected_keys():
     )
 
     assert result.passed is False
-    assert result.score == 0.0
+    # Score: 2 correct fields out of 3 total (2 expected + 1 extra) = 2/3
+    assert result.score == 2 / 3
     assert "extraField (unexpected)" in result.message
 
 
@@ -137,6 +140,31 @@ def test_mapping_subset_matcher_rejects_unexpected_nested_keys():
     )
 
     assert result.passed is False
-    assert result.score == 0.0
+    # Score: 2 correct leaf fields out of 4 total (2 expected + 2 extra) = 0.5
+    assert result.score == 0.5
     assert "time_period.date_type (unexpected)" in result.message
     assert "metadata (unexpected)" in result.message
+
+
+def test_mapping_subset_matcher_gives_partial_credit():
+    """Test that partial credit is given for partially correct output."""
+    result = MappingSubsetMatcher().compare(
+        expected={
+            "timePeriodType": "fy",
+            "timePeriodFY": ["2025"],
+            "awardType": ["Contracts"],
+            "selectedRecipients": ["CLARK CONSTRUCTION"],
+        },
+        actual={
+            "timePeriodType": "fy",
+            "timePeriodFY": ["2025"],
+            "awardType": ["Grants"],  # Wrong value
+            # selectedRecipients missing
+        },
+    )
+
+    assert result.passed is False
+    # Score: 2 correct out of 4 expected = 0.5
+    assert result.score == 0.5
+    assert "awardType" in result.message
+    assert "selectedRecipients (missing)" in result.message
