@@ -1,0 +1,38 @@
+name: Build USA Spending Docker Image for Test
+
+on:
+  workflow_call:
+
+jobs:
+  Run:
+    name: Run
+    runs-on: ${{ vars.RUNNER_VERSION }}
+    steps:
+      - name: Checkout Source Repository
+        uses: actions/checkout@v4
+
+      - name: Create .env for docker compose
+        run: cp .env.template .env
+
+      - name: Export build args from .env
+        run: grep -E '^(PROJECT_LOG_DIR|SPARK_LOGGING_LEVEL)=' .env >> "$GITHUB_ENV"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker Image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./development.Dockerfile
+          tags: usaspending-development:latest
+          build-args: |
+            PROJECT_LOG_DIR=${{ env.PROJECT_LOG_DIR }}
+            SPARK_LOGGING_LEVEL=${{ env.SPARK_LOGGING_LEVEL }}
+          outputs: type=docker,dest=/tmp/usaspending-development.tar
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: usaspending-development-image
+          path: /tmp/usaspending-development.tar
