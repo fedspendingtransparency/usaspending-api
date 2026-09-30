@@ -503,7 +503,8 @@ class ExecuteFilterInput(BaseModel):
         description=(
             'Awarding agencies keyed by "{id}_{agencyType}" (e.g. "1173_toptier"). Must call the '
             "lookup_agency tool to attain valid selected agency objects; pass the tool's returned "
-            "dictionary through unchanged, preserving its keys. Prefer awarding agency filter over funding agency filter."
+            "dictionary through unchanged, preserving its keys. Prefer awarding agency filter over funding agency "
+            "filter."
         ),
     )
     selectedFundingAgencies: dict[str, SelectedAgency] = Field(
