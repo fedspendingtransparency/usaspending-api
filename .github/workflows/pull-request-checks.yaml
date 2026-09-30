@@ -55,6 +55,14 @@ jobs:
     with:
       broker-branch: ${{ needs.Setup-Broker-Branch.outputs.branch }}
 
+  Build-USAspending-Docker-Image:
+    name: Build USAspending Docker Image
+    needs: Cancel-If-Draft-Pull-Request
+    if: |
+      always() &&
+      needs.Cancel-If-Draft-Pull-Request.result == 'skipped'
+    uses: ./.github/workflows/build-usaspending-image-for-test.yaml
+
   # The test suite is broken into multiple groups based on a combination of what is under test
   # and the time that it takes to run tests for that group.
   Run-Spark-Integration-Load-Transaction-FABS-and-FPDS-Tests:
@@ -63,6 +71,7 @@ jobs:
       - Run-Code-Style-Checks
       - Setup-Broker-Branch
       - Build-Broker-Docker-Image
+      - Build-USAspending-Docker-Image
     if: ${{ !failure() && !cancelled() }}
     uses: ./.github/workflows/test-spark-integration-load-transactions-fabs-fpds.yaml
     with:
@@ -74,6 +83,7 @@ jobs:
       - Run-Code-Style-Checks
       - Setup-Broker-Branch
       - Build-Broker-Docker-Image
+      - Build-USAspending-Docker-Image
     if: ${{ !failure() && !cancelled() }}
     uses: ./.github/workflows/test-spark-integration-load-transactions-lookup.yaml
     with:
@@ -85,6 +95,7 @@ jobs:
       - Run-Code-Style-Checks
       - Setup-Broker-Branch
       - Build-Broker-Docker-Image
+      - Build-USAspending-Docker-Image
     if: ${{ !failure() && !cancelled() }}
     uses: ./.github/workflows/test-spark-integration-load-to-from-delta.yaml
     with:
@@ -96,6 +107,7 @@ jobs:
       - Run-Code-Style-Checks
       - Setup-Broker-Branch
       - Build-Broker-Docker-Image
+      - Build-USAspending-Docker-Image
     if: ${{ !failure() && !cancelled() }}
     uses: ./.github/workflows/test-spark-integration-other.yaml
     with:
@@ -107,6 +119,7 @@ jobs:
       - Run-Code-Style-Checks
       - Setup-Broker-Branch
       - Build-Broker-Docker-Image
+      - Build-USAspending-Docker-Image
     if: ${{ !failure() && !cancelled() }}
     uses: ./.github/workflows/test-non-spark-integration.yaml
     with:
@@ -118,6 +131,7 @@ jobs:
       - Run-Code-Style-Checks
       - Setup-Broker-Branch
       - Build-Broker-Docker-Image
+      - Build-USAspending-Docker-Image
     if: ${{ !failure() && !cancelled() }}
     uses: ./.github/workflows/test-non-spark-integration-signal-handling.yaml
     with:
@@ -125,12 +139,16 @@ jobs:
 
   Run-Unit-Tests:
     name: Run Unit Tests
-    needs: Run-Code-Style-Checks
+    needs:
+      - Run-Code-Style-Checks
+      - Build-USAspending-Docker-Image
     if: ${{ !failure() && !cancelled() }}
     uses: ./.github/workflows/test-unit.yaml
 
   Run-Unit-Tests-With-Signal-Handling:
     name: Run Unit Tests With Signal Handling
-    needs: Run-Code-Style-Checks
+    needs:
+      - Run-Code-Style-Checks
+      - Build-USAspending-Docker-Image
     if: ${{ !failure() && !cancelled() }}
     uses: ./.github/workflows/test-unit-signal-handling.yaml
