@@ -27,9 +27,9 @@ class LocalConfig(DefaultConfig):
         Attributes inherited from or overridden from ``DefaultConfig``
 
     Attributes:
-        MINIO_ACCESS_KEY: Access key for accessing S3 object data stored locally via MinIO
-        MINIO_SECRET_KEY: Secret key for accessing S3 object data stored locally via MinIO
-        MINIO_DATA_DIR: Where docker persists "object data" for S3 objects stored locally
+        RUSTFS_ACCESS_KEY: Access key for accessing S3 object data stored locally via RustFS
+        RUSTFS_SECRET_KEY: Secret key for accessing S3 object data stored locally via RustFS
+        S3_DATA_DIR: Where docker persists "object data" for S3 objects stored locally
             - Should point to a path where data can be persistend beyond docker restarts,
               outside of the git source repository
     """
@@ -72,27 +72,27 @@ class LocalConfig(DefaultConfig):
     SPARK_SQL_WAREHOUSE_DIR: str = str(_PROJECT_ROOT_DIR / "spark-warehouse")
     HIVE_METASTORE_DERBY_DB_DIR: str = str(_PROJECT_ROOT_DIR / "spark-warehouse" / "metastore_db")
 
-    # ==== [MinIO] ====
-    MINIO_HOST: str = "minio"
-    # Changing MinIO ports from defaults. Known to have port conflicts with proxies on developer laptops
-    MINIO_PORT: str = "10001"
-    MINIO_CONSOLE_PORT: str = "10002"
-    MINIO_ACCESS_KEY: SecretStr = _USASPENDING_USER  # likely overridden in .env
-    MINIO_SECRET_KEY: SecretStr = _USASPENDING_PASSWORD  # likely overridden in .env
+    # ==== [S3] ====
+    RUSTFS_HOST: str = "usaspending-s3"
+    # Changing RustFS ports from defaults. Known to have port conflicts with proxies on developer laptops
+    RUSTFS_PORT: str = "10001"
+    RUSTFS_CONSOLE_PORT: str = "10002"
+    RUSTFS_ACCESS_KEY: SecretStr = _USASPENDING_USER  # likely overridden in .env
+    RUSTFS_SECRET_KEY: SecretStr = _USASPENDING_PASSWORD  # likely overridden in .env
     # Should point to a path where data can be persistend beyond docker restarts, outside of the git source repository
-    MINIO_DATA_DIR: str = USER_SPECIFIC_OVERRIDE
+    S3_DATA_DIR: str = USER_SPECIFIC_OVERRIDE
 
     # ==== [AWS] ====
     # In local dev env, default to NOT using AWS.
-    # - For S3, MinIO will be used, and the AWS Endpoints defaulted below  will be used by MinIO to connect to "S3"
+    # - For S3, RustFS will be used, and the AWS Endpoints defaulted below  will be used by RustFS to connect to "S3"
     #   locally.
     # - If you want to connect to AWS from your local dev env setup, for S3 as the backing object store of data,
     #   set this to True, and change the AWS endpoints/region to that of the targeted AWS account
     # - Then you MUST set your AWS creds (access/secret/token) by way of setting AWS_PROFILE env var (e.g. in your
     #   .env file)
     USE_AWS: bool = False
-    AWS_ACCESS_KEY: SecretStr = MINIO_ACCESS_KEY
-    AWS_SECRET_KEY: SecretStr = MINIO_SECRET_KEY
+    AWS_ACCESS_KEY: SecretStr = RUSTFS_ACCESS_KEY
+    AWS_SECRET_KEY: SecretStr = RUSTFS_SECRET_KEY
     AWS_PROFILE: str | None = None
     SPARK_S3_BUCKET: str = "data"
     BULK_DOWNLOAD_S3_BUCKET_NAME: str = "bulk-download"
@@ -110,7 +110,7 @@ class LocalConfig(DefaultConfig):
         merged_values = {**default_fields, **values}
 
         def factory_func() -> str:
-            return merged_values["MINIO_HOST"] + ":" + merged_values["MINIO_PORT"]
+            return merged_values["RUSTFS_HOST"] + ":" + merged_values["RUSTFS_PORT"]
 
         return eval_default_factory_from_root_validator(cls, values, "AWS_S3_ENDPOINT", factory_func)
 
