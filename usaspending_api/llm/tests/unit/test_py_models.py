@@ -243,6 +243,59 @@ class TestRecipientFields:
         assert filters.selectedRecipients == recipients
 
 
+class TestSelectedAgencyRekeying:
+    """Tests for the "{id}_{agencyType}" re-keying of selected agency dicts on the Filters model"""
+
+    TOPTIER_AGENCY = {
+        "id": 1173,
+        "agencyType": "toptier",
+        "toptier_flag": True,
+        "toptier_agency": {
+            "id": 126,
+            "toptier_code": "097",
+            "abbreviation": "DOD",
+            "name": "Department of Defense",
+        },
+    }
+
+    def test_rekeys_empty_key_from_value(self):
+        filters = Filters(selectedAwardingAgencies={"": dict(self.TOPTIER_AGENCY)})
+
+        assert list(filters.selectedAwardingAgencies.keys()) == ["1173_toptier"]
+
+    def test_rekeys_wrong_key_from_value(self):
+        filters = Filters(selectedFundingAgencies={"wrong-key": dict(self.TOPTIER_AGENCY)})
+
+        assert list(filters.selectedFundingAgencies.keys()) == ["1173_toptier"]
+
+    def test_preserves_correct_key(self):
+        filters = Filters(selectedAwardingAgencies={"1173_toptier": dict(self.TOPTIER_AGENCY)})
+
+        assert list(filters.selectedAwardingAgencies.keys()) == ["1173_toptier"]
+
+    def test_subtier_key_uses_subtier_agency_type(self):
+        subtier = {
+            "id": 42,
+            "agencyType": "subtier",
+            "toptier_flag": False,
+            "toptier_agency": {
+                "id": 126,
+                "toptier_code": "097",
+                "abbreviation": "DOD",
+                "name": "Department of Defense",
+            },
+            "subtier_agency": {"abbreviation": "USA", "name": "Department of the Army"},
+        }
+        filters = Filters(selectedAwardingAgencies={"": subtier})
+
+        assert list(filters.selectedAwardingAgencies.keys()) == ["42_subtier"]
+
+    def test_empty_dict_stays_empty(self):
+        filters = Filters(selectedAwardingAgencies={})
+
+        assert filters.selectedAwardingAgencies == {}
+
+
 class TestRecipientType:
     """Tests for recipientType field in Filters model"""
 

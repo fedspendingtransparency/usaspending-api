@@ -16,6 +16,23 @@ from usaspending_api.references.models import FilterHash
 logger = logging.getLogger(__name__)
 
 
+def build_filter_request(filter_input: dict) -> dict:
+    """
+    Validate and canonicalize filter input before it is hashed or evaluated.
+
+    ValidationError is intentionally propagated so callers can preserve their
+    own error handling while sharing one canonical filter representation.
+    """
+    filters = Filters(**filter_input)
+    filter_request = FilterRequest(filters=filters).model_dump(exclude_none=True)
+    if "keyword" in filter_request["filters"]:
+        filter_request["filters"]["keyword"] = {v: v for v in filter_request["filters"]["keyword"]}
+    if "selectedAwardIDs" in filter_request["filters"]:
+        filter_request["filters"]["selectedAwardIDs"] = {v: v for v in filter_request["filters"]["selectedAwardIDs"]}
+
+    return filter_request
+
+
 def execute_filter(**kwargs) -> dict[str, str]:
     logger.info(f"Starting execute_filter with {len(kwargs)} filter parameter(s)", extra={"filter_count": len(kwargs)})
 

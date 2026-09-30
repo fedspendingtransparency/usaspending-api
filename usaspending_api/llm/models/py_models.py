@@ -346,14 +346,14 @@ class Filters(BaseModel):
     time_period: list[TimePeriod] = Field(default_factory=list)
     selectedLocations: dict[str, SelectedLocation] = Field(default_factory=dict)
     locationDomesticForeign: Literal["all", "foreign"] = "all"
-    selectedFundingAgencies: dict[str, Any] = Field(default_factory=dict)
+    selectedFundingAgencies: dict[str, SelectedAgency] = Field(default_factory=dict)
     selectedAwardingAgencies: dict[str, SelectedAgency] = Field(default_factory=dict)
     selectedRecipients: list[str] = Field(default_factory=list)
     recipientDomesticForeign: Literal["all", "foreign"] = "all"
     recipientType: list[RecipientType] = Field(default_factory=list)
     selectedRecipientLocations: dict[str, Any] = Field(default_factory=dict)
     awardType: list[str] = Field(default_factory=list)
-    selectedAwardIDs: dict[str, Any] = Field(default_factory=dict)
+    selectedAwardIDs: list[str] = Field(default_factory=list)
     awardAmounts: AwardAmounts = Field(default_factory=lambda: AwardAmounts({}))
     selectedCFDA: dict[str, Any] = Field(default_factory=dict)
     naicsCodes: CodeLists = Field(default_factory=CodeLists)
@@ -369,6 +369,33 @@ class Filters(BaseModel):
     filterNewAwardsOnlyActive: bool = False
     filterNaoActiveFromFyOrDateRange: bool = False
 
+    @field_validator("selectedAwardingAgencies", "selectedFundingAgencies", mode="before")
+    @classmethod
+    def rekey_selected_agencies(cls, value: Any) -> Any:
+        """Re-key agency dicts by "{id}_{agencyType}".
+
+        The frontend keys selected agencies by "{id}_{agencyType}" (e.g. "1173_toptier"), but the
+        LLM does not reliably reproduce that key. Since each value already carries `id` and
+        `agencyType`, rebuild the key from the value so the persisted filter is always correctly
+        keyed regardless of what key the model emitted.
+        """
+        if not isinstance(value, dict):
+            return value
+
+        rekeyed = {}
+        for original_key, agency in value.items():
+            if isinstance(agency, dict):
+                agency_id = agency.get("id")
+                agency_type = agency.get("agencyType")
+            else:
+                agency_id = getattr(agency, "id", None)
+                agency_type = getattr(agency, "agencyType", None)
+            # Fall back to the original key if the value is missing the pieces we need; the
+            # SelectedAgency validation below will then surface the real problem.
+            key = f"{agency_id}_{agency_type}" if agency_id is not None and agency_type else original_key
+            rekeyed[key] = agency
+        return rekeyed
+
     @field_validator("awardType")
     @classmethod
     def validate_award_type(cls, value: list[str]) -> list[str]:
@@ -377,7 +404,9 @@ class Filters(BaseModel):
             return value
         unknown = [code for code in value if code not in all_awards_types_to_category]
         if unknown:
-            raise ValueError(f"Invalid award type code(s): {unknown}. Call list_award_type_codes for valid codes.")
+            raise ValueError(
+                f"Invalid award type code(s): {unknown}. See the awardType field description for valid codes."
+            )
         if not award_types_are_valid_groups(value):
             raise ValueError("'award_type_codes' must only contain types from one group.")
         return value
@@ -469,14 +498,33 @@ class ExecuteFilterInput(BaseModel):
     locationDomesticForeign: Literal["all", "foreign"] = Field(
         default="all", description='Use "foreign" to search all foreign locations. Otherwise use "all".'
     )
-    selectedFundingAgencies: dict[str, Any] = Field(
-        default_factory=dict, description="Funding agencies keyed by id. Use the lookup_agency tool to build these."
-    )
     selectedAwardingAgencies: dict[str, SelectedAgency] = Field(
-        default_factory=dict, description="Awarding agencies keyed by id. Use the lookup_agency tool to build these."
+        default_factory=dict,
+        description=(
+            'Awarding agencies keyed by "{id}_{agencyType}" (e.g. "1173_toptier"). Must call the '
+            "lookup_agency tool to attain valid selected agency objects; pass the tool's returned "
+            "dictionary through unchanged, preserving its keys. Prefer awarding agency filter over funding agency filter."
+        ),
     )
+    selectedFundingAgencies: dict[str, SelectedAgency] = Field(
+        default_factory=dict,
+        description=(
+            'Funding agencies keyed by "{id}_{agencyType}" (e.g. "1173_toptier"). Must call the '
+            "lookup_agency tool to attain valid selected agency objects; pass the tool's returned "
+            "dictionary through unchanged, preserving its keys."
+        ),
+    )
+
     selectedRecipients: list[str] = Field(
-        default_factory=list, description="Recipient names. Use the lookup_recipient tool to resolve these."
+        default_factory=list,
+        description="Recipient names or codes. Use the lookup_recipient tool to resolve these.",
+        json_schema_extra={
+            "examples": [
+                ["LOCKHEED MARTIN CORPORATION"],
+                ["HR1JA12FSM63"],
+                ["BOEING", "SPACE EXPLORATION TECHNOLOGIES CORP."],
+            ]
+        },
     )
     recipientDomesticForeign: Literal["all", "foreign"] = Field(
         default="all", description='Use "foreign" to search all foreign recipient locations. Otherwise use "all".'
@@ -496,13 +544,24 @@ class ExecuteFilterInput(BaseModel):
     awardType: list[str] = Field(
         default_factory=list,
         description=(
-            "Award-type code filter (e.g. contracts, grants, loans, IDVs). Call list_award_type_codes "
-            "for all valid codes grouped by category. May only contain codes from a single group."
+            "Award-type code filter. If the query mentions an award vehicle (contract, grant, loan, IDV, direct "
+            "payment, financial assistance, or a related word/concept), you MUST set this filter - even when the "
+            "query's main subject is a recipient, agency, or location (e.g. 'contracts for Boeing' requires BOTH "
+            "the recipient filter AND this filter). Use exactly one of these code groups, matching the query:\n"
+            "  contracts:       ['A', 'B', 'C', 'D']\n"
+            "  IDVs:            ['IDV_A', 'IDV_B', 'IDV_B_A', 'IDV_B_B', 'IDV_B_C', 'IDV_C', 'IDV_D', 'IDV_E']\n"
+            "  grants:          ['02', '03', '04', '05', 'F001', 'F002']\n"
+            "  loans:           ['07', '08', 'F003', 'F004']\n"
+            "  direct payments: ['06', '10', 'F006', 'F007']\n"
+            "  other:           ['09', '11', '-1', 'F005', 'F008', 'F009', 'F010']\n"
+            "A value may only contain codes from a SINGLE group."
         ),
-        json_schema_extra={"examples": [["02", "03", "04", "05"], ["A", "B", "C", "D"], ["07", "08"]]},
+        json_schema_extra={"examples": [["A", "B", "C", "D"], ["02", "03", "04", "05"], ["07", "08"]]},
     )
-    selectedAwardIDs: dict[str, Any] = Field(
-        default_factory=dict, description="Award ID (PIID/FAIN/URI) filter keyed by identifier."
+    selectedAwardIDs: list[str] = Field(
+        default_factory=list,
+        description="Award ID (PIID/FAIN/URI) filter.",
+        json_schema_extra={"examples": [["N0002417C2117"], ["N0002417C2117", "B-18-DP-72-0002"]]},
     )
     awardAmounts: dict[str, list[int | None]] = Field(
         default_factory=dict,

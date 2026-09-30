@@ -6,6 +6,107 @@ from usaspending_api.llm.tests.helper import (
     fuzzy_search_recipients,
     retrieve_recipient_names,
 )
+from usaspending_api.llm.tools.lookup_recipient import RecipientLookupTool
+
+
+def _make_response(hits: list[dict]) -> Mock:
+    mock_hits = []
+    for hit in hits:
+        mock_hit = Mock()
+        mock_hit.to_dict.return_value = hit
+        mock_hits.append(mock_hit)
+    response = Mock()
+    response.hits = mock_hits
+    return response
+
+
+class TestMatchedIdentifier:
+    """Tests for RecipientLookupTool._matched_identifier"""
+
+    def test_matches_uei(self):
+        hit = {"recipient_name": "ACME CORP", "uei": "UEI123456789", "duns": "123456789"}
+        assert RecipientLookupTool._matched_identifier(hit, "UEI123456789") == "UEI123456789"
+
+    def test_matches_duns(self):
+        hit = {"recipient_name": "ACME CORP", "uei": "UEI123456789", "duns": "123456789"}
+        assert RecipientLookupTool._matched_identifier(hit, "123456789") == "123456789"
+
+    def test_matches_hash_case_insensitively(self):
+        hit = {"recipient_name": "ACME CORP", "recipient_hash": "abc-123-def"}
+        # Query arrives uppercased; the stored hash is lowercase but should still match.
+        assert RecipientLookupTool._matched_identifier(hit, "ABC-123-DEF") == "abc-123-def"
+
+    def test_returns_none_when_only_name_matches(self):
+        hit = {"recipient_name": "ACME CORP", "uei": "UEI123456789", "duns": "123456789"}
+        assert RecipientLookupTool._matched_identifier(hit, "ACME CORP") is None
+
+    def test_ignores_missing_identifiers(self):
+        hit = {"recipient_name": "ACME CORP"}
+        assert RecipientLookupTool._matched_identifier(hit, "UEI123456789") is None
+
+
+class TestExtractRecipientNames:
+    """Tests for RecipientLookupTool._extract_recipient_names identifier/exact-match behavior"""
+
+    def test_exact_uei_match_returns_only_that_identifier(self):
+        response = _make_response(
+            [
+                {"recipient_name": "ACME CORP", "uei": "UEI123456789", "duns": "123456789"},
+                {"recipient_name": "ACME INDUSTRIES", "uei": "UEI999", "duns": "999"},
+            ]
+        )
+        result = RecipientLookupTool()._extract_recipient_names(response, "UEI123456789")
+        assert result == {"recipient_names": ["UEI123456789"]}
+
+    def test_exact_duns_match_returns_only_that_identifier(self):
+        response = _make_response(
+            [
+                {"recipient_name": "ACME CORP", "uei": "UEI123456789", "duns": "123456789"},
+                {"recipient_name": "ACME INDUSTRIES", "uei": "UEI999", "duns": "999"},
+            ]
+        )
+        result = RecipientLookupTool()._extract_recipient_names(response, "123456789")
+        assert result == {"recipient_names": ["123456789"]}
+
+    def test_exact_hash_match_returns_only_that_identifier(self):
+        response = _make_response(
+            [
+                {"recipient_name": "ACME CORP", "recipient_hash": "hash123"},
+                {"recipient_name": "ACME INDUSTRIES", "recipient_hash": "hash789"},
+            ]
+        )
+        result = RecipientLookupTool()._extract_recipient_names(response, "HASH123")
+        assert result == {"recipient_names": ["hash123"]}
+
+    def test_exact_name_match_returns_only_that_name(self):
+        response = _make_response(
+            [
+                {"recipient_name": "ACME CORP", "uei": "UEI123456789", "duns": "123456789"},
+                {"recipient_name": "ACME CORPORATION", "uei": "UEI999", "duns": "999"},
+            ]
+        )
+        result = RecipientLookupTool()._extract_recipient_names(response, "ACME CORP")
+        assert result == {"recipient_names": ["ACME CORP"]}
+
+    def test_returns_all_names_when_no_exact_match(self):
+        response = _make_response(
+            [
+                {"recipient_name": "ACME CORP", "uei": "UEI123456789", "duns": "123456789"},
+                {"recipient_name": "ACME INDUSTRIES", "uei": "UEI999", "duns": "999"},
+            ]
+        )
+        result = RecipientLookupTool()._extract_recipient_names(response, "ACME")
+        assert result == {"recipient_names": ["ACME CORP", "ACME INDUSTRIES"]}
+
+    def test_deduplicates_fuzzy_names(self):
+        response = _make_response(
+            [
+                {"recipient_name": "ACME CORP", "uei": "UEI123456789", "duns": "123456789"},
+                {"recipient_name": "ACME CORP", "uei": "UEI999", "duns": "999"},
+            ]
+        )
+        result = RecipientLookupTool()._extract_recipient_names(response, "ACME")
+        assert result == {"recipient_names": ["ACME CORP"]}
 
 
 class TestBuildFuzzyRecipientQuery:

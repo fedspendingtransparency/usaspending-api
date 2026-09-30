@@ -10,10 +10,6 @@ from usaspending_api.search.v2.es_sanitization import es_sanitize
 logger = logging.getLogger(__name__)
 
 
-# take a string name, uei or duns and get list of entities and subs
-# uses recipient_retrieval.py
-
-
 class RecipientLookupTool:
     """Tool for looking up recipients in OpenSearch with fuzzy matching support."""
 
@@ -56,7 +52,7 @@ class RecipientLookupTool:
             logger.error(f"OpenSearch query failed for query='{query}': {str(exception)}", exc_info=True)
             return []
 
-        result = self._extract_recipient_names(response)
+        result = self._extract_recipient_names(response, query_upper)
         recipient_count = len(result.get("recipient_names", []))
 
         # Log zero results as a warning for quality monitoring.
@@ -96,6 +92,8 @@ class RecipientLookupTool:
                     ES_Q("wildcard", **{f"{field}__keyword": {"value": f"{query_upper}*", "boost": 2.0}}),
                 ]
             )
+
+        should_queries.append(ES_Q("term", **{"recipient_hash": {"value": query_upper.lower(), "boost": 10.0}}))
         should_queries_dict = [q.to_dict() for q in should_queries]
 
         return (
@@ -105,40 +103,64 @@ class RecipientLookupTool:
             .sort({"_score": {"order": "desc"}})[:top_k]
         )
 
-    def _extract_recipient_names(self, response: Any) -> list[str]:
+    def _extract_recipient_names(self, response: Any, query_upper: str) -> list[str]:
         recipient_names = []
-        seen_names = set()
+        seen_values = set()
         for hit in response.hits:
-            recipient_name = hit.to_dict().get("recipient_name")
-            if not recipient_name or recipient_name in seen_names:
+            hit_dict = hit.to_dict()
+            # When the query exactly matches an identifier (UEI, DUNS, or hash), that is an
+            # unambiguous hit: return only the matched identifier the caller searched by.
+            matched_identifier = self._matched_identifier(hit_dict, query_upper)
+            if matched_identifier:
+                return {"recipient_names": [matched_identifier]}
+
+            recipient_name = hit_dict.get("recipient_name")
+            # An exact name match is also unambiguous: return only that name.
+            if recipient_name and str(recipient_name).upper() == query_upper:
+                return {"recipient_names": [recipient_name]}
+
+            if not recipient_name or recipient_name in seen_values:
                 continue
-            seen_names.add(recipient_name)
+            seen_values.add(recipient_name)
             recipient_names.append(recipient_name)
         return {"recipient_names": recipient_names}
+
+    @staticmethod
+    def _matched_identifier(hit_dict: dict, query_upper: str) -> str | None:
+        """Return the UEI, DUNS, or hash if the query is an exact match for it, else None."""
+        for field in ("uei", "duns", "recipient_hash"):
+            identifier = hit_dict.get(field)
+            if identifier and str(identifier).upper() == query_upper:
+                return identifier
+        return None
 
 
 lookup_recipient_tool = AITool(
     description=AIToolDescription(
         name="lookup_recipient",
         description="""
-Search for valid recipient objects by name, UEI or DUNS using fuzzy matching.
+Search for valid recipient objects by name, UEI, DUNS, or recipient hash using fuzzy matching.
 
-Returns a list of strings.
+Returns a list of strings. When the query is an exact match for a recipient (by UEI, DUNS,
+recipient hash, or name), a single-element list containing just that exact match is returned
+(the matching identifier for identifier matches, otherwise the name). When there is no exact
+match, the list of fuzzy-matched recipient names is returned.
 
 Supported inputs:
 - Recipient names (eg 'BOEING COMPANY', 'Lockheed Martin')
 - UEI codes (12-character alphanumeric)
 - DUNS numbers (9-digit, legacy)
+- Recipient hashes (UUID)
 
 Examples:
 - lookup_recipient('BOEING') -> ['BOEING COMPANY', ...]
-- lookup_recipient('EWN9HP5FT8A5') -> ['BOEING COMPANY', ...]
+- lookup_recipient('EWN9HP5FT8A5') -> ['EWN9HP5FT8A5', ...]
 
 """.strip(),
         input_schema={
             "type": "object",
             "properties": {
-                "query": {"type": "string", "description": "Recipient search (name, uai, duns)"},
+                "query": {"type": "string", "description": "Recipient search (name, uei, duns, hash)"},
                 "top_k": {
                     "type": "integer",
                     "description": "Maximum number of recipient results to return (1-100, default: 10)",

@@ -91,10 +91,16 @@
       - This is not a chat interface. Do not ask the user for clarification or additional input.
       - Before calling execute_filter, call the lookup and list tools as needed to get valid parameter
         values (e.g. lookup_agency, lookup_location, lookup_recipient, lookup_code, list_recipient_types,
-        list_defc_codes, list_award_type_codes).
+        list_defc_codes).
       - You may only call execute_filter once; calling it ends the conversation. Include every relevant
         parameter in that single call, and only the relevant ones.
       - You must call execute_filter. Do not quit before calling it.
       - Prefer specific structured filters over the generic 'keyword' filter whenever the query maps to
         one. Keywords are exact-match and AND-combined, so only use them for terms with no matching filter.
+      - Prefer selectedAwardingAgencies over selectedFundingAgencies if the query does not specify
+      - If the query names an award vehicle (contract, grant, loan, IDV, direct payment, or financial
+        assistance), you MUST set the awardType filter using the code group documented on the
+        execute_filter schema. This is required even when the query's main subject is a recipient,
+        agency, or location - e.g. "contracts for Boeing" needs BOTH the recipient filter AND awardType
+        set to the contract codes. Do not skip awardType just because another filter is present.
     created_at: '2026-09-24'
