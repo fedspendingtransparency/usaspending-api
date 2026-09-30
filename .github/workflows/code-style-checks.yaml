@@ -10,7 +10,7 @@ env:
   ES_SCHEME: http
   ES_HOST: usaspending-es
   ES_PORT: 9200
-  MINIO_HOST: minio
+  RUSTFS_HOST: usaspending-s3
   USASPENDING_DB_HOST: usaspending-db
   USASPENDING_DB_PORT: 5432
   USASPENDING_DB_USER: usaspending
@@ -52,10 +52,10 @@ jobs:
           echo "DATABASE_URL=postgres://$USASPENDING_DB_USER:$USASPENDING_DB_PASSWORD@$USASPENDING_DB_HOST:$USASPENDING_DB_PORT/$USASPENDING_DB_NAME" >> $GITHUB_ENV
           echo "DOWNLOAD_DATABASE_URL=postgres://$USASPENDING_DB_USER:$USASPENDING_DB_PASSWORD@$USASPENDING_DB_HOST:$USASPENDING_DB_PORT/$USASPENDING_DB_NAME" >> $GITHUB_ENV
           echo "ES_HOSTNAME=$ES_SCHEME://$ES_HOST:$ES_PORT" >> $GITHUB_ENV
-          echo "MINIO_DATA_DIR=$HOME/Development/data/usaspending/docker/usaspending-s3" >> $GITHUB_ENV
+          echo "S3_DATA_DIR=$HOME/Development/data/usaspending/docker/usaspending-s3" >> $GITHUB_ENV
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: latest
 
@@ -82,4 +82,7 @@ jobs:
         run: python manage.py check_for_endpoint_documentation
 
       - name: Run Dredd
+        env:
+          # dredd-hooks (unmaintained since 2018) imports the `imp` module, removed in Python 3.12; patches/imp.py shims it
+          PYTHONPATH: patches
         run: dredd > dredd-results.txt && echo '! grep -E "^[warn:|error:]" dredd-results.txt' | bash
