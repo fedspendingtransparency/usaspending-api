@@ -15,7 +15,7 @@ from usaspending_api.references.models import FilterHash
 logger = logging.getLogger(__name__)
 
 
-def execute_filter(**kwargs) -> dict[str, str]:
+async def execute_filter(**kwargs) -> dict[str, str]:
     logger.info(f"Starting execute_filter with {len(kwargs)} filter parameter(s)", extra={"filter_count": len(kwargs)})
 
     try:
@@ -37,13 +37,13 @@ def execute_filter(**kwargs) -> dict[str, str]:
     logger.info(f"Generated filter hash: {hash_key}", extra={"hash": hash_key, "filter_keys": list(kwargs.keys())})
 
     try:
-        FilterHash.objects.get(hash=hash_key)
+        await FilterHash.objects.aget(hash=hash_key)
         logger.info(f"Filter hash already exists in database: {hash_key}", extra={"hash": hash_key, "is_new": False})
     except FilterHash.DoesNotExist:
         logger.info(f"Filter hash not found, creating new entry: {hash_key}", extra={"hash": hash_key, "is_new": True})
         try:
             fh = FilterHash(hash=hash_key, filter=filter_request)
-            fh.save()
+            await fh.asave()
             logger.info(f"Successfully saved new filter hash: {hash_key}", extra={"hash": hash_key})
         except Exception as e:
             return {

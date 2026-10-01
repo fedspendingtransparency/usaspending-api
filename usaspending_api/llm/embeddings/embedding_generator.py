@@ -1,6 +1,8 @@
 import json
 import logging
+import os
 
+import aioboto3
 import boto3
 from botocore.config import Config
 
@@ -47,6 +49,38 @@ class EmbeddingGenerator:
             response_body = json.loads(response["body"].read())
             return response_body.get("embedding")
 
+        except Exception as e:
+            logger.error(f"Error generating embedding: {str(e)}")
+            return None
+
+    async def agenerate_embedding(self, text: str) -> list[float] | None:
+        """Async counterpart to `generate_embedding`, using aioboto3."""
+        if not text or not text.strip():
+            return None
+
+        max_input = 8192  # Titan max input: 8192 tokens
+        request_body = {
+            "inputText": text[:max_input],
+            "dimensions": self.dimensions,
+            "normalize": self.normalize,
+        }
+
+        session = aioboto3.Session()
+        config = Config(retries={"max_attempts": 3, "mode": "adaptive"})
+        try:
+            async with session.client(
+                service_name="bedrock-runtime",
+                region_name=os.environ.get("AWS_REGION", "us-gov-west-1"),
+                config=config,
+            ) as client:
+                response = await client.invoke_model(
+                    modelId=self.model.model_id,
+                    body=json.dumps(request_body),
+                    contentType="application/json",
+                    accept="application/json",
+                )
+                response_body = json.loads(await response["body"].read())
+                return response_body.get("embedding")
         except Exception as e:
             logger.error(f"Error generating embedding: {str(e)}")
             return None
