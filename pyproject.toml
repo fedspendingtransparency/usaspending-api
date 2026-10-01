@@ -98,6 +98,8 @@ dependencies = [
     "opentelemetry-semantic-conventions==0.49b2",
     "opentelemetry-util-http==0.49b2",
     # The above packages are listed and pinned to avoid using the 'opentelemetry-bootstrap -a install' command
+    "django-ninja>=1.7.1",
+    "aioboto3>=13.2.0",
 ]
 
 [project.optional-dependencies]
@@ -111,6 +113,7 @@ dev = [
     "pip==23.2.*",
     "pre-commit==3.6.2",
     "pytest==8.0.*",
+    "pytest-asyncio==0.23.*",
     "pytest-cov==4.1.*",
     "pytest-django==4.8.*",
     "pytest-pretty==1.2.*",
@@ -140,6 +143,7 @@ repository = 'https://github.com/fedspendingtransparency/usaspending-api'
 [tool.pytest.ini_options]
 DJANGO_SETTINGS_MODULE = "usaspending_api.settings"
 addopts = "--cov=usaspending_api"
+asyncio_mode = "auto"
 markers = [
     "signal_handling: Mark all tests that import the signal library and invoke signals. This MUST be done on the main thread, and can cause errors if pytest-xdist subordinates parellel test sessions to background threads.",
     # These are "auto" marked based on fixture usage. See conftest.py pytest_collection_modifyitems
