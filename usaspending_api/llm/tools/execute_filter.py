@@ -6,6 +6,7 @@ from pydantic import ValidationError
 from usaspending_api.llm.models.py_models import (
     AITool,
     AIToolDescription,
+    ExecuteFilterInput,
     FilterRequest,
     Filters,
 )
@@ -13,6 +14,23 @@ from usaspending_api.references.helpers import create_hash
 from usaspending_api.references.models import FilterHash
 
 logger = logging.getLogger(__name__)
+
+
+def build_filter_request(filter_input: dict) -> dict:
+    """
+    Validate and canonicalize filter input before it is hashed or evaluated.
+
+    ValidationError is intentionally propagated so callers can preserve their
+    own error handling while sharing one canonical filter representation.
+    """
+    filters = Filters(**filter_input)
+    filter_request = FilterRequest(filters=filters).model_dump(exclude_none=True)
+    if "keyword" in filter_request["filters"]:
+        filter_request["filters"]["keyword"] = {v: v for v in filter_request["filters"]["keyword"]}
+    if "selectedAwardIDs" in filter_request["filters"]:
+        filter_request["filters"]["selectedAwardIDs"] = {v: v for v in filter_request["filters"]["selectedAwardIDs"]}
+
+    return filter_request
 
 
 def execute_filter(**kwargs) -> dict[str, str]:
@@ -68,6 +86,6 @@ execute_filter_tool = AITool(
             Filters are combined with an AND operator.
             Awards will only appear if they meet all of the filter conditions.
         """,
-        input_schema=Filters.model_json_schema(),
+        input_schema=ExecuteFilterInput.model_json_schema(),
     ),
 )

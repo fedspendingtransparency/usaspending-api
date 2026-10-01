@@ -3,7 +3,7 @@
 import pytest
 from pydantic import ValidationError
 
-from usaspending_api.llm.models.py_models import Filters, InferenceConfig
+from usaspending_api.llm.models.py_models import AwardAmounts, Filters, InferenceConfig
 
 
 class TestInferenceConfig:
@@ -241,6 +241,59 @@ class TestRecipientFields:
 
         # Whitespace should be preserved as-is
         assert filters.selectedRecipients == recipients
+
+
+class TestSelectedAgencyRekeying:
+    """Tests for the "{id}_{agencyType}" re-keying of selected agency dicts on the Filters model"""
+
+    TOPTIER_AGENCY = {
+        "id": 1173,
+        "agencyType": "toptier",
+        "toptier_flag": True,
+        "toptier_agency": {
+            "id": 126,
+            "toptier_code": "097",
+            "abbreviation": "DOD",
+            "name": "Department of Defense",
+        },
+    }
+
+    def test_rekeys_empty_key_from_value(self):
+        filters = Filters(selectedAwardingAgencies={"": dict(self.TOPTIER_AGENCY)})
+
+        assert list(filters.selectedAwardingAgencies.keys()) == ["1173_toptier"]
+
+    def test_rekeys_wrong_key_from_value(self):
+        filters = Filters(selectedFundingAgencies={"wrong-key": dict(self.TOPTIER_AGENCY)})
+
+        assert list(filters.selectedFundingAgencies.keys()) == ["1173_toptier"]
+
+    def test_preserves_correct_key(self):
+        filters = Filters(selectedAwardingAgencies={"1173_toptier": dict(self.TOPTIER_AGENCY)})
+
+        assert list(filters.selectedAwardingAgencies.keys()) == ["1173_toptier"]
+
+    def test_subtier_key_uses_subtier_agency_type(self):
+        subtier = {
+            "id": 42,
+            "agencyType": "subtier",
+            "toptier_flag": False,
+            "toptier_agency": {
+                "id": 126,
+                "toptier_code": "097",
+                "abbreviation": "DOD",
+                "name": "Department of Defense",
+            },
+            "subtier_agency": {"abbreviation": "USA", "name": "Department of the Army"},
+        }
+        filters = Filters(selectedAwardingAgencies={"": subtier})
+
+        assert list(filters.selectedAwardingAgencies.keys()) == ["42_subtier"]
+
+    def test_empty_dict_stays_empty(self):
+        filters = Filters(selectedAwardingAgencies={})
+
+        assert filters.selectedAwardingAgencies == {}
 
 
 class TestRecipientType:
@@ -485,6 +538,156 @@ class TestRecipientType:
         # Should not raise validation error
         filters = Filters(recipientType=all_types)
         assert len(filters.recipientType) == len(all_types)
+
+
+class TestAwardType:
+    """Tests for the awardType single-group validation on the Filters model"""
+
+    def test_award_type_default_empty_list(self):
+        filters = Filters()
+
+        assert filters.awardType == []
+        assert isinstance(filters.awardType, list)
+
+    def test_award_type_accepts_all_contracts(self):
+        types = ["A", "B", "C", "D"]
+        filters = Filters(awardType=types)
+
+        assert filters.awardType == types
+
+    def test_award_type_accepts_all_grants(self):
+        types = ["02", "03", "04", "05"]
+        filters = Filters(awardType=types)
+
+        assert filters.awardType == types
+
+    def test_award_type_accepts_loans(self):
+        filters = Filters(awardType=["07", "08"])
+
+        assert filters.awardType == ["07", "08"]
+
+    def test_award_type_accepts_idvs(self):
+        types = ["IDV_A", "IDV_B_A", "IDV_C"]
+        filters = Filters(awardType=types)
+
+        assert filters.awardType == types
+
+    def test_award_type_accepts_single_code(self):
+        filters = Filters(awardType=["D"])
+
+        assert filters.awardType == ["D"]
+
+    def test_award_type_rejects_mixed_groups(self):
+        """Contracts (A) and grants (02) cannot be combined."""
+        with pytest.raises(ValidationError) as exc_info:
+            Filters(awardType=["A", "02"])
+
+        assert "must only contain types from one group" in str(exc_info.value)
+
+    def test_award_type_rejects_contract_mixed_with_loan(self):
+        with pytest.raises(ValidationError) as exc_info:
+            Filters(awardType=["D", "07"])
+
+        assert "must only contain types from one group" in str(exc_info.value)
+
+    def test_award_type_rejects_unknown_code(self):
+        with pytest.raises(ValidationError) as exc_info:
+            Filters(awardType=["NOT_A_REAL_CODE"])
+
+        assert "Invalid award type code" in str(exc_info.value)
+
+    def test_award_type_unknown_code_reported_even_within_one_group(self):
+        """A bogus code mixed with valid same-group codes still trips the 'invalid code' message."""
+        with pytest.raises(ValidationError) as exc_info:
+            Filters(awardType=["A", "B", "NOPE"])
+
+        assert "Invalid award type code" in str(exc_info.value)
+
+    def test_award_type_empty_list_is_valid(self):
+        filters = Filters(awardType=[])
+
+        assert filters.awardType == []
+
+
+class TestAwardAmounts:
+    """Tests for the AwardAmounts range-vs-specific validation on the Filters model"""
+
+    def test_award_amounts_default_empty(self):
+        filters = Filters()
+
+        assert filters.awardAmounts.root == {}
+        assert filters.model_dump()["awardAmounts"] == {}
+
+    def test_award_amounts_accepts_single_range(self):
+        filters = Filters(awardAmounts={"range-1": [1000000, 25000000]})
+
+        assert filters.awardAmounts.root == {"range-1": [1000000, 25000000]}
+
+    def test_award_amounts_accepts_multiple_combinable_ranges(self):
+        amounts = {"range-0": [None, 1000000], "range-2": [25000000, 100000000]}
+        filters = Filters(awardAmounts=amounts)
+
+        assert filters.awardAmounts.root == amounts
+
+    def test_award_amounts_accepts_specific_alone(self):
+        filters = Filters(awardAmounts={"specific": [5000000, 50000000]})
+
+        assert filters.awardAmounts.root == {"specific": [5000000, 50000000]}
+
+    def test_award_amounts_accepts_open_ended_bounds(self):
+        """A None bound means the range is open on that end."""
+        filters = Filters(awardAmounts={"range-4": [500000000, None]})
+
+        assert filters.awardAmounts.root == {"range-4": [500000000, None]}
+
+    def test_award_amounts_rejects_specific_combined_with_range(self):
+        with pytest.raises(ValidationError) as exc_info:
+            Filters(awardAmounts={"specific": [1, 2], "range-1": [1000000, 25000000]})
+
+        assert "must be the only key" in str(exc_info.value)
+
+    def test_award_amounts_rejects_noncanonical_range_bounds(self):
+        """A range bucket must carry its fixed bounds; custom values belong in 'specific'."""
+        with pytest.raises(ValidationError) as exc_info:
+            Filters(awardAmounts={"range-1": [1000000, 20000000]})
+
+        assert "use the 'specific' key" in str(exc_info.value)
+
+    def test_award_amounts_rejects_unknown_key(self):
+        with pytest.raises(ValidationError) as exc_info:
+            Filters(awardAmounts={"range-9": [0, 1]})
+
+        assert "Invalid award amount key" in str(exc_info.value)
+
+    def test_award_amounts_rejects_wrong_length_pair(self):
+        with pytest.raises(ValidationError) as exc_info:
+            Filters(awardAmounts={"specific": [1000000]})
+
+        assert "must be a [min, max] pair" in str(exc_info.value)
+
+    def test_award_amounts_rejects_max_less_than_min(self):
+        with pytest.raises(ValidationError) as exc_info:
+            Filters(awardAmounts={"specific": [100, 10]})
+
+        assert "greater than or equal to min" in str(exc_info.value)
+
+    def test_award_amounts_rejects_negative_bound(self):
+        with pytest.raises(ValidationError) as exc_info:
+            Filters(awardAmounts={"specific": [-5, 100]})
+
+        assert "non-negative" in str(exc_info.value)
+
+    def test_award_amounts_serialization_preserves_frontend_shape(self):
+        """The persisted blob must keep the exact frontend key/pair shape (e.g. 'range-1': [min, max])."""
+        filters = Filters(awardAmounts={"range-1": [1000000, 25000000]})
+
+        dumped = filters.model_dump()["awardAmounts"]
+        assert dumped == {"range-1": [1000000, 25000000]}
+
+    def test_award_amounts_model_can_be_used_directly(self):
+        model = AwardAmounts({"range-3": [100000000, 500000000]})
+
+        assert model.root == {"range-3": [100000000, 500000000]}
 
 
 class TestRecipientDomesticForeign:
