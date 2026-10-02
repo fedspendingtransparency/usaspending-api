@@ -7,6 +7,7 @@ from model_bakery import baker
 from rest_framework import status
 
 from usaspending_api.llm.models.db_models import Assistant, Session
+from usaspending_api.llm.services.guardrails import GuardrailAssessment
 
 
 @pytest.fixture
@@ -40,6 +41,26 @@ def mock_llm_api_key():
 
 
 @pytest.fixture
+def mock_guardrails_pass():
+    """Mock Bedrock Guardrails to always pass (allow) requests."""
+    with patch("usaspending_api.llm.v2.views.filter_search.BedrockGuardrailService") as mock_service:
+        mock_instance = Mock()
+        mock_service.return_value = mock_instance
+
+        # Create a mock assessment that passes (does not intervene)
+        mock_assessment = GuardrailAssessment(
+            action="NONE",
+            action_reason=None,
+            assessments=[],
+            usage={},
+            outputs=[],
+            guardrail_coverage={},
+        )
+        mock_instance.assess_input.return_value = mock_assessment
+        yield mock_instance
+
+
+@pytest.fixture
 def system_prompt_data(db):
     """Create system prompt test data."""
     return baker.make(
@@ -63,7 +84,7 @@ class TestFilterSearch:
         assert resp.status_code in [status.HTTP_403_FORBIDDEN, status.HTTP_500_INTERNAL_SERVER_ERROR]
 
     @pytest.mark.django_db
-    def test_endpoint_rejects_missing_query(self, client, ai_model_data, mock_llm_api_key):
+    def test_endpoint_rejects_missing_query(self, client, ai_model_data, mock_llm_api_key, mock_guardrails_pass):
         """Test that endpoint rejects requests without query parameter."""
         resp = client.post(self.url, content_type="application/json", data=json.dumps({}))
         # Endpoint returns streaming response even for validation errors.
@@ -79,7 +100,7 @@ class TestFilterSearch:
         assert "query" in event["message"].lower()
 
     @pytest.mark.django_db
-    def test_endpoint_rejects_empty_query(self, client, ai_model_data, mock_llm_api_key):
+    def test_endpoint_rejects_empty_query(self, client, ai_model_data, mock_llm_api_key, mock_guardrails_pass):
         """Test that endpoint rejects empty query string."""
         resp = client.post(self.url, content_type="application/json", data=json.dumps({"query": ""}))
         # Endpoint returns streaming response even for validation errors.
@@ -95,7 +116,7 @@ class TestFilterSearch:
         assert "query" in event["message"].lower() or "min" in event["message"].lower()
 
     @pytest.mark.django_db
-    def test_endpoint_rejects_query_too_long(self, client, ai_model_data, mock_llm_api_key):
+    def test_endpoint_rejects_query_too_long(self, client, ai_model_data, mock_llm_api_key, mock_guardrails_pass):
         """Test that endpoint rejects query strings longer than 1000 characters."""
         long_query = "a" * 1001
         resp = client.post(self.url, content_type="application/json", data=json.dumps({"query": long_query}))
@@ -113,7 +134,9 @@ class TestFilterSearch:
         # NOTE: The backend limitation on queries should be unnecessary if client-side restricts input length,
         #       but it's good to have in case users find ways to bypass client-side restrictions.
 
-    def test_endpoint_accepts_valid_query(self, client, ai_model_data, mock_llm_api_key, mock_bedrock_client):
+    def test_endpoint_accepts_valid_query(
+        self, client, ai_model_data, mock_llm_api_key, mock_guardrails_pass, mock_bedrock_client
+    ):
         """Test that endpoint accepts valid query and returns streaming response."""
         # Mock Bedrock response.
         mock_bedrock_client.converse.return_value = {
@@ -132,7 +155,9 @@ class TestFilterSearch:
         assert resp["Cache-Control"] == "no-cache"
         assert resp["X-Accel-Buffering"] == "no"
 
-    def test_endpoint_creates_session(self, client, ai_model_data, mock_llm_api_key, mock_bedrock_client):
+    def test_endpoint_creates_session(
+        self, client, ai_model_data, mock_llm_api_key, mock_guardrails_pass, mock_bedrock_client
+    ):
         """Test that endpoint creates a Session record."""
         # Mock Bedrock response.
         mock_bedrock_client.converse.return_value = {
@@ -156,7 +181,9 @@ class TestFilterSearch:
         assert "lookup_location" in session.tools
         assert "lookup_recipient" in session.tools
 
-    def test_endpoint_returns_ndjson_stream(self, client, ai_model_data, mock_llm_api_key, mock_bedrock_client):
+    def test_endpoint_returns_ndjson_stream(
+        self, client, ai_model_data, mock_llm_api_key, mock_guardrails_pass, mock_bedrock_client
+    ):
         """Test that endpoint returns properly formatted NDJSON stream."""
         # Mock Bedrock response.
         mock_bedrock_client.converse.return_value = {
@@ -184,7 +211,9 @@ class TestFilterSearch:
         assert first_event["type"] == "search_start"
         uuid.UUID(first_event["search_id"])
 
-    def test_endpoint_with_tool_execution(self, client, ai_model_data, mock_llm_api_key, mock_bedrock_client):
+    def test_endpoint_with_tool_execution(
+        self, client, ai_model_data, mock_llm_api_key, mock_guardrails_pass, mock_bedrock_client
+    ):
         """Test endpoint with tool execution in the response."""
         # Mock Bedrock to return tool_use.
         mock_bedrock_client.converse.side_effect = [
@@ -240,7 +269,7 @@ class TestFilterSearch:
             assert "tool_use_id" in tool_event
 
     @pytest.mark.django_db
-    def test_endpoint_handles_missing_ai_model(self, client, mock_llm_api_key):
+    def test_endpoint_handles_missing_ai_model(self, client, mock_llm_api_key, mock_guardrails_pass):
         """Test that endpoint handles missing AI model gracefully."""
         # Don't create ai_model_data fixture.
         resp = client.post(self.url, content_type="application/json", data=json.dumps({"query": "test query"}))
@@ -258,7 +287,7 @@ class TestFilterSearch:
 
     @pytest.mark.django_db
     def test_endpoint_uses_active_filter_search_assistant(
-        self, client, mock_llm_api_key, mock_bedrock_client, system_prompt_data
+        self, client, mock_llm_api_key, mock_guardrails_pass, mock_bedrock_client, system_prompt_data
     ):
         """Test that endpoint uses the active filter-search Assistant configuration."""
         custom_model = baker.make(
@@ -302,7 +331,9 @@ class TestFilterSearch:
         assert mock_bedrock_client.converse.call_args.kwargs["inferenceConfig"] == {"temperature": 0.4}
         assert mock_bedrock_client.converse.call_args.kwargs["system"] == [{"text": system_prompt_data.text}]
 
-    def test_endpoint_handles_bedrock_error(self, client, ai_model_data, mock_llm_api_key, mock_bedrock_client):
+    def test_endpoint_handles_bedrock_error(
+        self, client, ai_model_data, mock_llm_api_key, mock_guardrails_pass, mock_bedrock_client
+    ):
         """Test that endpoint handles Bedrock API errors gracefully."""
         # Mock Bedrock to raise an error.
         mock_bedrock_client.converse.side_effect = Exception("Bedrock API error")
@@ -326,7 +357,7 @@ class TestFilterSearch:
         assert "error" in error_event["message"].lower()
 
     def test_endpoint_validates_query_length_boundaries(
-        self, client, ai_model_data, mock_llm_api_key, mock_bedrock_client
+        self, client, ai_model_data, mock_llm_api_key, mock_guardrails_pass, mock_bedrock_client
     ):
         """Test query length validation at boundaries."""
         # Mock Bedrock response.
@@ -348,7 +379,7 @@ class TestFilterSearch:
 
     @pytest.mark.django_db
     def test_endpoint_search_id_consistency(
-        self, client, ai_model_data, mock_llm_api_key, mock_bedrock_client, system_prompt_data
+        self, client, ai_model_data, mock_llm_api_key, mock_guardrails_pass, mock_bedrock_client, system_prompt_data
     ):
         """Test that all events in a stream share the same search_id (as strings)."""
         # Mock Bedrock with tool use.
@@ -397,3 +428,130 @@ class TestFilterSearch:
 
         session = Session.objects.latest("started_at")
         assert parsed_ids[0] == session.id
+
+    @pytest.mark.django_db
+    def test_guardrails_blocks_inappropriate_content(self, client, ai_model_data, mock_llm_api_key):
+        """Test that guardrails blocks inappropriate content and returns 400."""
+        with patch("usaspending_api.llm.v2.views.filter_search.BedrockGuardrailService") as mock_service:
+            mock_instance = Mock()
+            mock_service.return_value = mock_instance
+
+            # Create a mock assessment that intervenes (blocks)
+            mock_assessment = GuardrailAssessment(
+                action="GUARDRAIL_INTERVENED",
+                action_reason="SENSITIVE_INFORMATION",
+                assessments=[
+                    {
+                        "sensitiveInformationPolicy": {
+                            "piiEntities": [{"type": "EMAIL", "match": "test@example.com", "action": "BLOCKED"}]
+                        }
+                    }
+                ],
+                usage={},
+                outputs=[],
+                guardrail_coverage={},
+            )
+            mock_instance.assess_input.return_value = mock_assessment
+
+            resp = client.post(
+                self.url,
+                content_type="application/json",
+                data=json.dumps({"query": "Show contracts for test@example.com"}),
+            )
+
+            assert resp.status_code == status.HTTP_400_BAD_REQUEST
+            assert resp.json() == {"detail": "The submitted request cannot be processed."}
+
+            # Verify no session was created
+            assert Session.objects.count() == 0
+
+    @pytest.mark.django_db
+    def test_guardrails_configuration_error_returns_503(self, client, ai_model_data, mock_llm_api_key):
+        """Test that guardrails configuration errors return 503."""
+        with patch("usaspending_api.llm.v2.views.filter_search.BedrockGuardrailService") as mock_service:
+            mock_instance = Mock()
+            mock_service.return_value = mock_instance
+
+            # Simulate configuration error
+            from usaspending_api.llm.services.guardrails import GuardrailConfigurationError
+
+            mock_instance.assess_input.side_effect = GuardrailConfigurationError(
+                "Bedrock Guardrails configuration is incomplete."
+            )
+
+            resp = client.post(
+                self.url,
+                content_type="application/json",
+                data=json.dumps({"query": "test query"}),
+            )
+
+            assert resp.status_code == status.HTTP_503_SERVICE_UNAVAILABLE
+            assert resp.json() == {"detail": "The filter-search service is temporarily unavailable."}
+
+            # Verify no session was created
+            assert Session.objects.count() == 0
+
+    @pytest.mark.django_db
+    def test_guardrails_service_unavailable_returns_503(self, client, ai_model_data, mock_llm_api_key):
+        """Test that guardrails service unavailability returns 503."""
+        with patch("usaspending_api.llm.v2.views.filter_search.BedrockGuardrailService") as mock_service:
+            mock_instance = Mock()
+            mock_service.return_value = mock_instance
+
+            # Simulate service unavailable error
+            from usaspending_api.llm.services.guardrails import GuardrailServiceUnavailable
+
+            mock_instance.assess_input.side_effect = GuardrailServiceUnavailable("Unable to moderate request content.")
+
+            resp = client.post(
+                self.url,
+                content_type="application/json",
+                data=json.dumps({"query": "test query"}),
+            )
+
+            assert resp.status_code == status.HTTP_503_SERVICE_UNAVAILABLE
+            assert resp.json() == {"detail": "The filter-search service is temporarily unavailable."}
+
+            # Verify no session was created
+            assert Session.objects.count() == 0
+
+    @pytest.mark.django_db
+    def test_guardrails_passes_valid_content(self, client, ai_model_data, mock_llm_api_key, mock_bedrock_client):
+        """Test that guardrails allows valid content through."""
+        with patch("usaspending_api.llm.v2.views.filter_search.BedrockGuardrailService") as mock_service:
+            mock_instance = Mock()
+            mock_service.return_value = mock_instance
+
+            # Create a mock assessment that passes
+            mock_assessment = GuardrailAssessment(
+                action="NONE",
+                action_reason=None,
+                assessments=[],
+                usage={"contentPolicyUnits": 1},
+                outputs=[{"text": "Show me defense contracts in California"}],
+                guardrail_coverage={"textCharacters": {"guarded": 42, "total": 42}},
+            )
+            mock_instance.assess_input.return_value = mock_assessment
+
+            # Mock Bedrock response
+            mock_bedrock_client.converse.return_value = {
+                "output": {"message": {"role": "assistant", "content": [{"text": "Results"}]}},
+                "stopReason": "end_turn",
+                "usage": {"inputTokens": 10, "outputTokens": 20},
+                "metrics": {"latencyMs": 100},
+            }
+
+            resp = client.post(
+                self.url,
+                content_type="application/json",
+                data=json.dumps({"query": "Show me defense contracts in California"}),
+            )
+
+            assert resp.status_code == status.HTTP_200_OK
+            assert resp["Content-Type"] == "application/x-ndjson"
+
+            # Verify session was created
+            assert Session.objects.count() == 1
+
+            # Verify guardrails was called
+            mock_instance.assess_input.assert_called_once_with("Show me defense contracts in California")
