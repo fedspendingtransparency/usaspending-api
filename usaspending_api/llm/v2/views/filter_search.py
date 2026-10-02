@@ -1,14 +1,21 @@
 import logging
-from typing import Generator
+from typing import Any, Generator
 
 from django.http import StreamingHttpResponse
 from django.utils import timezone
+from rest_framework import status
 from rest_framework.request import Request
+from rest_framework.response import Response
 
 from usaspending_api.common.api_request_utils import LLMAPIKeyHandler
 from usaspending_api.common.validator.tinyshield import TinyShield
 from usaspending_api.llm.assistants.filter_search import FilterSearchAssistant
 from usaspending_api.llm.models.db_models import Assistant, Session
+from usaspending_api.llm.services.guardrails import (
+    BedrockGuardrailService,
+    GuardrailConfigurationError,
+    GuardrailServiceUnavailable,
+)
 from usaspending_api.llm.tools.execute_filter import execute_filter_tool
 from usaspending_api.llm.tools.lookup_agency import lookup_agency_tool
 from usaspending_api.llm.tools.lookup_code import lookup_code_tool
@@ -17,6 +24,50 @@ from usaspending_api.llm.tools.lookup_recipient import lookup_recipient_tool
 from usaspending_api.llm.v2.views.llm_base import FilterSearchEvent, LLMBase
 
 logger = logging.getLogger(__name__)
+
+
+def _run_query_through_guardrails(query: Any) -> Response | None:
+    """
+    Run the query through Bedrock Guardrails to check for violations.
+
+    Args:
+        query: The query to check against Guardrails.
+
+    Returns:
+        Response | None: A response if the query is blocked; otherwise None.
+    """
+    guardrail_service = BedrockGuardrailService()
+    try:
+        # Assess user query.
+        guardrail_assessment = guardrail_service.assess_input(query)
+    # If Guardrails is misconfigured, return a 503.
+    except GuardrailConfigurationError:
+        logger.exception("Filter-search request could not be moderated because Guardrails is misconfigured.")
+        return Response(
+            {"detail": "The filter-search service is temporarily unavailable."},
+            status=status.HTTP_503_SERVICE_UNAVAILABLE,
+        )
+    # If Guardrails is unavailable or unreachable (e.g., misconfigured variables or AWS issues), return a 503.
+    except GuardrailServiceUnavailable:
+        logger.exception("Filter-search request could not be moderated because Guardrails is unavailable.")
+        return Response(
+            {"detail": "The filter-search service is temporarily unavailable."},
+            status=status.HTTP_503_SERVICE_UNAVAILABLE,
+        )
+
+    # If Guardrails intervenes, return a 400.
+    if guardrail_assessment.intervened:
+        logger.warning(
+            "Filter-search request rejected by Bedrock Guardrails.",
+            extra={
+                "guardrail_action_reason": guardrail_assessment.action_reason,
+                "guardrail_assessments": guardrail_assessment.assessments,
+            },
+        )
+        return Response(
+            {"detail": "The submitted request cannot be processed."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
 
 
 class FilterSearchViewSet(LLMBase):
@@ -48,6 +99,12 @@ class FilterSearchViewSet(LLMBase):
             # Validate request and retrieve the active filter-search Assistant.
             validated_request_data = TinyShield(models).block(request.data)
             query = validated_request_data["query"]
+
+            # Check query against Bedrock Guardrails.
+            guardrail_response = _run_query_through_guardrails(query)
+            if guardrail_response is not None:
+                return guardrail_response
+
             try:
                 assistant_config = Assistant.objects.get(name="filter-search", is_active=True)
             except Assistant.DoesNotExist as error:
