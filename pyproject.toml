@@ -12,7 +12,7 @@ description = """
 readme = 'README.md'
 license = "CC0-1.0"
 license-files = ["LICENSE"]
-requires-python = '== 3.10.12'
+requires-python = '== 3.12.11'
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Programming Language :: Python",
@@ -42,8 +42,6 @@ dependencies = [
     "drf-api-tracking==1.8.4",
     "drf-extensions==0.7.*",
     "duckdb==1.4.3",
-    "elasticsearch-dsl==7.4.*",
-    "elasticsearch==7.10.*",
     "et-xmlfile==1.1.0",
     "filelock==3.13.1",
     "fiscalyear==0.4.0",
@@ -63,8 +61,8 @@ dependencies = [
     "pyyaml>=6.0.3",
     "requests",
     "retrying==1.3.4",
-    "sqlparse==0.5.*",
-    "urllib3==1.26.*",
+    "sqlparse==0.6.*",
+    "urllib3==2.8.*",
     "xlrd3==1.1.0",
     # Opentelemetry Dependencies
     "opentelemetry-api==1.28.2",
@@ -100,12 +98,11 @@ dependencies = [
     "opentelemetry-semantic-conventions==0.49b2",
     "opentelemetry-util-http==0.49b2",
     # The above packages are listed and pinned to avoid using the 'opentelemetry-bootstrap -a install' command
-
 ]
 
 [project.optional-dependencies]
 dev = [
-    "click==8.1.7",
+    "click==8.5.*",
     "docker==7.1.0",
     "dredd-hooks==0.2.0",
     "importlib-metadata==8.5.0",
@@ -132,7 +129,7 @@ server = [
     "supervisor==4.1.0",
     "uwsgi==2.0.23",
 ]
-ansible = ["ansible==2.9.*"]
+ansible = ["ansible==14.4.*"]
 awscli = ["awscli==1.34.*"]
 
 [project.urls]
@@ -242,3 +239,7 @@ pycodestyle.max-line-length = 120
 "**/disaster/management/sql/spark/**.py" = [
     "E501", # Line too long
 ]
+
+[tool.hatch.build.targets.wheel]
+packages = ["usaspending_api"]
+

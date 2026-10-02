@@ -21,9 +21,8 @@ LOCAL_BASIC_EXTRA_CONF = {
     # process is started from, even if started under the hood of a Py4J JavaGateway). With a "standalone" (not
     # YARN or Mesos or Kubernetes) cluster manager, only client mode is supported.
     "spark.submit.deployMode": "client",
-    # Default of 1g (1GiB) for Driver. Increase here if the Java process is crashing with memory errors
-    "spark.driver.memory": "1g",
-    "spark.executor.memory": "1g",
+    "spark.driver.memory": "2g",
+    "spark.executor.memory": "2g",
     "spark.ui.enabled": "false",  # Does the same as setting SPARK_TESTING=true env var
 }
 
@@ -37,11 +36,11 @@ LOCAL_EXTENDED_EXTRA_CONF = {
     "spark.sql.warehouse.dir": getattr(CONFIG, "SPARK_SQL_WAREHOUSE_DIR", ""),
 }
 
-if getattr(CONFIG, "MINIO_ACCESS_KEY", False) and getattr(CONFIG.MINIO_ACCESS_KEY, "get_secret_value", False):
-    LOCAL_EXTENDED_EXTRA_CONF["spark.hadoop.fs.s3a.access.key"] = CONFIG.MINIO_ACCESS_KEY.get_secret_value()
+if getattr(CONFIG, "RUSTFS_ACCESS_KEY", False) and getattr(CONFIG.RUSTFS_ACCESS_KEY, "get_secret_value", False):
+    LOCAL_EXTENDED_EXTRA_CONF["spark.hadoop.fs.s3a.access.key"] = CONFIG.RUSTFS_ACCESS_KEY.get_secret_value()
 
-if getattr(CONFIG, "MINIO_SECRET_KEY", False):
-    LOCAL_EXTENDED_EXTRA_CONF["spark.hadoop.fs.s3a.secret.key"] = CONFIG.MINIO_SECRET_KEY.get_secret_value()
+if getattr(CONFIG, "RUSTFS_SECRET_KEY", False):
+    LOCAL_EXTENDED_EXTRA_CONF["spark.hadoop.fs.s3a.secret.key"] = CONFIG.RUSTFS_SECRET_KEY.get_secret_value()
 
 if getattr(CONFIG, "HIVE_METASTORE_DERBY_DB_DIR", False):
     LOCAL_EXTENDED_EXTRA_CONF["spark.hadoop.javax.jdo.option.ConnectionURL"] = (

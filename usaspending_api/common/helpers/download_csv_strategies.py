@@ -22,6 +22,7 @@ from usaspending_api.config import CONFIG
 from usaspending_api.download.filestreaming.download_generation import (
     execute_psql,
     generate_export_query_temp_file,
+    retrieve_db_string,
     split_and_zip_data_files,
     wait_for_process,
 )
@@ -106,7 +107,7 @@ class PostgresToCSVStrategy(AbstractToCSVStrategy):
             temp_file, temp_file_path = generate_export_query_temp_file(export_query, None, working_dir_path)
             # Create a separate process to run the PSQL command; wait
             psql_process = multiprocessing.Process(
-                target=execute_psql, args=(temp_file_path, temp_data_file_name, None)
+                target=execute_psql, args=(temp_file_path, temp_data_file_name, None, retrieve_db_string())
             )
             psql_process.start()
             wait_for_process(psql_process, start_time, None)
@@ -295,15 +296,11 @@ class SparkToCSVStrategy(AbstractToCSVStrategy):
             files were moved to from s3.
         """
         start_time = time.time()
-        self._logger.info(
-            "Moving data files from S3 to local machine using threading..."
-        )
+        self._logger.info("Moving data files from S3 to local machine using threading...")
         self._logger.info(f"Max threads: {max_threads}")
         local_csv_file_paths = []
 
-        with ThreadPoolExecutor(
-            max_workers=max_threads, thread_name_prefix="spark-downloader-worker"
-        ) as executor:
+        with ThreadPoolExecutor(max_workers=max_threads, thread_name_prefix="spark-downloader-worker") as executor:
             futures = [
                 executor.submit(
                     self._move_data_csv_s3_to_local,
@@ -319,9 +316,7 @@ class SparkToCSVStrategy(AbstractToCSVStrategy):
             for future in as_completed(futures):
                 local_csv_file_paths.append(future.result())
 
-        self._logger.info(
-            f"Copied data files from S3 to local machine in {(time.time() - start_time):3f}s"
-        )
+        self._logger.info(f"Copied data files from S3 to local machine in {(time.time() - start_time):3f}s")
         self._logger.info(f"Local CSV file paths: {local_csv_file_paths}")
         return local_csv_file_paths
 

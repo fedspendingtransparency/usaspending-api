@@ -25,7 +25,7 @@ endif
 # default ENV_CODE to lcl if not set
 ENV_CODE ?= lcl
 # default version if not set in .env or an env var
-PYTHON_VERSION ?= 3.10.12
+PYTHON_VERSION ?= 3.12.11
 venv_name := usaspending-api
 docker_compose_file := docker-compose.yml
 dockerfile_for_backend := Dockerfile
@@ -127,7 +127,7 @@ docker-compose-up-usaspending: ## Deploy containerized version of this app on th
 	docker compose --profile usaspending --project-directory . --file ${docker_compose_file} up ${args}
 
 .PHONY: docker-compose-up-s3
-docker-compose-up-s3: ## Deploy minio container on the local machine using docker compose, which acts as a look-alike AWS S3 service
+docker-compose-up-s3: ## Deploy RustFS container on the local machine using docker compose, which acts as a look-alike AWS S3 service
 	# NOTE: [See NOTE in docker compose rule about .env file]
 	echo "docker compose --profile s3 --project-directory . --file ${docker_compose_file} up ${args}"
 	docker compose --profile s3 --project-directory . --file ${docker_compose_file} up ${args}
