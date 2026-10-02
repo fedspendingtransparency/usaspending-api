@@ -14,11 +14,13 @@ logger = logging.getLogger(__name__)
 
 class GuardrailConfigurationError(Exception):
     """Raised when the Guardrails integration is not configured correctly."""
+
     pass
 
 
 class GuardrailServiceUnavailable(Exception):
     """Raised when request moderation cannot be completed safely."""
+
     pass
 
 
