@@ -39,7 +39,12 @@ def test_parse_json_cases_builds_expected_case(tmp_path: Path):
         "lookup_recipient",
         "execute_filter",
     )
-    assert case.expected_output == SAMPLE_CASE["expected_output"]
+    # The expected_output is normalized through the Filters model, so it includes all fields with defaults
+    assert case.expected_output["timePeriodType"] == "fy"
+    assert case.expected_output["timePeriodFY"] == ["2025"]
+    assert case.expected_output["selectedRecipients"] == ["CLARK CONSTRUCTION"]
+    # Verify keyword was transformed to dict
+    assert case.expected_output["keyword"] == {}
     assert case.metadata == {
         "approved": True,
         "tags": ["multi_filter", "temporal"],
