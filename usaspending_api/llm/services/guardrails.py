@@ -14,10 +14,12 @@ logger = logging.getLogger(__name__)
 
 class GuardrailConfigurationError(Exception):
     """Raised when the Guardrails integration is not configured correctly."""
+    pass
 
 
 class GuardrailServiceUnavailable(Exception):
     """Raised when request moderation cannot be completed safely."""
+    pass
 
 
 @dataclass(frozen=True)
@@ -25,9 +27,9 @@ class GuardrailAssessment:
     action: str
     action_reason: str | None
     assessments: list[dict[str, Any]]
-    coverage: dict[str, Any]
     usage: dict[str, Any]
-    latency_ms: int | None
+    outputs: list[dict[str, Any]]
+    guardrail_coverage: dict[str, Any]
 
     @property
     def intervened(self) -> bool:
@@ -39,22 +41,27 @@ class BedrockGuardrailService:
     Applies the configured Amazon Bedrock Guardrail to user-provided request text.
 
     Guardrail ID is a static deployment configuration.
-    Guardrail Version is read from Secrets Manager and cached briefly so a published version can be changed without
+    Guardrail Tag is read from Secrets Manager and cached briefly so a published tag can be changed without
     rebuilding/redeploying the application.
     """
 
-    _version_lock = threading.Lock()
-    _version_cache: str | None = None
-    _version_cache_expires_at: float = 0.0
+    _tag_cache: str | None = None
+    _tag_cache_expires_at: float = 0.0
+    # Use a lock to ensure thread-safe access to the cache.
+    _tag_lock = threading.Lock()
 
     def __init__(
         self,
         bedrock_runtime_client: Any | None = None,
         secrets_manager_client: Any | None = None,
     ) -> None:
+        # Guardrail Identifier (ID or ARN).
         self.guardrail_id = settings.AWS_BEDROCK_GUARDRAIL_ID
-        self.version_secret_arn = settings.AWS_BEDROCK_GUARDRAIL_VERSION_SECRET_ARN
-        self.version_cache_seconds = settings.AWS_BEDROCK_GUARDRAIL_VERSION_CACHE_SECONDS
+        # Secrets Manager ARN for the Guardrail tag.
+        self.tag_secret_arn = settings.AWS_BEDROCK_GUARDRAIL_TAG_SECRETS_MGR_ARN
+        # Cache duration (default: 5 minutes).
+        self.tag_cache_seconds = settings.AWS_BEDROCK_GUARDRAIL_TAG_CACHE_SECONDS
+        # AWS Region (default: same as USAspending AWS Region).
         self.region_name = settings.AWS_BEDROCK_GUARDRAIL_AWS_REGION
 
         self.bedrock_runtime_client = bedrock_runtime_client or boto3.client(
@@ -67,25 +74,27 @@ class BedrockGuardrailService:
         )
 
     def assess_input(self, text: str) -> GuardrailAssessment:
-        """
-        Submit input text for moderation by Guardrails.
-
-        The source is "INPUT" because this endpoint is moderating user input before it is persisted or sent downstream.
-        """
+        """Submit input text for moderation by Guardrails."""
         if not isinstance(text, str) or not text.strip():
             raise ValueError("Guardrails input text must be a non-empty string.")
 
         self._validate_configuration()
-        guardrail_version = self._get_guardrail_version()
+        guardrail_tag = self._get_guardrail_tag()
 
         try:
+            # Docs: https://docs.aws.amazon.com/boto3/latest/reference/services/bedrock-runtime/client/apply_guardrail.html
             response = self.bedrock_runtime_client.apply_guardrail(
+                # Guardrail ID or ARN.
                 guardrailIdentifier=self.guardrail_id,
-                guardrailVersion=guardrail_version,
+                # Guardrail version number or tag.
+                guardrailVersion=guardrail_tag,
+                # Source of the content (INPUT or OUTPUT).
                 source="INPUT",
+                # Content to moderate (can pass multiple content blocks).
                 content=[
                     {
                         "text": {
+                            # The query string to evaluate that was input by a user.
                             "text": text,
                         }
                     }
@@ -96,7 +105,7 @@ class BedrockGuardrailService:
                 "Unable to apply Bedrock Guardrail to filter-search request.",
                 extra={
                     "guardrail_id": self.guardrail_id,
-                    "guardrail_version": self._get_guardrail_version(),
+                    "guardrail_tag": self._get_guardrail_tag(),
                     "error_type": type(exc).__name__,
                 },
             )
@@ -106,22 +115,21 @@ class BedrockGuardrailService:
             action=response.get("action"),
             action_reason=response.get("actionReason"),
             assessments=response.get("assessments", []),
-            coverage=response.get("guardrailCoverage", {}),
             usage=response.get("usage", {}),
-            latency_ms=response.get("latencyMs"),
+            outputs=response.get("outputs", []),
+            guardrail_coverage=response.get("guardrailCoverage", {}),
         )
 
         logger.info(
             "Bedrock Guardrail assessed filter-search request.",
             extra={
                 "guardrail_id": self.guardrail_id,
-                "guardrail_version": guardrail_version,
+                "guardrail_tag": guardrail_tag,
                 "guardrail_action": assessment.action,
                 "guardrail_action_reason": assessment.action_reason,
                 "guardrail_assessments": assessment.assessments,
-                "guardrail_coverage": assessment.coverage,
                 "guardrail_usage": assessment.usage,
-                "guardrail_latency_ms": assessment.latency_ms,
+                "guardrail_coverage": assessment.guardrail_coverage,
             },
         )
 
@@ -132,7 +140,7 @@ class BedrockGuardrailService:
             setting_name
             for setting_name, value in (
                 ("AWS_BEDROCK_GUARDRAIL_ID", self.guardrail_id),
-                ("AWS_BEDROCK_GUARDRAIL_VERSION_SECRET_ARN", self.version_secret_arn),
+                ("AWS_BEDROCK_GUARDRAIL_TAG_SECRETS_MGR_ARN", self.tag_secret_arn),
             )
             if not value
         ]
@@ -144,54 +152,55 @@ class BedrockGuardrailService:
             )
             raise GuardrailConfigurationError("Bedrock Guardrails configuration is incomplete.")
 
-    def _get_guardrail_version(self) -> str:
+    def _get_guardrail_tag(self) -> str:
         now = time.monotonic()
 
-        if self.__class__._cached_version is not None and now < self.__class__._version_cache_expires_at:
-            return self.__class__._cached_version
+        if self.__class__._tag_cache is not None and now < self.__class__._tag_cache_expires_at:
+            return self.__class__._tag_cache
 
-        with self.__class__._version_lock:
+        with self.__class__._tag_lock:
             now = time.monotonic()
 
-            if self.__class__._cached_version is not None and now < self.__class__._version_cache_expires_at:
-                return self.__class__._cached_version
+            if self.__class__._tag_cache is not None and now < self.__class__._tag_cache_expires_at:
+                return self.__class__._tag_cache
 
             try:
-                response = self.secrets_manager_client.get_secret_value(SecretId=self.version_secret_arn)
+                # Docs: https://docs.aws.amazon.com/boto3/latest/reference/services/secretsmanager/client/get_secret_value.html
+                response = self.secrets_manager_client.get_secret_value(SecretId=self.tag_secret_arn)
                 secret_string = response["SecretString"]
                 secret_value = json.loads(secret_string)
-                version = str(secret_value["version"]).strip()
+                tag = str(secret_value["tag"]).strip()
             except (BotoCoreError, ClientError, KeyError, TypeError, ValueError, json.JSONDecodeError) as exc:
                 logger.exception(
-                    "Unable to retreive Bedrock Guardrail version.",
+                    "Unable to retreive Bedrock Guardrail tag.",
                     extra={
                         "gaurdrail_id": self.guardrail_id,
-                        "version_secret_arn": self.version_secret_arn,
+                        "tag_secret_arn": self.tag_secret_arn,
                         "error_type": type(exc).__name__,
                     },
                 )
-                raise GuardrailConfigurationError("Unable to retrieve Bedrock Guardrail version.") from exc
+                raise GuardrailConfigurationError("Unable to retrieve Bedrock Guardrail tag.") from exc
 
-            if not version:
+            if not tag:
                 logger.error(
-                    "Bedrock Guardrail version secret contains an empty version.",
+                    "Bedrock Guardrail tag secret contains an empty tag.",
                     extra={
                         "guardrail_id": self.guardrail_id,
-                        "version_secret_arn": self.version_secret_arn,
+                        "tag_secret_arn": self.tag_secret_arn,
                     },
                 )
-                raise GuardrailConfigurationError("Bedrock Guardrail version secret contains an empty version.")
+                raise GuardrailConfigurationError("Bedrock Guardrail tag secret contains an empty tag.")
 
-            self.__class__._cached_version = version
-            self.__class__._version_cache_expires_at = now + self.version_cache_seconds
+            self.__class__._tag_cache = tag
+            self.__class__._tag_cache_expires_at = now + self.tag_cache_seconds
 
             logger.info(
-                "Refreshed Bedrock Guardrail version from Secrets Manager.",
+                "Refreshed Bedrock Guardrail tag from Secrets Manager.",
                 extra={
                     "guardrail_id": self.guardrail_id,
-                    "guardrail_version": version,
-                    "version_cache_seconds": self.version_cache_seconds,
+                    "guardrail_tag": tag,
+                    "tag_cache_seconds": self.tag_cache_seconds,
                 },
             )
 
-            return version
+            return tag

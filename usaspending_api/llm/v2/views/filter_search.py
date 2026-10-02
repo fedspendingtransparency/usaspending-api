@@ -26,22 +26,6 @@ from usaspending_api.llm.v2.views.llm_base import FilterSearchEvent, LLMBase
 logger = logging.getLogger(__name__)
 
 
-def _filter_search_guardrail_text(validated_request: Any) -> str:
-    """
-    Build the complete user-controlled filter-search content submitted to Guardrails.
-
-    Args:
-        validated_request: The validated request object (Pydantic model or dict-like).
-
-    Returns:
-        str: JSON string of the request data for Guardrail processing.
-    """
-    if hasattr(validated_request, "model_dump_json"):
-        return validated_request.model_dump_json(exclude_none=True)
-
-    return validated_request.json(exclude_none=True)
-
-
 def _run_query_through_guardrails(query: Any) -> Response | None:
     """
     Run the query through Bedrock Guardrails to check for violations.
@@ -50,17 +34,20 @@ def _run_query_through_guardrails(query: Any) -> Response | None:
         query: The query to check against Guardrails.
 
     Returns:
-        Response | None: A response if the query is blocked; None otherwise.
+        Response | None: A response if the query is blocked; otherwise None.
     """
     guardrail_service = BedrockGuardrailService()
     try:
-        guardrail_assessment = guardrail_service.assess_input(_filter_search_guardrail_text(query))
+        # Assess user query.
+        guardrail_assessment = guardrail_service.assess_input(query)
+    # If Guardrails is misconfigured, return a 503.
     except GuardrailConfigurationError:
         logger.exception("Filter-search request could not be moderated because Guardrails is misconfigured.")
         return Response(
             {"detail": "The filter-search service is temporarily unavailable."},
             status=status.HTTP_503_SERVICE_UNAVAILABLE,
         )
+    # If Guardrails is unavailable or unreachable (e.g., misconfigured variables or AWS issues), return a 503.
     except GuardrailServiceUnavailable:
         logger.exception("Filter-search request could not be moderated because Guardrails is unavailable.")
         return Response(
@@ -68,9 +55,10 @@ def _run_query_through_guardrails(query: Any) -> Response | None:
             status=status.HTTP_503_SERVICE_UNAVAILABLE,
         )
 
+    # If Guardrails intervenes, return a 400.
     if guardrail_assessment.intervened:
         logger.warning(
-            "Filter-search reqeust rejected by Bedrock Guardrails.",
+            "Filter-search request rejected by Bedrock Guardrails.",
             extra={
                 "guardrail_action_reason": guardrail_assessment.action_reason,
                 "guardrail_assessments": guardrail_assessment.assessments,

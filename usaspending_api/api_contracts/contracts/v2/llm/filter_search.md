@@ -79,7 +79,7 @@ This endpoint accepts a natural language query and returns a streaming response 
  
 + Response 503 (application/json)
  
-    The request could not be moderated because the configured Amazon Bedrock Guardrail or its version configuration was unavailable. The endpoint fails closed, so unmoderated content is not processed or stored.
+    The request could not be moderated because the configured Amazon Bedrock Guardrail or its tag configuration was unavailable. The endpoint fails closed, so unmoderated content is not processed or stored.
  
     + Attributes (object)
         + `detail` (required, string)
