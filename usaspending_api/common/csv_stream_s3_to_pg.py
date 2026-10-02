@@ -118,8 +118,10 @@ def copy_csv_from_s3_to_pg(  # noqa: PLR0913
     ensure_logging(logging_config_dict=LOGGING, formatter_class=AbbrevNamespaceUTCFormatter, logger_to_use=logger)
     try:
         with psycopg.connect(db_dsn) as connection:
-            connection.autocommit = True
-            with connection.cursor() as cursor:
+            # This must be set to False so that all records are committed once complete to avoid issues with
+            # Spark tasks failing, retrying, and then creating a duplicate record.
+            connection.autocommit = False
+            with connection.transaction(), connection.cursor() as cursor:
                 if work_mem_override:
                     cursor.execute(sql.SQL("SET work_mem TO {}").format(sql.Literal(work_mem_override)))
                 s3_client = _get_boto3_s3_client()
@@ -161,8 +163,10 @@ def copy_csvs_from_s3_to_pg(  # noqa: PLR0913
     logger.info(f"{partition_prefix}Starting write of a batch of {batch_size} on partition {batch_num}")
     try:
         with psycopg.connect(db_dsn) as connection:
-            connection.autocommit = True
-            with connection.cursor() as cursor:
+            # This must be set to False so that all records are committed once complete to avoid issues with
+            # Spark tasks failing, retrying, and then creating a duplicate record.
+            connection.autocommit = False
+            with connection.transaction(), connection.cursor() as cursor:
                 if work_mem_override:
                     cursor.execute(sql.SQL("SET work_mem TO {}").format(sql.Literal(work_mem_override)))
                 s3_client = _get_boto3_s3_client()
