@@ -80,16 +80,9 @@ def parse_expected_output(value: Any, case_id: str) -> dict[str, Any]:
     if not all(isinstance(key, str) and key for key in value):
         raise DatasetError(f"Case '{case_id}' expected_output keys must be non-empty strings.")
 
-    # Pre-process selectedAwardIDs if it's a list (convert to dict before Filters validation).
-    # The LLM provides it as a list, but the API expects a dict.
-    if "selectedAwardIDs" in value and isinstance(value["selectedAwardIDs"], list):
-        value = {**value, "selectedAwardIDs": {v: v for v in value["selectedAwardIDs"]}}
-
     # Pass through Filters model to normalize and include all fields with defaults.
     result = Filters(**value).model_dump(exclude_none=True)
 
-    # Post-process keyword to transform list of strings to dictionary.
-    # This is required by the API, but the LLM has trouble with this unusual data structure.
     if "keyword" in result:
         result["keyword"] = {v: v for v in result["keyword"]}
 
