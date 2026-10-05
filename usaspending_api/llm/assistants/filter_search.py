@@ -1,12 +1,11 @@
 import logging
-import os
 import time
 from functools import cached_property
 from typing import AsyncGenerator
 
-import aioboto3
 from django.db.models import Sum
 
+from usaspending_api.common.helpers.aws_helpers import async_aws_client
 from usaspending_api.llm.models.db_models import Assistant, Message, Session, ToolUse
 from usaspending_api.llm.models.py_models import AITool
 
@@ -123,11 +122,7 @@ class FilterSearchAssistant:
         self.message_order += 1
         self.messages.append({"role": "user", "content": [{"text": query}]})
 
-        session = aioboto3.Session()
-        async with session.client(
-            service_name="bedrock-runtime",
-            region_name=os.environ.get("AWS_REGION", "us-gov-west-1"),
-        ) as client:
+        async with async_aws_client("bedrock-runtime") as client:
             response = await client.converse(
                 modelId=self.assistant.ai_model.model_id,
                 messages=self.messages,

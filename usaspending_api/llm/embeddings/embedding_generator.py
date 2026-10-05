@@ -1,11 +1,10 @@
 import json
 import logging
-import os
 
-import aioboto3
 import boto3
 from botocore.config import Config
 
+from usaspending_api.common.helpers.aws_helpers import async_aws_client
 from usaspending_api.llm.models.db_models import AIModel
 
 logger = logging.getLogger(__name__)
@@ -65,14 +64,9 @@ class EmbeddingGenerator:
             "normalize": self.normalize,
         }
 
-        session = aioboto3.Session()
         config = Config(retries={"max_attempts": 3, "mode": "adaptive"})
         try:
-            async with session.client(
-                service_name="bedrock-runtime",
-                region_name=os.environ.get("AWS_REGION", "us-gov-west-1"),
-                config=config,
-            ) as client:
+            async with async_aws_client("bedrock-runtime", config=config) as client:
                 response = await client.invoke_model(
                     modelId=self.model.model_id,
                     body=json.dumps(request_body),

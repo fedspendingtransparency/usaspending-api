@@ -88,7 +88,7 @@ def mock_bedrock_client():
 
 @pytest.fixture
 def assistant(mock_assistant, mock_tool, mock_search_tool, mock_session, mock_bedrock_client):
-    with patch("usaspending_api.llm.assistants.filter_search.aioboto3.Session") as mock_session_cls:
+    with patch("usaspending_api.common.helpers.aws_helpers.aioboto3.Session") as mock_session_cls:
         cm = AsyncMock()
         cm.__aenter__.return_value = mock_bedrock_client
         mock_session_cls.return_value.client.return_value = cm
@@ -240,7 +240,7 @@ class TestFilterSearchAssistant:
         mock_bedrock_client,
     ):
         """Test search that completes with execute_filter tool."""
-        with patch("usaspending_api.llm.assistants.filter_search.aioboto3.Session") as mock_session_cls:
+        with patch("usaspending_api.common.helpers.aws_helpers.aioboto3.Session") as mock_session_cls:
             cm = AsyncMock()
             cm.__aenter__.return_value = mock_bedrock_client
             mock_session_cls.return_value.client.return_value = cm
@@ -386,7 +386,7 @@ class TestFilterSearchAssistant:
         mock_bedrock_client,
     ):
         """Test handling of tool errors."""
-        with patch("usaspending_api.llm.assistants.filter_search.aioboto3.Session") as mock_session_cls:
+        with patch("usaspending_api.common.helpers.aws_helpers.aioboto3.Session") as mock_session_cls:
             cm = AsyncMock()
             cm.__aenter__.return_value = mock_bedrock_client
             mock_session_cls.return_value.client.return_value = cm

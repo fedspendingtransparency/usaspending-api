@@ -1,10 +1,10 @@
 import logging
-import os
 from typing import Optional
 
-import aioboto3
 from django.http import HttpRequest
 from ninja.security import APIKeyHeader
+
+from usaspending_api.common.helpers.aws_helpers import async_aws_client
 
 logger = logging.getLogger(__name__)
 
@@ -28,11 +28,7 @@ class LLMApiKeyAuth(APIKeyHeader):
 
     @staticmethod
     async def _get_secret_uuid() -> Optional[str]:
-        session = aioboto3.Session()
-        async with session.client(
-            service_name="secretsmanager",
-            region_name=os.environ.get("AWS_REGION", "us-gov-west-1"),
-        ) as client:
+        async with async_aws_client("secretsmanager") as client:
             try:
                 response = await client.get_secret_value(SecretId=LLM_API_SECRET_NAME)
             except Exception as e:

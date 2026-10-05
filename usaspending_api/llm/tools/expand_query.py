@@ -1,8 +1,6 @@
 import logging
-import os
 
-import aioboto3
-
+from usaspending_api.common.helpers.aws_helpers import async_aws_client
 from usaspending_api.llm.models.db_models import AIModel
 
 logger = logging.getLogger(__name__)
@@ -58,11 +56,7 @@ async def expand_query(query: str, model: AIModel, num_variations: int = 3) -> l
             }
         ]
         model_id = model.model_id
-        session = aioboto3.Session()
-        async with session.client(
-            service_name="bedrock-runtime",
-            region_name=os.environ.get("AWS_REGION", "us-gov-west-1"),
-        ) as client:
+        async with async_aws_client("bedrock-runtime") as client:
             # First call to get tool use
             response = await client.converse(
                 modelId=model_id,
