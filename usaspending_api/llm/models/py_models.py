@@ -125,7 +125,7 @@ class SelectedAgency(BaseModel):
     toptier_flag: bool
     toptier_agency: ToptierAgency
     subtier_agency: SubtierAgency | None = None
-    agencyType: str = Field(alias="agencyType")
+    agencyType: Literal["toptier", "subtier"] = "toptier"
 
 
 class CodeLists(BaseModel):
@@ -270,6 +270,47 @@ RecipientType = Literal[
     "individuals",
 ]
 
+SetAsideCode = Literal[
+    "NONE",
+    "SBA",
+    "SBP",
+    "RSB",
+    "VSB",
+    "ESB",
+    "8A",
+    "8AN",
+    "8AC",
+    "HZC",
+    "HZS",
+    "HS2",
+    "HS3",
+    "SDVOSBC",
+    "SDVOSBS",
+    "VSA",
+    "VSS",
+    "WOSB",
+    "WOSBSS",
+    "EDWOSB",
+    "EDWOSBSS",
+    "HMT",
+    "HMP",
+    "BI",
+    "IEE",
+    "ISBEE",
+]
+
+ExtentCompetedCode = Literal[
+    "A",
+    "B",
+    "C",
+    "D",
+    "E",
+    "F",
+    "G",
+    "CDO",
+    "NDO",
+]
+
 
 class DEFCodeLists(BaseModel):
     """Validation model for DEFC code lists"""
@@ -360,8 +401,8 @@ class Filters(BaseModel):
     pscCodes: CodeLists = Field(default_factory=CodeLists)
     defCodes: DEFCodeLists = Field(default_factory=DEFCodeLists)
     pricingType: list[str] = Field(default_factory=list)
-    setAside: list[str] = Field(default_factory=list)
-    extentCompeted: list[str] = Field(default_factory=list)
+    setAside: list[SetAsideCode] = Field(default_factory=list)
+    extentCompeted: list[ExtentCompetedCode] = Field(default_factory=list)
     treasuryAccounts: dict[str, Any] = Field(default_factory=dict)
     tasCodes: CodeLists = Field(default_factory=CodeLists)
     awardDescription: str = ""
@@ -463,17 +504,35 @@ class ExecuteFilterInput(BaseModel):
 
     keyword: list[str] = Field(
         default_factory=list,
-        description="Free-text keywords. Only for terms with no matching structured filter.",
+        description=(
+            "Free-text keywords. Only for discrete terms with no matching structured filter. For literal "
+            "descriptive phrases, product/item names, addresses, or multi-term OR-style searches, use "
+            "awardDescription instead (comma-separate terms there for OR logic). Never put boolean or "
+            "HTML-escaped syntax (e.g. '&quot;jeep&quot; OR &quot;toyota&quot;') in either field."
+        ),
         json_schema_extra={"examples": [["bridge", "repair"]]},
     )
     timePeriodType: Literal["fy", "dr"] = Field(
         default="fy",
-        description="Time period mode: 'fy' populates timePeriodFY; 'dr' populates time_period. Populate only one.",
+        description=(
+            "Time period mode: 'fy' populates timePeriodFY; 'dr' populates time_period. Populate only one. "
+            "Leave BOTH timePeriodFY and time_period empty/omitted unless the query names or clearly implies "
+            "a year, date, or date range — do not default to the current year or to all available years just "
+            "because no time period was mentioned. Use 'fy' only when the query names one or more whole "
+            "federal fiscal years (e.g. 'in FY2023', 'since 2022'). Use 'dr' for anything involving quarters, "
+            "months, or explicit calendar dates. The federal fiscal year runs Oct 1 - Sep 30 of the following "
+            "calendar year, so a fiscal quarter must be converted to calendar dates for 'dr': FY Q1 = "
+            "Oct 1 - Dec 31 (previous calendar year), Q2 = Jan 1 - Mar 31, Q3 = Apr 1 - Jun 30, Q4 = Jul 1 - "
+            "Sep 30 (all calendar-year dates matching the fiscal year's number). Example: 'Q2 FY2024' -> "
+            "timePeriodType='dr', time_period=[{\"start_date\": \"2024-01-01\", \"end_date\": \"2024-03-31\"}] "
+            "(NOT a calendar-year Q2). For relative phrases ('last year', 'this quarter'), compute the actual "
+            "dates from the current date given in the system prompt."
+        ),
     )
     timePeriodFY: Annotated[
         list[str],
         Field(
-            description="Fiscal years as four-digit strings. Only when timePeriodType='fy'.",
+            description="Fiscal years as four-digit strings. Only when timePeriodType='fy'. Leave empty unless the query names specific fiscal year(s).",
             json_schema_extra={"examples": [["2023", "2024"]], "pattern": "^\\d{4}$"},
         ),
     ] = []
@@ -481,7 +540,11 @@ class ExecuteFilterInput(BaseModel):
         list[TimePeriod],
         Field(
             default_factory=list,
-            description="Custom date ranges (YYYY-MM-DD). Only when timePeriodType='dr'.",
+            description=(
+                "Custom date ranges (YYYY-MM-DD). Only when timePeriodType='dr'. Leave empty unless the query "
+                "implies specific dates, months, or quarters. See timePeriodType's description for how to "
+                "convert fiscal quarters to calendar dates."
+            ),
             json_schema_extra={"examples": [[{"start_date": "2023-01-01", "end_date": "2023-12-31"}]]},
         ),
     ]
@@ -518,7 +581,13 @@ class ExecuteFilterInput(BaseModel):
 
     selectedRecipients: list[str] = Field(
         default_factory=list,
-        description="Recipient names or codes. Use the lookup_recipient tool to resolve these.",
+        description=(
+            "Named recipients only (specific companies/organizations), resolved via the lookup_recipient "
+            "tool. May include multiple recipients. Do NOT use this for generic/demographic/category terms "
+            "(e.g. 'veteran-owned', 'small business', 'minority-owned') - those belong in recipientType via "
+            "list_recipient_types instead. Once a term has been resolved to a recipientType code, do not "
+            "also call lookup_recipient for that same term."
+        ),
         json_schema_extra={
             "examples": [
                 ["LOCKHEED MARTIN CORPORATION"],
@@ -534,7 +603,9 @@ class ExecuteFilterInput(BaseModel):
         default_factory=list,
         description=(
             "Business/organization type filter for award recipients (e.g. 'small_business'). "
-            "Call list_recipient_types for all valid values grouped by category."
+            "Call list_recipient_types for all valid values grouped by category. Use this for "
+            "generic/demographic/category terms (e.g. 'veteran-owned', 'minority-owned', 'small business') - "
+            "do not treat these as named recipients for selectedRecipients/lookup_recipient."
         ),
         json_schema_extra={"examples": [["small_business"], ["woman_owned_business", "minority_owned_business"]]},
     )
@@ -567,15 +638,20 @@ class ExecuteFilterInput(BaseModel):
     awardAmounts: dict[str, list[int | None]] = Field(
         default_factory=dict,
         description=(
-            "Award amount ranges as {key: [min, max]}; None = unbounded. Predefined buckets have fixed "
+            "Award amount ranges as {key: [min, max]}; None = unbounded (never use a large sentinel number "
+            "like 999999999999 for an open-ended bound - use None). Predefined buckets have fixed "
             "bounds and are combinable: range-0 [,1M], range-1 [1M,25M], range-2 [25M,100M], "
-            "range-3 [100M,500M], range-4 [500M,]. For a custom range use 'specific': [min, max], which "
-            "must be the only key."
+            "range-3 [100M,500M], range-4 [500M,]. Only use range-N buckets when the query's thresholds "
+            "match those exact boundaries. For ANY other arbitrary user-stated threshold (e.g. 'over $1 "
+            "million', 'between $500k and $2M', 'at least $750,000'), use 'specific': [min, max] instead - "
+            "'specific' must be the only key when used, and its bounds are NOT limited to the range-N "
+            "boundaries."
         ),
         json_schema_extra={
             "examples": [
                 {"range-0": [None, 1000000], "range-2": [25000000, 100000000]},
                 {"specific": [5000000, 50000000]},
+                {"specific": [1000000, None]},
             ]
         },
     )
@@ -593,13 +669,67 @@ class ExecuteFilterInput(BaseModel):
         ),
     )
     pricingType: list[str] = Field(default_factory=list, description="Contract pricing type codes (e.g. 'A', 'B').")
-    setAside: list[str] = Field(default_factory=list, description="Type-of-set-aside codes (e.g. 'SBA', 'SDVOSBC').")
-    extentCompeted: list[str] = Field(default_factory=list, description="Extent-competed codes (e.g. 'A', 'D').")
+    setAside: list[str] = Field(
+        default_factory=list,
+        description=(
+            "Type-of-set-aside codes. Valid codes:\n"
+            "  NONE     No Set Aside Used\n"
+            "  SBA      Small Business Set-Aside - Total\n"
+            "  SBP      Small Business Set-Aside - Partial\n"
+            "  RSB      Reserved for Small Business\n"
+            "  VSB      Very Small Business Set-Aside\n"
+            "  ESB      Emerging Small Business Set-Aside\n"
+            "  8A       8A Competed\n"
+            "  8AN      8(a) Sole Source\n"
+            "  8AC      SDB Set-Aside 8(a)\n"
+            "  HZC      HUBZone Set-Aside\n"
+            "  HZS      HUBZone Sole Source\n"
+            "  HS2      Combination HUBZone and 8(a)\n"
+            "  HS3      8(a) with HUBZone Preference\n"
+            "  SDVOSBC  Service-Disabled Veteran-Owned Small Business Set-Aside\n"
+            "  SDVOSBS  SDVOSB Sole Source\n"
+            "  VSA      Veteran Set-Aside\n"
+            "  VSS      Veteran Sole Source\n"
+            "  WOSB     Women-Owned Small Business\n"
+            "  WOSBSS   Women Owned Small Business Sole Source\n"
+            "  EDWOSB   Economically-Disadvantaged Women-Owned Small Business\n"
+            "  EDWOSBSS Economically Disadvantaged Women Owned Small Business Sole Source\n"
+            "  HMT      HBCU or MI Set-Aside - Total\n"
+            "  HMP      HBCU or MI Set-Aside - Partial\n"
+            "  BI       Buy Indian\n"
+            "  IEE      Indian Economic Enterprise\n"
+            "  ISBEE    Indian Small Business Economic Enterprise\n"
+            "Use this field (not recipientType or selectedRecipients) for set-aside/socioeconomic "
+            "program language like 'Native American owned', 'HUBZone', '8(a)', or 'SDVOSB set-aside'."
+        ),
+    )
+    extentCompeted: list[str] = Field(
+        default_factory=list,
+        description=(
+            "Extent-competed codes. Valid codes:\n"
+            "  A    Full and Open Competition\n"
+            "  B    Not Available for Competition\n"
+            "  C    Not Competed\n"
+            "  D    Full and Open Competition after exclusion of sources\n"
+            "  E    Follow On to Competed Action\n"
+            "  F    Competed under SAP\n"
+            "  G    Not Competed under SAP\n"
+            "  CDO  Competitive Delivery Order\n"
+            "  NDO  Non-Competitive Delivery Order"
+        ),
+    )
     treasuryAccounts: dict[str, Any] = Field(
         default_factory=dict, description="Treasury Account Symbol (TAS) filter keyed by identifier."
     )
     tasCodes: CodeLists = Field(default_factory=CodeLists)
-    awardDescription: str = Field(default="", description="Free-text award description search term.")
+    awardDescription: str = Field(
+        default="",
+        description=(
+            "Free-text award description search term for literal descriptive phrases, product/item names, "
+            "or addresses meant to match verbatim. For multiple terms with OR logic, comma-separate them "
+            "(e.g. 'jeep,toyota') - do not use boolean or HTML-escaped syntax."
+        ),
+    )
     filterNewAwardsOnlySelected: bool = Field(default=False, description="When true, limit results to new awards only.")
     filterNewAwardsOnlyActive: bool = Field(
         default=False, description="When true, the new-awards-only filter is active."

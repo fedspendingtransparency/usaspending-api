@@ -1,7 +1,9 @@
 import logging
 import time
+import uuid
+from datetime import date
 from functools import cached_property
-from typing import Any, Generator
+from typing import Any, Callable, Generator
 
 import boto3
 
@@ -32,9 +34,6 @@ class FilterSearchAssistant:
         """
         Lazy-load the Bedrock client so instantiation is deferred to first access and cached thereafter.
         This prevents the client from being created and never used (e.g., if __init__ fails).
-
-        Returns:
-            boto3 Bedrock Runtime client.
         """
         return boto3.client("bedrock-runtime")
 
@@ -48,19 +47,56 @@ class FilterSearchAssistant:
         - No text block exists (e.g., tool-only response -> returns empty string);
         - Multiple text blocks exist (-> concatenates them together); and,
         - Text blocks are in any position in the array (not just content[0]) -> (collects/concatenates them).
-
-        Args:
-            content: List of content blocks from Bedrock response.
-
-        Returns:
-            Concatenated text from all text blocks, or an empty string if none are found.
-
-        References:
-            AWS Bedrock ContentBlock documentation:
-            https://docs.aws.amazon.com/bedrock/latest/APIReference/API_runtime_ContentBlock.html
         """
         text_blocks = [block.get("text", "") for block in content if "text" in block]
         return " ".join(text_blocks).strip()
+
+    @staticmethod
+    def _rekey_empty_string_key(value: Any, derive_key: Callable[[dict], str | None]) -> Any:
+        """Replace an empty-string dict key with one derived from its value.
+
+        Bedrock's Converse API rejects empty-string object keys anywhere in `toolUse.input`,
+        and it validates the full message history on every call -- so once a message with such
+        a key is in `self.messages`, every subsequent `converse()` call fails, permanently
+        blocking the conversation. The model occasionally emits dict fields keyed by "" instead
+        of the documented key format; rebuild the key from the value's own fields when possible.
+        """
+        if not isinstance(value, dict) or "" not in value:
+            return value
+
+        rekeyed = dict(value)
+        entry = rekeyed.pop("")
+        new_key = derive_key(entry) if isinstance(entry, dict) else None
+        rekeyed[new_key or f"unknown_{uuid.uuid4().hex}"] = entry
+        return rekeyed
+
+    @classmethod
+    def _sanitize_tool_use_input(cls, content: list[dict]) -> None:
+        """Fix empty-string dict keys in `toolUse.input` blocks, in place.
+
+        This insures that the selected agency and selected location filters have the correct keys
+        """
+        for block in content:
+            tool_use = block.get("toolUse")
+            tool_input = tool_use.get("input") if tool_use else None
+            if not isinstance(tool_input, dict):
+                continue
+
+            for field in ("selectedAwardingAgencies", "selectedFundingAgencies"):
+                if field in tool_input:
+                    tool_input[field] = cls._rekey_empty_string_key(
+                        tool_input[field],
+                        lambda agency: (
+                            f"{agency.get('id')}_{agency.get('agencyType')}"
+                            if agency.get("id") is not None and agency.get("agencyType")
+                            else None
+                        ),
+                    )
+
+            if "selectedLocations" in tool_input:
+                tool_input["selectedLocations"] = cls._rekey_empty_string_key(
+                    tool_input["selectedLocations"], lambda location: location.get("identifier")
+                )
 
     def _create_message_from_response(self, response: dict) -> Message:
         """Create a Message record from Bedrock's response."""
@@ -91,7 +127,16 @@ class FilterSearchAssistant:
     def system_message(self) -> str:
         """Return the active Assistant's system prompt or the default prompt."""
         if self.assistant.system_prompt:
-            return self.assistant.system_prompt.text
+            today = date.today()
+            current_fy = today.year + 1 if today.month >= 10 else today.year
+            date_context = (
+                f"\nThe current date is {today.strftime('%m/%d/%Y')}. The current federal fiscal year is "
+                f"FY{current_fy} (the federal fiscal year runs Oct 1 - Sep 30 and is named for the calendar "
+                f"year it ends in, so FY{current_fy} runs 10/01/{current_fy - 1} - 09/30/{current_fy}). "
+                f"Use FY{current_fy} directly as 'this fiscal year' and FY{current_fy - 1} as 'last fiscal "
+                f"year' - do not recompute the fiscal year from the date yourself."
+            )
+            return self.assistant.system_prompt.text + date_context
         return self.DEFAULT_SYSTEM_MESSAGE
 
     @cached_property
@@ -138,6 +183,7 @@ class FilterSearchAssistant:
             system=[{"text": self.system_message}],
             inferenceConfig=self.inference_config,
         )
+        self._sanitize_tool_use_input(response["output"]["message"]["content"])
         m = self._create_message_from_response(response)
         stop_reason = response["stopReason"]
         search_complete = False
@@ -167,7 +213,6 @@ class FilterSearchAssistant:
 
             if search_complete:
                 break
-
             response = self.client.converse(
                 modelId=self.assistant.ai_model.model_id,
                 messages=self.messages,
@@ -175,6 +220,7 @@ class FilterSearchAssistant:
                 system=[{"text": self.system_message}],
                 inferenceConfig=self.inference_config,
             )
+            self._sanitize_tool_use_input(response["output"]["message"]["content"])
             m = self._create_message_from_response(response)
             stop_reason = response["stopReason"]
 
@@ -201,6 +247,9 @@ class FilterSearchAssistant:
                 "type": "search_error",
                 "message": f"Maximum tool iterations ({self.MAX_TOOL_ITERATIONS}) reached without completing search.",
             }
+        elif self.tool_iterations < self.MAX_TOOL_ITERATIONS and not search_complete:
+            logger.info("Search not complete. Restarting search")
+            self.search("Search is not complete.  You must call execute_filter to complete the search.")
 
         # Calculate total token usage for this search.
         total_input_tokens = sum(msg.input_tokens for msg in self.session.messages.all())

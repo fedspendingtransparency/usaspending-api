@@ -25,12 +25,12 @@ class RecipientLookupTool:
         self,
         query: str,
         top_k: int = 10,
-    ) -> list[str]:
+    ) -> dict[str, list[str]]:
         """
         Search for recipients by name, uei, duns, and return recipient names.
         """
         if not query or not query.strip():
-            return []
+            return {"errors": ["Query cannot be empty."]}
 
         top_k = max(1, min(top_k, 100))
         query_upper = es_sanitize(query).strip().upper()
@@ -50,7 +50,7 @@ class RecipientLookupTool:
             )
         except Exception as exception:
             logger.error(f"OpenSearch query failed for query='{query}': {str(exception)}", exc_info=True)
-            return []
+            return {"errors": [str(exception)]}
 
         result = self._extract_recipient_names(response, query_upper)
         recipient_count = len(result.get("recipient_names", []))
@@ -65,6 +65,7 @@ class RecipientLookupTool:
                     "zero_results": True,
                 },
             )
+            return {"messages": ["No results returned for recipient lookup."]}
 
         logger.info(
             f"Recipient lookup completed: query='{query}', recipient_names_count={recipient_count}",
@@ -103,7 +104,7 @@ class RecipientLookupTool:
             .sort({"_score": {"order": "desc"}})[:top_k]
         )
 
-    def _extract_recipient_names(self, response: Any, query_upper: str) -> list[str]:
+    def _extract_recipient_names(self, response: Any, query_upper: str) -> dict[str, list[str]]:
         recipient_names = []
         seen_values = set()
         for hit in response.hits:
@@ -115,9 +116,6 @@ class RecipientLookupTool:
                 return {"recipient_names": [matched_identifier]}
 
             recipient_name = hit_dict.get("recipient_name")
-            # An exact name match is also unambiguous: return only that name.
-            if recipient_name and str(recipient_name).upper() == query_upper:
-                return {"recipient_names": [recipient_name]}
 
             if not recipient_name or recipient_name in seen_values:
                 continue
