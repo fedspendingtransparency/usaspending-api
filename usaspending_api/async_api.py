@@ -7,8 +7,8 @@ api = NinjaAPI(
     title="USASpending API",
     version="1.0.0",
     urls_namespace="async_api",
-    docs_url="/docs/new" if CONFIG.ENV_CODE.lower() != "prd" else None,
-    openapi_url="/openapi.json" if CONFIG.ENV_CODE.lower() != "prd" else None,
+    docs_url=None if CONFIG.ENV_CODE.lower() == "prd" else "/docs/new",
+    openapi_url=None if CONFIG.ENV_CODE.lower() == "prd" else "/openapi.json",
 )
 
 api.add_router("/api/v2/llm/", llm_router, url_name_prefix="v2")
