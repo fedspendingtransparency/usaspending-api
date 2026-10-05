@@ -249,10 +249,7 @@ class TestHybridSearch:
         # Same embedding distance (0.0) for both; text similarity differs via name.
         high_top = await _make_toptier_agency("300", "orbital research", "ORA", embedding=_unit_vector(dims, 0))
         low_top = await _make_toptier_agency(
-            "400",
-            "completely different naming",
-            "CDN",
-            embedding=_unit_vector(dims, 0)
+            "400", "completely different naming", "CDN", embedding=_unit_vector(dims, 0)
         )
         await _make_agency(high_top)
         await _make_agency(low_top)
@@ -270,10 +267,7 @@ class TestHybridSearch:
 
         for i in range(5):
             top = await _make_toptier_agency(
-                f"50{i}",
-                f"Matching Agency {i}",
-                f"MA{i}",
-                embedding=_unit_vector(dims, 0)
+                f"50{i}", f"Matching Agency {i}", f"MA{i}", embedding=_unit_vector(dims, 0)
             )
             await _make_agency(top)
 

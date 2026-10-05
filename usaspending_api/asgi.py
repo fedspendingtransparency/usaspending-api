@@ -97,12 +97,13 @@ application = OpenTelemetryMiddleware(
 
 logger.info(
     f"""
-{'=' * 40}
+{"=" * 40}
     Python: {platform.python_version()}
     Django: {django_version}
     Django Ninja: {django_ninja_version}
     Django REST Framework: {drf_version}
     Daphne: {daphne_version}
-{'=' * 40}
-""")
+{"=" * 40}
+    """
+)
 logger.info("Ready for requests.")

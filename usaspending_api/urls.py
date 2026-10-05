@@ -54,7 +54,6 @@ urlpatterns = [
     re_path(r"^api/v2/transactions/", include("usaspending_api.awards.v2.urls_transactions")),
     re_path(r"^docs/", include("usaspending_api.api_docs.urls")),
     re_path(r"^status/", views.StatusView.as_view()),
-
     # Async endpoints
     # Swagger docs available at: /docs/new
     path("", async_api.api.urls),  # Django Ninja URLs

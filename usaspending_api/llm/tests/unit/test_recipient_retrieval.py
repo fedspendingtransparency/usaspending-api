@@ -1,4 +1,5 @@
 """Unit tests for recipient_retrieval module"""
+
 from unittest.mock import AsyncMock, Mock, patch
 
 from usaspending_api.llm.tests.helper import (

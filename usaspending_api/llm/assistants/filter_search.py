@@ -153,9 +153,7 @@ class FilterSearchAssistant:
                     "message_text": m.message,
                 },
             )
-            while (
-                stop_reason == "tool_use" and not search_complete and self.tool_iterations < self.MAX_TOOL_ITERATIONS
-            ):
+            while stop_reason == "tool_use" and not search_complete and self.tool_iterations < self.MAX_TOOL_ITERATIONS:
                 self.tool_iterations += 1
                 tool_requests = [
                     request for request in response["output"]["message"]["content"] if "toolUse" in request

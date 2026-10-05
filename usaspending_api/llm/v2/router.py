@@ -18,10 +18,7 @@ from usaspending_api.llm.v2.auth import LLMApiKeyAuth
 
 logger = logging.getLogger(__name__)
 
-router = Router(
-    auth=LLMApiKeyAuth(),
-    tags=["SmartAssist"]
-)
+router = Router(auth=LLMApiKeyAuth(), tags=["SmartAssist"])
 
 TOOLS = [
     lookup_agency_tool,
@@ -43,7 +40,10 @@ def _stream_response(event_source: AsyncGenerator[str, None]) -> StreamingHttpRe
     return response
 
 
-@router.post("/filter-search/", url_name="filter_search",)
+@router.post(
+    "/filter-search/",
+    url_name="filter_search",
+)
 async def filter_search(request: HttpRequest, payload: FilterSearchInput) -> StreamingHttpResponse:
     """
     Streaming, LLM-powered filter search. Emits newline-delimited FilterSearchEvent
@@ -100,8 +100,7 @@ async def filter_search(request: HttpRequest, payload: FilterSearchInput) -> Str
             await session.asave(update_fields=["ended_at"])
 
             totals = await session.messages.aaggregate(
-                input_tokens=Sum("input_tokens"),
-                output_tokens=Sum("output_tokens")
+                input_tokens=Sum("input_tokens"), output_tokens=Sum("output_tokens")
             )
             message_count = await session.messages.acount()
             tool_use_count = await ToolUse.objects.filter(message__session=session).acount()
