@@ -77,7 +77,8 @@ class TestExtractRecipientNames:
         result = RecipientLookupTool()._extract_recipient_names(response, "HASH123")
         assert result == {"recipient_names": ["hash123"]}
 
-    def test_exact_name_match_returns_only_that_name(self):
+    def test_exact_name_match_still_returns_all_fuzzy_matches(self):
+        """An exact name match isn't short-circuited since a different match may rank better."""
         response = _make_response(
             [
                 {"recipient_name": "ACME CORP", "uei": "UEI123456789", "duns": "123456789"},
@@ -85,7 +86,7 @@ class TestExtractRecipientNames:
             ]
         )
         result = RecipientLookupTool()._extract_recipient_names(response, "ACME CORP")
-        assert result == {"recipient_names": ["ACME CORP"]}
+        assert result == {"recipient_names": ["ACME CORP", "ACME CORPORATION"]}
 
     def test_returns_all_names_when_no_exact_match(self):
         response = _make_response(

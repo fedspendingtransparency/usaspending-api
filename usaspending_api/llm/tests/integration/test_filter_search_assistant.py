@@ -124,7 +124,7 @@ class TestFilterSearchAssistant:
         assert assistant.inference_config == {}
 
     def test_system_message_uses_assistant_prompt(self, assistant):
-        assert assistant.system_message == "Test system message"
+        assert assistant.system_message == "Test system message" + FilterSearchAssistant._fiscal_year_date_context()
 
     def test_system_message_uses_default_when_assistant_has_no_prompt(self, mock_assistant, mock_tool, mock_session):
         mock_assistant.system_prompt = None

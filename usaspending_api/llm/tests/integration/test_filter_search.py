@@ -6,6 +6,7 @@ import pytest
 from model_bakery import baker
 from rest_framework import status
 
+from usaspending_api.llm.assistants.filter_search import FilterSearchAssistant
 from usaspending_api.llm.models.db_models import Assistant, Session
 
 
@@ -300,7 +301,9 @@ class TestFilterSearch:
         assert session.ai_model == custom_model
         assert session.system_prompt == system_prompt_data
         assert mock_bedrock_client.converse.call_args.kwargs["inferenceConfig"] == {"temperature": 0.4}
-        assert mock_bedrock_client.converse.call_args.kwargs["system"] == [{"text": system_prompt_data.text}]
+        assert mock_bedrock_client.converse.call_args.kwargs["system"] == [
+            {"text": system_prompt_data.text + FilterSearchAssistant._fiscal_year_date_context()}
+        ]
 
     def test_endpoint_handles_bedrock_error(self, client, ai_model_data, mock_llm_api_key, mock_bedrock_client):
         """Test that endpoint handles Bedrock API errors gracefully."""

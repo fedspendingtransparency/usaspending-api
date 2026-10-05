@@ -65,7 +65,7 @@ class RecipientLookupTool:
                     "zero_results": True,
                 },
             )
-            return {"messages": ["No results returned for recipient lookup."]}
+            return {**result, "messages": ["No results returned for recipient lookup."]}
 
         logger.info(
             f"Recipient lookup completed: query='{query}', recipient_names_count={recipient_count}",
@@ -139,10 +139,16 @@ lookup_recipient_tool = AITool(
         description="""
 Search for valid recipient objects by name, UEI, DUNS, or recipient hash using fuzzy matching.
 
-Returns a list of strings. When the query is an exact match for a recipient (by UEI, DUNS,
-recipient hash, or name), a single-element list containing just that exact match is returned
-(the matching identifier for identifier matches, otherwise the name). When there is no exact
-match, the list of fuzzy-matched recipient names is returned.
+Returns recipient_names: a list of strings. When the query is an exact match for an identifier
+(UEI, DUNS, or recipient hash), a single-element list containing just that identifier is returned,
+since identifiers are unique and unambiguous. Name queries never short-circuit this way, even on an
+exact name match - all fuzzy-matched recipient names are returned, since an exact text match is not
+necessarily the best or intended match (e.g. "ACME CORP" vs. "ACME CORPORATION"). Review every name
+returned and pick the one that best fits the user's query rather than assuming the first result.
+
+When no recipients are found, a "messages" key explains that zero results were returned - this is
+not an error, and you should still call execute_filter using the information you already have
+rather than quitting.
 
 Supported inputs:
 - Recipient names (eg 'BOEING COMPANY', 'Lockheed Martin')
@@ -151,8 +157,8 @@ Supported inputs:
 - Recipient hashes (UUID)
 
 Examples:
-- lookup_recipient('BOEING') -> ['BOEING COMPANY', ...]
-- lookup_recipient('EWN9HP5FT8A5') -> ['EWN9HP5FT8A5', ...]
+- lookup_recipient('BOEING') -> {"recipient_names": ["BOEING COMPANY", ...]}
+- lookup_recipient('EWN9HP5FT8A5') -> {"recipient_names": ["EWN9HP5FT8A5"]}
 
 """.strip(),
         input_schema={

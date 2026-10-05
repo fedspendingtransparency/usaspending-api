@@ -123,20 +123,25 @@ class FilterSearchAssistant:
         specs = [tool.description.model_dump() for tool in self.tools]
         return {"tools": [{"toolSpec": {"inputSchema": {"json": spec.pop("input_schema")}, **spec}} for spec in specs]}
 
+    @staticmethod
+    def _fiscal_year_date_context() -> str:
+        """Build the current-date/fiscal-year string appended to the system prompt.
+        """
+        today = date.today()
+        current_fy = today.year + 1 if today.month >= 10 else today.year
+        return (
+            f"\nThe current date is {today.strftime('%m/%d/%Y')}. The current federal fiscal year is "
+            f"FY{current_fy} (the federal fiscal year runs Oct 1 - Sep 30 and is named for the calendar "
+            f"year it ends in, so FY{current_fy} runs 10/01/{current_fy - 1} - 09/30/{current_fy}). "
+            f"Use FY{current_fy} directly as 'this fiscal year' and FY{current_fy - 1} as 'last fiscal "
+            f"year' - do not recompute the fiscal year from the date yourself."
+        )
+
     @cached_property
     def system_message(self) -> str:
         """Return the active Assistant's system prompt or the default prompt."""
         if self.assistant.system_prompt:
-            today = date.today()
-            current_fy = today.year + 1 if today.month >= 10 else today.year
-            date_context = (
-                f"\nThe current date is {today.strftime('%m/%d/%Y')}. The current federal fiscal year is "
-                f"FY{current_fy} (the federal fiscal year runs Oct 1 - Sep 30 and is named for the calendar "
-                f"year it ends in, so FY{current_fy} runs 10/01/{current_fy - 1} - 09/30/{current_fy}). "
-                f"Use FY{current_fy} directly as 'this fiscal year' and FY{current_fy - 1} as 'last fiscal "
-                f"year' - do not recompute the fiscal year from the date yourself."
-            )
-            return self.assistant.system_prompt.text + date_context
+            return self.assistant.system_prompt.text + self._fiscal_year_date_context()
         return self.DEFAULT_SYSTEM_MESSAGE
 
     @cached_property
