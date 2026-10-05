@@ -65,7 +65,7 @@ class RecipientLookupTool:
                     "zero_results": True,
                 },
             )
-            return {**result, "messages": ["No results returned for recipient lookup."]}
+            result = {**result, "messages": ["No results returned for recipient lookup."]}
 
         logger.info(
             f"Recipient lookup completed: query='{query}', recipient_names_count={recipient_count}",

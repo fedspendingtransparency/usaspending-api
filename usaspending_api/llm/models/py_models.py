@@ -524,7 +524,7 @@ class ExecuteFilterInput(BaseModel):
             "calendar year, so a fiscal quarter must be converted to calendar dates for 'dr': FY Q1 = "
             "Oct 1 - Dec 31 (previous calendar year), Q2 = Jan 1 - Mar 31, Q3 = Apr 1 - Jun 30, Q4 = Jul 1 - "
             "Sep 30 (all calendar-year dates matching the fiscal year's number). Example: 'Q2 FY2024' -> "
-            "timePeriodType='dr', time_period=[{\"start_date\": \"2024-01-01\", \"end_date\": \"2024-03-31\"}] "
+            'timePeriodType=\'dr\', time_period=[{"start_date": "2024-01-01", "end_date": "2024-03-31"}] '
             "(NOT a calendar-year Q2). For relative phrases ('last year', 'this quarter'), compute the actual "
             "dates from the current date given in the system prompt."
         ),
@@ -532,7 +532,10 @@ class ExecuteFilterInput(BaseModel):
     timePeriodFY: Annotated[
         list[str],
         Field(
-            description="Fiscal years as four-digit strings. Only when timePeriodType='fy'. Leave empty unless the query names specific fiscal year(s).",
+            description=(
+                "Fiscal years as four-digit strings. Only when timePeriodType='fy'. Leave empty unless the query names "
+                "specific fiscal year(s)."
+            ),
             json_schema_extra={"examples": [["2023", "2024"]], "pattern": "^\\d{4}$"},
         ),
     ] = []

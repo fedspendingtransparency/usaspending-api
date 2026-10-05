@@ -125,8 +125,7 @@ class FilterSearchAssistant:
 
     @staticmethod
     def _fiscal_year_date_context() -> str:
-        """Build the current-date/fiscal-year string appended to the system prompt.
-        """
+        """Build the current-date/fiscal-year string appended to the system prompt."""
         today = date.today()
         current_fy = today.year + 1 if today.month >= 10 else today.year
         return (
