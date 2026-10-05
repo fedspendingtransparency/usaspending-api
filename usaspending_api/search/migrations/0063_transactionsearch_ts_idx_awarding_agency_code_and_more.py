@@ -11,12 +11,37 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.AddIndex(
-            model_name='transactionsearch',
-            index=models.Index(fields=['awarding_agency_code'], name='ts_idx_awarding_agency_code'),
-        ),
-        migrations.AddIndex(
-            model_name='transactionsearch',
-            index=models.Index(fields=['funding_agency_code'], name='ts_idx_funding_agency_code'),
-        ),
+        migrations.RunSQL(
+            sql="""
+                CREATE INDEX ts_idx_awarding_agency_code ON rpt.transaction_search (awarding_agency_code);
+                -- Must rename the auto-named inherited indexes on child partitions of this parent partitioned table, 
+                -- so that they follow the naming convention of the parent, and copy_table_metadata command will 
+                -- continue to work
+                ALTER
+                INDEX rpt.transaction_search_fabs_awarding_agency_code_idx RENAME TO ts_idx_awarding_agency_code_fabs;
+                    ALTER
+                INDEX rpt.transaction_search_fpds_awarding_agency_code_idx RENAME TO ts_idx_awarding_agency_code_fpds;
+                CREATE INDEX ts_idx_funding_agency_code ON rpt.transaction_search (funding_agency_code);
+                -- (Same comment as above)
+                ALTER
+                INDEX rpt.transaction_search_fabs_funding_agency_code_idx RENAME TO ts_idx_funding_agency_code_fabs;
+                    ALTER
+                INDEX rpt.transaction_search_fpds_funding_agency_code_idx RENAME TO ts_idx_funding_agency_code_fpds;
+                """,
+            reverse_sql="""
+                        DROP INDEX ts_idx_awarding_agency_code;
+                        DROP INDEX ts_idx_funding_agency_code;
+                        """,
+            state_operations=[
+                migrations.AddIndex(
+                    model_name='transactionsearch',
+                    index=models.Index(fields=['awarding_agency_code'], name='ts_idx_awarding_agency_code'),
+                ),
+                migrations.AddIndex(
+                    model_name='transactionsearch',
+                    index=models.Index(fields=['funding_agency_code'], name='ts_idx_funding_agency_code'),
+                )
+            ]
+        )
+        ,
     ]
