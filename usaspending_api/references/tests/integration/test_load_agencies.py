@@ -43,7 +43,7 @@ def _get_record_count():
 
 
 @pytest.fixture
-def prepare_delta_tables(spark, s3_unittest_data_bucket, hive_unittest_metastore_db):
+def prepare_delta_tables(spark, s3_unittest_data_bucket, hive_unittest_metastore_db, broker_server_dblink_setup):
     tables_to_create = [
         "detached_award_procurement",
         "published_fabs",
