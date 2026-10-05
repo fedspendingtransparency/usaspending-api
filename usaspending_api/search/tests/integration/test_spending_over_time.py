@@ -3779,9 +3779,9 @@ def _test_correct_response_for_contract_pricing_type_codes(client):
         },
     ]
     assert resp.status_code == status.HTTP_200_OK
-    assert (
-        resp.json().get("results") == expected_result
-    ), "Contract Pricing Type Codes filter does not match expected result"
+    assert resp.json().get("results") == expected_result, (
+        "Contract Pricing Type Codes filter does not match expected result"
+    )
 
 
 def _test_correct_response_for_set_aside_type_codes(client):
@@ -4271,9 +4271,9 @@ def _test_correct_response_for_set_extent_competed_type_codes(client):
         },
     ]
     assert resp.status_code == status.HTTP_200_OK
-    assert (
-        resp.json().get("results") == expected_result
-    ), "Extent Competed Type Codes filter does not match expected result"
+    assert resp.json().get("results") == expected_result, (
+        "Extent Competed Type Codes filter does not match expected result"
+    )
 
 
 def _test_correct_response_for_recipient_id(client):
