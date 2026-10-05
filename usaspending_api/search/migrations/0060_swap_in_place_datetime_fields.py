@@ -146,13 +146,11 @@ class Migration(migrations.Migration):
                 {vw_awards_sql}
                 {vw_transaction_normalized_sql}
                 {vw_transaction_fpds_sql}
-                {vw_transaction_fabs_sql}
                 {transaction_delta_view}
             """,
             reverse_sql="""
                 DROP VIEW IF EXISTS
                     vw_awards,
-                    vw_transaction_fabs,
                     vw_transaction_normalized,
                     vw_transaction_fpds,
                     transaction_delta_view
