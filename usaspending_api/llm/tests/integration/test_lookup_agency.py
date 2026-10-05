@@ -248,7 +248,12 @@ class TestHybridSearch:
         dims = getattr(ToptierAgency, "embedding_dimensions", 256)
         # Same embedding distance (0.0) for both; text similarity differs via name.
         high_top = await _make_toptier_agency("300", "orbital research", "ORA", embedding=_unit_vector(dims, 0))
-        low_top = await _make_toptier_agency("400", "completely different naming", "CDN", embedding=_unit_vector(dims, 0))
+        low_top = await _make_toptier_agency(
+            "400",
+            "completely different naming",
+            "CDN",
+            embedding=_unit_vector(dims, 0)
+        )
         await _make_agency(high_top)
         await _make_agency(low_top)
 
@@ -264,7 +269,12 @@ class TestHybridSearch:
         mock_embedding_generator.agenerate_embedding.return_value = _unit_vector(dims, 0)
 
         for i in range(5):
-            top = await _make_toptier_agency(f"50{i}", f"Matching Agency {i}", f"MA{i}", embedding=_unit_vector(dims, 0))
+            top = await _make_toptier_agency(
+                f"50{i}",
+                f"Matching Agency {i}",
+                f"MA{i}",
+                embedding=_unit_vector(dims, 0)
+            )
             await _make_agency(top)
 
         result = await tool.lookup_agencies("matching agency query", top_k=2)

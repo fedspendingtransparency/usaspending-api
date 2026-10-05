@@ -1,5 +1,5 @@
 import logging
-from typing import AsyncGenerator, Any
+from typing import Any, AsyncGenerator
 
 from django.db.models import Sum
 from django.http import HttpRequest, StreamingHttpResponse
@@ -19,7 +19,7 @@ from usaspending_api.llm.v2.auth import LLMApiKeyAuth
 logger = logging.getLogger(__name__)
 
 router = Router(
-    #auth=LLMApiKeyAuth(),
+    auth=LLMApiKeyAuth(),
     tags=["SmartAssist"]
 )
 
@@ -99,7 +99,10 @@ async def filter_search(request: HttpRequest, payload: FilterSearchInput) -> Str
             session.ended_at = timezone.now()
             await session.asave(update_fields=["ended_at"])
 
-            totals = await session.messages.aaggregate(input_tokens=Sum("input_tokens"), output_tokens=Sum("output_tokens"))
+            totals = await session.messages.aaggregate(
+                input_tokens=Sum("input_tokens"),
+                output_tokens=Sum("output_tokens")
+            )
             message_count = await session.messages.acount()
             tool_use_count = await ToolUse.objects.filter(message__session=session).acount()
             duration_seconds = (session.ended_at - session.started_at).total_seconds()
