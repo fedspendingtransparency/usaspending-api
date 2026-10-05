@@ -7,8 +7,8 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('awards', '0115_rename_financialaccountsbyawards_disaster_emergency_fund_submission_award_piid_fain_uri_parent_award'),
-        ('search', '0061_awardsearch_object_classes'),
+        ('awards', '0116_create_transaction_fabs_view'),
+        ('search', '0062_new_award_amount_award_recipient_fields'),
     ]
 
     operations = [
