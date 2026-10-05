@@ -246,7 +246,7 @@ def transaction_test_data(prepare_delta_tables):
             )
 
 
-@pytest.mark.django_db(databases=[BROKER_DB_ALIAS, DEFAULT_DB_ALIAS], transaction=True)(transaction=True)
+@pytest.mark.django_db(databases=[BROKER_DB_ALIAS, DEFAULT_DB_ALIAS], transaction=True)
 def test_happy_path(prepare_delta_tables):
     """
     We're running this one without a transaction just to ensure the vacuuming doesn't blow up.  For
