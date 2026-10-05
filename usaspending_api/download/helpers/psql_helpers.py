@@ -30,6 +30,8 @@ def build_psql_env(
     if statement_timeout_hours or work_mem_mb:
         options = []
         options.append("--statement-timeout=36h")
+        if statement_timeout_hours:
+            options.append(f"--statement-timeout={statement_timeout_hours}h")
         if work_mem_mb:
             options.append(f"--work-mem={work_mem_mb}MB")
         env["PGOPTIONS"] = " ".join(options)

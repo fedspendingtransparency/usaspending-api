@@ -173,10 +173,11 @@ class Command(BaseCommand):
             if not db_url:
                 raise ValueError("DOWNLOAD_DATABASE_URL is not configured")
 
-            # Build PostgreSQL environment using helper
+            # Build PostgreSQL environment using helper; the timeout is set much higher than normal downloads due
+            # to issues with larger delta taking a while to run
             psql_env = build_psql_env(
                 dsn=db_url,
-                statement_timeout_hours=settings.DOWNLOAD_DB_TIMEOUT_IN_HOURS,
+                statement_timeout_hours=36,
                 work_mem_mb=settings.DOWNLOAD_DB_WORK_MEM_IN_MB,
             )
 
