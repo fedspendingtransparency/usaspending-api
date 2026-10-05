@@ -1,4 +1,6 @@
 import logging
+from datetime import datetime, timezone
+from unittest.mock import patch
 
 import pytest
 from django.core.management import call_command
@@ -452,8 +454,11 @@ def test_update_transactions_and_awards(disable_vacuuming, transaction_test_data
     assert "2 record(s) would be updated in int.transaction_normalized" in caplog_messages
     assert "2 record(s) would be updated in int.awards" in caplog_messages
 
-    # Call again but force to pick up File D changes following a dry-run
-    call_command("load_agencies", AGENCY_FILE, "--force")
+    mocked_datetime_now = datetime(2026, 1, 1, 0, 0, 0, 0, timezone.utc)
+    with patch("usaspending_api.references.management.commands.load_agencies.datetime") as mock_datetime:
+        mock_datetime.now.return_value = mocked_datetime_now
+        # Call again but force to pick up File D changes following a dry-run
+        call_command("load_agencies", AGENCY_FILE, "--force")
 
     # Validate postgres tables
     source_assistance_transaction = SourceAssistanceTransaction.objects.first()
@@ -519,10 +524,13 @@ def test_update_transactions_and_awards(disable_vacuuming, transaction_test_data
 
     asst_awards_record = awards_df.filter(awards_df["id"] == 1).first()
     cont_awards_record = awards_df.filter(awards_df["id"] == 2).first()
+    expected_update_date = datetime(2026, 1, 1, 0, 0)
     assert asst_awards_record["awarding_agency_id"] == fabs_awarding_agency_id
     assert asst_awards_record["funding_agency_id"] == fabs_funding_agency_id
+    assert asst_awards_record["update_date"] == expected_update_date
     assert cont_awards_record["awarding_agency_id"] == fpds_awarding_agency_id
     assert cont_awards_record["funding_agency_id"] == fpds_funding_agency_id
+    assert cont_awards_record["update_date"] == expected_update_date
 
 
 @pytest.mark.django_db(databases=[BROKER_DB_ALIAS, DEFAULT_DB_ALIAS], transaction=True)

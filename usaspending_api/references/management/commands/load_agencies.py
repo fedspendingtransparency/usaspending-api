@@ -4,6 +4,7 @@ import logging
 from collections import namedtuple
 from contextlib import contextmanager
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Generator, Literal, get_args
 
@@ -511,7 +512,15 @@ class Command(mixins.ETLMixin, BaseCommand):
             how="left",
         )
 
-        target_join_id = "latest_transaction_id" if table_name == "int.awards" else "id"
+        if table_name == "int.awards":
+            # This is needed to make sure that OpenSearch documents are updated. They use the update_date on the Award
+            # or the etl_update_date on the Transaction; the latter being a coalesce of the Award and Transaction
+            # update dates.
+            extra_update = {"update_date": f"'{datetime.now(timezone.utc).isoformat(' ')}'"}
+            target_join_id = "latest_transaction_id"
+        else:
+            extra_update = {}
+            target_join_id = "id"
 
         if self.file_d_dry_run:
             logging.info(f"Getting count of record(s) that would be updated in {table_name}")
@@ -537,8 +546,49 @@ class Command(mixins.ETLMixin, BaseCommand):
                         (~sf.col("t.awarding_agency_id").eqNullSafe(sf.col("s.awarding_id")))
                         | (~sf.col("t.funding_agency_id").eqNullSafe(sf.col("s.funding_id")))
                     ),
-                    set={"awarding_agency_id": "s.awarding_id", "funding_agency_id": "s.funding_id"},
+                    set={**extra_update, "awarding_agency_id": "s.awarding_id", "funding_agency_id": "s.funding_id"},
                 )
                 .execute()
             )
             logger.info(f"Finished merging values into {table_name}")
+
+    # def update_delta_award_table(self, spark: SparkSession) -> None:
+    #     table_name = "int.awards"
+    #     target = DeltaTable.forName(spark, table_name).alias("t")
+    #     source_df = spark.table("int.transaction_normalized")
+    #
+    #     if self.file_d_dry_run:
+    #         logging.info(f"Getting count of record(s) that would be updated in {table_name}")
+    #         target_df = target.toDF()
+    #         join_df = target_df.join(
+    #             source_df,
+    #             on=(
+    #                 (target_df["latest_transaction_id"] == source_df["id"])
+    #                 & (
+    #                     (~target_df["awarding_agency_id"].eqNullSafe(source_df["awarding_agency_id"]))
+    #                     | (~target_df["funding_agency_id"].eqNullSafe(source_df["funding_agency_id"]))
+    #                 )
+    #             ),
+    #             how="left_semi",
+    #         )
+    #         logger.info(f"{join_df.count():,} record(s) would be updated in {table_name}")
+    #     else:
+    #         logger.info(f"Merging values into {table_name}")
+    #         (
+    #             target.merge(source_df.alias("s"), "t.latest_transaction_id = s.id")
+    #             .whenMatchedUpdate(
+    #                 # Accomplishes the same as a Postgres "DISTINCT FROM"
+    #                 condition=(
+    #                     (~sf.col("t.awarding_agency_id").eqNullSafe(sf.col("s.awarding_agency_id")))
+    #                     | (~sf.col("t.funding_agency_id").eqNullSafe(sf.col("s.funding_agency_id")))
+    #                 ),
+    #                 set={
+    #                     "awarding_agency_id": "s.awarding_agency_id",
+    #                     "funding_agency_id": "s.funding_agency_id",
+    #                     # This is needed so that OpenSearch documents will be updated in the pipeline
+    #                     "update_date": f"'{datetime.now(timezone.utc).isoformat(' ')}'",
+    #                 },
+    #             )
+    #             .execute()
+    #         )
+    #         logger.info(f"Finished merging values into {table_name}")
