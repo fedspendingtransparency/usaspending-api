@@ -30,7 +30,6 @@ def build_filter_request(filter_input: dict) -> dict:
     if "selectedAwardIDs" in filter_request["filters"]:
         filter_request["filters"]["selectedAwardIDs"] = {v: v for v in filter_request["filters"]["selectedAwardIDs"]}
 
-
     return filter_request
 
 
