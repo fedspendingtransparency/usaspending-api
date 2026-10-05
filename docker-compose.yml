@@ -233,29 +233,6 @@ services:
     environment:
       <<: *application-vars
 
-  usaspending-api-async: # builds using the default Dockerfile to mirror deployed environments for local testing
-    profiles:
-      - usaspending  # must pass --profile usaspending to docker compose for this to come up
-    image: usaspending-backend  # when an image by this name is not found in the local repo, and it is forced to build, it will use this as the tag
-    build: .
-    container_name: usaspending-api-async
-    init: true  # needed for the reaping of processes; mostly related to downloads run in a process
-    volumes:
-      - type: bind
-        source: .
-        target: /usaspending-api
-        read_only: false
-    ports:
-      - 8001:8000
-    depends_on:
-      - usaspending-db
-      - usaspending-es
-    restart: on-failure:3 # 3 max attempt, and then it will stop restarting
-    # Must wait on postgres db to be up (~9s)
-    command: /bin/sh -c "sleep 9s; python3 -u -m daphne -b 0.0.0.0 -p 8000 --verbosity 2 usaspending_api.asgi:application"
-    environment:
-      <<: *application-vars
-
   usaspending-bulk-download:
     profiles:
       - usaspending  # must pass --profile usaspending to docker compose for this to come up
