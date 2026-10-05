@@ -1,7 +1,5 @@
 import re
-import string
 import unicodedata
-from random import choice
 
 STANDARDIZE_WHITESPACE = re.compile(r"\s+")
 
@@ -58,14 +56,3 @@ def standardize_nullable_whitespace(string: str) -> str | None:
     of blanks.
     """
     return standardize_whitespace(string) or None
-
-
-def generate_random_string(size: int = 6, chars: str = string.ascii_lowercase + string.digits) -> str:
-    """
-    Generates a random string of the specified size consisting entirely of lowercase ASCII
-    characters and numeric digits.  Safe for file or table names with the caveat that some systems
-    disallow names starting with a numeric digit.  If that's its intended use, consider prefacing
-    with a controlled string (e.g. "temp_file_" + generate_random_string()) or providing your own
-    character set.
-    """
-    return "".join(choice(chars) for _ in range(size))

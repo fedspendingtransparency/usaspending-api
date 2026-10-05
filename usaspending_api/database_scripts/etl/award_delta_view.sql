@@ -129,6 +129,11 @@ SELECT
   CAST("object_classes" AS VARCHAR(65535)) AS object_classes,
   "subaward_count",
   "total_subaward_amount",
+  /*
+   Ratio of subaward to prime award amount. Primw award amount, which is
+   total_subsidy_cost for loans and total_obligation for all other types.
+   */
+  COALESCE("total_subaward_amount", 0) / NULLIF("award_amount", 0) as subaward_to_award_ratio,
   "transaction_count",
 
   /*

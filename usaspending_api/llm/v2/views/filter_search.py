@@ -8,11 +8,13 @@ from rest_framework.request import Request
 from usaspending_api.common.api_request_utils import LLMAPIKeyHandler
 from usaspending_api.common.validator.tinyshield import TinyShield
 from usaspending_api.llm.assistants.filter_search import FilterSearchAssistant
-from usaspending_api.llm.models.db_models import Prompts, Session
+from usaspending_api.llm.models.db_models import Assistant, Session
 from usaspending_api.llm.tools.execute_filter import execute_filter_tool
+from usaspending_api.llm.tools.lookup_agency import lookup_agency_tool
+from usaspending_api.llm.tools.lookup_code import lookup_code_tool
 from usaspending_api.llm.tools.lookup_location import lookup_location_tool
 from usaspending_api.llm.tools.lookup_recipient import lookup_recipient_tool
-from usaspending_api.llm.v2.views.llm_base import LLMBase
+from usaspending_api.llm.v2.views.llm_base import FilterSearchEvent, LLMBase
 
 logger = logging.getLogger(__name__)
 
@@ -28,6 +30,8 @@ class FilterSearchViewSet(LLMBase):
 
     # Define a list of allowed AI tools to pass to the assistant.
     tools = [
+        lookup_agency_tool,
+        lookup_code_tool,
         lookup_location_tool,
         lookup_recipient_tool,
         execute_filter_tool,
@@ -41,20 +45,22 @@ class FilterSearchViewSet(LLMBase):
         ]
 
         try:
-            # Validate request and retrieve AI model.
+            # Validate request and retrieve the active filter-search Assistant.
             validated_request_data = TinyShield(models).block(request.data)
             query = validated_request_data["query"]
-            ai_model = self._get_ai_model()
+            try:
+                assistant_config = Assistant.objects.get(name="filter-search", is_active=True)
+            except Assistant.DoesNotExist as error:
+                raise ValueError("Active filter-search Assistant not found.") from error
+            ai_model = assistant_config.ai_model
 
             # Get available tools.
             tools = self.tools
 
-            # Retrieve system prompt from database (fall back to Assistant's default if not found).
-            system_prompt = None
-            try:
-                system_prompt = Prompts.objects.get(name="filter-preference")
-            except Prompts.DoesNotExist:
-                logger.warning("System prompt not found in database, using Assistant's default.")
+            # Use the active Assistant's configured system prompt and inference settings.
+            system_prompt = assistant_config.system_prompt
+            if system_prompt is None:
+                logger.warning("Active filter-search Assistant has no system prompt; using the default.")
 
             # Instantiate session.
             session = Session.objects.create(
@@ -66,7 +72,7 @@ class FilterSearchViewSet(LLMBase):
             logger.info(
                 f"Filter search session initialized: session_id={session.id}, model={ai_model.name}",
                 extra={
-                    "session_id": session.id,
+                    "session_id": str(session.id),
                     "model_id": ai_model.model_id,
                     "model_name": ai_model.name,
                     "provider": ai_model.provider,
@@ -76,29 +82,20 @@ class FilterSearchViewSet(LLMBase):
                 },
             )
 
-            # Create assistant with appropriate arguments.
-            assistant_kwargs = {
-                "model": ai_model,
-                "tools": tools,
-                "session": session,
-            }
-            # If system_prompt is set, override the Assistant's default prompt.
-            if system_prompt:
-                assistant_kwargs["system_message"] = system_prompt.text
-
-            assistant = FilterSearchAssistant(**assistant_kwargs)
+            # Create assistant from the persisted Assistant configuration.
+            assistant = FilterSearchAssistant(assistant=assistant_config, tools=tools, session=session)
 
             def event_stream() -> Generator[str, None, None]:
                 try:
                     for event in assistant.search(query):
-                        yield self._ndjson_format(event)
+                        yield self._ndjson_format(FilterSearchEvent(**event))
                 except Exception as e:
                     logger.error(f"Error during filter search: {str(e)}", exc_info=True)
-                    error_event = {
-                        "search_id": str(session.id),
-                        "type": "search_error",
-                        "message": "An error occurred.",
-                    }
+                    error_event = FilterSearchEvent(
+                        search_id=str(session.id),
+                        type="search_error",
+                        message="An error occurred.",
+                    )
                     yield self._ndjson_format(error_event)
                 finally:
                     # Update session end time when stream completes (success or error).
@@ -114,7 +111,7 @@ class FilterSearchViewSet(LLMBase):
                     logger.info(
                         f"Filter search session completed: session_id={session.id}, duration={duration_seconds:.3f}s",
                         extra={
-                            "session_id": session.id,
+                            "session_id": str(session.id),
                             "duration_seconds": duration_seconds,
                             "message_count": message_count,
                             "tool_use_count": tool_use_count,

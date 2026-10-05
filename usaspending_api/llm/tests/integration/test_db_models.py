@@ -1,5 +1,7 @@
+import uuid
+
 import pytest
-from django.db import IntegrityError
+from django.db import IntegrityError, connection, models
 from django.utils import timezone
 
 from usaspending_api.llm.models.db_models import AIModel, Assistant, Message, Prompts, Session, ToolUse
@@ -17,6 +19,12 @@ class TestAIModel:
         assert ai_model.name == "claude 3.5"
         assert ai_model.model_id == "anthropic.claude-3-5-sonnet"
         assert ai_model.provider == "anthropic"
+
+    def test_model_id_is_unique(self):
+        AIModel.objects.create(name="model 1", model_id="duplicate-id", provider="provider1")
+
+        with pytest.raises(IntegrityError):
+            AIModel.objects.create(name="model 2", model_id="duplicate-id", provider="provider2")
 
     def test_ai_model_str_representation(self):
         """Test __str__ method of AIModel"""
@@ -36,47 +44,6 @@ class TestAIModel:
         assert models[0] == model3
         assert models[1] == model2
         assert models[2] == model1
-
-    def test_ai_model_with_inference_config(self):
-        """Test creating an AIModel with custom inference config."""
-        ai_model = AIModel.objects.create(
-            name="claude 3.5",
-            model_id="anthropic.claude-3-5-sonnet",
-            provider="anthropic",
-            inference_config={
-                "temperature": 0.5,
-                "topP": 0.8,
-                "maxTokens": 8192,
-            },
-        )
-
-        assert ai_model.inference_config["temperature"] == 0.5
-        assert ai_model.inference_config["topP"] == 0.8
-        assert ai_model.inference_config["maxTokens"] == 8192
-
-    def test_ai_model_without_inference_config(self):
-        """Test that inference_config defaults to empty dict."""
-        ai_model = AIModel.objects.create(name="test model", model_id="test-id", provider="test-provider")
-
-        assert ai_model.inference_config == {}
-
-    def test_ai_model_update_inference_config(self):
-        """Test updating inference_config on existing model."""
-        ai_model = AIModel.objects.create(
-            name="test model", model_id="test-id", provider="test-provider", inference_config={"temperature": 0.0}
-        )
-
-        ai_model.inference_config = {
-            "temperature": 0.7,
-            "topP": 0.9,
-            "maxTokens": 4096,
-        }
-        ai_model.save()
-        ai_model.refresh_from_db()
-
-        assert ai_model.inference_config["temperature"] == 0.7
-        assert ai_model.inference_config["topP"] == 0.9
-        assert ai_model.inference_config["maxTokens"] == 4096
 
 
 @pytest.mark.django_db
@@ -133,12 +100,47 @@ class TestSession:
         session = Session.objects.create(ai_model=ai_model, system_prompt=prompt, tools=["tool1", "tool2"])
 
         assert session.id is not None
+        assert isinstance(session.id, uuid.UUID)
         assert session.ai_model == ai_model
         assert session.system_prompt == prompt
         assert session.tools == ["tool1", "tool2"]
         assert session.started_at is not None
         assert session.ended_at is None
         assert session.feedback is None
+
+    def test_session_id_is_uuid_field(self):
+        """session.id is a UUID both on the model and on the session table"""
+        id_field = Session._meta.get_field("id")
+        assert isinstance(id_field, models.UUIDField)
+        assert id_field.primary_key is True
+        assert id_field.default is uuid.uuid4
+
+        session = Session.objects.create()
+        assert isinstance(session.id, uuid.UUID)
+
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                SELECT data_type
+                FROM information_schema.columns
+                WHERE table_schema = current_schema()
+                  AND table_name = 'session'
+                  AND column_name = 'id'
+                """
+            )
+            row = cursor.fetchone()
+
+        assert row is not None
+        assert row[0] == "uuid"
+
+    def test_session_id_generates_unique_uuid_on_save(self):
+        """Confirms actual instances get valid, unique UUID values assigned"""
+        session1 = Session.objects.create()
+        session2 = Session.objects.create()
+
+        assert isinstance(session1.id, uuid.UUID)
+        assert isinstance(session2.id, uuid.UUID)
+        assert session1.id != session2.id
 
     def test_session_without_ai_model(self):
         """Test creating a session without an AI model"""
@@ -414,25 +416,29 @@ class TestAssistant:
         assert assistant.system_prompt == prompt
         assert assistant.inference_config["temperature"] == 0.5
 
-    def test_assistant_without_ai_model(self):
-        """Test creating an assistant without an AI model."""
-        assistant = Assistant.objects.create(name="test-assistant")
-        assert assistant.ai_model is None
+    def test_assistant_requires_ai_model(self):
+        """Test that creating an assistant without an AI model fails."""
+        with pytest.raises(IntegrityError):
+            Assistant.objects.create(name="test-assistant")
 
     def test_assistant_without_system_prompt(self):
         """Test creating an assistant without a system prompt."""
-        assistant = Assistant.objects.create(name="test-assistant")
+        model = AIModel.objects.create(name="test model", model_id="test-id", provider="test-provider")
+        assistant = Assistant.objects.create(name="test-assistant", ai_model=model)
         assert assistant.system_prompt is None
 
     def test_assistant_inference_config_default_value(self):
         """Test that inference_config defaults to empty dict."""
-        assistant = Assistant.objects.create(name="test-assistant")
+        model = AIModel.objects.create(name="test model", model_id="test-id", provider="test-provider")
+        assistant = Assistant.objects.create(name="test-assistant", ai_model=model)
         assert assistant.inference_config == {}
 
     def test_assistant_with_inference_config(self):
         """Test creating an Assistant with custom inference config."""
+        model = AIModel.objects.create(name="test model", model_id="test-id", provider="test-provider")
         assistant = Assistant.objects.create(
             name="test-assistant",
+            ai_model=model,
             inference_config={
                 "temperature": 0.7,
                 "topP": 0.8,
@@ -448,8 +454,9 @@ class TestAssistant:
 
     def test_assistant_update_inference_config(self):
         """Test updating inference_config on existing assistant."""
+        model = AIModel.objects.create(name="test model", model_id="test-id", provider="test-provider")
         assistant = Assistant.objects.create(
-            name="test-assistant", inference_config={"temperature": 0.0, "maxTokens": 1000}
+            name="test-assistant", ai_model=model, inference_config={"temperature": 0.0, "maxTokens": 1000}
         )
 
         assistant.inference_config = {

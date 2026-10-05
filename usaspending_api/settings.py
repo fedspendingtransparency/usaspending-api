@@ -226,6 +226,7 @@ GRANTS_URL = "https://apply07.grants.gov/grantsws/rest/opportunities/search/cfda
 
 # Applications https://docs.djangoproject.com/en/3.2/ref/settings/#installed-apps
 INSTALLED_APPS = [
+    "daphne",
     # Built-in
     "django.contrib.admin",
     "django.contrib.auth",
@@ -300,6 +301,7 @@ TEMPLATES = [
     }
 ]
 
+ASGI_APPLICATION = "usaspending_api.asgi.application"
 WSGI_APPLICATION = "usaspending_api.wsgi.application"
 
 # CORS Settings

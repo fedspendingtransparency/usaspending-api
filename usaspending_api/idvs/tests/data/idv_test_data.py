@@ -17,7 +17,6 @@ in the IDV world but has been added for testing purposes.  Hope this helps.
 import pytest
 from model_bakery import baker
 
-
 AWARD_COUNT = 15
 IDVS = (1, 2, 3, 4, 5, 7, 8)
 PARENTS = {3: 1, 4: 1, 5: 1, 6: 1, 7: 2, 8: 2, 9: 2, 10: 2, 11: 7, 12: 7, 13: 8, 14: 8, 15: 9}
@@ -30,6 +29,7 @@ def create_idv_test_data(db):
 
     dsws = baker.make(
         "submissions.DABSSubmissionWindowSchedule",
+        id=9998,
         submission_reveal_date="2021-01-01",
     )
 
@@ -40,7 +40,6 @@ def create_idv_test_data(db):
     # would we know for sure the $100 returned by our API endpoint actually came
     # from base_and_all_options and not base_exercised_options_val?
     for award_id in range(1, AWARD_COUNT + 1):
-
         parent_award_id = PARENTS.get(award_id)
 
         # These are intended to be grafted into strings so we will pad with
@@ -112,6 +111,8 @@ def create_idv_test_data(db):
         submission_attributes = baker.make(
             "submissions.SubmissionAttributes",
             submission_id=1000 + award_id,
+            submission_window=dsws,
+            submission_window_id=dsws.id,
             reporting_fiscal_year=2000 + award_id,
             reporting_fiscal_period=award_id % 12 + 1,
             reporting_fiscal_quarter=(award_id % 12 + 3) // 3,
@@ -188,12 +189,14 @@ def create_idv_test_data(db):
             "submissions.SubmissionAttributes",
             reporting_fiscal_year=2008,
             submission_window=dsws,
+            submission_window_id=dsws.id,
             toptier_code=awarding_toptier_agency.toptier_code,
         )
         baker.make(
             "submissions.SubmissionAttributes",
             reporting_fiscal_year=2008,
             submission_window=dsws,
+            submission_window_id=dsws.id,
             toptier_code=funding_toptier_agency.toptier_code,
         )
 

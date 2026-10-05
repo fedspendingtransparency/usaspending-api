@@ -9,3 +9,5 @@
       topP: 1.0
       maxTokens: 5000
       stopSequences: []
+    is_active: true
+    description: "Initial assistant created via fixture"
