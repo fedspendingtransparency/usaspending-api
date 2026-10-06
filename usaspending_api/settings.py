@@ -103,13 +103,11 @@ if not USASPENDING_AWS_REGION:
 
 # AWS Bedrock Guardrails Identifier (the ID or the ARN; either works).
 AWS_BEDROCK_GUARDRAIL_ID = os.environ.get("AWS_BEDROCK_GUARDRAIL_ID")
-# The ARN of the Secrets Manager object containing the Guardrail tag.
-AWS_BEDROCK_GUARDRAIL_TAG_SECRETS_MGR_ARN = os.environ.get("AWS_BEDROCK_GUARDRAIL_TAG_SECRETS_MGR_ARN")
 AWS_BEDROCK_GUARDRAIL_AWS_REGION = os.environ.get(
     "AWS_BEDROCK_GUARDRAIL_AWS_REGION",
     os.environ.get("AWS_DEFAULT_REGION", USASPENDING_AWS_REGION),
 )
-AWS_BEDROCK_GUARDRAIL_TAG_CACHE_SECONDS = int(os.environ.get("AWS_BEDROCK_GUARDRAIL_TAG_CACHE_SECONDS", "300"))
+AWS_BEDROCK_GUARDRAIL_VERSION_CACHE_SECONDS = int(os.environ.get("AWS_BEDROCK_GUARDRAIL_VERSION_CACHE_SECONDS", "300"))
 
 # AWS locations for CSV files
 CSV_LOCAL_PATH = str(REPO_DIR / "csv_downloads") + "/"

@@ -26,7 +26,7 @@ from usaspending_api.llm.v2.views.llm_base import FilterSearchEvent, LLMBase
 logger = logging.getLogger(__name__)
 
 
-def _run_query_through_guardrails(query: Any) -> Response | None:
+def _run_query_through_guardrails(query: str) -> Response | None:
     """
     Run the query through Bedrock Guardrails to check for violations.
 
@@ -89,7 +89,7 @@ class FilterSearchViewSet(LLMBase):
     ]
 
     @LLMAPIKeyHandler.require_api_key
-    def post(self, request: Request) -> StreamingHttpResponse:
+    def post(self, request: Request) -> Response | StreamingHttpResponse:
         # Accept a string sanitized as search input.
         models = [
             {"name": "filter_search", "key": "query", "type": "text", "text_type": "search", "min": 1, "max": 1000}
