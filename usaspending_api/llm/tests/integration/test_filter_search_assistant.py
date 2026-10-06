@@ -1,5 +1,5 @@
 import uuid
-from unittest.mock import Mock, patch
+from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 
@@ -16,23 +16,15 @@ def mock_session():
     # Track messages created during the test.
     session._test_messages = []
 
-    # Mock messages manager to return tracked messages.
     mock_messages_manager = Mock()
+    mock_messages_manager.count.return_value = 0
 
-    def get_all_messages():
-        # Return messages with default token values if they don't have them.
-        for msg in session._test_messages:
-            if not hasattr(msg, "input_tokens"):
-                msg.input_tokens = 10
-            if not hasattr(msg, "output_tokens"):
-                msg.output_tokens = 20
-            if not hasattr(msg, "tool_uses"):
-                msg.tool_uses = Mock()
-                msg.tool_uses.count.return_value = 0
-        return session._test_messages
+    async def aaggregate(*args, **kwargs):
+        input_tokens = sum(getattr(msg, "input_tokens", 0) or 0 for msg in session._test_messages)
+        output_tokens = sum(getattr(msg, "output_tokens", 0) or 0 for msg in session._test_messages)
+        return {"input_tokens": input_tokens, "output_tokens": output_tokens}
 
-    mock_messages_manager.all = get_all_messages
-    mock_messages_manager.count.return_value = len(session._test_messages)
+    mock_messages_manager.aaggregate = AsyncMock(side_effect=aaggregate)
     session.messages = mock_messages_manager
 
     return session
@@ -57,7 +49,7 @@ def mock_tool():
             "input_schema": {"type": "object", "properties": {}},
         }
     )
-    tool.function = Mock(return_value={"result": "success"})
+    tool.function = AsyncMock(return_value={"result": "success"})
     tool.logging = Mock(return_value="Executing test_tool")
     return tool
 
@@ -74,7 +66,7 @@ def mock_search_tool():
             "input_schema": {"type": "object", "properties": {}},
         }
     )
-    tool.function = Mock(return_value={"hash": "abc123", "results": []})
+    tool.function = AsyncMock(return_value={"hash": "abc123", "results": []})
     tool.logging = Mock(return_value="Searching federal contracts")
     return tool
 
@@ -89,15 +81,25 @@ def mock_assistant(mock_model):
 
 
 @pytest.fixture
-def assistant(mock_assistant, mock_tool, mock_search_tool, mock_session):
-    with patch("boto3.client"):
+def mock_bedrock_client():
+    """AsyncMock standing in for the aioboto3 bedrock-runtime client."""
+    return AsyncMock()
+
+
+@pytest.fixture
+def assistant(mock_assistant, mock_tool, mock_search_tool, mock_session, mock_bedrock_client):
+    with patch("usaspending_api.common.helpers.aws_helpers.aioboto3.Session") as mock_session_cls:
+        cm = AsyncMock()
+        cm.__aenter__.return_value = mock_bedrock_client
+        mock_session_cls.return_value.client.return_value = cm
+
         assistant = FilterSearchAssistant(
             assistant=mock_assistant,
             tools=[mock_tool, mock_search_tool],
             session=mock_session,
         )
-        assistant.client = Mock()
-        return assistant
+        assistant.client = mock_bedrock_client
+        yield assistant
 
 
 class TestFilterSearchAssistant:
@@ -111,15 +113,13 @@ class TestFilterSearchAssistant:
 
     def test_null_inference_values_are_omitted(self, mock_assistant, mock_tool, mock_session):
         mock_assistant.inference_config = {"temperature": 0.4, "topP": None, "maxTokens": None}
-        with patch("boto3.client"):
-            assistant = FilterSearchAssistant(assistant=mock_assistant, tools=[mock_tool], session=mock_session)
+        assistant = FilterSearchAssistant(assistant=mock_assistant, tools=[mock_tool], session=mock_session)
 
         assert assistant.inference_config == {"temperature": 0.4}
 
     def test_all_null_inference_values_produce_empty_config(self, mock_assistant, mock_tool, mock_session):
         mock_assistant.inference_config = {"temperature": None, "topP": None, "maxTokens": None}
-        with patch("boto3.client"):
-            assistant = FilterSearchAssistant(assistant=mock_assistant, tools=[mock_tool], session=mock_session)
+        assistant = FilterSearchAssistant(assistant=mock_assistant, tools=[mock_tool], session=mock_session)
 
         assert assistant.inference_config == {}
 
@@ -128,13 +128,12 @@ class TestFilterSearchAssistant:
 
     def test_system_message_uses_default_when_assistant_has_no_prompt(self, mock_assistant, mock_tool, mock_session):
         mock_assistant.system_prompt = None
-        with patch("boto3.client"):
-            assistant = FilterSearchAssistant(assistant=mock_assistant, tools=[mock_tool], session=mock_session)
+        assistant = FilterSearchAssistant(assistant=mock_assistant, tools=[mock_tool], session=mock_session)
 
         assert assistant.system_message == FilterSearchAssistant.DEFAULT_SYSTEM_MESSAGE
 
-    @patch("usaspending_api.llm.models.db_models.Message.objects.create")
-    def test_search_simple_response(self, mock_message_create, assistant):
+    @patch("usaspending_api.llm.models.db_models.Message.objects.acreate", new_callable=AsyncMock)
+    async def test_search_simple_response(self, mock_message_create, assistant):
         """Test search with a simple text response (no tool use)."""
 
         def create_message(**kwargs):
@@ -156,16 +155,16 @@ class TestFilterSearchAssistant:
             "stopReason": "end_turn",
         }
 
-        results = list(assistant.search("test query"))
+        results = [event async for event in assistant.search("test query")]
 
         assert len(results) == 1
         assert results[0]["type"] == "search_start"
         assert assistant.client.converse.call_count == 1
         assert mock_message_create.call_count == 2  # User message + assistant message
 
-    @patch("usaspending_api.llm.models.db_models.ToolUse.objects.create")
-    @patch("usaspending_api.llm.models.db_models.Message.objects.create")
-    def test_search_with_tool_use(self, mock_message_create, mock_tool_use_create, assistant):
+    @patch("usaspending_api.llm.models.db_models.ToolUse.objects.acreate", new_callable=AsyncMock)
+    @patch("usaspending_api.llm.models.db_models.Message.objects.acreate", new_callable=AsyncMock)
+    async def test_search_with_tool_use(self, mock_message_create, mock_tool_use_create, assistant):
         """Test search that requires tool use."""
 
         def create_message(**kwargs):
@@ -182,6 +181,7 @@ class TestFilterSearchAssistant:
 
         mock_tool_use = Mock()
         mock_tool_use.id = "tool-use-123"
+        mock_tool_use.asave = AsyncMock()
         mock_tool_use_create.return_value = mock_tool_use
 
         first_response = {
@@ -220,7 +220,7 @@ class TestFilterSearchAssistant:
 
         assistant.client.converse.side_effect = [first_response, second_response]
 
-        results = list(assistant.search("test query"))
+        results = [event async for event in assistant.search("test query")]
 
         event_types = [r["type"] for r in results]
 
@@ -228,61 +228,72 @@ class TestFilterSearchAssistant:
         assert "tool_complete" in event_types
         assert "search_complete" in event_types
 
-    @patch("usaspending_api.llm.models.db_models.ToolUse.objects.create")
-    @patch("usaspending_api.llm.models.db_models.Message.objects.create")
-    def test_search_with_search_tool_completion(
-        self, mock_message_create, mock_tool_use_create, mock_session, mock_assistant, mock_search_tool
+    @patch("usaspending_api.llm.models.db_models.ToolUse.objects.acreate", new_callable=AsyncMock)
+    @patch("usaspending_api.llm.models.db_models.Message.objects.acreate", new_callable=AsyncMock)
+    async def test_search_with_search_tool_completion(
+        self,
+        mock_message_create,
+        mock_tool_use_create,
+        mock_session,
+        mock_assistant,
+        mock_search_tool,
+        mock_bedrock_client,
     ):
         """Test search that completes with execute_filter tool."""
-        with patch("boto3.client"):
+        with patch("usaspending_api.common.helpers.aws_helpers.aioboto3.Session") as mock_session_cls:
+            cm = AsyncMock()
+            cm.__aenter__.return_value = mock_bedrock_client
+            mock_session_cls.return_value.client.return_value = cm
+
             assistant = FilterSearchAssistant(assistant=mock_assistant, tools=[mock_search_tool], session=mock_session)
-            assistant.client = Mock()
+            assistant.client = mock_bedrock_client
 
-        def create_message(**kwargs):
-            mock_message = Mock()
-            mock_message.input_tokens = kwargs.get("input_tokens", 10)
-            mock_message.output_tokens = kwargs.get("output_tokens", 20)
-            mock_message.id = len(assistant.session._test_messages) + 1
-            mock_message.tool_uses = Mock()
-            mock_message.tool_uses.count.return_value = 0
-            assistant.session._test_messages.append(mock_message)
-            return mock_message
+            def create_message(**kwargs):
+                mock_message = Mock()
+                mock_message.input_tokens = kwargs.get("input_tokens", 10)
+                mock_message.output_tokens = kwargs.get("output_tokens", 20)
+                mock_message.id = len(assistant.session._test_messages) + 1
+                mock_message.tool_uses = Mock()
+                mock_message.tool_uses.count.return_value = 0
+                assistant.session._test_messages.append(mock_message)
+                return mock_message
 
-        mock_message_create.side_effect = create_message
+            mock_message_create.side_effect = create_message
 
-        mock_tool_use = Mock()
-        mock_tool_use.id = "tool-use-123"
-        mock_tool_use_create.return_value = mock_tool_use
+            mock_tool_use = Mock()
+            mock_tool_use.id = "tool-use-123"
+            mock_tool_use.asave = AsyncMock()
+            mock_tool_use_create.return_value = mock_tool_use
 
-        response = {
-            "output": {
-                "message": {
-                    "role": "assistant",
-                    "content": [
-                        {
-                            "text": "Let me use a tool",
-                            "toolUse": {
-                                "toolUseId": "tool-123",
-                                "name": "execute_filter",
-                                "input": {"query": "test"},
+            response = {
+                "output": {
+                    "message": {
+                        "role": "assistant",
+                        "content": [
+                            {
+                                "text": "Let me use a tool",
+                                "toolUse": {
+                                    "toolUseId": "tool-123",
+                                    "name": "execute_filter",
+                                    "input": {"query": "test"},
+                                },
                             },
-                        },
-                    ],
-                }
-            },
-            "usage": {"inputTokens": 10, "outputTokens": 20},
-            "metrics": {"latencyMs": 100},
-            "stopReason": "tool_use",
-        }
+                        ],
+                    }
+                },
+                "usage": {"inputTokens": 10, "outputTokens": 20},
+                "metrics": {"latencyMs": 100},
+                "stopReason": "tool_use",
+            }
 
-        assistant.client.converse.return_value = response
+            assistant.client.converse.return_value = response
 
-        results = list(assistant.search("test query"))
+            results = [event async for event in assistant.search("test query")]
 
         assert any(r["type"] == "search_complete" and r["result"] == "abc123" for r in results)
 
-    @patch("usaspending_api.llm.models.db_models.Message.objects.create")
-    def test_max_tool_iterations(self, mock_message_create, assistant):
+    @patch("usaspending_api.llm.models.db_models.Message.objects.acreate", new_callable=AsyncMock)
+    async def test_max_tool_iterations(self, mock_message_create, assistant):
         """Test that tool iterations are limited to MAX_TOOL_ITERATIONS."""
 
         def create_message(**kwargs):
@@ -316,8 +327,11 @@ class TestFilterSearchAssistant:
 
         assistant.client.converse.return_value = response
 
-        with patch("usaspending_api.llm.models.db_models.ToolUse.objects.create"):
-            list(assistant.search("test query"))
+        with patch(
+            "usaspending_api.llm.models.db_models.ToolUse.objects.acreate", new_callable=AsyncMock
+        ) as mock_tool_use_create:
+            mock_tool_use_create.return_value.asave = AsyncMock()
+            _ = [event async for event in assistant.search("test query")]
 
         assert assistant.tool_iterations == assistant.MAX_TOOL_ITERATIONS
         assert assistant.client.converse.call_count == assistant.MAX_TOOL_ITERATIONS + 1
@@ -331,8 +345,8 @@ class TestFilterSearchAssistant:
         assert "toolSpec" in config["tools"][0]
         assert "inputSchema" in config["tools"][0]["toolSpec"]
 
-    @patch("usaspending_api.llm.models.db_models.Message.objects.create")
-    def test_message_ordering(self, mock_message_create, assistant):
+    @patch("usaspending_api.llm.models.db_models.Message.objects.acreate", new_callable=AsyncMock)
+    async def test_message_ordering(self, mock_message_create, assistant):
         """Test that messages are created with correct ordering."""
 
         def create_message(**kwargs):
@@ -354,64 +368,75 @@ class TestFilterSearchAssistant:
             "stopReason": "end_turn",
         }
 
-        list(assistant.search("test query"))
+        _ = [event async for event in assistant.search("test query")]
 
         calls = mock_message_create.call_args_list
         assert calls[0][1]["order"] == 0  # User message
         assert calls[1][1]["order"] == 1  # Assistant message
 
-    @patch("usaspending_api.llm.models.db_models.ToolUse.objects.create")
-    @patch("usaspending_api.llm.models.db_models.Message.objects.create")
-    def test_tool_error_handling(
-        self, mock_message_create, mock_tool_use_create, mock_session, mock_assistant, mock_search_tool
+    @patch("usaspending_api.llm.models.db_models.ToolUse.objects.acreate", new_callable=AsyncMock)
+    @patch("usaspending_api.llm.models.db_models.Message.objects.acreate", new_callable=AsyncMock)
+    async def test_tool_error_handling(
+        self,
+        mock_message_create,
+        mock_tool_use_create,
+        mock_session,
+        mock_assistant,
+        mock_search_tool,
+        mock_bedrock_client,
     ):
         """Test handling of tool errors."""
-        with patch("boto3.client"):
+        with patch("usaspending_api.common.helpers.aws_helpers.aioboto3.Session") as mock_session_cls:
+            cm = AsyncMock()
+            cm.__aenter__.return_value = mock_bedrock_client
+            mock_session_cls.return_value.client.return_value = cm
+
             assistant = FilterSearchAssistant(assistant=mock_assistant, tools=[mock_search_tool], session=mock_session)
-            assistant.client = Mock()
+            assistant.client = mock_bedrock_client
 
-        def create_message(**kwargs):
-            mock_message = Mock()
-            mock_message.input_tokens = kwargs.get("input_tokens", 10)
-            mock_message.output_tokens = kwargs.get("output_tokens", 20)
-            mock_message.id = len(assistant.session._test_messages) + 1
-            mock_message.tool_uses = Mock()
-            mock_message.tool_uses.count.return_value = 0
-            assistant.session._test_messages.append(mock_message)
-            return mock_message
+            def create_message(**kwargs):
+                mock_message = Mock()
+                mock_message.input_tokens = kwargs.get("input_tokens", 10)
+                mock_message.output_tokens = kwargs.get("output_tokens", 20)
+                mock_message.id = len(assistant.session._test_messages) + 1
+                mock_message.tool_uses = Mock()
+                mock_message.tool_uses.count.return_value = 0
+                assistant.session._test_messages.append(mock_message)
+                return mock_message
 
-        mock_message_create.side_effect = create_message
+            mock_message_create.side_effect = create_message
 
-        mock_tool_use = Mock()
-        mock_tool_use.id = "tool-use-123"
-        mock_tool_use_create.return_value = mock_tool_use
+            mock_tool_use = Mock()
+            mock_tool_use.id = "tool-use-123"
+            mock_tool_use.asave = AsyncMock()
+            mock_tool_use_create.return_value = mock_tool_use
 
-        mock_search_tool.function.return_value = {"error": "Something went wrong"}
+            mock_search_tool.function.return_value = {"error": "Something went wrong"}
 
-        response = {
-            "output": {
-                "message": {
-                    "role": "assistant",
-                    "content": [
-                        {
-                            "text": "Let me use a tool",
-                            "toolUse": {
-                                "toolUseId": "tool-123",
-                                "name": "execute_filter",
-                                "input": {"query": "test"},
-                            },
-                        }
-                    ],
-                }
-            },
-            "usage": {"inputTokens": 10, "outputTokens": 20},
-            "metrics": {"latencyMs": 100},
-            "stopReason": "tool_use",
-        }
+            response = {
+                "output": {
+                    "message": {
+                        "role": "assistant",
+                        "content": [
+                            {
+                                "text": "Let me use a tool",
+                                "toolUse": {
+                                    "toolUseId": "tool-123",
+                                    "name": "execute_filter",
+                                    "input": {"query": "test"},
+                                },
+                            }
+                        ],
+                    }
+                },
+                "usage": {"inputTokens": 10, "outputTokens": 20},
+                "metrics": {"latencyMs": 100},
+                "stopReason": "tool_use",
+            }
 
-        assistant.client.converse.return_value = response
+            assistant.client.converse.return_value = response
 
-        results = list(assistant.search("test query"))
+            results = [event async for event in assistant.search("test query")]
 
         # Should not yield search_complete when there's an error
         assert not any(r.get("type") == "search_complete" for r in results)
