@@ -1,5 +1,4 @@
 import copy
-from functools import lru_cache
 from sys import maxsize
 from typing import Iterable
 
@@ -12,7 +11,6 @@ from usaspending_api.search.filters.elasticsearch.psc import PSCCodes
 from usaspending_api.search.filters.elasticsearch.tas import TasCodes, TreasuryAccounts
 
 
-@lru_cache(maxsize=1)
 def _get_def_codes() -> Iterable:
     """This function is here to avoid issues where this file gets imported by management commands, but the database
     is not available yet. For example the check_for_endpoint_documentation management command.
