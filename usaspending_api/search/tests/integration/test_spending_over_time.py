@@ -336,7 +336,6 @@ def test_spending_over_time_failure(client, monkeypatch, elasticsearch_transacti
 
 @pytest.mark.django_db
 def test_spending_over_time_subawards_success(client, monkeypatch, elasticsearch_subaward_index):
-
     setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
 
     resp = client.post(
