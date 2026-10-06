@@ -32,6 +32,7 @@ TOOLS = [
     execute_filter_tool,
 ]
 
+
 async def _run_query_through_guardrails(query: str) -> JsonResponse | None:
     """
     Run the query through Bedrock Guardrails to check for violations.
