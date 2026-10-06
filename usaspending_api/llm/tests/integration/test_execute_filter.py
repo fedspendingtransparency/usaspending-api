@@ -1,4 +1,4 @@
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
@@ -6,7 +6,7 @@ from usaspending_api.llm.models.py_models import Filters
 from usaspending_api.llm.tools.execute_filter import execute_filter, execute_filter_tool
 from usaspending_api.references.models import FilterHash
 
-pytestmark = pytest.mark.django_db
+pytestmark = pytest.mark.django_db(transaction=True)
 
 
 @pytest.fixture
@@ -37,45 +37,52 @@ def mock_filter_hash():
     """Fixture to mock FilterHash model."""
     with patch("usaspending_api.llm.tools.execute_filter.FilterHash") as mock:
         mock.DoesNotExist = FilterHash.DoesNotExist
+        mock.objects.aget = AsyncMock()
         yield mock
+
+
+def _new_mock_instance():
+    mock_instance = MagicMock()
+    mock_instance.asave = AsyncMock()
+    return mock_instance
 
 
 class TestInputValidation:
     """Test input validation and error handling."""
 
-    def test_valid_filters_accepted(self, sample_filters):
+    async def test_valid_filters_accepted(self, sample_filters):
         """Test that valid filters are accepted."""
-        result = execute_filter(**sample_filters)
+        result = await execute_filter(**sample_filters)
 
         assert "hash" in result
         assert "error" not in result
 
-    def test_invalid_filters_return_error(self):
+    async def test_invalid_filters_return_error(self):
         """Test that invalid filters return validation error."""
-        result = execute_filter(invalid_field="invalid_value")
+        result = await execute_filter(invalid_field="invalid_value")
 
         assert "error" in result
         assert "message" in result
         assert "invalid" in result["message"].lower()
 
-    def test_empty_filters_accepted(self):
+    async def test_empty_filters_accepted(self):
         """Test that empty filters are valid."""
-        result = execute_filter()
+        result = await execute_filter()
 
         assert "hash" in result
         assert "error" not in result
 
-    def test_validation_error_message_includes_details(self):
+    async def test_validation_error_message_includes_details(self):
         """Test that validation errors include helpful details."""
-        result = execute_filter(time_period="invalid")
+        result = await execute_filter(time_period="invalid")
 
         assert "error" in result
         assert isinstance(result["error"], str)
         assert len(result["error"]) > 0
 
-    def test_partial_valid_filters(self):
+    async def test_partial_valid_filters(self):
         """Test filters with only some valid fields."""
-        result = execute_filter(awardType=["A", "B"], invalid_field="should_be_ignored")
+        result = await execute_filter(awardType=["A", "B"], invalid_field="should_be_ignored")
 
         # Should fail validation due to invalid field
         assert "error" in result
@@ -84,29 +91,29 @@ class TestInputValidation:
 class TestFilterProcessing:
     """Test filter processing and transformation."""
 
-    def test_filters_converted_to_filter_request(self, sample_filters, mock_filter_hash):
+    async def test_filters_converted_to_filter_request(self, sample_filters, mock_filter_hash):
         """Test that filters are properly converted to FilterRequest format."""
-        mock_filter_hash.objects.get.side_effect = FilterHash.DoesNotExist
-        mock_instance = MagicMock()
+        mock_filter_hash.objects.aget.side_effect = FilterHash.DoesNotExist
+        mock_instance = _new_mock_instance()
         mock_instance.hash = "test_hash_value"
         mock_filter_hash.return_value = mock_instance
 
-        result = execute_filter(**sample_filters)
+        result = await execute_filter(**sample_filters)
 
         assert "hash" in result
         assert mock_filter_hash.called
-        assert mock_instance.save.called
+        assert mock_instance.asave.called
         call_args = mock_filter_hash.call_args[1]
         saved_filter = call_args["filter"]
         assert "filters" in saved_filter
 
-    def test_exclude_none_values(self, mock_filter_hash):
+    async def test_exclude_none_values(self, mock_filter_hash):
         """Test that None values are excluded from filter request."""
-        mock_filter_hash.objects.get.side_effect = FilterHash.DoesNotExist
-        mock_instance = MagicMock()
+        mock_filter_hash.objects.aget.side_effect = FilterHash.DoesNotExist
+        mock_instance = _new_mock_instance()
         mock_filter_hash.return_value = mock_instance
 
-        execute_filter(awardType=["A"])
+        await execute_filter(awardType=["A"])
 
         call_args = mock_filter_hash.call_args
         saved_filter = call_args[1]["filter"]
@@ -116,13 +123,13 @@ class TestFilterProcessing:
         # None fields should not be present
         assert all(v is not None for v in saved_filter["filters"].values())
 
-    def test_keyword_transformation(self, mock_filter_hash):
+    async def test_keyword_transformation(self, mock_filter_hash):
         """Test that keyword field is transformed to dict format."""
-        mock_filter_hash.objects.get.side_effect = FilterHash.DoesNotExist
-        mock_instance = MagicMock()
+        mock_filter_hash.objects.aget.side_effect = FilterHash.DoesNotExist
+        mock_instance = _new_mock_instance()
         mock_filter_hash.return_value = mock_instance
 
-        execute_filter(keyword=["test", "search"])
+        await execute_filter(keyword=["test", "search"])
 
         call_args = mock_filter_hash.call_args
         saved_filter = call_args[1]["filter"]
@@ -133,13 +140,13 @@ class TestFilterProcessing:
         assert isinstance(keyword_dict, dict)
         assert keyword_dict == {"test": "test", "search": "search"}
 
-    def test_keyword_empty_list(self, mock_filter_hash):
+    async def test_keyword_empty_list(self, mock_filter_hash):
         """Test handling of empty keyword list."""
-        mock_filter_hash.objects.get.side_effect = FilterHash.DoesNotExist
-        mock_instance = MagicMock()
+        mock_filter_hash.objects.aget.side_effect = FilterHash.DoesNotExist
+        mock_instance = _new_mock_instance()
         mock_filter_hash.return_value = mock_instance
 
-        execute_filter(keyword=[])
+        await execute_filter(keyword=[])
 
         call_args = mock_filter_hash.call_args
         saved_filter = call_args[1]["filter"]
@@ -148,14 +155,14 @@ class TestFilterProcessing:
         if "keyword" in saved_filter["filters"]:
             assert saved_filter["filters"]["keyword"] == {}
 
-    def test_filter_json_sorted_keys(self, mock_filter_hash):
+    async def test_filter_json_sorted_keys(self, mock_filter_hash):
         """Test that filter JSON has sorted keys for consistent hashing."""
-        mock_filter_hash.objects.get.side_effect = FilterHash.DoesNotExist
-        mock_instance = MagicMock()
+        mock_filter_hash.objects.aget.side_effect = FilterHash.DoesNotExist
+        mock_instance = _new_mock_instance()
         mock_filter_hash.return_value = mock_instance
 
         # Create filters with multiple fields
-        result = execute_filter(
+        result = await execute_filter(
             awardType=["A"],
             selectedAwardingAgencies={
                 "1_toptier": {
@@ -182,55 +189,55 @@ class TestHashCreationAndStorage:
     """Test hash creation and database storage."""
 
     @patch("usaspending_api.llm.tools.execute_filter.create_hash")
-    def test_hash_created_from_filter_json(self, mock_create_hash, mock_filter_hash):
+    async def test_hash_created_from_filter_json(self, mock_create_hash, mock_filter_hash):
         """Test that hash is created from filter JSON."""
         mock_create_hash.return_value = "test_hash_123"
-        mock_filter_hash.objects.get.side_effect = FilterHash.DoesNotExist
-        mock_instance = MagicMock()
+        mock_filter_hash.objects.aget.side_effect = FilterHash.DoesNotExist
+        mock_instance = _new_mock_instance()
         mock_filter_hash.return_value = mock_instance
 
-        result = execute_filter(awardType=["A"])
+        result = await execute_filter(awardType=["A"])
 
         # Verify create_hash was called
         assert mock_create_hash.called
         # Verify hash is returned
         assert result["hash"] == "test_hash_123"
 
-    def test_existing_hash_not_recreated(self, mock_filter_hash):
+    async def test_existing_hash_not_recreated(self, mock_filter_hash):
         """Test that existing hash is returned without creating new entry."""
         existing_hash = MagicMock()
         existing_hash.hash = "existing_hash_456"
-        mock_filter_hash.objects.get.return_value = existing_hash
+        mock_filter_hash.objects.aget.return_value = existing_hash
 
-        result = execute_filter(awardType=["A"])
+        result = await execute_filter(awardType=["A"])
 
         # Should return existing hash
         assert "hash" in result
         # Should not create new FilterHash
         assert not mock_filter_hash.called
 
-    def test_new_hash_saved_to_database(self, mock_filter_hash):
+    async def test_new_hash_saved_to_database(self, mock_filter_hash):
         """Test that new hash is saved to database."""
-        mock_filter_hash.objects.get.side_effect = FilterHash.DoesNotExist
-        mock_instance = MagicMock()
+        mock_filter_hash.objects.aget.side_effect = FilterHash.DoesNotExist
+        mock_instance = _new_mock_instance()
         mock_filter_hash.return_value = mock_instance
 
-        result = execute_filter(awardType=["A"])
+        result = await execute_filter(awardType=["A"])
 
         # Verify FilterHash was created
         assert mock_filter_hash.called
         # Verify save was called
-        assert mock_instance.save.called
+        assert mock_instance.asave.called
         # Verify hash is returned
         assert "hash" in result
 
-    def test_hash_includes_filter_json(self, mock_filter_hash):
+    async def test_hash_includes_filter_json(self, mock_filter_hash):
         """Test that saved hash includes filter JSON."""
-        mock_filter_hash.objects.get.side_effect = FilterHash.DoesNotExist
-        mock_instance = MagicMock()
+        mock_filter_hash.objects.aget.side_effect = FilterHash.DoesNotExist
+        mock_instance = _new_mock_instance()
         mock_filter_hash.return_value = mock_instance
 
-        execute_filter(awardType=["A", "B"])
+        await execute_filter(awardType=["A", "B"])
 
         # Verify FilterHash was called with filter JSON
         call_args = mock_filter_hash.call_args
@@ -239,28 +246,28 @@ class TestHashCreationAndStorage:
         assert "filters" in saved_filter
         assert saved_filter["filters"]["awardType"] == ["A", "B"]
 
-    def test_same_filters_produce_same_hash(self, mock_filter_hash):
+    async def test_same_filters_produce_same_hash(self, mock_filter_hash):
         """Test that identical filters produce identical hashes."""
-        mock_filter_hash.objects.get.side_effect = FilterHash.DoesNotExist
-        mock_instance = MagicMock()
+        mock_filter_hash.objects.aget.side_effect = FilterHash.DoesNotExist
+        mock_instance = _new_mock_instance()
         mock_filter_hash.return_value = mock_instance
 
         filters = {"awardType": ["A", "B"]}
 
-        result1 = execute_filter(**filters)
-        result2 = execute_filter(**filters)
+        result1 = await execute_filter(**filters)
+        result2 = await execute_filter(**filters)
 
         # Both should produce the same hash
         assert result1["hash"] == result2["hash"]
 
-    def test_different_filters_produce_different_hashes(self, mock_filter_hash):
+    async def test_different_filters_produce_different_hashes(self, mock_filter_hash):
         """Test that different filters produce different hashes."""
-        mock_filter_hash.objects.get.side_effect = FilterHash.DoesNotExist
-        mock_instance = MagicMock()
+        mock_filter_hash.objects.aget.side_effect = FilterHash.DoesNotExist
+        mock_instance = _new_mock_instance()
         mock_filter_hash.return_value = mock_instance
 
-        result1 = execute_filter(awardType=["A"])
-        result2 = execute_filter(awardType=["B"])
+        result1 = await execute_filter(awardType=["A"])
+        result2 = await execute_filter(awardType=["B"])
 
         # Should produce different hashes
         assert result1["hash"] != result2["hash"]
@@ -269,45 +276,45 @@ class TestHashCreationAndStorage:
 class TestErrorHandling:
     """Test error handling scenarios."""
 
-    def test_validation_error_returns_error_dict(self):
+    async def test_validation_error_returns_error_dict(self):
         """Test that validation errors return proper error dict."""
-        result = execute_filter(time_period="invalid_format")
+        result = await execute_filter(time_period="invalid_format")
 
         assert "error" in result
         assert "message" in result
         assert isinstance(result["error"], str)
         assert isinstance(result["message"], str)
 
-    def test_database_save_error_returns_error_dict(self, mock_filter_hash):
+    async def test_database_save_error_returns_error_dict(self, mock_filter_hash):
         """Test that database save errors return proper error dict."""
-        mock_filter_hash.objects.get.side_effect = FilterHash.DoesNotExist
-        mock_instance = MagicMock()
-        mock_instance.save.side_effect = Exception("Database error")
+        mock_filter_hash.objects.aget.side_effect = FilterHash.DoesNotExist
+        mock_instance = _new_mock_instance()
+        mock_instance.asave.side_effect = Exception("Database error")
         mock_filter_hash.return_value = mock_instance
 
-        result = execute_filter(awardType=["A"])
+        result = await execute_filter(awardType=["A"])
 
         assert "error" in result
         assert "message" in result
         assert "error saving" in result["message"].lower()
 
-    def test_error_message_includes_exception_details(self, mock_filter_hash):
+    async def test_error_message_includes_exception_details(self, mock_filter_hash):
         """Test that error messages include exception details."""
-        mock_filter_hash.objects.get.side_effect = FilterHash.DoesNotExist
-        mock_instance = MagicMock()
-        mock_instance.save.side_effect = Exception("Specific database error")
+        mock_filter_hash.objects.aget.side_effect = FilterHash.DoesNotExist
+        mock_instance = _new_mock_instance()
+        mock_instance.asave.side_effect = Exception("Specific database error")
         mock_filter_hash.return_value = mock_instance
 
-        result = execute_filter(awardType=["A"])
+        result = await execute_filter(awardType=["A"])
 
         assert "Specific database error" in result["error"]
 
-    def test_validation_error_does_not_save_to_database(self, mock_filter_hash):
+    async def test_validation_error_does_not_save_to_database(self, mock_filter_hash):
         """Test that validation errors don't attempt database save."""
-        execute_filter(invalid_field="invalid")
+        await execute_filter(invalid_field="invalid")
 
         # Should not attempt to access database
-        assert not mock_filter_hash.objects.get.called
+        assert not mock_filter_hash.objects.aget.called
         assert not mock_filter_hash.called
 
 
@@ -359,13 +366,13 @@ class TestAIToolImplementation:
         assert isinstance(log_msg, str)
         assert "Selecting filters" in log_msg
 
-    def test_tool_execution_through_aitool(self, mock_filter_hash):
+    async def test_tool_execution_through_aitool(self, mock_filter_hash):
         """Test executing tool through AITool interface."""
-        mock_filter_hash.objects.get.side_effect = FilterHash.DoesNotExist
-        mock_instance = MagicMock()
+        mock_filter_hash.objects.aget.side_effect = FilterHash.DoesNotExist
+        mock_instance = _new_mock_instance()
         mock_filter_hash.return_value = mock_instance
 
-        result = execute_filter_tool.function(awardType=["A"])
+        result = await execute_filter_tool.function(awardType=["A"])
 
         assert "hash" in result
 
@@ -373,7 +380,7 @@ class TestAIToolImplementation:
 class TestIntegrationWithFiltersModel:
     """Test integration with Filters Pydantic model."""
 
-    def test_all_filters_model_fields_supported(self):
+    async def test_all_filters_model_fields_supported(self):
         """Test that all Filters model fields are supported."""
         # Get all fields from Filters model
         filters_schema = Filters.model_json_schema()
@@ -391,24 +398,24 @@ class TestIntegrationWithFiltersModel:
                 test_data[field_name] = ["test"]
 
         # Should not raise validation error
-        result = execute_filter(**test_data)
+        result = await execute_filter(**test_data)
         assert "hash" in result or "error" in result
 
-    def test_filters_model_validation_applied(self):
+    async def test_filters_model_validation_applied(self):
         """Test that Filters model validation is applied."""
         # Invalid date format should fail validation
-        result = execute_filter(time_period=[{"start_date": "invalid-date"}])
+        result = await execute_filter(time_period=[{"start_date": "invalid-date"}])
 
         # Should return validation error
         assert "error" in result
 
-    def test_complex_filters_combination(self, mock_filter_hash):
+    async def test_complex_filters_combination(self, mock_filter_hash):
         """Test complex combination of multiple filters."""
-        mock_filter_hash.objects.get.side_effect = FilterHash.DoesNotExist
-        mock_instance = MagicMock()
+        mock_filter_hash.objects.aget.side_effect = FilterHash.DoesNotExist
+        mock_instance = _new_mock_instance()
         mock_filter_hash.return_value = mock_instance
 
-        result = execute_filter(
+        result = await execute_filter(
             awardType=["A", "B", "C"],
             timePeriodType="dr",
             time_period=[{"start_date": "2023-01-01", "end_date": "2023-12-31"}],
@@ -434,46 +441,46 @@ class TestIntegrationWithFiltersModel:
 class TestEdgeCases:
     """Test edge cases and special scenarios."""
 
-    def test_very_large_filter_set(self, mock_filter_hash):
+    async def test_very_large_filter_set(self, mock_filter_hash):
         """Test handling of very large filter sets."""
-        mock_filter_hash.objects.get.side_effect = FilterHash.DoesNotExist
-        mock_instance = MagicMock()
+        mock_filter_hash.objects.aget.side_effect = FilterHash.DoesNotExist
+        mock_instance = _new_mock_instance()
         mock_filter_hash.return_value = mock_instance
 
         # Create large filter set
         large_codes = [f"CODE_{i}" for i in range(100)]
 
-        result = execute_filter(awardType=large_codes)
+        result = await execute_filter(awardType=large_codes)
 
         assert "hash" in result
 
-    def test_unicode_in_filters(self, mock_filter_hash):
+    async def test_unicode_in_filters(self, mock_filter_hash):
         """Test handling of unicode characters in filters."""
-        mock_filter_hash.objects.get.side_effect = FilterHash.DoesNotExist
-        mock_instance = MagicMock()
+        mock_filter_hash.objects.aget.side_effect = FilterHash.DoesNotExist
+        mock_instance = _new_mock_instance()
         mock_filter_hash.return_value = mock_instance
 
-        result = execute_filter(keyword=["test™", "café", "日本"])
+        result = await execute_filter(keyword=["test™", "café", "日本"])
 
         assert "hash" in result
 
-    def test_special_characters_in_keyword(self, mock_filter_hash):
+    async def test_special_characters_in_keyword(self, mock_filter_hash):
         """Test handling of special characters in keyword field."""
-        mock_filter_hash.objects.get.side_effect = FilterHash.DoesNotExist
-        mock_instance = MagicMock()
+        mock_filter_hash.objects.aget.side_effect = FilterHash.DoesNotExist
+        mock_instance = _new_mock_instance()
         mock_filter_hash.return_value = mock_instance
 
-        result = execute_filter(keyword=["test & co.", "50% off", "$1,000"])
+        result = await execute_filter(keyword=["test & co.", "50% off", "$1,000"])
 
         assert "hash" in result
 
-    def test_nested_filter_structures(self, mock_filter_hash):
+    async def test_nested_filter_structures(self, mock_filter_hash):
         """Test handling of deeply nested filter structures."""
-        mock_filter_hash.objects.get.side_effect = FilterHash.DoesNotExist
-        mock_instance = MagicMock()
+        mock_filter_hash.objects.aget.side_effect = FilterHash.DoesNotExist
+        mock_instance = _new_mock_instance()
         mock_filter_hash.return_value = mock_instance
 
-        result = execute_filter(
+        result = await execute_filter(
             selectedAwardingAgencies={
                 "1_toptier": {
                     "id": 1,
@@ -491,13 +498,13 @@ class TestEdgeCases:
 
         assert "hash" in result
 
-    def test_empty_list_filters(self, mock_filter_hash):
+    async def test_empty_list_filters(self, mock_filter_hash):
         """Test handling of empty list filters."""
-        mock_filter_hash.objects.get.side_effect = FilterHash.DoesNotExist
-        mock_instance = MagicMock()
+        mock_filter_hash.objects.aget.side_effect = FilterHash.DoesNotExist
+        mock_instance = _new_mock_instance()
         mock_filter_hash.return_value = mock_instance
 
-        result = execute_filter(awardType=[], keyword=[])
+        result = await execute_filter(awardType=[], keyword=[])
 
         assert "hash" in result
 
@@ -505,13 +512,13 @@ class TestEdgeCases:
 class TestRealWorldScenarios:
     """Test realistic usage scenarios."""
 
-    def test_typical_award_search_filters(self, mock_filter_hash):
+    async def test_typical_award_search_filters(self, mock_filter_hash):
         """Test typical award search filter combination."""
-        mock_filter_hash.objects.get.side_effect = FilterHash.DoesNotExist
-        mock_instance = MagicMock()
+        mock_filter_hash.objects.aget.side_effect = FilterHash.DoesNotExist
+        mock_instance = _new_mock_instance()
         mock_filter_hash.return_value = mock_instance
 
-        result = execute_filter(
+        result = await execute_filter(
             timePeriodType="dr",
             time_period=[{"start_date": "2023-01-01", "end_date": "2023-12-31"}],
             awardType=["A", "B", "C", "D"],
@@ -533,23 +540,23 @@ class TestRealWorldScenarios:
 
         assert "hash" in result
 
-    def test_recipient_focused_search(self, mock_filter_hash):
+    async def test_recipient_focused_search(self, mock_filter_hash):
         """Test recipient-focused search filters."""
-        mock_filter_hash.objects.get.side_effect = FilterHash.DoesNotExist
-        mock_instance = MagicMock()
+        mock_filter_hash.objects.aget.side_effect = FilterHash.DoesNotExist
+        mock_instance = _new_mock_instance()
         mock_filter_hash.return_value = mock_instance
 
-        result = execute_filter(selectedRecipients=["ACME Corporation"], recipientType=["business"])
+        result = await execute_filter(selectedRecipients=["ACME Corporation"], recipientType=["business"])
 
         assert "hash" in result
 
-    def test_location_based_search(self, mock_filter_hash):
+    async def test_location_based_search(self, mock_filter_hash):
         """Test location-based search filters."""
-        mock_filter_hash.objects.get.side_effect = FilterHash.DoesNotExist
-        mock_instance = MagicMock()
+        mock_filter_hash.objects.aget.side_effect = FilterHash.DoesNotExist
+        mock_instance = _new_mock_instance()
         mock_filter_hash.return_value = mock_instance
 
-        result = execute_filter(
+        result = await execute_filter(
             selectedLocations={
                 "USA_TX": {
                     "identifier": "USA_TX",
@@ -561,22 +568,22 @@ class TestRealWorldScenarios:
 
         assert "hash" in result
 
-    def test_filter_reuse_returns_same_hash(self, mock_filter_hash):
+    async def test_filter_reuse_returns_same_hash(self, mock_filter_hash):
         """Test that reusing same filters returns same hash."""
         # First call creates hash
-        mock_filter_hash.objects.get.side_effect = FilterHash.DoesNotExist
-        mock_instance = MagicMock()
+        mock_filter_hash.objects.aget.side_effect = FilterHash.DoesNotExist
+        mock_instance = _new_mock_instance()
         mock_filter_hash.return_value = mock_instance
 
         filters = {"awardType": ["A", "B"]}
-        result1 = execute_filter(**filters)
+        result1 = await execute_filter(**filters)
 
         # Second call finds existing hash
-        mock_filter_hash.objects.get.side_effect = None
+        mock_filter_hash.objects.aget.side_effect = None
         existing = MagicMock()
         existing.hash = result1["hash"]
-        mock_filter_hash.objects.get.return_value = existing
+        mock_filter_hash.objects.aget.return_value = existing
 
-        result2 = execute_filter(**filters)
+        result2 = await execute_filter(**filters)
 
         assert result1["hash"] == result2["hash"]
