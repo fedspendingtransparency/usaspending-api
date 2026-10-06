@@ -7,9 +7,8 @@ from django.http import HttpRequest, JsonResponse, StreamingHttpResponse
 from django.utils import timezone
 
 from usaspending_api.llm.assistants.filter_search import FilterSearchAssistant
-from usaspending_api.llm.models.db_models import ToolUse
+from usaspending_api.llm.models.db_models import Assistant, Session, ToolUse
 from usaspending_api.llm.models.py_models import FilterSearchEvent, FilterSearchInput
-from usaspending_api.llm.models.db_models import Assistant, Session
 from usaspending_api.llm.services.guardrails import (
     BedrockGuardrailService,
     GuardrailConfigurationError,
@@ -77,7 +76,6 @@ async def _run_query_through_guardrails(query: str) -> JsonResponse | None:
             {"detail": "The submitted request cannot be processed."},
             status=400,
         )
-    return None
 
 
 def _ndjson(event: FilterSearchEvent) -> str:
