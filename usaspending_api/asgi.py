@@ -6,17 +6,23 @@ It exposes the ASGI callable as a module-level variable named ``application``.
 
 import logging
 import os
+import platform
 from typing import Any
 
 from asgiref.typing import Scope
+from daphne import __version__ as daphne_version
+from django import __version__ as django_version
+from django.contrib.staticfiles.handlers import ASGIStaticFilesHandler
 from django.core.asgi import get_asgi_application
+from ninja import __version__ as django_ninja_version
 from opentelemetry import trace
 from opentelemetry.instrumentation.asgi import OpenTelemetryMiddleware, asgi_getter
 from opentelemetry.instrumentation.django import DjangoInstrumentor
 from opentelemetry.trace import Span
+from rest_framework import __version__ as drf_version
 
 from usaspending_api.common.logging import configure_logging
-from usaspending_api.settings import IS_LOCAL, TRACE_ENV
+from usaspending_api.settings import DEBUG, IS_LOCAL, TRACE_ENV
 
 # Constants
 HEADERS_TO_CAPTURE = [
@@ -81,6 +87,23 @@ OTEL_EXPORTER_OTLP_TRACES_ENDPOINT = os.getenv("OTEL_EXPORTER_OTLP_TRACES_ENDPOI
 ############################################################
 
 application = get_asgi_application()
+if DEBUG:
+    # Serving via daphne directly bypasses runserver's automatic static-file handling,
+    # which debug_toolbar and the docs UI rely on for their CSS/JS assets.
+    application = ASGIStaticFilesHandler(application)
 application = OpenTelemetryMiddleware(
     application, client_request_hook=client_request_hook, client_response_hook=client_response_hook
 )
+
+logger.info(
+    f"""
+{"=" * 40}
+    Python: {platform.python_version()}
+    Django: {django_version}
+    Django Ninja: {django_ninja_version}
+    Django REST Framework: {drf_version}
+    Daphne: {daphne_version}
+{"=" * 40}
+    """
+)
+logger.info("Ready for requests.")

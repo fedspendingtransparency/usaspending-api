@@ -3,12 +3,38 @@ from ssl import CERT_NONE
 from typing import Callable, Optional, Union
 
 from django.conf import settings
-from opensearchpy import ConnectionError, ConnectionTimeout, NotFoundError, OpenSearch, TransportError
+from opensearchpy import (
+    AsyncOpenSearch,
+    ConnectionError,
+    ConnectionTimeout,
+    NotFoundError,
+    OpenSearch,
+    TransportError,
+)
 from opensearchpy.connection import create_ssl_context
 from opensearchpy.helpers.response import Response
 from opensearchpy.helpers.search import Search as SearchBase
 
 logger = logging.getLogger("console")
+
+
+def _build_es_config() -> dict:
+    if settings.ES_HOSTNAME is None or settings.ES_HOSTNAME == "":
+        logger.error("env var 'ES_HOSTNAME' needs to be set for Elasticsearch connection")
+    es_config = {"hosts": [settings.ES_HOSTNAME], "timeout": settings.ES_TIMEOUT}
+    # If the connection string is using SSL with localhost, disable verifying
+    # the certificates to allow testing in a development environment
+    # Also allow host.docker.internal, when SSH-tunneling on localhost to a remote nonprod instance over HTTPS
+    if settings.ES_HOSTNAME.startswith(("https://localhost", "https://host.docker.internal")):
+        logger.warning("SSL cert verification is disabled. Safe only for local development")
+        import urllib3
+
+        urllib3.disable_warnings()
+        ssl_context = create_ssl_context()
+        ssl_context.check_hostname = False
+        ssl_context.verify_mode = CERT_NONE
+        es_config["ssl_context"] = ssl_context
+    return es_config
 
 
 class Search(SearchBase):
@@ -123,6 +149,95 @@ class RecipientSearch(Search):
 
 
 class LocationSearch(Search):
+    _index_name = f"{settings.ES_LOCATIONS_QUERY_ALIAS_PREFIX}*"
+
+    @staticmethod
+    def type_as_string():
+        return "location_search"
+
+
+class AsyncSearch(SearchBase):
+    """
+    Async counterpart to `Search`. opensearch-py ships an `AsyncOpenSearch` client but no
+    async DSL search helper, and `SearchBase.execute()`/`.count()` hardcode a sync client
+    call - so execution is reimplemented here with `await` instead of delegating to those.
+    """
+
+    _index_name = None
+
+    def __init__(self, **kwargs) -> None:
+        self.client: AsyncOpenSearch = self._create_es_client()
+        kwargs.update({"index": self._index_name, "using": self.client})
+        super().__init__(**kwargs)
+
+    @staticmethod
+    def _create_es_client() -> AsyncOpenSearch:
+        try:
+            return AsyncOpenSearch(**_build_es_config())
+        except Exception as e:
+            logger.error("Error creating the async elasticsearch client: {}".format(e))
+
+    async def _execute(self, timeout: str) -> Response:
+        response = await self.client.search(index=self._index, body=self.to_dict(), timeout=timeout, **self._params)
+        self._response = self._response_class(self, response)
+        return self._response
+
+    async def _count(self, timeout: str) -> int:
+        d = self.to_dict(count=True)
+        result = await self.client.count(index=self._index, body=d, **self._params)
+        return result["count"]
+
+    async def _handle_retry(self, func: Callable, retries: int, timeout: str) -> Optional[Union[Response, int]]:
+        if retries > 20:
+            retries = 20
+        elif retries < 1:
+            retries = 1
+        for _attempt in range(retries):
+            response = await func(timeout)
+            if response is None:
+                logger.info(f"Failure using these: Index='{self._index_name}', Body={self.to_dict()}")
+            else:
+                return response
+        logger.error(f"Unable to reach elasticsearch cluster. {retries} attempt(s) made.")
+        return None
+
+    async def _handle_errors(self, func: Callable, retries: int, timeout: int) -> Response:
+        error_template = "[ERROR] ({type}) with ElasticSearch cluster: {e}"
+        try:
+            result = await self._handle_retry(func, retries, timeout)
+        except NameError as e:
+            logger.error(error_template.format(type="Hostname", e=str(e)))
+            raise
+        except (ConnectionError, ConnectionTimeout) as e:
+            logger.error(error_template.format(type="Connection", e=str(e)))
+            raise
+        except NotFoundError as e:
+            logger.error(error_template.format(type="404 Not Found", e=str(e)))
+            raise
+        except TransportError as e:
+            logger.error(error_template.format(type="Transport", e=str(e)))
+            raise
+        except Exception as e:
+            logger.error(error_template.format(type="Generic", e=str(e)))
+            raise
+        return result
+
+    async def handle_execute(self, retries: int = 5, timeout: int = 90) -> Response:
+        return await self._handle_errors(self._execute, retries, timeout)
+
+    async def handle_count(self, retries: int = 5) -> int:
+        return await self._handle_errors(self._count, retries, None)
+
+
+class AsyncRecipientSearch(AsyncSearch):
+    _index_name = f"{settings.ES_RECIPIENTS_QUERY_ALIAS_PREFIX}*"
+
+    @staticmethod
+    def type_as_string():
+        return "recipient_search"
+
+
+class AsyncLocationSearch(AsyncSearch):
     _index_name = f"{settings.ES_LOCATIONS_QUERY_ALIAS_PREFIX}*"
 
     @staticmethod

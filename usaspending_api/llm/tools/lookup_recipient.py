@@ -3,7 +3,7 @@ from typing import Any
 
 from opensearchpy.helpers.query import Q as ES_Q
 
-from usaspending_api.common.elasticsearch.search_wrappers import RecipientSearch
+from usaspending_api.common.elasticsearch.search_wrappers import AsyncRecipientSearch
 from usaspending_api.llm.models.py_models import AITool, AIToolDescription
 from usaspending_api.search.v2.es_sanitization import es_sanitize
 
@@ -25,7 +25,7 @@ class RecipientLookupTool:
         "recipient_hash",
     ]
 
-    def lookup_recipient(
+    async def lookup_recipient(
         self,
         query: str,
         top_k: int = 10,
@@ -47,7 +47,7 @@ class RecipientLookupTool:
         try:
             search = self._build_search(query_upper, top_k)
             logger.debug(f"Executing OpenSearch query for recipient: query='{query}'")
-            response = search.handle_execute()
+            response = await search.handle_execute()
             logger.info(
                 f"OpenSearch query successful: query='{query}', hits={len(response.hits)}",
                 extra={"query": query, "hits_count": len(response.hits)},
@@ -76,7 +76,7 @@ class RecipientLookupTool:
         )
         return result
 
-    def _build_search(self, query_upper: str, top_k: int) -> RecipientSearch:
+    def _build_search(self, query_upper: str, top_k: int) -> AsyncRecipientSearch:
         should_queries = []
         for field in ("recipient_name", "uei", "duns"):
             should_queries.extend(
@@ -99,7 +99,7 @@ class RecipientLookupTool:
         should_queries_dict = [q.to_dict() for q in should_queries]
 
         return (
-            RecipientSearch()
+            AsyncRecipientSearch()
             .query("bool", should=should_queries_dict, minimum_should_match=1)
             .source(list(self.RECIPIENT_SOURCE_FIELDS))
             .sort({"_score": {"order": "desc"}})[:top_k]
