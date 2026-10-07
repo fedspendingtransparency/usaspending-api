@@ -478,7 +478,6 @@ class Command(mixins.ETLMixin, BaseCommand):
     def update_delta_transaction_normalized_and_awards_table(
         self, spark: SparkSession, table_name: Literal["int.awards", "int.transaction_normalized"]
     ) -> None:
-        # table_name = "int.transaction_normalized"
         target = DeltaTable.forName(spark, table_name).alias("t")
 
         agency_df = spark.table("global_temp.agency").select("id", "subtier_agency_id")
