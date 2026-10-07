@@ -3,7 +3,7 @@ import time
 import uuid
 from datetime import date
 from functools import cached_property
-from typing import Any, Callable, AsyncGenerator
+from typing import Any, AsyncGenerator, Callable
 
 from django.db.models import Sum
 
