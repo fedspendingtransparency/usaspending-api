@@ -18,12 +18,8 @@ class TransactionSearch(models.Model):
     # Also, this table has been physically partitioned by partition key: is_fpds. We can no longer have a UNIQUE key
     # or UNIQUE INDEX on transaction_id (the primary_key) anymore, it must include the partition key. So setting
     # primary_key=False and adding a UniqueConstraint (is_fpds, transaction)
-    transaction = models.OneToOneField(
-        "awards.TransactionNormalized", on_delete=models.DO_NOTHING, primary_key=True
-    )
-    award = models.ForeignKey(
-        "search.AwardSearch", on_delete=models.DO_NOTHING, null=True
-    )
+    transaction = models.OneToOneField("awards.TransactionNormalized", on_delete=models.DO_NOTHING, primary_key=True)
+    award = models.ForeignKey("search.AwardSearch", on_delete=models.DO_NOTHING, null=True)
     transaction_unique_id = models.TextField(blank=False, null=False, default="NONE")
     usaspending_unique_transaction_id = models.TextField(null=True)
     modification_number = models.TextField(null=True)
@@ -84,31 +80,15 @@ class TransactionSearch(models.Model):
     business_categories = ArrayField(models.TextField(), null=True)
 
     # Amounts
-    award_amount = models.DecimalField(
-        max_digits=23, decimal_places=2, blank=True, null=True
-    )
-    generated_pragmatic_obligation = models.DecimalField(
-        max_digits=23, decimal_places=2, blank=True, null=True
-    )
-    federal_action_obligation = models.DecimalField(
-        max_digits=23, decimal_places=2, blank=True, null=True
-    )
-    original_loan_subsidy_cost = models.DecimalField(
-        max_digits=23, decimal_places=2, blank=True, null=True
-    )
-    face_value_loan_guarantee = models.DecimalField(
-        max_digits=23, decimal_places=2, blank=True, null=True
-    )
+    award_amount = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
+    generated_pragmatic_obligation = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
+    federal_action_obligation = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
+    original_loan_subsidy_cost = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
+    face_value_loan_guarantee = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
     indirect_federal_sharing = NumericField(blank=True, null=True)
-    funding_amount = models.DecimalField(
-        max_digits=23, decimal_places=2, blank=True, null=True
-    )
-    total_funding_amount = models.DecimalField(
-        max_digits=23, decimal_places=2, blank=True, null=True
-    )
-    non_federal_funding_amount = models.DecimalField(
-        max_digits=23, decimal_places=2, blank=True, null=True
-    )
+    funding_amount = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
+    total_funding_amount = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
+    non_federal_funding_amount = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
 
     # Recipient
     recipient_hash = models.UUIDField(null=True)
@@ -181,25 +161,15 @@ class TransactionSearch(models.Model):
 
     # Officer Amounts
     officer_1_name = models.TextField(null=True)
-    officer_1_amount = models.DecimalField(
-        max_digits=23, decimal_places=2, blank=True, null=True
-    )
+    officer_1_amount = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
     officer_2_name = models.TextField(null=True)
-    officer_2_amount = models.DecimalField(
-        max_digits=23, decimal_places=2, blank=True, null=True
-    )
+    officer_2_amount = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
     officer_3_name = models.TextField(null=True)
-    officer_3_amount = models.DecimalField(
-        max_digits=23, decimal_places=2, blank=True, null=True
-    )
+    officer_3_amount = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
     officer_4_name = models.TextField(null=True)
-    officer_4_amount = models.DecimalField(
-        max_digits=23, decimal_places=2, blank=True, null=True
-    )
+    officer_4_amount = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
     officer_5_name = models.TextField(null=True)
-    officer_5_amount = models.DecimalField(
-        max_digits=23, decimal_places=2, blank=True, null=True
-    )
+    officer_5_amount = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
 
     # Exclusively FABS
     published_fabs_id = models.IntegerField(blank=True, null=True)
@@ -444,14 +414,14 @@ class TransactionSearch(models.Model):
     woman_owned_business = models.BooleanField(null=True)
     women_owned_small_business = models.BooleanField(null=True)
     program_activities = models.JSONField(null=True)
+    award_amount_basis_code = models.TextField(blank=True, null=True)
+    award_amount_basis_name = models.TextField(blank=True, null=True)
+    award_recipient_basis_code = models.TextField(blank=True, null=True)
+    award_recipient_basis_name = models.TextField(blank=True, null=True)
 
     class Meta:
         db_table = "transaction_search"
-        constraints = [
-            models.UniqueConstraint(
-                fields=["is_fpds", "transaction"], name="ts_idx_is_fpds_transaction_id"
-            )
-        ]
+        constraints = [models.UniqueConstraint(fields=["is_fpds", "transaction"], name="ts_idx_is_fpds_transaction_id")]
         indexes = [
             models.Index(fields=["transaction"], name="ts_idx_transaction_id"),
             models.Index(fields=["generated_unique_award_id"], name="ts_idx_award_key"),
@@ -491,9 +461,7 @@ class TransactionSearch(models.Model):
                 name="ts_idx_action_date",
                 condition=Q(action_date__gte="2007-10-01"),
             ),
-            models.Index(
-                fields=["-last_modified_date"], name="ts_idx_last_modified_date"
-            ),
+            models.Index(fields=["-last_modified_date"], name="ts_idx_last_modified_date"),
             models.Index(
                 fields=["-fiscal_year"],
                 name="ts_idx_fiscal_year",
@@ -517,14 +485,12 @@ class TransactionSearch(models.Model):
             models.Index(
                 fields=["recipient_unique_id"],
                 name="ts_idx_recipient_unique_id",
-                condition=Q(recipient_unique_id__isnull=False)
-                & Q(action_date__gte="2007-10-01"),
+                condition=Q(recipient_unique_id__isnull=False) & Q(action_date__gte="2007-10-01"),
             ),
             models.Index(
                 fields=["parent_recipient_unique_id"],
                 name="ts_idx_parent_recipient_unique",
-                condition=Q(parent_recipient_unique_id__isnull=False)
-                & Q(action_date__gte="2007-10-01"),
+                condition=Q(parent_recipient_unique_id__isnull=False) & Q(action_date__gte="2007-10-01"),
             ),
             models.Index(
                 fields=["pop_state_code", "action_date"],
@@ -574,8 +540,6 @@ class TransactionSearch(models.Model):
                 name="ts_idx_cfda_aside_pre2008",
                 condition=Q(action_date__lt="2007-10-01"),
             ),
-            models.Index(
-                fields=["awarding_agency_id"], name="ts_idx_awarding_agency_id"
-            ),
+            models.Index(fields=["awarding_agency_id"], name="ts_idx_awarding_agency_id"),
             models.Index(fields=["funding_agency_id"], name="ts_idx_funding_agency_id"),
         ]
