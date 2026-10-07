@@ -1,9 +1,10 @@
 """Unit tests for recipient-related fields in py_models"""
 
 import pytest
+from model_bakery import baker
 from pydantic import ValidationError
 
-from usaspending_api.llm.models.py_models import AwardAmounts, Filters, InferenceConfig
+from usaspending_api.llm.models.py_models import AwardAmounts, Filters, InferenceConfig, get_defc_rows
 
 
 class TestInferenceConfig:
@@ -609,8 +610,43 @@ class TestAwardType:
         assert filters.awardType == []
 
 
+@pytest.mark.django_db
 class TestDefCodes:
-    """Tests for the DEFC code restriction (COVID-19 + Infrastructure only) on the Filters model"""
+    """Tests for the DEFC code restriction (COVID-19 + Infrastructure only) on the Filters model.
+
+    DEFC validity is sourced from the DisasterEmergencyFundCode table (see get_defc_rows), cached
+    for the life of the process via lru_cache -- cache_clear() must run before each test so one test's
+    DB-seeded codes don't leak into another's (django_db rolls back the DB, but not the Python-level cache).
+    """
+
+    @pytest.fixture(autouse=True)
+    def seed_defc_codes(self):
+        get_defc_rows.cache_clear()
+        for code in ["L", "M", "N", "O", "P", "U", "V"]:
+            baker.make(
+                "references.DisasterEmergencyFundCode",
+                code=code,
+                public_law=f"PUBLIC LAW FOR CODE {code}",
+                title=f"TITLE FOR CODE {code}",
+                group_name="covid_19",
+            )
+        for code in ["Z", "1"]:
+            baker.make(
+                "references.DisasterEmergencyFundCode",
+                code=code,
+                public_law=f"PUBLIC LAW FOR CODE {code}",
+                title=f"TITLE FOR CODE {code}",
+                group_name="infrastructure",
+            )
+        baker.make(
+            "references.DisasterEmergencyFundCode",
+            code="A",
+            public_law="PUBLIC LAW FOR CODE A",
+            title="TITLE FOR CODE A",
+            group_name="other",
+        )
+        yield
+        get_defc_rows.cache_clear()
 
     def test_def_codes_default_empty(self):
         filters = Filters()
@@ -636,7 +672,7 @@ class TestDefCodes:
         assert filters.defCodes.exclude == ["Z"]
 
     def test_def_codes_rejects_code_outside_covid_and_infrastructure(self):
-        """DEFC codes outside the frontend-supported set (e.g. the 2017-2020 disaster codes) are rejected."""
+        """DEFC codes outside the frontend-supported groups (e.g. a code in another group) are rejected."""
         with pytest.raises(ValidationError) as exc_info:
             Filters(defCodes={"require": ["A"]})
 

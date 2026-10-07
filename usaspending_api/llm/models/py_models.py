@@ -1,9 +1,11 @@
+from functools import lru_cache
 from typing import Annotated, Any, Callable, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, RootModel, field_validator, model_validator
 
 from usaspending_api.awards.v2.lookups.lookups import all_awards_types_to_category
 from usaspending_api.common.helpers.orm_helpers import award_types_are_valid_groups
+from usaspending_api.references.helpers import get_defc_code_details
 
 
 class InferenceConfig(BaseModel):
@@ -150,19 +152,38 @@ class CodeLists(BaseModel):
     counts: list = Field(default_factory=list)
 
 
-# Only the DEFCs the Advanced Search frontend exposes (COVID-19 and Infrastructure) are supported here.
-# See ExecuteFilterInput.defCodes for the code-to-event grouping.
-DEFCode = Literal[
-    "L",
-    "M",
-    "N",
-    "O",
-    "P",
-    "U",
-    "V",
-    "Z",
-    "1",
-]
+DEFC_GROUPS = ("covid_19", "infrastructure")
+
+
+@lru_cache(maxsize=1)
+def get_defc_rows() -> tuple[dict, ...]:
+    """DEFC rows for the frontend-supported groups; hits the DB once per process, then cached."""
+    return tuple(get_defc_code_details(list(DEFC_GROUPS)))
+
+
+def get_valid_defc_codes() -> frozenset[str]:
+    return frozenset(row["code"] for row in get_defc_rows())
+
+
+def build_defc_description() -> str:
+    """LLM-facing description for the defCodes field, built from the DB rows above."""
+    labels = {"covid_19": "COVID-19", "infrastructure": "Infrastructure"}
+    lines = [
+        "Disaster/Emergency Fund Codes (DEFC) filter with 'require'/'exclude' lists. Only COVID-19 and "
+        "Infrastructure DEFCs are supported (matching what the Advanced Search page allows). Use codes "
+        "from the matching group:",
+    ]
+    rows_by_group: dict[str, list[dict]] = {}
+    for row in get_defc_rows():
+        rows_by_group.setdefault(row["group_name"], []).append(row)
+    for group_name in DEFC_GROUPS:
+        rows = rows_by_group.get(group_name, [])
+        codes = ", ".join(f"'{row['code']}'" for row in rows)
+        lines.append(f"  {labels.get(group_name, group_name)}: [{codes}]")
+        for row in rows:
+            lines.append(f"    {row['code']} = {row['title']} ({row['public_law']})")
+    return "\n".join(lines)
+
 
 RecipientType = Literal[
     "business",
@@ -280,8 +301,20 @@ ExtentCompetedCode = Literal[
 class DEFCodeLists(BaseModel):
     """Validation model for DEFC code lists"""
 
-    require: list[DEFCode] = Field(default_factory=list)
-    exclude: list[DEFCode] = Field(default_factory=list)
+    require: list[str] = Field(default_factory=list)
+    exclude: list[str] = Field(default_factory=list)
+
+    @field_validator("require", "exclude")
+    @classmethod
+    def validate_def_codes(cls, value: list[str]) -> list[str]:
+        """Validate DEFC codes against the DB-sourced, supported set (COVID-19 + Infrastructure)."""
+        if not value:
+            return value
+        valid_codes = get_valid_defc_codes()
+        unknown = [code for code in value if code not in valid_codes]
+        if unknown:
+            raise ValueError(f"Invalid DEFC code(s): {unknown}. See the defCodes field description for valid codes.")
+        return value
 
 
 # The frontend's predefined award-amount buckets and their fixed bounds (see
@@ -436,7 +469,7 @@ class Filters(BaseModel):
 
 
 class DEFCodeListsWithoutEnum(BaseModel):
-    """Version of DEFCodeLists with loose ``str`` codes instead of the DEFCode enum.
+    """Version of DEFCodeLists without its DB-backed validator.
     This reduces the payload send to the llm with every call."""
 
     require: Annotated[
@@ -634,19 +667,7 @@ class ExecuteFilterInput(BaseModel):
         default_factory=DEFCodeListsWithoutEnum,
         description=(
             "Disaster/Emergency Fund Codes (DEFC) filter with 'require'/'exclude' lists. Only COVID-19 and "
-            "Infrastructure DEFCs are supported (matching what the Advanced Search page allows). Use codes "
-            "from the matching group:\n"
-            "  COVID-19:       ['L', 'M', 'N', 'O', 'P', 'U', 'V']\n"
-            "    L = Coronavirus Preparedness Act (2020, emergency)\n"
-            "    M = Families First Coronavirus Response Act\n"
-            "    N = CARES Act (emergency)\n"
-            "    O = CARES Act / PPP / Consolidated Appropriations 2021 / American Rescue Plan (non-emergency)\n"
-            "    P = Paycheck Protection Program (emergency)\n"
-            "    U = Consolidated Appropriations Act 2021 (emergency)\n"
-            "    V = American Rescue Plan Act 2021 (non-emergency)\n"
-            "  Infrastructure: ['Z', '1']\n"
-            "    Z = Infrastructure Investment and Jobs Act (emergency)\n"
-            "    1 = Infrastructure Investment and Jobs Act (non-emergency)"
+            "Infrastructure DEFCs are supported."
         ),
         json_schema_extra={
             "examples": [

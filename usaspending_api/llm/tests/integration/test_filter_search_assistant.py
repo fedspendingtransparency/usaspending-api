@@ -2,10 +2,12 @@ import uuid
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
+from model_bakery import baker
 
 from usaspending_api.llm.assistants.filter_search import FilterSearchAssistant
 from usaspending_api.llm.models.db_models import AIModel, Assistant, Session
-from usaspending_api.llm.models.py_models import AITool
+from usaspending_api.llm.models.py_models import AITool, get_defc_rows
+from usaspending_api.llm.tools.execute_filter import execute_filter_tool
 
 
 @pytest.fixture
@@ -344,6 +346,30 @@ class TestFilterSearchAssistant:
         assert len(config["tools"]) == 2
         assert "toolSpec" in config["tools"][0]
         assert "inputSchema" in config["tools"][0]["toolSpec"]
+
+    @pytest.mark.django_db
+    def test_tool_config_patches_defcodes_description_from_db(self, mock_assistant, mock_session):
+        """tool_config injects a DB-sourced defCodes description into execute_filter's schema.
+
+        The description is patched lazily here (not at execute_filter_tool's module-import time)
+        so the DB query only ever runs once real DB access is available -- see get_defc_rows.
+        """
+        get_defc_rows.cache_clear()
+        baker.make(
+            "references.DisasterEmergencyFundCode",
+            code="L",
+            public_law="PUBLIC LAW FOR CODE L",
+            title="TITLE FOR CODE L",
+            group_name="covid_19",
+        )
+
+        assistant = FilterSearchAssistant(assistant=mock_assistant, tools=[execute_filter_tool], session=mock_session)
+        config = assistant.tool_config
+        description = config["tools"][0]["toolSpec"]["inputSchema"]["json"]["properties"]["defCodes"]["description"]
+
+        assert "TITLE FOR CODE L" in description
+
+        get_defc_rows.cache_clear()
 
     @patch("usaspending_api.llm.models.db_models.Message.objects.acreate", new_callable=AsyncMock)
     async def test_message_ordering(self, mock_message_create, assistant):

@@ -9,7 +9,7 @@ from django.db.models import Sum
 
 from usaspending_api.common.helpers.aws_helpers import async_aws_client
 from usaspending_api.llm.models.db_models import Assistant, Message, Session, ToolUse
-from usaspending_api.llm.models.py_models import AITool
+from usaspending_api.llm.models.py_models import AITool, build_defc_description
 
 logger = logging.getLogger(__name__)
 
@@ -114,6 +114,10 @@ class FilterSearchAssistant:
     @cached_property
     def tool_config(self) -> dict[str, list[dict]]:
         specs = [tool.description.model_dump() for tool in self.tools]
+        for spec in specs:
+            def_codes_property = spec["input_schema"].get("properties", {}).get("defCodes")
+            if def_codes_property is not None:
+                def_codes_property["description"] = build_defc_description()
         return {"tools": [{"toolSpec": {"inputSchema": {"json": spec.pop("input_schema")}, **spec}} for spec in specs]}
 
     @staticmethod

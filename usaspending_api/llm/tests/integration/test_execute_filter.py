@@ -376,8 +376,8 @@ class TestAIToolImplementation:
     def test_execute_filter_input_omits_the_large_enums(self):
         """ExecuteFilterInput carries loose str types for recipientType/DEFC instead of the big enums.
 
-        This reduces the payload; the 68-value recipient-type and 46-value DEFC enums are looked up
-        via tools, not inlined into the schema sent on every converse call.
+        This reduces the payload; the 68-value recipient-type enum is looked up via tools rather than
+        inlined into the schema sent on every converse call.
         """
         efi = ExecuteFilterInput.model_json_schema()
         efi_json = json.dumps(efi)
