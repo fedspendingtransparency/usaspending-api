@@ -753,3 +753,21 @@ class FilterResponse(BaseModel):
     """Model for the API response"""
 
     hash: str
+
+
+class FilterSearchInput(BaseModel):
+    query: str = Field(
+        ...,
+        min_length=1,
+        max_length=1000,
+        description="The natural language query describing what the user wants to search for",
+        json_schema_extra={"examples": ["How many contracts did the Department of Energy award in fiscal year 2025?"]},
+    )
+
+
+class FilterSearchEvent(BaseModel):
+    search_id: str | None = None
+    tool_use_id: str | None = None
+    type: Literal["search_start", "search_error", "search_complete", "tool_start", "tool_complete", "tool_error"]
+    message: str
+    result: Any = None

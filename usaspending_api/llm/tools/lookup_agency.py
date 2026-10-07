@@ -6,6 +6,7 @@ from django.db.models.functions import Greatest, Least, Upper
 from pgvector.django import CosineDistance
 
 from usaspending_api.llm.embeddings.embedding_generator import EmbeddingGenerator
+from usaspending_api.llm.models.db_models import AIModel
 from usaspending_api.llm.models.py_models import AITool, AIToolDescription
 from usaspending_api.references.models.agency import Agency
 from usaspending_api.search.models.mv_agency_autocomplete import AgencyAutocompleteMatview
@@ -29,22 +30,23 @@ class AgencyLookupTool:
     HYBRID_VECTOR_WEIGHT = 0.5
     VECTOR_DISTANCE_THRESHOLD = 0.75
 
-    def lookup_agencies(self, query: str, top_k: int = 10) -> dict:
+    async def lookup_agencies(self, query: str, top_k: int = 10) -> dict:
         normalized = query.strip()
-        matches = self._query_exact_and_prefix_matches(normalized)
+        matches = await self._query_exact_and_prefix_matches(normalized)
 
-        if matches.exists():
+        if await matches.aexists():
             ordered = matches.order_by("-toptier_flag", Upper("toptier_name"), Upper("subtier_name"))
-            entries = [self._matview_row_to_entry(row) for row in ordered[:top_k]]
+            entries = [self._matview_row_to_entry(row) async for row in ordered[:top_k]]
         else:
-            embedding = EmbeddingGenerator().generate_embedding(normalized)
+            model = await AIModel.objects.aget(name="titan")
+            embedding = await EmbeddingGenerator(model=model).agenerate_embedding(normalized)
             hybrid_matches = self._hybrid_search(normalized, embedding)
-            entries = [self._agency_row_to_entry(row) for row in hybrid_matches[:top_k]]
+            entries = [self._agency_row_to_entry(row) async for row in hybrid_matches[:top_k]]
 
         return {f"{entry['id']}_{entry['agencyType']}": entry for entry in entries}
 
     @staticmethod
-    def _query_exact_and_prefix_matches(query: str) -> QuerySet:
+    async def _query_exact_and_prefix_matches(query: str) -> QuerySet:
         exact_filter = (
             Q(toptier_code__iexact=query)
             | Q(toptier_abbreviation__iexact=query)
@@ -53,7 +55,7 @@ class AgencyLookupTool:
             | Q(subtier_name__iexact=query)
         )
         exact_matches = AgencyAutocompleteMatview.objects.filter(exact_filter)
-        if exact_matches.exists():
+        if await exact_matches.aexists():
             return exact_matches
 
         prefix_filter = (

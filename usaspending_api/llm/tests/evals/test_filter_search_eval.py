@@ -39,7 +39,7 @@ def make_case(
 
 
 def test_filter_search_eval_uses_the_same_tools_as_the_endpoint():
-    assert [tool.description.name for tool in filter_search.FILTER_SEARCH_TOOLS] == [
+    assert [tool.description.name for tool in filter_search.filter_search_tools] == [
         "lookup_agencies",
         "lookup_codes",
         "lookup_location",
