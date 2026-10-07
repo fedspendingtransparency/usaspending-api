@@ -28,7 +28,7 @@ def write_dataset(tmp_path):
                     "id": 2,
                     "query": "Show me all transactions for award PIID N0001917C0001",
                     "expected_output": {
-                        "selectedAwardIDs": {"N0001917C0001": {}},
+                        "selectedAwardIDs": ["N0001917C0001"],
                     },
                     "expected_tools": ["execute_filter"],
                     "tags": ["single_filter"],
@@ -56,7 +56,7 @@ def fake_eval_observation(case: EvalCase) -> EvalObservation:
 
     return EvalObservation(
         tool_calls=(ToolCall(name="execute_filter"),),
-        output={"selectedAwardIDs": {"N0001917C0001": {}}},
+        output={"selectedAwardIDs": ["N0001917C0001"]},
     )
 
 

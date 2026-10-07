@@ -1,8 +1,9 @@
+import json
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from usaspending_api.llm.models.py_models import Filters
+from usaspending_api.llm.models.py_models import ExecuteFilterInput, Filters
 from usaspending_api.llm.tools.execute_filter import execute_filter, execute_filter_tool
 from usaspending_api.references.models import FilterHash
 
@@ -86,6 +87,20 @@ class TestInputValidation:
 
         # Should fail validation due to invalid field
         assert "error" in result
+
+    async def test_selected_recipients_at_max_length_accepted(self):
+        """Test that exactly 50 selected recipients is accepted."""
+        result = await execute_filter(selectedRecipients=[f"RECIPIENT_{i}" for i in range(50)])
+
+        assert "hash" in result
+        assert "error" not in result
+
+    async def test_selected_recipients_over_max_length_returns_error(self):
+        """Test that more than 50 selected recipients is rejected to avoid oversized OpenSearch queries."""
+        result = await execute_filter(selectedRecipients=[f"RECIPIENT_{i}" for i in range(51)])
+
+        assert "error" in result
+        assert "message" in result
 
 
 class TestFilterProcessing:
@@ -342,12 +357,37 @@ class TestAIToolImplementation:
         assert len(desc.description) > 50
         assert "filter" in desc.description.lower()
 
-    def test_tool_input_schema_matches_filters_model(self):
-        """Test that input schema matches Filters model."""
+    def test_tool_input_schema_is_decoupled_from_filter_model(self):
+        """The ExecuteFilterInput schema is decoupled from the full Filters model."""
         schema = execute_filter_tool.description.input_schema
-        filters_schema = Filters.model_json_schema()
 
-        assert schema == filters_schema
+        assert schema == ExecuteFilterInput.model_json_schema()
+        assert schema != Filters.model_json_schema()
+
+    def test_execute_filter_input_exposes_every_filter_field(self):
+        """The assistant must be able to see and set every Filters field, and no more.
+
+        Field-set equality is the drift guard in both directions: a Filters-only field would be a
+        filter the assistant can't set, and an ExecuteFilterInput-only field would be rejected by
+        Filters(**kwargs) at runtime (extra='forbid').
+        """
+        assert set(ExecuteFilterInput.model_fields) == set(Filters.model_fields)
+
+    def test_execute_filter_input_omits_the_large_enums(self):
+        """ExecuteFilterInput carries loose str types for recipientType/DEFC instead of the big enums.
+
+        This reduces the payload; the 68-value recipient-type enum is looked up via tools rather than
+        inlined into the schema sent on every converse call.
+        """
+        efi = ExecuteFilterInput.model_json_schema()
+        efi_json = json.dumps(efi)
+
+        # recipientType is a plain list[str] here; the enum values are not inlined.
+        assert efi["properties"]["recipientType"]["items"] == {"type": "string"}
+        assert "corporate_entity_tax_exempt" not in efi_json
+
+        # The validation model, by contrast, does pin the enum.
+        assert "corporate_entity_tax_exempt" in json.dumps(Filters.model_json_schema())
 
     def test_logging_function_formats_filters(self):
         """Test that logging function formats filters properly."""
@@ -447,10 +487,11 @@ class TestEdgeCases:
         mock_instance = _new_mock_instance()
         mock_filter_hash.return_value = mock_instance
 
-        # Create large filter set
-        large_codes = [f"CODE_{i}" for i in range(100)]
+        # Create large filter set (keyword accepts arbitrary strings; awardType is validated
+        # against a known code set, so use keyword to exercise raw payload size here).
+        large_keywords = [f"term_{i}" for i in range(100)]
 
-        result = await execute_filter(awardType=large_codes)
+        result = await execute_filter(keyword=large_keywords)
 
         assert "hash" in result
 
@@ -567,6 +608,35 @@ class TestRealWorldScenarios:
         )
 
         assert "hash" in result
+
+    async def test_award_amounts_range_filter(self, mock_filter_hash):
+        """A valid award-amount range blob is accepted and hashed."""
+        mock_filter_hash.objects.aget.side_effect = FilterHash.DoesNotExist
+        mock_instance = _new_mock_instance()
+        mock_filter_hash.return_value = mock_instance
+
+        result = await execute_filter(awardAmounts={"range-1": [1000000, 25000000]})
+
+        assert "hash" in result
+        saved_filter = mock_filter_hash.call_args[1]["filter"]
+        assert saved_filter["filters"]["awardAmounts"] == {"range-1": [1000000, 25000000]}
+
+    async def test_award_amounts_specific_filter(self, mock_filter_hash):
+        """A valid 'specific' award-amount blob is accepted."""
+        mock_filter_hash.objects.aget.side_effect = FilterHash.DoesNotExist
+        mock_instance = _new_mock_instance()
+        mock_filter_hash.return_value = mock_instance
+
+        result = await execute_filter(awardAmounts={"specific": [5000000, None]})
+
+        assert "hash" in result
+
+    async def test_award_amounts_invalid_returns_error(self):
+        """Combining 'specific' with a range bucket is rejected before any DB access."""
+        result = await execute_filter(awardAmounts={"specific": [1, 2], "range-1": [1000000, 25000000]})
+
+        assert "error" in result
+        assert "message" in result
 
     async def test_filter_reuse_returns_same_hash(self, mock_filter_hash):
         """Test that reusing same filters returns same hash."""
