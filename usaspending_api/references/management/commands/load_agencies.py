@@ -1,6 +1,7 @@
 import argparse
 import concurrent.futures
 import logging
+import threading
 from collections import namedtuple
 from contextlib import contextmanager
 from dataclasses import dataclass
@@ -87,6 +88,8 @@ class Command(mixins.ETLMixin, BaseCommand):
     agency_file = None
     force = False
     file_d_dry_run = False
+
+    delta_merge_lock = threading.Lock()
 
     etl_logger_function = logger.info
     etl_dml_sql_directory = Path(__file__).resolve().parent / "load_agencies_sql"
@@ -457,7 +460,7 @@ class Command(mixins.ETLMixin, BaseCommand):
             logger.info(f"{join_df.count():,} record(s) would be updated in {target_table_name}")
         else:
             logger.info(f"Merging values into {target_table_name}")
-            (
+            merge_action = (
                 target.alias("t")
                 .merge(
                     source_df.alias("s"),
@@ -471,8 +474,9 @@ class Command(mixins.ETLMixin, BaseCommand):
                         "funding_agency_name": "s.funding_agency_name",
                     }
                 )
-                .execute()
             )
+            with self.delta_merge_lock:
+                merge_action.execute()
             logger.info(f"Finished merging values into {target_table_name}")
 
     def update_delta_transaction_normalized_and_awards_table(
@@ -539,15 +543,15 @@ class Command(mixins.ETLMixin, BaseCommand):
             logger.info(f"{join_df.count():,} record(s) would be updated in {table_name}")
         else:
             logger.info(f"Merging values into {table_name}")
-            (
-                target.merge(source_df.alias("s"), f"t.{target_join_id} = s.transaction_id")
-                .whenMatchedUpdate(
-                    condition=(
-                        (~sf.col("t.awarding_agency_id").eqNullSafe(sf.col("s.awarding_id")))
-                        | (~sf.col("t.funding_agency_id").eqNullSafe(sf.col("s.funding_id")))
-                    ),
-                    set={**extra_update, "awarding_agency_id": "s.awarding_id", "funding_agency_id": "s.funding_id"},
-                )
-                .execute()
+            merge_action = target.merge(
+                source_df.alias("s"), f"t.{target_join_id} = s.transaction_id"
+            ).whenMatchedUpdate(
+                condition=(
+                    (~sf.col("t.awarding_agency_id").eqNullSafe(sf.col("s.awarding_id")))
+                    | (~sf.col("t.funding_agency_id").eqNullSafe(sf.col("s.funding_id")))
+                ),
+                set={**extra_update, "awarding_agency_id": "s.awarding_id", "funding_agency_id": "s.funding_id"},
             )
+            with self.delta_merge_lock:
+                merge_action.execute()
             logger.info(f"Finished merging values into {table_name}")
