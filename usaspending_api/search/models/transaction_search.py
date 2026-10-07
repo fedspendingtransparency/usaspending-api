@@ -542,4 +542,6 @@ class TransactionSearch(models.Model):
             ),
             models.Index(fields=["awarding_agency_id"], name="ts_idx_awarding_agency_id"),
             models.Index(fields=["funding_agency_id"], name="ts_idx_funding_agency_id"),
+            models.Index(fields=["awarding_agency_code"], name="ts_idx_awarding_agency_code"),
+            models.Index(fields=["funding_agency_code"], name="ts_idx_funding_agency_code"),
         ]

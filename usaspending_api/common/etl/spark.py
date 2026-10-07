@@ -618,137 +618,150 @@ def _generate_global_view_sql_strings(tables: list[str], jdbc_url: str) -> list[
     return sql_strings
 
 
-def create_ref_temp_views(  # noqa: PLR0912
-    spark: SparkSession | DuckDBSparkSession, create_broker_views: bool = False, download_job: DownloadJob | None = None
-) -> None:  # noqa: PLR0912
+def create_ref_temp_views(
+    spark: SparkSession | DuckDBSparkSession,
+    create_broker_views: bool = False,
+    download_job: DownloadJob | None = None,
+    extra_table_names: list[str] | None = None,
+) -> None:
     """Create global temporary Spark reference views that sit atop remote PostgreSQL RDS tables
     Setting create_broker_views to True will create views for all tables list in _BROKER_REF_TABLES
     Note: They will all be listed under global_temp.{table_name}
-
-    Args:
-        spark (SparkSession | DuckDBSparkSession): Spark session
-        create_broker_views (bool): Should the temporary views, using the Broker tables, be created
-            Default: False
     """
 
     # Create USAS temp views
-    rds_ref_tables = build_ref_table_name_list()
-    logger.info(f"Creating the following tables under the global_temp database: {rds_ref_tables}")
+    rds_ref_table_names = build_ref_table_name_list()
+    rds_ref_table_names.extend(extra_table_names or [])
+    logger.info(f"Creating the following tables under the global_temp database: {rds_ref_table_names}")
 
     match isinstance(spark, DuckDBSparkSession):
         case True:
-            logger.info("Creating ref temp views using DuckDB")
-            if IS_LOCAL:
-                spark.sql(
-                    f"""
-                    CREATE OR REPLACE SECRET (
-                        TYPE s3,
-                        PROVIDER config,
-                        KEY_ID '{CONFIG.AWS_ACCESS_KEY.get_secret_value()}',
-                        SECRET '{CONFIG.AWS_SECRET_KEY.get_secret_value()}',
-                        ENDPOINT '{CONFIG.AWS_S3_ENDPOINT}',
-                        URL_STYLE 'path',
-                        USE_SSL 'false'
-                    );
-                """
-                )
-            else:
-                # DuckDB will prepend the HTTP or HTTPS so we need to strip it from the AWS endpoint URL
-                endpoint_url = CONFIG.AWS_S3_ENDPOINT.replace("http://", "").replace("https://", "")
-                spark.sql(
-                    f"""
-                    CREATE OR REPLACE SECRET (
-                        TYPE s3,
-                        REGION '{USASPENDING_AWS_REGION}',
-                        ENDPOINT '{endpoint_url}',
-                        PROVIDER 'credential_chain'
-                    );
-                """
-                )
-
-            _download_delta_tables = [
-                {"schema": "rpt", "table_name": "account_balances_download"},
-                {
-                    "schema": "rpt",
-                    "table_name": "object_class_program_activity_download"
-                },
-                {"schema": "rpt", "table_name": "award_financial_download"},
-            ]
-
-            # Save resources by only creating the tables required for this particular download, in DuckDB
-            # Key: table name | Value: table schema
-            _tables_to_create = {
-                table["table_name"]: table['schema']
-                for table in _download_delta_tables
-                if table["table_name"].replace("_download", "")
-                in json.loads(download_job.json_request).get("download_types", [])
-            } if hasattr(download_job, "json_request") else {}
-
-            # The DuckDB Delta extension is needed to interact with DeltaLake tables
-            spark.sql("LOAD delta; CREATE SCHEMA IF NOT EXISTS rpt;")
-            for table_name, table_schema in _tables_to_create.items():
-                s3_path = f"s3://{CONFIG.SPARK_S3_BUCKET}/{CONFIG.DELTA_LAKE_S3_PATH}/{table_schema}/{table_name}"
-                try:
-                    spark.sql(
-                        f"""
-                        CREATE OR REPLACE TABLE {table_schema}.{table_name} AS
-                        SELECT * FROM delta_scan('{s3_path}');
-                    """
-                    )
-                    logger.info(f"Successfully created table {table_schema}.{table_name}")
-                except duckdb.IOException as exc:
-                    logger.exception(f"Failed to create table {table_name}")
-                    raise RuntimeError(f"Failed to create table {table_name}") from exc
-
-            # The DuckDB Postgres extension is needed to connect to the USAS Postgres DB
-            spark.sql("LOAD postgres; CREATE SCHEMA IF NOT EXISTS global_temp;")
-            spark.sql(f"ATTACH '{CONFIG.DATABASE_URL}' AS usas (TYPE postgres, READ_ONLY);")
-
-            for table in rds_ref_tables:
-                try:
-                    spark.sql(f"CREATE OR REPLACE VIEW global_temp.{table} AS SELECT * FROM usas.public.{table};")
-                except duckdb.CatalogException as exc:
-                    logger.exception(f"Failed to create view {table} for {table}")
-                    raise RuntimeError(f"Failed to create view {table} for {table}") from exc
-
-            if create_broker_views:
-                spark.sql(
-                    f"""
-                    ATTACH '{CONFIG.BROKER_DB}' AS broker (TYPE postgres, READ_ONLY);
-                """
-                )
-                logger.info(
-                    f"Creating the following Broker tables under the global_temp database: {_BROKER_REF_TABLES}"
-                )
-                for table in _BROKER_REF_TABLES:
-                    try:
-                        spark.sql(f"CREATE OR REPLACE VIEW global_temp.{table} AS SELECT * FROM broker.public.{table};")
-                    except duckdb.CatalogException as exc:
-                        logger.exception(f"Failed to create view {table} for {table}")
-                        raise RuntimeError(f"Failed to create view {table} for {table}") from exc
+            _create_duckdb_ref_temp_views(spark, rds_ref_table_names, create_broker_views, download_job)
         case False:
-            logger.info("Creating ref temp views using Spark")
-
-            rds_sql_strings = _generate_global_view_sql_strings(
-                tables=rds_ref_tables,
-                jdbc_url=get_usas_jdbc_url(),
-            )
-
-            for sql_statement in rds_sql_strings:
-                spark.sql(sql_statement)
-
-            if create_broker_views:
-                broker_sql_strings = _generate_global_view_sql_strings(
-                    tables=_BROKER_REF_TABLES,
-                    jdbc_url=get_broker_jdbc_url(),
-                )
-                logger.info(
-                    f"Creating the following Broker tables under the global_temp database: {_BROKER_REF_TABLES}"
-                )
-                for sql_statement in broker_sql_strings:
-                    spark.sql(sql_statement)
+            _create_spark_ref_temp_views(spark, rds_ref_table_names, create_broker_views)
 
     logger.info("Created the reference views in the global_temp database")
+
+
+def _create_duckdb_ref_temp_views(
+    spark: SparkSession | DuckDBSparkSession,
+    rds_ref_table_names: list[str],
+    create_broker_views: bool,
+    download_job: DownloadJob | None = None,
+) -> None:
+    logger.info("Creating ref temp views using DuckDB")
+    if IS_LOCAL:
+        spark.sql(
+            f"""
+                CREATE OR REPLACE SECRET (
+                    TYPE s3,
+                    PROVIDER config,
+                    KEY_ID '{CONFIG.AWS_ACCESS_KEY.get_secret_value()}',
+                    SECRET '{CONFIG.AWS_SECRET_KEY.get_secret_value()}',
+                    ENDPOINT '{CONFIG.AWS_S3_ENDPOINT}',
+                    URL_STYLE 'path',
+                    USE_SSL 'false'
+                );
+            """
+        )
+    else:
+        # DuckDB will prepend the HTTP or HTTPS so we need to strip it from the AWS endpoint URL
+        endpoint_url = CONFIG.AWS_S3_ENDPOINT.replace("http://", "").replace("https://", "")
+        spark.sql(
+            f"""
+                CREATE OR REPLACE SECRET (
+                    TYPE s3,
+                    REGION '{USASPENDING_AWS_REGION}',
+                    ENDPOINT '{endpoint_url}',
+                    PROVIDER 'credential_chain'
+                );
+            """
+        )
+
+    _download_delta_tables = [
+        {"schema": "rpt", "table_name": "account_balances_download"},
+        {"schema": "rpt", "table_name": "object_class_program_activity_download"},
+        {"schema": "rpt", "table_name": "award_financial_download"},
+    ]
+
+    # Save resources by only creating the tables required for this particular download, in DuckDB
+    # Key: table name | Value: table schema
+    _tables_to_create = (
+        {
+            table["table_name"]: table["schema"]
+            for table in _download_delta_tables
+            if table["table_name"].replace("_download", "")
+            in json.loads(download_job.json_request).get("download_types", [])
+        }
+        if hasattr(download_job, "json_request")
+        else {}
+    )
+
+    # The DuckDB Delta extension is needed to interact with DeltaLake tables
+    spark.sql("LOAD delta; CREATE SCHEMA IF NOT EXISTS rpt;")
+    for table_name, table_schema in _tables_to_create.items():
+        s3_path = f"s3://{CONFIG.SPARK_S3_BUCKET}/{CONFIG.DELTA_LAKE_S3_PATH}/{table_schema}/{table_name}"
+        try:
+            spark.sql(
+                f"""
+                    CREATE OR REPLACE TABLE {table_schema}.{table_name} AS
+                    SELECT * FROM delta_scan('{s3_path}');
+                """
+            )
+            logger.info(f"Successfully created table {table_schema}.{table_name}")
+        except duckdb.IOException as exc:
+            logger.exception(f"Failed to create table {table_name}")
+            raise RuntimeError(f"Failed to create table {table_name}") from exc
+
+    # The DuckDB Postgres extension is needed to connect to the USAS Postgres DB
+    spark.sql("LOAD postgres; CREATE SCHEMA IF NOT EXISTS global_temp;")
+    spark.sql(f"ATTACH '{CONFIG.DATABASE_URL}' AS usas (TYPE postgres, READ_ONLY);")
+
+    for table in rds_ref_table_names:
+        try:
+            spark.sql(f"CREATE OR REPLACE VIEW global_temp.{table} AS SELECT * FROM usas.public.{table};")
+        except duckdb.CatalogException as exc:
+            logger.exception(f"Failed to create view {table} for {table}")
+            raise RuntimeError(f"Failed to create view {table} for {table}") from exc
+
+    if create_broker_views:
+        spark.sql(
+            f"""
+                ATTACH '{CONFIG.BROKER_DB}' AS broker (TYPE postgres, READ_ONLY);
+            """
+        )
+        logger.info(f"Creating the following Broker tables under the global_temp database: {_BROKER_REF_TABLES}")
+        for table in _BROKER_REF_TABLES:
+            try:
+                spark.sql(f"CREATE OR REPLACE VIEW global_temp.{table} AS SELECT * FROM broker.public.{table};")
+            except duckdb.CatalogException as exc:
+                logger.exception(f"Failed to create view {table} for {table}")
+                raise RuntimeError(f"Failed to create view {table} for {table}") from exc
+
+
+def _create_spark_ref_temp_views(
+    spark: SparkSession | DuckDBSparkSession,
+    rds_ref_table_names: list[str],
+    create_broker_views: bool,
+) -> None:
+    logger.info("Creating ref temp views using Spark")
+
+    rds_sql_strings = _generate_global_view_sql_strings(
+        tables=rds_ref_table_names,
+        jdbc_url=get_usas_jdbc_url(),
+    )
+
+    for sql_statement in rds_sql_strings:
+        spark.sql(sql_statement)
+
+    if create_broker_views:
+        broker_sql_strings = _generate_global_view_sql_strings(
+            tables=_BROKER_REF_TABLES,
+            jdbc_url=get_broker_jdbc_url(),
+        )
+        logger.info(f"Creating the following Broker tables under the global_temp database: {_BROKER_REF_TABLES}")
+        for sql_statement in broker_sql_strings:
+            spark.sql(sql_statement)
 
 
 def write_csv_file(  # noqa: PLR0913
