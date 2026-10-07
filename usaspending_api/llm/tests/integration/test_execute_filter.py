@@ -88,6 +88,20 @@ class TestInputValidation:
         # Should fail validation due to invalid field
         assert "error" in result
 
+    async def test_selected_recipients_at_max_length_accepted(self):
+        """Test that exactly 50 selected recipients is accepted."""
+        result = await execute_filter(selectedRecipients=[f"RECIPIENT_{i}" for i in range(50)])
+
+        assert "hash" in result
+        assert "error" not in result
+
+    async def test_selected_recipients_over_max_length_returns_error(self):
+        """Test that more than 50 selected recipients is rejected to avoid oversized OpenSearch queries."""
+        result = await execute_filter(selectedRecipients=[f"RECIPIENT_{i}" for i in range(51)])
+
+        assert "error" in result
+        assert "message" in result
+
 
 class TestFilterProcessing:
     """Test filter processing and transformation."""

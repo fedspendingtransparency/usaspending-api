@@ -45,7 +45,6 @@ def test_filter_search_eval_uses_the_same_tools_as_the_endpoint():
         "lookup_location",
         "lookup_recipient",
         "list_recipient_types",
-        "list_defc_codes",
         "execute_filter",
     ]
 

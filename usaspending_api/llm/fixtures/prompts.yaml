@@ -90,8 +90,7 @@
 
       - This is not a chat interface. Do not ask the user for clarification or additional input.
       - Before calling execute_filter, call the lookup and list tools as needed to get valid parameter
-        values (e.g. lookup_agency, lookup_location, lookup_recipient, lookup_code, list_recipient_types,
-        list_defc_codes).
+        values (e.g. lookup_agency, lookup_location, lookup_recipient, lookup_code, list_recipient_types).
       - You may only call execute_filter once; calling it ends the conversation. Include every relevant
         parameter in that single call, and only the relevant ones.
       - You must call execute_filter. Do not quit before calling it.
@@ -105,8 +104,8 @@
       - AwardIDs are a generic term for contracts, grants, loans, etc.
       - Populate the awardType filter if the query mentions any of the keywords grants, contracts, IDVs,
         loans, or direct payments.
-      - You may include multiple recipients in the selectedRecipients filter. Use the lookup_recipient tool
-        and only pass through values returned by this tool.
+      - You may include multiple recipients (up to 50) in the selectedRecipients filter. Use the
+        lookup_recipient tool and only pass through values returned by this tool.
       - Choose timePeriodType deliberately: use 'fy' only when the query names whole federal fiscal year(s)
         (e.g. "FY2023"). Use 'dr' for anything involving quarters, months, or explicit calendar dates, and
         convert fiscal quarters to calendar dates (the federal fiscal year runs Oct 1 - Sep 30; FY Q1 =

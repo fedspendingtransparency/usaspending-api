@@ -609,6 +609,46 @@ class TestAwardType:
         assert filters.awardType == []
 
 
+class TestDefCodes:
+    """Tests for the DEFC code restriction (COVID-19 + Infrastructure only) on the Filters model"""
+
+    def test_def_codes_default_empty(self):
+        filters = Filters()
+
+        assert filters.defCodes.require == []
+        assert filters.defCodes.exclude == []
+
+    def test_def_codes_accepts_covid_codes(self):
+        codes = ["L", "M", "N", "O", "P", "U", "V"]
+        filters = Filters(defCodes={"require": codes})
+
+        assert filters.defCodes.require == codes
+
+    def test_def_codes_accepts_infrastructure_codes(self):
+        filters = Filters(defCodes={"require": ["Z", "1"]})
+
+        assert filters.defCodes.require == ["Z", "1"]
+
+    def test_def_codes_accepts_require_and_exclude_together(self):
+        filters = Filters(defCodes={"require": ["L"], "exclude": ["Z"]})
+
+        assert filters.defCodes.require == ["L"]
+        assert filters.defCodes.exclude == ["Z"]
+
+    def test_def_codes_rejects_code_outside_covid_and_infrastructure(self):
+        """DEFC codes outside the frontend-supported set (e.g. the 2017-2020 disaster codes) are rejected."""
+        with pytest.raises(ValidationError) as exc_info:
+            Filters(defCodes={"require": ["A"]})
+
+        assert "defCodes" in str(exc_info.value)
+
+    def test_def_codes_rejects_unsupported_code_in_exclude(self):
+        with pytest.raises(ValidationError) as exc_info:
+            Filters(defCodes={"exclude": ["AAA"]})
+
+        assert "defCodes" in str(exc_info.value)
+
+
 class TestAwardAmounts:
     """Tests for the AwardAmounts range-vs-specific validation on the Filters model"""
 

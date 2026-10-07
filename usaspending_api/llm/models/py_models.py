@@ -150,53 +150,18 @@ class CodeLists(BaseModel):
     counts: list = Field(default_factory=list)
 
 
+# Only the DEFCs the Advanced Search frontend exposes (COVID-19 and Infrastructure) are supported here.
+# See ExecuteFilterInput.defCodes for the code-to-event grouping.
 DEFCode = Literal[
-    "A",
-    "B",
-    "C",
-    "D",
-    "E",
-    "F",
-    "G",
-    "H",
-    "I",
-    "J",
-    "K",
     "L",
     "M",
     "N",
     "O",
     "P",
-    "Q",
-    "R",
-    "S",
-    "T",
     "U",
     "V",
-    "W",
-    "X",
-    "Y",
     "Z",
     "1",
-    "2",
-    "3",
-    "4",
-    "5",
-    "6",
-    "7",
-    "8",
-    "9",
-    "AAA",
-    "AAB",
-    "AAC",
-    "AAD",
-    "AAE",
-    "AAF",
-    "AAG",
-    "AAH",
-    "AAI",
-    "AAJ",
-    "QQQ",
 ]
 
 RecipientType = Literal[
@@ -389,7 +354,7 @@ class Filters(BaseModel):
     locationDomesticForeign: Literal["all", "foreign"] = "all"
     selectedFundingAgencies: dict[str, SelectedAgency] = Field(default_factory=dict)
     selectedAwardingAgencies: dict[str, SelectedAgency] = Field(default_factory=dict)
-    selectedRecipients: list[str] = Field(default_factory=list)
+    selectedRecipients: list[str] = Field(default_factory=list, max_length=50)
     recipientDomesticForeign: Literal["all", "foreign"] = "all"
     recipientType: list[RecipientType] = Field(default_factory=list)
     selectedRecipientLocations: dict[str, Any] = Field(default_factory=dict)
@@ -478,7 +443,7 @@ class DEFCodeListsWithoutEnum(BaseModel):
         list[str],
         Field(
             default_factory=list,
-            description="DEFC codes that must be present. Call list_defc_codes for valid codes.",
+            description="DEFC codes that must be present. See the defCodes field description for valid codes.",
             json_schema_extra={"examples": [["L", "M", "N"]]},
         ),
     ]
@@ -486,8 +451,8 @@ class DEFCodeListsWithoutEnum(BaseModel):
         list[str],
         Field(
             default_factory=list,
-            description="DEFC codes to exclude.",
-            json_schema_extra={"examples": [["A"]]},
+            description="DEFC codes to exclude. See the defCodes field description for valid codes.",
+            json_schema_extra={"examples": [["Z"]]},
         ),
     ]
 
@@ -584,10 +549,11 @@ class ExecuteFilterInput(BaseModel):
 
     selectedRecipients: list[str] = Field(
         default_factory=list,
+        max_length=50,
         description=(
             "Named recipients only (specific companies/organizations), resolved via the lookup_recipient "
-            "tool. May include multiple recipients. Do NOT use this for generic/demographic/category terms "
-            "(e.g. 'veteran-owned', 'small business', 'minority-owned') - those belong in recipientType via "
+            "tool. May include multiple recipients (up to 50). Do NOT use this for generic/demographic/category "
+            "terms (e.g. 'veteran-owned', 'small business', 'minority-owned') - those belong in recipientType via "
             "list_recipient_types instead. Once a term has been resolved to a recipientType code, do not "
             "also call lookup_recipient for that same term."
         ),
@@ -667,9 +633,27 @@ class ExecuteFilterInput(BaseModel):
     defCodes: DEFCodeListsWithoutEnum = Field(
         default_factory=DEFCodeListsWithoutEnum,
         description=(
-            "Disaster/Emergency Fund Codes (DEFC) filter with 'require'/'exclude' lists (e.g. COVID-19, "
-            "Infrastructure, or Ukraine aid). Call list_defc_codes for all valid codes grouped by event."
+            "Disaster/Emergency Fund Codes (DEFC) filter with 'require'/'exclude' lists. Only COVID-19 and "
+            "Infrastructure DEFCs are supported (matching what the Advanced Search page allows). Use codes "
+            "from the matching group:\n"
+            "  COVID-19:       ['L', 'M', 'N', 'O', 'P', 'U', 'V']\n"
+            "    L = Coronavirus Preparedness Act (2020, emergency)\n"
+            "    M = Families First Coronavirus Response Act\n"
+            "    N = CARES Act (emergency)\n"
+            "    O = CARES Act / PPP / Consolidated Appropriations 2021 / American Rescue Plan (non-emergency)\n"
+            "    P = Paycheck Protection Program (emergency)\n"
+            "    U = Consolidated Appropriations Act 2021 (emergency)\n"
+            "    V = American Rescue Plan Act 2021 (non-emergency)\n"
+            "  Infrastructure: ['Z', '1']\n"
+            "    Z = Infrastructure Investment and Jobs Act (emergency)\n"
+            "    1 = Infrastructure Investment and Jobs Act (non-emergency)"
         ),
+        json_schema_extra={
+            "examples": [
+                {"require": ["L", "M", "N", "O", "P", "U", "V"]},
+                {"require": ["Z", "1"]},
+            ]
+        },
     )
     pricingType: list[str] = Field(default_factory=list, description="Contract pricing type codes (e.g. 'A', 'B').")
     setAside: list[str] = Field(
