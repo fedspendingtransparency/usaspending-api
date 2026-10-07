@@ -54,6 +54,15 @@ def get_def_codes_by_group(group_names: list[str] | None) -> dict[str, list[str]
     return {group_name: def_codes for group_name, def_codes in def_codes_by_group}
 
 
+def get_defc_code_details(group_names: list[str]) -> list[dict]:
+    """Return code/title/public_law rows for the given DEFC groups, ordered by group then code."""
+    return list(
+        DisasterEmergencyFundCode.objects.filter(group_name__in=group_names)
+        .values("code", "group_name", "title", "public_law")
+        .order_by("group_name", "code")
+    )
+
+
 def create_hash(payload: bytes) -> str:
     """
     Create a MD5 hash
