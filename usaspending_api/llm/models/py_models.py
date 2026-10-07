@@ -1,3 +1,4 @@
+from functools import lru_cache
 from typing import Annotated, Any, Callable, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, RootModel, field_validator, model_validator
@@ -154,7 +155,7 @@ class CodeLists(BaseModel):
 DEFC_GROUPS = ("covid_19", "infrastructure")
 
 
-# TODO add caching to this function
+@lru_cache(maxsize=1)
 def get_defc_rows() -> tuple[dict, ...]:
     """DEFC rows for the frontend-supported groups; hits the DB once per process, then cached."""
     return tuple(get_defc_code_details(list(DEFC_GROUPS)))
