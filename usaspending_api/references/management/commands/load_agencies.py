@@ -10,7 +10,6 @@ from pathlib import Path
 from typing import Generator, Literal, get_args
 
 from delta import DeltaTable
-from distutils.util import strtobool
 from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.db import connection, transaction
@@ -20,6 +19,7 @@ from pyspark.sql import functions as sf
 
 from usaspending_api.common.csv_helpers import read_csv_file_as_list_of_dictionaries
 from usaspending_api.common.etl.postgres import ETLQueryFile, ETLTable, mixins
+from usaspending_api.common.helpers.generic_helper import strtobool
 from usaspending_api.common.helpers.sql_helpers import execute_sql, get_connection
 from usaspending_api.common.helpers.text_helpers import (
     standardize_nullable_whitespace as prep,
