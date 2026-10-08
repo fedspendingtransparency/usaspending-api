@@ -1,6 +1,7 @@
 from ninja import NinjaAPI
 
 from usaspending_api.config import CONFIG
+from usaspending_api.llm.v2 import views as llm_views  # noqa: F401  (registers routes on llm_router)
 from usaspending_api.llm.v2.router import router as llm_router
 
 api = NinjaAPI(

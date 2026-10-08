@@ -4,7 +4,7 @@ import pytest
 from model_bakery import baker
 from pydantic import ValidationError
 
-from usaspending_api.llm.models.py_models import AwardAmounts, Filters, InferenceConfig, get_defc_rows
+from usaspending_api.llm.models.py_models import AwardAmounts, Filters, InferenceConfig, clear_defc_rows_cache
 
 
 class TestInferenceConfig:
@@ -615,13 +615,13 @@ class TestDefCodes:
     """Tests for the DEFC code restriction (COVID-19 + Infrastructure only) on the Filters model.
 
     DEFC validity is sourced from the DisasterEmergencyFundCode table (see get_defc_rows), cached
-    for the life of the process via lru_cache -- cache_clear() must run before each test so one test's
+    for the life of the process -- clear_defc_rows_cache() must run before each test so one test's
     DB-seeded codes don't leak into another's (django_db rolls back the DB, but not the Python-level cache).
     """
 
     @pytest.fixture(autouse=True)
     def seed_defc_codes(self):
-        get_defc_rows.cache_clear()
+        clear_defc_rows_cache()
         for code in ["L", "M", "N", "O", "P", "U", "V"]:
             baker.make(
                 "references.DisasterEmergencyFundCode",
@@ -646,7 +646,7 @@ class TestDefCodes:
             group_name="other",
         )
         yield
-        get_defc_rows.cache_clear()
+        clear_defc_rows_cache()
 
     def test_def_codes_default_empty(self):
         filters = Filters()
