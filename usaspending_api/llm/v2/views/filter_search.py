@@ -5,6 +5,7 @@ from django.db.models import Sum
 from django.http import HttpRequest, StreamingHttpResponse
 from django.utils import timezone
 
+from usaspending_api.common.helpers.decorators import browsable
 from usaspending_api.llm.assistants.filter_search import FilterSearchAssistant
 from usaspending_api.llm.models.db_models import Assistant, Session, ToolUse
 from usaspending_api.llm.models.py_models import FilterSearchEvent, FilterSearchInput
@@ -39,9 +40,11 @@ def _stream_response(event_source: AsyncGenerator[str, None]) -> StreamingHttpRe
     return response
 
 
-@router.post(
+@browsable(
+    router,
     "/filter-search/",
     url_name="filter_search",
+    endpoint_doc="usaspending_api/api_contracts/contracts/v2/llm/filter_search.md",
 )
 async def filter_search(request: HttpRequest, payload: FilterSearchInput) -> StreamingHttpResponse:
     """
