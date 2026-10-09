@@ -1,10 +1,14 @@
 import logging
-from typing import Callable
+from typing import Callable, Coroutine
 
+from asgiref.sync import sync_to_async
 from django.db import connection
 from django.db.utils import OperationalError
+from django.http import HttpResponseBase, StreamingHttpResponse
 from ninja import Router
+from ninja.decorators import decorate_view
 from rest_framework.request import Request
+from rest_framework.response import Response as DRFResponse
 from rest_framework.views import APIView
 
 from usaspending_api.common.exceptions import EndpointTimeoutException
@@ -94,10 +98,22 @@ def set_db_timeout(timeout_in_seconds: int) -> Callable:
     return wrap
 
 
-def _served_by_ninja(self: APIView, request: Request, *args, **kwargs) -> NotImplementedError:
-    """Real traffic is handled by the Django Ninja operation; this exists only so
-    DRF advertises the method and renders the browsable page for a browser GET."""
-    raise NotImplementedError
+def _show_browsable_result(self: APIView, request: Request, *args, **kwargs) -> DRFResponse:
+    """Renders the real Ninja response that the browsable()-installed run() wrapper
+    already buffered onto the request, through DRF's normal browsable rendering pipeline."""
+    try:
+        status_code, body_text = request._browsable_result
+    except AttributeError as exc:
+        raise NotImplementedError("browsable() did not buffer a result for this request.") from exc
+    return DRFResponse(body_text, status=status_code)
+
+
+async def _buffer_streaming_response(response: HttpResponseBase) -> tuple[int, str]:
+    if isinstance(response, StreamingHttpResponse):
+        body = b"".join([part async for part in response])
+    else:
+        body = response.content
+    return response.status_code, body.decode()
 
 
 def browsable(
@@ -115,13 +131,32 @@ def browsable(
             {
                 "__doc__": view_func.__doc__,
                 "endpoint_doc": endpoint_doc,
-                **{m.lower(): _served_by_ninja for m in methods},
+                **{m.lower(): _show_browsable_result for m in methods},
             },
         )
         rendered = doc_view.as_view()
         router.get(path, auth=None, include_in_schema=False, url_name=DJANGO_NINJA_TEMP_NAME_FOR_DRF)(
             lambda request: rendered(request)
         )
-        return router.api_operation(list(methods), path, **ninja_kwargs)(view_func)
+
+        registered_view_func = router.api_operation(list(methods), path, **ninja_kwargs)(view_func)
+        operation = registered_view_func._ninja_operation
+        if not operation.is_async:
+            raise RuntimeError("@browsable only supports async Ninja operations.")
+
+        def _html_aware_run(run_func: Callable) -> Callable:
+            async def wrapper(request: Request, *args, **kwargs) -> Coroutine:
+                result = await run_func(request, *args, **kwargs)
+                if "text/html" not in request.headers.get("Accept", ""):
+                    return result
+                status_code, body_text = await _buffer_streaming_response(result)
+                request._browsable_result = (status_code, body_text)
+                return await sync_to_async(rendered, thread_sensitive=True)(request)
+
+            return wrapper
+
+        decorate_view(_html_aware_run)(registered_view_func)
+
+        return registered_view_func
 
     return decorator
