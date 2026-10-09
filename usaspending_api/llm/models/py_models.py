@@ -1,6 +1,11 @@
+from functools import lru_cache
 from typing import Annotated, Any, Callable, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, RootModel, field_validator, model_validator
+
+from usaspending_api.awards.v2.lookups.lookups import all_awards_types_to_category
+from usaspending_api.common.helpers.orm_helpers import award_types_are_valid_groups
+from usaspending_api.references.helpers import get_defc_code_details
 
 
 class InferenceConfig(BaseModel):
@@ -122,7 +127,7 @@ class SelectedAgency(BaseModel):
     toptier_flag: bool
     toptier_agency: ToptierAgency
     subtier_agency: SubtierAgency | None = None
-    agencyType: str = Field(alias="agencyType")
+    agencyType: Literal["toptier", "subtier"] = "toptier"
 
 
 class CodeLists(BaseModel):
@@ -147,54 +152,38 @@ class CodeLists(BaseModel):
     counts: list = Field(default_factory=list)
 
 
-DEFCode = Literal[
-    "A",
-    "B",
-    "C",
-    "D",
-    "E",
-    "F",
-    "G",
-    "H",
-    "I",
-    "J",
-    "K",
-    "L",
-    "M",
-    "N",
-    "O",
-    "P",
-    "Q",
-    "R",
-    "S",
-    "T",
-    "U",
-    "V",
-    "W",
-    "X",
-    "Y",
-    "Z",
-    "1",
-    "2",
-    "3",
-    "4",
-    "5",
-    "6",
-    "7",
-    "8",
-    "9",
-    "AAA",
-    "AAB",
-    "AAC",
-    "AAD",
-    "AAE",
-    "AAF",
-    "AAG",
-    "AAH",
-    "AAI",
-    "AAJ",
-    "QQQ",
-]
+DEFC_GROUPS = ("covid_19", "infrastructure")
+
+
+@lru_cache(maxsize=1)
+def get_defc_rows() -> tuple[dict, ...]:
+    """DEFC rows for the frontend-supported groups; hits the DB once per process, then cached."""
+    return tuple(get_defc_code_details(list(DEFC_GROUPS)))
+
+
+def get_valid_defc_codes() -> frozenset[str]:
+    return frozenset(row["code"] for row in get_defc_rows())
+
+
+def build_defc_description() -> str:
+    """LLM-facing description for the defCodes field, built from the DB rows above."""
+    labels = {"covid_19": "COVID-19", "infrastructure": "Infrastructure"}
+    lines = [
+        "Disaster/Emergency Fund Codes (DEFC) filter with 'require'/'exclude' lists. Only COVID-19 and "
+        "Infrastructure DEFCs are supported (matching what the Advanced Search page allows). Use codes "
+        "from the matching group:",
+    ]
+    rows_by_group: dict[str, list[dict]] = {}
+    for row in get_defc_rows():
+        rows_by_group.setdefault(row["group_name"], []).append(row)
+    for group_name in DEFC_GROUPS:
+        rows = rows_by_group.get(group_name, [])
+        codes = ", ".join(f"'{row['code']}'" for row in rows)
+        lines.append(f"  {labels.get(group_name, group_name)}: [{codes}]")
+        for row in rows:
+            lines.append(f"    {row['code']} = {row['title']} ({row['public_law']})")
+    return "\n".join(lines)
+
 
 RecipientType = Literal[
     "business",
@@ -267,334 +256,199 @@ RecipientType = Literal[
     "individuals",
 ]
 
+SetAsideCode = Literal[
+    "NONE",
+    "SBA",
+    "SBP",
+    "RSB",
+    "VSB",
+    "ESB",
+    "8A",
+    "8AN",
+    "8AC",
+    "HZC",
+    "HZS",
+    "HS2",
+    "HS3",
+    "SDVOSBC",
+    "SDVOSBS",
+    "VSA",
+    "VSS",
+    "WOSB",
+    "WOSBSS",
+    "EDWOSB",
+    "EDWOSBSS",
+    "HMT",
+    "HMP",
+    "BI",
+    "IEE",
+    "ISBEE",
+]
+
+ExtentCompetedCode = Literal[
+    "A",
+    "B",
+    "C",
+    "D",
+    "E",
+    "F",
+    "G",
+    "CDO",
+    "NDO",
+]
+
 
 class DEFCodeLists(BaseModel):
-    """Base Model for code lists"""
+    """Validation model for DEFC code lists"""
 
-    require: Annotated[
-        list[DEFCode],
-        Field(
-            default_factory=list,
-            description="List of codes that must be present.",
-            json_schema_extra={"examples": [["A", "AAB"]]},
-        ),
-    ]
-    exclude: Annotated[
-        list[DEFCode],
-        Field(
-            default_factory=list, description="List of codes to exclude", json_schema_extra={"examples": [["336413"]]}
-        ),
-    ]
+    require: list[str] = Field(default_factory=list)
+    exclude: list[str] = Field(default_factory=list)
+
+    @field_validator("require", "exclude")
+    @classmethod
+    def validate_def_codes(cls, value: list[str]) -> list[str]:
+        """Validate DEFC codes against the DB-sourced, supported set (COVID-19 + Infrastructure)."""
+        if not value:
+            return value
+        valid_codes = get_valid_defc_codes()
+        unknown = [code for code in value if code not in valid_codes]
+        if unknown:
+            raise ValueError(f"Invalid DEFC code(s): {unknown}. See the defCodes field description for valid codes.")
+        return value
+
+
+# The frontend's predefined award-amount buckets and their fixed bounds (see
+# https://github.com/fedspendingtransparency/usaspending-website/blob/master/src/js/dataMapping/search/awardAmount.js).
+# None means the bound is open ended. Buckets may be combined with each other (OR semantics); a custom range instead
+# uses the single 'specific' key.
+AWARD_AMOUNT_RANGES: dict[str, list[int | None]] = {
+    "range-0": [None, 1000000],
+    "range-1": [1000000, 25000000],
+    "range-2": [25000000, 100000000],
+    "range-3": [100000000, 500000000],
+    "range-4": [500000000, None],
+}
+AWARD_AMOUNT_KEYS = set(AWARD_AMOUNT_RANGES) | {"specific"}
+
+
+class AwardAmounts(RootModel[dict[str, list[int | None]]]):
+    """Validation model for the award-amount filter blob.
+
+    The frontend stores award-amount filters as a dict of {key: [min, max]}, where a None bound is open
+    ended. A key is either one or more of the predefined range buckets (range-0 .. range-4) — each of which
+    carries fixed bounds — or the single 'specific' key holding a custom [min, max], which must stand alone.
+    """
+
+    @model_validator(mode="after")
+    def validate_amounts(self) -> "AwardAmounts":
+        amounts = self.root
+
+        unknown = [key for key in amounts if key not in AWARD_AMOUNT_KEYS]
+        if unknown:
+            raise ValueError(f"Invalid award amount key(s): {unknown}. Valid keys are {sorted(AWARD_AMOUNT_KEYS)}.")
+
+        if "specific" in amounts and len(amounts) > 1:
+            raise ValueError("'specific' award amount must be the only key; it cannot be combined with range buckets.")
+
+        for key, bounds in amounts.items():
+            if key in AWARD_AMOUNT_RANGES:
+                # Range buckets have fixed bounds; a custom range must use 'specific' instead.
+                if bounds != AWARD_AMOUNT_RANGES[key]:
+                    raise ValueError(
+                        f"Award amount '{key}' must be {AWARD_AMOUNT_RANGES[key]}; use the 'specific' key "
+                        f"for a custom range."
+                    )
+                continue
+
+            # 'specific': a free-form [min, max] pair.
+            if len(bounds) != 2:
+                raise ValueError(f"Award amount '{key}' must be a [min, max] pair; got {bounds}.")
+            lower, upper = bounds
+            if lower is not None and lower < 0:
+                raise ValueError(f"Award amount '{key}' min must be non-negative; got {lower}.")
+            if upper is not None and upper < 0:
+                raise ValueError(f"Award amount '{key}' max must be non-negative; got {upper}.")
+            if lower is not None and upper is not None and upper < lower:
+                raise ValueError(f"Award amount '{key}' max ({upper}) must be greater than or equal to min ({lower}).")
+
+        return self
 
 
 class Filters(BaseModel):
-    """Model for all filter criteria"""
+    """Validation model for all filter criteria and the persisted FilterHash blob."""
 
     model_config = ConfigDict(extra="forbid")
 
-    keyword: list[str] = Field(
-        default_factory=list, description="List of keywords. Use query fan out to expand user query to 2-3 synonyms"
-    )
-    timePeriodType: Annotated[
-        Literal["fy", "dr"],
-        Field(
-            description=(
-                "Time period type selector:\n"
-                "- 'fy' (fiscal year): Use timePeriodFY field with year strings like '2023', '2024'\n"
-                "- 'dr' (date range): Use time_period field with TimePeriod objects containing "
-                "start_date and end_date\n\n"
-                "IMPORTANT: Only populate the field that matches this type."
-            )
-        ),
-    ] = "fy"
-    timePeriodFY: Annotated[
-        list[str],
-        Field(
-            description=(
-                "ONLY use when timePeriodType='fy'. "
-                "List of fiscal years as four-digit strings (e.g., ['2023', '2024']). "
-                "Leave empty if using date ranges (timePeriodType='dr')."
-            ),
-            json_schema_extra={"examples": [["2023", "2024", "2025"]], "pattern": "^\\d{4}$"},
-        ),
-    ] = []
-    time_period: Annotated[
-        list[TimePeriod],
-        Field(
-            default_factory=list,
-            description=(
-                "ONLY use when timePeriodType='dr'. "
-                "List of custom date ranges with start_date and end_date in YYYY-MM-DD format. "
-                "Leave empty if using fiscal years (timePeriodType='fy')."
-            ),
-            json_schema_extra={
-                "examples": [
-                    [
-                        {"start_date": "2019-07-01", "end_date": "2021-06-30"},
-                        {"start_date": "2022-01-01", "end_date": "2022-12-31"},
-                    ]
-                ]
-            },
-        ),
-    ]
-    selectedLocations: Annotated[
-        dict[str, SelectedLocation],
-        Field(
-            default_factory=dict,
-            description=(
-                "Dictionary of selected locations keyed by their identifier. "
-                "The key MUST match the 'identifier' field in the SelectedLocation value. "
-                "\n\n"
-                "IMPORTANT: Use the lookup_location tool to get properly formatted location objects. "
-                "Do not construct these manually.\n\n"
-                "Structure patterns:\n"
-                "- Country only: 'DEU' → {country: 'DEU'}\n"
-                "- State: 'USA_MO' → {country: 'USA', state: 'MO'}\n"
-                "- County: 'USA_MO_095' → {country: 'USA', state: 'MO', county: '095'}\n"
-                "- City: 'USA_MO_KANSAS CITY' → {country: 'USA', state: 'MO', city: 'KANSAS CITY'}\n"
-                "- District: 'USA_MO_04' → {country: 'USA', state: 'MO', district_current: '04'}\n"
-                "- Zip: 'USA_64198' → {country: 'USA', zip: '64198'}\n"
-                "- Foreign city: 'TUR_undefined_ISTANBUL' → {country: 'TUR', city: 'ISTANBUL'}"
-            ),
-            json_schema_extra={
-                "examples": [
-                    {
-                        "USA_TX": {
-                            "identifier": "USA_TX",
-                            "filter": {"country": "USA", "state": "TX"},
-                            "display": {"entity": "State", "standalone": "TEXAS", "title": "TEXAS"},
-                        },
-                        "USA_IL_CHICAGO": {
-                            "identifier": "USA_IL_CHICAGO",
-                            "filter": {"country": "USA", "state": "IL", "city": "CHICAGO"},
-                            "display": {"entity": "City", "standalone": "CHICAGO", "title": "CHICAGO, ILLINOIS"},
-                        },
-                    }
-                ]
-            },
-        ),
-    ]
-    locationDomesticForeign: Literal["all", "foreign"] = Field(
-        default="all", description='Use "foreign" to search all foreign locations. Otherwise use "all"'
-    )
-    selectedFundingAgencies: dict[str, Any] = Field(default_factory=dict)
+    keyword: list[str] = Field(default_factory=list)
+    timePeriodType: Literal["fy", "dr"] = "fy"
+    timePeriodFY: list[str] = []
+    time_period: list[TimePeriod] = Field(default_factory=list)
+    selectedLocations: dict[str, SelectedLocation] = Field(default_factory=dict)
+    locationDomesticForeign: Literal["all", "foreign"] = "all"
+    selectedFundingAgencies: dict[str, SelectedAgency] = Field(default_factory=dict)
     selectedAwardingAgencies: dict[str, SelectedAgency] = Field(default_factory=dict)
-    selectedRecipients: list[str] = Field(default_factory=list)
-    recipientDomesticForeign: Literal["all", "foreign"] = Field(
-        default="all", description='Use "foreign" to search all foreign locations. Otherwise use "all"'
-    )
-    recipientType: list[RecipientType] = Field(
-        default_factory=list,
-        description=(
-            "Recipient type filter for award recipients. Select one or more types from the categories below.\n\n"
-            "GENERAL BUSINESS (10 types) - For-profit entities:\n"
-            "  business - Any business entity\n"
-            "  small_business - Small business (SBA size standards)\n"
-            "  other_than_small_business - Large businesses\n"
-            "  corporate_entity_tax_exempt - Tax-exempt corporations\n"
-            "  corporate_entity_not_tax_exempt - Taxable corporations\n"
-            "  partnership_or_limited_liability_partnership - Partnerships/LLPs\n"
-            "  sole_proprietorship - Individual-owned businesses\n"
-            "  manufacturer_of_goods - Manufacturing companies\n"
-            "  subchapter_s_corporation - S-Corps (pass-through taxation)\n"
-            "  limited_liability_corporation - LLCs\n\n"
-            "MINORITY OWNED BUSINESS (11 types) - Businesses owned by racial/ethnic minorities:\n"
-            "  minority_owned_business - Any minority-owned business\n"
-            "  alaskan_native_corporation_owned_firm - Alaska Native corporations\n"
-            "  american_indian_owned_business - American Indian owned\n"
-            "  asian_pacific_american_owned_business - Asian Pacific American owned\n"
-            "  black_american_owned_business - Black/African American owned\n"
-            "  hispanic_american_owned_business - Hispanic/Latino owned\n"
-            "  native_american_owned_business - Native American owned\n"
-            "  native_hawaiian_organization_owned_firm - Native Hawaiian organizations\n"
-            "  subcontinent_asian_indian_american_owned_business - South Asian owned\n"
-            "  tribally_owned_firm - Tribal government-owned\n"
-            "  other_minority_owned_business - Other minority categories\n\n"
-            "WOMEN OWNED BUSINESS (5 types) - Businesses owned/controlled by women:\n"
-            "  woman_owned_business - Any women-owned business\n"
-            "  women_owned_small_business - Women-owned small business (WOSB)\n"
-            "  economically_disadvantaged_women_owned_small_business - Economically disadvantaged WOSB (EDWOSB)\n"
-            "  joint_venture_women_owned_small_business - WOSB joint ventures\n"
-            "  joint_venture_economically_disadvantaged_women_owned_small_business - EDWOSB joint ventures\n\n"
-            "VETERAN OWNED BUSINESS (2 types) - Businesses owned by military veterans:\n"
-            "  veteran_owned_business - Veteran-owned business (VOB)\n"
-            "  service_disabled_veteran_owned_business - Service-disabled veteran-owned (SDVOB)\n\n"
-            "SPECIAL DESIGNATIONS (20 types) - Businesses with federal program certifications:\n"
-            "  special_designations - Any special designation\n"
-            "  8a_program_participant - SBA 8(a) Business Development program\n"
-            "  ability_one_program - AbilityOne (employs people with disabilities)\n"
-            "  dot_certified_disadvantaged_business_enterprise - DoT DBE certified\n"
-            "  emerging_small_business - Emerging small business\n"
-            "  federally_funded_research_and_development_corp - FFRDCs\n"
-            "  historically_underutilized_business_firm - HUBZone certified\n"
-            "  labor_surplus_area_firm - Located in labor surplus areas\n"
-            "  sba_certified_8a_joint_venture - SBA-certified 8(a) joint ventures\n"
-            "  self_certified_small_disadvanted_business - Self-certified small disadvantaged business\n"
-            "  small_agricultural_cooperative - Agricultural cooperatives\n"
-            "  community_developed_corporation_owned_firm - Community development corporations\n"
-            "  us_owned_business - U.S.-owned businesses\n"
-            "  foreign_owned_and_us_located_business - Foreign-owned, U.S.-based\n"
-            "  foreign_owned - Foreign-owned entities\n"
-            "  foreign_government - Foreign government entities\n"
-            "  international_organization - International organizations (UN, World Bank, etc.)\n"
-            "  domestic_shelter - Domestic violence shelters\n"
-            "  hospital - Hospital facilities\n"
-            "  veterinary_hospital - Veterinary hospitals\n\n"
-            "NONPROFIT (3 types) - Tax-exempt organizations:\n"
-            "  nonprofit - Any nonprofit organization (501(c) entities)\n"
-            "  foundation - Private/public foundations\n"
-            "  community_development_corporations - Community development nonprofits\n\n"
-            "HIGHER EDUCATION (6 types) - Colleges and universities:\n"
-            "  higher_education - Any higher education institution\n"
-            "  public_institution_of_higher_education - Public colleges/universities\n"
-            "  private_institution_of_higher_education - Private colleges/universities\n"
-            "  minority_serving_institution_of_higher_education - MSIs (HBCUs, HSIs, TCUs, etc.)\n"
-            "  school_of_forestry - Forestry schools\n"
-            "  veterinary_college - Veterinary medicine schools\n\n"
-            "GOVERNMENT (10 types) - Government entities:\n"
-            "  government - Any government entity\n"
-            "  national_government - Federal government agencies\n"
-            "  interstate_entity - Multi-state compacts/authorities\n"
-            "  regional_and_state_government - State governments\n"
-            "  regional_organization - Regional planning organizations\n"
-            "  us_territory_or_possession - Puerto Rico, Guam, USVI, etc.\n"
-            "  council_of_governments - Regional councils (COGs)\n"
-            "  local_government - Cities, counties, municipalities\n"
-            "  indian_native_american_tribal_government - Federally recognized tribes\n"
-            "  authorities_and_commissions - Public authorities/commissions\n\n"
-            "INDIVIDUALS (1 type) - Individual recipients:\n"
-            "  individuals - Individual persons (grants, scholarships, etc.)\n\n"
-            "Usage examples:\n"
-            "  All small businesses: ['small_business']\n"
-            "  Women and minority-owned: ['woman_owned_business', 'minority_owned_business']\n"
-            "  Veterans and 8(a): ['veteran_owned_business', '8a_program_participant']\n"
-            "  All nonprofits and education: ['nonprofit', 'higher_education']\n"
-            "  State and local government: ['regional_and_state_government', 'local_government']\n"
-            "  HUBZone small businesses: ['historically_underutilized_business_firm', 'small_business']"
-        ),
-    )
+    selectedRecipients: list[str] = Field(default_factory=list, max_length=50)
+    recipientDomesticForeign: Literal["all", "foreign"] = "all"
+    recipientType: list[RecipientType] = Field(default_factory=list)
     selectedRecipientLocations: dict[str, Any] = Field(default_factory=dict)
     awardType: list[str] = Field(default_factory=list)
-    selectedAwardIDs: dict[str, Any] = Field(default_factory=dict)
-    awardAmounts: dict[str, list[int | None]] = Field(
-        default_factory=dict,
-        description=(
-            "Dictionary of award amount ranges for filtering. "
-            "Each value is a two-element list: [min_amount, max_amount]. "
-            "Use `None` for unbounded ranges.\n\n"
-            "TWO MUTUALLY EXCLUSIVE MODES:\n\n"
-            "MODE 1 - STANDARD RANGES (can select multiple):\n"
-            "- 'range-0': [None, 1000000] - Awards up to $1M\n"
-            "- 'range-1': [1000000, 25000000] - Awards $1M to $25M\n"
-            "- 'range-2': [25000000, 100000000] - Awards $25M to $100M\n"
-            "- 'range-3': [100000000, 500000000] - Awards $100M to $500M\n"
-            "- 'range-4': [500000000, None] - Awards over $500M\n\n"
-            "MODE 2 - SPECIFIC RANGE (must be alone):\n"
-            "- 'specific': [min, max] - Specify exact dollar amounts\n\n"
-            "CRITICAL RULES:\n"
-            "1. You can use multiple standard ranges together (range-0 through range-4)\n"
-            "2. You can use ONE specific range with specific min/max values\n"
-            "3. NEVER mix standard ranges with specific range\n"
-            "4. When using 'specific', it must be the ONLY key in the dictionary"
-        ),
-        json_schema_extra={
-            "examples": [
-                # Example 1: Multiple standard ranges
-                {"range-0": [None, 1000000], "range-2": [25000000, 100000000]},
-                # Example 2: Single standard range
-                {"range-3": [100000000, 500000000]},
-                # Example 3: Custom range with both bounds
-                {"specific": [5000000, 50000000]},
-                # Example 4: Custom range unbounded above
-                {"specific": [10000000, None]},
-                # Example 5: Custom range unbounded below
-                {"specific": [None, 75000000]},
-            ]
-        },
-    )
+    selectedAwardIDs: list[str] = Field(default_factory=list)
+    awardAmounts: AwardAmounts = Field(default_factory=lambda: AwardAmounts({}))
     selectedCFDA: dict[str, Any] = Field(default_factory=dict)
     naicsCodes: CodeLists = Field(default_factory=CodeLists)
     pscCodes: CodeLists = Field(default_factory=CodeLists)
-    defCodes: DEFCodeLists = Field(
-        default_factory=DEFCodeLists,
-        description=(
-            "Disaster/Emergency Fund Codes (DEFC) filter using CodeLists structure with 'require' and "
-            "'exclude' lists.\n\n"
-            "VALID CODES ONLY: A-Z, 1-9, AAA-AAJ, Q, QQQ\n\n"
-            "Common groupings:\n"
-            "COVID-19 Pandemic (use all 7 for comprehensive COVID spending):\n"
-            "  L - Coronavirus Preparedness (P.L. 116-123, Mar 2020)\n"
-            "  M - Families First Act (P.L. 116-127, Mar 2020)\n"
-            "  N - CARES Act (P.L. 116-136, Mar 2020)\n"
-            "  O - Non-emergency COVID (multiple P.L.s)\n"
-            "  P - Paycheck Protection Program (P.L. 116-139, Apr 2020)\n"
-            "  U - Consolidated Appropriations 2021 COVID (P.L. 116-260, Dec 2020)\n"
-            "  V - American Rescue Plan (P.L. 117-2, Mar 2021)\n\n"
-            "Infrastructure Investment and Jobs Act (IIJA):\n"
-            "  Z - Emergency IIJA funding (P.L. 117-58, Nov 2021)\n"
-            "  1 - Non-emergency IIJA funding (P.L. 117-58, Nov 2021)\n\n"
-            "Ukraine Aid:\n"
-            "  6 - Additional Ukraine Supplemental (P.L. 117-128, May 2022)\n"
-            "  AAA - Ukraine Continuing Appropriations (P.L. 117-180, Sep 2022)\n\n"
-            "2017-2020 Natural Disasters:\n"
-            "  A - P.L. 115-56 (Sep 2017 - Hurricanes Harvey, Irma, Maria)\n"
-            "  B - P.L. 115-72 (Oct 2017 - Additional disaster relief)\n"
-            "  C - Bipartisan Budget Act 2018 (P.L. 115-123, Feb 2018)\n"
-            "  D - FAA Reauthorization (P.L. 115-254, Oct 2018)\n"
-            "  E - Additional Disaster Relief 2019 (P.L. 116-20, Jun 2019)\n"
-            "  F - Southern Border Assistance (P.L. 116-26, Jul 2019)\n"
-            "  G - Emergency Consolidated Appropriations 2020 (P.L. 116-93, Dec 2019)\n"
-            "  H - Disaster Consolidated Appropriations 2020 (P.L. 116-93, Dec 2019)\n"
-            "  I - Further Consolidated Appropriations 2020 (P.L. 116-94, Dec 2019)\n"
-            "  J - Wildfire Suppression (P.L. 116-94, Dec 2019)\n"
-            "  K - USMCA Implementation (P.L. 116-113, Jan 2020)\n\n"
-            "2021-2024 Appropriations:\n"
-            "  W - Emergency Security Supplemental (P.L. 117-31, Jul 2021)\n"
-            "  X - Emergency Extending Government Funding (P.L. 117-43, Sep 2021)\n"
-            "  Y - Disaster Extending Government Funding (P.L. 117-43, Sep 2021)\n"
-            "  2 - Further Extending Government Funding (P.L. 117-70, Dec 2021)\n"
-            "  3 - Emergency Consolidated Appropriations 2022 (P.L. 117-103, Mar 2022)\n"
-            "  4 - Disaster Consolidated Appropriations 2022 (P.L. 117-103, Mar 2022)\n"
-            "  5 - Wildfire Suppression 2022 (P.L. 117-103, Mar 2022)\n"
-            "  7 - Bipartisan Safer Communities Act (P.L. 117-159, Jun 2022)\n"
-            "  8 - Legislative Branch Appropriations (P.L. 117-167, Aug 2022)\n"
-            "  AAB - Emergency Consolidated Appropriations 2023 (P.L. 117-328, Dec 2022)\n"
-            "  AAC - Wildfire Suppression 2023 (P.L. 117-328, Dec 2022)\n"
-            "  AAD - Disaster Consolidated Appropriations 2023 (P.L. 117-328, Dec 2022)\n"
-            "  AAE - Continuing Appropriations 2024 (P.L. 118-15, Sep 2023)\n"
-            "  AAF - Emergency Consolidated Appropriations 2024 (P.L. 118-42, Mar 2024)\n"
-            "  AAG - Disaster Consolidated Appropriations 2024 (P.L. 118-42, Mar 2024)\n"
-            "  AAH - Emergency P.L. 118-47 (2024)\n"
-            "  AAI - Disaster P.L. 118-47 (2024)\n"
-            "  AAJ - Emergency P.L. 118-50 (2024)\n\n"
-            "Special codes:\n"
-            "  Q - Not Designated (non-emergency/non-disaster)\n"
-            "  9 - Unspecified non-COVID (discontinued Jul 2021)\n"
-            "  QQQ - Excluded from tracking\n\n"
-            "Usage examples:\n"
-            "  All COVID spending: {'require': ['L', 'M', 'N', 'O', 'P', 'U', 'V']}\n"
-            "  Infrastructure only: {'require': ['Z', '1']}\n"
-            "  Exclude COVID from results: {'exclude': ['L', 'M', 'N', 'O', 'P', 'U', 'V']}\n"
-            "  2017 hurricanes: {'require': ['A', 'B']}\n"
-            "  Ukraine aid: {'require': ['6', 'AAA']}"
-        ),
-    )
-    defCode: list[str] = Field(
-        default_factory=list,
-        description=(
-            "Legacy DEFC filter (list of codes). Use defCodes (CodeLists) instead for require/exclude logic.\n"
-            "Valid codes: A-Z, 1-9, AAA-AAJ, QQQ (see defCodes description for details)"
-        ),
-    )
+    defCodes: DEFCodeLists = Field(default_factory=DEFCodeLists)
     pricingType: list[str] = Field(default_factory=list)
-    setAside: list[str] = Field(default_factory=list)
-    extentCompeted: list[str] = Field(default_factory=list)
+    setAside: list[SetAsideCode] = Field(default_factory=list)
+    extentCompeted: list[ExtentCompetedCode] = Field(default_factory=list)
     treasuryAccounts: dict[str, Any] = Field(default_factory=dict)
     tasCodes: CodeLists = Field(default_factory=CodeLists)
     awardDescription: str = ""
     filterNewAwardsOnlySelected: bool = False
     filterNewAwardsOnlyActive: bool = False
     filterNaoActiveFromFyOrDateRange: bool = False
+
+    @field_validator("selectedAwardingAgencies", "selectedFundingAgencies", mode="before")
+    @classmethod
+    def rekey_selected_agencies(cls, value: Any) -> Any:
+        """Re-key agency dicts by "{id}_{agencyType}".
+
+        The frontend keys selected agencies by "{id}_{agencyType}" (e.g. "1173_toptier"), but the
+        LLM does not reliably reproduce that key. Since each value already carries `id` and
+        `agencyType`, rebuild the key from the value so the persisted filter is always correctly
+        keyed regardless of what key the model emitted.
+        """
+        if not isinstance(value, dict):
+            return value
+
+        rekeyed = {}
+        for original_key, agency in value.items():
+            if isinstance(agency, dict):
+                agency_id = agency.get("id")
+                agency_type = agency.get("agencyType")
+            else:
+                agency_id = getattr(agency, "id", None)
+                agency_type = getattr(agency, "agencyType", None)
+            # Fall back to the original key if the value is missing the pieces we need; the
+            # SelectedAgency validation below will then surface the real problem.
+            key = f"{agency_id}_{agency_type}" if agency_id is not None and agency_type else original_key
+            rekeyed[key] = agency
+        return rekeyed
+
+    @field_validator("awardType")
+    @classmethod
+    def validate_award_type(cls, value: list[str]) -> list[str]:
+        """Validate award-type codes: each must be a known code, and all must share one award group."""
+        if not value:
+            return value
+        unknown = [code for code in value if code not in all_awards_types_to_category]
+        if unknown:
+            raise ValueError(
+                f"Invalid award type code(s): {unknown}. See the awardType field description for valid codes."
+            )
+        if not award_types_are_valid_groups(value):
+            raise ValueError("'award_type_codes' must only contain types from one group.")
+        return value
 
     @model_validator(mode="after")
     def validate_time_period_consistency(self) -> "Filters":
@@ -612,6 +466,285 @@ class Filters(BaseModel):
                 )
 
         return self
+
+
+class DEFCodeListsWithoutEnum(BaseModel):
+    """Version of DEFCodeLists without its DB-backed validator.
+    This reduces the payload send to the llm with every call."""
+
+    require: Annotated[
+        list[str],
+        Field(
+            default_factory=list,
+            description="DEFC codes that must be present. See the defCodes field description for valid codes.",
+            json_schema_extra={"examples": [["L", "M", "N"]]},
+        ),
+    ]
+    exclude: Annotated[
+        list[str],
+        Field(
+            default_factory=list,
+            description="DEFC codes to exclude. See the defCodes field description for valid codes.",
+            json_schema_extra={"examples": [["Z"]]},
+        ),
+    ]
+
+
+class ExecuteFilterInput(BaseModel):
+    """Model for the input schema for the execute_filter tool
+
+    This model is decoupled form the Filter model above.  the Filter model provides comprehensive validation.  This
+    model is a lighter version that excludes the enumerated values in order to reduce the payload sent to the llm with
+    every call.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    keyword: list[str] = Field(
+        default_factory=list,
+        description=(
+            "Free-text keywords. Only for discrete terms with no matching structured filter. For literal "
+            "descriptive phrases, product/item names, addresses, or multi-term OR-style searches, use "
+            "awardDescription instead (comma-separate terms there for OR logic). Never put boolean or "
+            "HTML-escaped syntax (e.g. '&quot;jeep&quot; OR &quot;toyota&quot;') in either field."
+        ),
+        json_schema_extra={"examples": [["bridge", "repair"]]},
+    )
+    timePeriodType: Literal["fy", "dr"] = Field(
+        default="fy",
+        description=(
+            "Time period mode: 'fy' populates timePeriodFY; 'dr' populates time_period. Populate only one. "
+            "Leave BOTH timePeriodFY and time_period empty/omitted unless the query names or clearly implies "
+            "a year, date, or date range — do not default to the current year or to all available years just "
+            "because no time period was mentioned. Use 'fy' only when the query names one or more whole "
+            "federal fiscal years (e.g. 'in FY2023', 'since 2022'). Use 'dr' for anything involving quarters, "
+            "months, or explicit calendar dates. The federal fiscal year runs Oct 1 - Sep 30 of the following "
+            "calendar year, so a fiscal quarter must be converted to calendar dates for 'dr': FY Q1 = "
+            "Oct 1 - Dec 31 (previous calendar year), Q2 = Jan 1 - Mar 31, Q3 = Apr 1 - Jun 30, Q4 = Jul 1 - "
+            "Sep 30 (all calendar-year dates matching the fiscal year's number). Example: 'Q2 FY2024' -> "
+            'timePeriodType=\'dr\', time_period=[{"start_date": "2024-01-01", "end_date": "2024-03-31"}] '
+            "(NOT a calendar-year Q2). For relative phrases ('last year', 'this quarter'), compute the actual "
+            "dates from the current date given in the system prompt."
+        ),
+    )
+    timePeriodFY: Annotated[
+        list[str],
+        Field(
+            description=(
+                "Fiscal years as four-digit strings. Only when timePeriodType='fy'. Leave empty unless the query names "
+                "specific fiscal year(s)."
+            ),
+            json_schema_extra={"examples": [["2023", "2024"]], "pattern": "^\\d{4}$"},
+        ),
+    ] = []
+    time_period: Annotated[
+        list[TimePeriod],
+        Field(
+            default_factory=list,
+            description=(
+                "Custom date ranges (YYYY-MM-DD). Only when timePeriodType='dr'. Leave empty unless the query "
+                "implies specific dates, months, or quarters. See timePeriodType's description for how to "
+                "convert fiscal quarters to calendar dates."
+            ),
+            json_schema_extra={"examples": [[{"start_date": "2023-01-01", "end_date": "2023-12-31"}]]},
+        ),
+    ]
+    selectedLocations: Annotated[
+        dict[str, SelectedLocation],
+        Field(
+            default_factory=dict,
+            description=(
+                "Selected locations keyed by identifier. Use the lookup_location tool to build these; "
+                "do not construct them manually."
+            ),
+        ),
+    ]
+    locationDomesticForeign: Literal["all", "foreign"] = Field(
+        default="all", description='Use "foreign" to search all foreign locations. Otherwise use "all".'
+    )
+    selectedAwardingAgencies: dict[str, SelectedAgency] = Field(
+        default_factory=dict,
+        description=(
+            'Awarding agencies keyed by "{id}_{agencyType}" (e.g. "1173_toptier"). Must call the '
+            "lookup_agency tool to attain valid selected agency objects; pass the tool's returned "
+            "dictionary through unchanged, preserving its keys. Prefer awarding agency filter over funding agency "
+            "filter."
+        ),
+    )
+    selectedFundingAgencies: dict[str, SelectedAgency] = Field(
+        default_factory=dict,
+        description=(
+            'Funding agencies keyed by "{id}_{agencyType}" (e.g. "1173_toptier"). Must call the '
+            "lookup_agency tool to attain valid selected agency objects; pass the tool's returned "
+            "dictionary through unchanged, preserving its keys."
+        ),
+    )
+
+    selectedRecipients: list[str] = Field(
+        default_factory=list,
+        max_length=50,
+        description=(
+            "Named recipients only (specific companies/organizations), resolved via the lookup_recipient "
+            "tool. May include multiple recipients (up to 50). Do NOT use this for generic/demographic/category "
+            "terms (e.g. 'veteran-owned', 'small business', 'minority-owned') - those belong in recipientType via "
+            "list_recipient_types instead. Once a term has been resolved to a recipientType code, do not "
+            "also call lookup_recipient for that same term."
+        ),
+        json_schema_extra={
+            "examples": [
+                ["LOCKHEED MARTIN CORPORATION"],
+                ["HR1JA12FSM63"],
+                ["BOEING", "SPACE EXPLORATION TECHNOLOGIES CORP."],
+            ]
+        },
+    )
+    recipientDomesticForeign: Literal["all", "foreign"] = Field(
+        default="all", description='Use "foreign" to search all foreign recipient locations. Otherwise use "all".'
+    )
+    recipientType: list[str] = Field(
+        default_factory=list,
+        description=(
+            "Business/organization type filter for award recipients (e.g. 'small_business'). "
+            "Call list_recipient_types for all valid values grouped by category. Use this for "
+            "generic/demographic/category terms (e.g. 'veteran-owned', 'minority-owned', 'small business') - "
+            "do not treat these as named recipients for selectedRecipients/lookup_recipient."
+        ),
+        json_schema_extra={"examples": [["small_business"], ["woman_owned_business", "minority_owned_business"]]},
+    )
+    selectedRecipientLocations: dict[str, Any] = Field(
+        default_factory=dict,
+        description="Recipient locations keyed by identifier. Use the lookup_location tool to build these.",
+    )
+    awardType: list[str] = Field(
+        default_factory=list,
+        description=(
+            "Award-type code filter. If the query mentions an award vehicle (contract, grant, loan, IDV, direct "
+            "payment, financial assistance, or a related word/concept), you MUST set this filter - even when the "
+            "query's main subject is a recipient, agency, or location (e.g. 'contracts for Boeing' requires BOTH "
+            "the recipient filter AND this filter). Use exactly one of these code groups, matching the query:\n"
+            "  contracts:       ['A', 'B', 'C', 'D']\n"
+            "  IDVs:            ['IDV_A', 'IDV_B', 'IDV_B_A', 'IDV_B_B', 'IDV_B_C', 'IDV_C', 'IDV_D', 'IDV_E']\n"
+            "  grants:          ['02', '03', '04', '05', 'F001', 'F002']\n"
+            "  loans:           ['07', '08', 'F003', 'F004']\n"
+            "  direct payments: ['06', '10', 'F006', 'F007']\n"
+            "  other:           ['09', '11', '-1', 'F005', 'F008', 'F009', 'F010']\n"
+            "A value may only contain codes from a SINGLE group."
+        ),
+        json_schema_extra={"examples": [["A", "B", "C", "D"], ["02", "03", "04", "05"], ["07", "08"]]},
+    )
+    selectedAwardIDs: list[str] = Field(
+        default_factory=list,
+        description="Award ID (PIID/FAIN/URI) filter.",
+        json_schema_extra={"examples": [["N0002417C2117"], ["N0002417C2117", "B-18-DP-72-0002"]]},
+    )
+    awardAmounts: dict[str, list[int | None]] = Field(
+        default_factory=dict,
+        description=(
+            "Award amount ranges as {key: [min, max]}; None = unbounded (never use a large sentinel number "
+            "like 999999999999 for an open-ended bound - use None). Predefined buckets have fixed "
+            "bounds and are combinable: range-0 [,1M], range-1 [1M,25M], range-2 [25M,100M], "
+            "range-3 [100M,500M], range-4 [500M,]. Only use range-N buckets when the query's thresholds "
+            "match those exact boundaries. For ANY other arbitrary user-stated threshold (e.g. 'over $1 "
+            "million', 'between $500k and $2M', 'at least $750,000'), use 'specific': [min, max] instead - "
+            "'specific' must be the only key when used, and its bounds are NOT limited to the range-N "
+            "boundaries."
+        ),
+        json_schema_extra={
+            "examples": [
+                {"range-0": [None, 1000000], "range-2": [25000000, 100000000]},
+                {"specific": [5000000, 50000000]},
+                {"specific": [1000000, None]},
+            ]
+        },
+    )
+    selectedCFDA: dict[str, Any] = Field(
+        default_factory=dict,
+        description="CFDA / Assistance Listing filter keyed by program number. Use the lookup_code tool.",
+    )
+    naicsCodes: CodeLists = Field(default_factory=CodeLists)
+    pscCodes: CodeLists = Field(default_factory=CodeLists)
+    defCodes: DEFCodeListsWithoutEnum = Field(
+        default_factory=DEFCodeListsWithoutEnum,
+        description=(
+            "Disaster/Emergency Fund Codes (DEFC) filter with 'require'/'exclude' lists. Only COVID-19 and "
+            "Infrastructure DEFCs are supported."
+        ),
+        json_schema_extra={
+            "examples": [
+                {"require": ["L", "M", "N", "O", "P", "U", "V"]},
+                {"require": ["Z", "1"]},
+            ]
+        },
+    )
+    pricingType: list[str] = Field(default_factory=list, description="Contract pricing type codes (e.g. 'A', 'B').")
+    setAside: list[str] = Field(
+        default_factory=list,
+        description=(
+            "Type-of-set-aside codes. Valid codes:\n"
+            "  NONE     No Set Aside Used\n"
+            "  SBA      Small Business Set-Aside - Total\n"
+            "  SBP      Small Business Set-Aside - Partial\n"
+            "  RSB      Reserved for Small Business\n"
+            "  VSB      Very Small Business Set-Aside\n"
+            "  ESB      Emerging Small Business Set-Aside\n"
+            "  8A       8A Competed\n"
+            "  8AN      8(a) Sole Source\n"
+            "  8AC      SDB Set-Aside 8(a)\n"
+            "  HZC      HUBZone Set-Aside\n"
+            "  HZS      HUBZone Sole Source\n"
+            "  HS2      Combination HUBZone and 8(a)\n"
+            "  HS3      8(a) with HUBZone Preference\n"
+            "  SDVOSBC  Service-Disabled Veteran-Owned Small Business Set-Aside\n"
+            "  SDVOSBS  SDVOSB Sole Source\n"
+            "  VSA      Veteran Set-Aside\n"
+            "  VSS      Veteran Sole Source\n"
+            "  WOSB     Women-Owned Small Business\n"
+            "  WOSBSS   Women Owned Small Business Sole Source\n"
+            "  EDWOSB   Economically-Disadvantaged Women-Owned Small Business\n"
+            "  EDWOSBSS Economically Disadvantaged Women Owned Small Business Sole Source\n"
+            "  HMT      HBCU or MI Set-Aside - Total\n"
+            "  HMP      HBCU or MI Set-Aside - Partial\n"
+            "  BI       Buy Indian\n"
+            "  IEE      Indian Economic Enterprise\n"
+            "  ISBEE    Indian Small Business Economic Enterprise\n"
+            "Use this field (not recipientType or selectedRecipients) for set-aside/socioeconomic "
+            "program language like 'Native American owned', 'HUBZone', '8(a)', or 'SDVOSB set-aside'."
+        ),
+    )
+    extentCompeted: list[str] = Field(
+        default_factory=list,
+        description=(
+            "Extent-competed codes. Valid codes:\n"
+            "  A    Full and Open Competition\n"
+            "  B    Not Available for Competition\n"
+            "  C    Not Competed\n"
+            "  D    Full and Open Competition after exclusion of sources\n"
+            "  E    Follow On to Competed Action\n"
+            "  F    Competed under SAP\n"
+            "  G    Not Competed under SAP\n"
+            "  CDO  Competitive Delivery Order\n"
+            "  NDO  Non-Competitive Delivery Order"
+        ),
+    )
+    treasuryAccounts: dict[str, Any] = Field(
+        default_factory=dict, description="Treasury Account Symbol (TAS) filter keyed by identifier."
+    )
+    tasCodes: CodeLists = Field(default_factory=CodeLists)
+    awardDescription: str = Field(
+        default="",
+        description=(
+            "Free-text award description search term for literal descriptive phrases, product/item names, "
+            "or addresses meant to match verbatim. For multiple terms with OR logic, comma-separate them "
+            "(e.g. 'jeep,toyota') - do not use boolean or HTML-escaped syntax."
+        ),
+    )
+    filterNewAwardsOnlySelected: bool = Field(default=False, description="When true, limit results to new awards only.")
+    filterNewAwardsOnlyActive: bool = Field(
+        default=False, description="When true, the new-awards-only filter is active."
+    )
+    filterNaoActiveFromFyOrDateRange: bool = Field(
+        default=False, description="When true, derive the new-awards-only window from the selected FY or date range."
+    )
 
 
 class FilterRequest(BaseModel):
