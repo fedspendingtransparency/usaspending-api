@@ -3,47 +3,45 @@ import re
 import shutil
 import subprocess
 import time
-
-from calendar import monthrange, isleap
+from calendar import monthrange
 from datetime import datetime as dt
 from pathlib import Path
+from typing import Any, Iterable, Literal
 
 from dateutil import parser
-
 from django.conf import settings
 from django.db import connection
 from fiscalyear import datetime
+
 from usaspending_api.common.matview_manager import (
+    CHUNKED_MATERIALIZED_VIEWS,
+    DEFAULT_MATIVEW_DIR,
     DEPENDENCY_FILEPATH,
     MATERIALIZED_VIEWS,
-    CHUNKED_MATERIALIZED_VIEWS,
     MATVIEW_GENERATOR_FILE,
-    DEFAULT_MATIVEW_DIR,
 )
 from usaspending_api.references.models import Agency
-from typing import List
-
 
 logger = logging.getLogger(__name__)
 
 
-def read_text_file(filepath):
+def read_text_file(filepath: str) -> str:
     with open(filepath, "r") as plaintext_file:
         file_content_str = plaintext_file.read()
     return file_content_str
 
 
-def convert_string_to_datetime(input: str) -> datetime.datetime:
+def convert_string_to_datetime(val: str) -> datetime.datetime:
     """Parse a string into a datetime object"""
-    return parser.parse(input)
+    return parser.parse(val)
 
 
-def convert_string_to_date(input: str) -> datetime.date:
+def convert_string_to_date(val: str) -> datetime.date:
     """Parse a string into a date object"""
-    return convert_string_to_datetime(input).date()
+    return convert_string_to_datetime(val).date()
 
 
-def validate_date(date):
+def validate_date(date: Any) -> None:
     if not isinstance(date, (datetime.datetime, datetime.date)):
         raise TypeError("Incorrect parameter type provided")
 
@@ -51,13 +49,13 @@ def validate_date(date):
         raise Exception("Malformed date object provided")
 
 
-def check_valid_toptier_agency(agency_id):
+def check_valid_toptier_agency(agency_id: int) -> bool:
     """Check if the ID provided (corresponding to Agency.id) is a valid toptier agency"""
     agency = Agency.objects.filter(id=agency_id, toptier_flag=True).first()
     return agency is not None
 
 
-def generate_date_from_string(date_str):
+def generate_date_from_string(date_str: str) -> datetime.date | None:
     """Expects a string with format YYYY-MM-DD. returns datetime.date"""
     try:
         return datetime.date(*[int(x) for x in date_str.split("-")])
@@ -66,7 +64,7 @@ def generate_date_from_string(date_str):
     return None
 
 
-def dates_are_month_bookends(start, end):
+def dates_are_month_bookends(start: datetime.date, end: datetime.date) -> bool:
     try:
         last_day_of_month = monthrange(end.year, end.month)[1]
         if start.day == 1 and end.day == last_day_of_month:
@@ -82,24 +80,11 @@ def min_and_max_from_date_ranges(filter_time_periods: list) -> tuple:
     return dt.strptime(min_date, "%Y-%m-%d"), dt.strptime(max_date, "%Y-%m-%d")
 
 
-def within_one_year(d1, d2):
-    """includes leap years"""
-    year_range = list(range(d1.year, d2.year + 1))
-    if len(year_range) > 2:
-        return False
-    days_diff = abs((d2 - d1).days)
-    for leap_year in [year for year in year_range if isleap(year)]:
-        leap_date = datetime.datetime(leap_year, 2, 29)
-        if d1 <= leap_date <= d2:
-            days_diff -= 1
-    return days_diff <= 365
-
-
 EXTRACT_MATVIEW_SQL = re.compile(r"^.*?CREATE MATERIALIZED VIEW (.*?)_temp\b(.*?) (?:NO )?WITH DATA;.*?$", re.DOTALL)
 REPLACE_VIEW_SQL = r"CREATE OR REPLACE VIEW \1\2;"
 
 
-def convert_matview_to_view(matview_sql):
+def convert_matview_to_view(matview_sql: str) -> str:
     sql = EXTRACT_MATVIEW_SQL.sub(REPLACE_VIEW_SQL, matview_sql)
     if sql == matview_sql:
         raise RuntimeError(
@@ -108,7 +93,7 @@ def convert_matview_to_view(matview_sql):
     return sql
 
 
-def get_temp_matview_sql_files_dict(matview_dir: Path) -> List[dict]:
+def get_temp_matview_sql_files_dict(matview_dir: Path) -> list[dict]:
     """Get mapping of matviews to SQL file definitions
 
     Args:
@@ -160,7 +145,9 @@ def generate_matviews(materialized_views_as_traditional_views: bool = False, par
         shutil.rmtree(matview_dir)
 
 
-def get_pagination(results, limit, page, benchmarks=False):
+def get_pagination(
+    results: list[Any], limit: int, page: int, benchmarks: bool = False
+) -> tuple[list[Any], dict[str, Any]]:
     if benchmarks:
         start_pagination = time.time()
     page_metadata = {
@@ -189,7 +176,7 @@ def get_pagination(results, limit, page, benchmarks=False):
     return paginated_results, page_metadata
 
 
-def get_pagination_metadata(total_return_count, limit, page):
+def get_pagination_metadata(total_return_count: int, limit: int, page: int) -> dict[str, Any]:
     page_metadata = {
         "page": page,
         "total": total_return_count,
@@ -209,7 +196,7 @@ def get_pagination_metadata(total_return_count, limit, page):
     return page_metadata
 
 
-def get_simple_pagination_metadata(results_plus_one, limit, page):
+def get_simple_pagination_metadata(results_plus_one: int, limit: int, page: int) -> dict[str, Any]:
     has_next = results_plus_one > limit
     has_previous = page > 1
 
@@ -223,14 +210,14 @@ def get_simple_pagination_metadata(results_plus_one, limit, page):
     return page_metadata
 
 
-def get_generic_filters_message(original_filters, allowed_filters) -> List[str]:
+def get_generic_filters_message(original_filters: list[str], allowed_filters: list[str]) -> list[str]:
     retval = [get_time_period_message()]
     if set(original_filters).difference(allowed_filters):
         retval.append(unused_filters_message(set(original_filters).difference(allowed_filters)))
     return retval
 
 
-def get_time_period_message():
+def get_time_period_message() -> str:
     return (
         "For searches, time period start and end dates are currently limited to an earliest date of "
         f"{settings.API_SEARCH_MIN_DATE}.  For data going back to {settings.API_MIN_DATE}, use either the Custom "
@@ -243,14 +230,17 @@ def under_development_message() -> str:
     return "This endpoint is under active development and subject to change"
 
 
-def unused_filters_message(filters):
-    return f"The following filters from the request were not used: {filters}. See https://api.usaspending.gov/docs/endpoints for a list of appropriate filters"
-
-
-def get_account_data_time_period_message():
+def unused_filters_message(filters: Iterable) -> str:
     return (
-        f"Account data powering this endpoint were first collected in FY2017 Q2 under the DATA Act; "
-        f"as such, there are no data available for prior fiscal years."
+        f"The following filters from the request were not used: {filters}. See "
+        "https://api.usaspending.gov/docs/endpoints for a list of appropriate filters"
+    )
+
+
+def get_account_data_time_period_message() -> str:
+    return (
+        "Account data powering this endpoint were first collected in FY2017 Q2 under the DATA Act; "
+        "as such, there are no data available for prior fiscal years."
     )
 
 
@@ -336,7 +326,9 @@ END IF;
 END$$;"""
 
 
-def sort_with_null_last(to_sort, sort_key, sort_order, tie_breaker=None):
+def sort_with_null_last(
+    to_sort: list[dict[str, Any]], sort_key: str, sort_order: Literal["asc", "desc"], tie_breaker: str | None = None
+) -> list[dict[str, Any]]:
     """
     Use tuples to sort results so that None can be converted to a Boolean for comparison
     """
@@ -349,10 +341,28 @@ def sort_with_null_last(to_sort, sort_key, sort_order, tie_breaker=None):
     )
 
 
-def deprecated_api_endpoint_message(messages: List[str]):
+def deprecated_api_endpoint_message(messages: list[str]) -> None:
     """Adds a deprecation message (when needed) indicating that the endpoint is deprecated.
     Args:
         message: The existing message list to add additional messages to
     """
-    deprecation_message = f"This endpoint is DEPRECATED. Please refer to the api contracts."
+    deprecation_message = "This endpoint is DEPRECATED. Please refer to the api contracts."
     messages.append(deprecation_message)
+
+
+def strtobool(val: str) -> bool:
+    """Convert a string representation of truth to true (1) or false (0).
+
+    True values are 'y', 'yes', 't', 'true', 'on', and '1'; false values
+    are 'n', 'no', 'f', 'false', 'off', and '0'.  Raises ValueError if
+    'val' is anything else.
+
+    This copies the functionality previously imported from "from distutils.util import strtobool" that was removed.
+    """
+    val = val.lower()
+    if val in ("y", "yes", "t", "true", "on", "1"):
+        return True
+    elif val in ("n", "no", "f", "false", "off", "0"):
+        return False
+    else:
+        raise ValueError(f"invalid truth value {val!r}")

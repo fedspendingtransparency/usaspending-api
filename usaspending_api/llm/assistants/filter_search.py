@@ -9,7 +9,7 @@ from django.db.models import Sum
 
 from usaspending_api.common.helpers.aws_helpers import async_aws_client
 from usaspending_api.llm.models.db_models import Assistant, Message, Session, ToolUse
-from usaspending_api.llm.models.py_models import AITool, build_defc_description
+from usaspending_api.llm.models.py_models import AITool, abuild_defc_description
 
 logger = logging.getLogger(__name__)
 
@@ -29,6 +29,7 @@ class FilterSearchAssistant:
         self.message_order = 0
         self.messages = []
         self.tool_iterations = 0
+        self._tool_config: dict[str, list[dict]] | None = None
 
     @staticmethod
     def _extract_text_from_content(content: list[dict]) -> str:
@@ -111,14 +112,17 @@ class FilterSearchAssistant:
         self.messages.append(output_message)
         return message
 
-    @cached_property
-    def tool_config(self) -> dict[str, list[dict]]:
-        specs = [tool.description.model_dump() for tool in self.tools]
-        for spec in specs:
-            def_codes_property = spec["input_schema"].get("properties", {}).get("defCodes")
-            if def_codes_property is not None:
-                def_codes_property["description"] = build_defc_description()
-        return {"tools": [{"toolSpec": {"inputSchema": {"json": spec.pop("input_schema")}, **spec}} for spec in specs]}
+    async def aget_tool_config(self) -> dict[str, list[dict]]:
+        if self._tool_config is None:
+            specs = [tool.description.model_dump() for tool in self.tools]
+            for spec in specs:
+                def_codes_property = spec["input_schema"].get("properties", {}).get("defCodes")
+                if def_codes_property is not None:
+                    def_codes_property["description"] = await abuild_defc_description()
+            self._tool_config = {
+                "tools": [{"toolSpec": {"inputSchema": {"json": spec.pop("input_schema")}, **spec}} for spec in specs]
+            }
+        return self._tool_config
 
     @staticmethod
     def _fiscal_year_date_context() -> str:
@@ -182,7 +186,7 @@ class FilterSearchAssistant:
             response = await client.converse(
                 modelId=self.assistant.ai_model.model_id,
                 messages=self.messages,
-                toolConfig=self.tool_config,
+                toolConfig=await self.aget_tool_config(),
                 system=[{"text": self.system_message}],
                 inferenceConfig=self.inference_config,
             )
@@ -222,7 +226,7 @@ class FilterSearchAssistant:
                 response = await client.converse(
                     modelId=self.assistant.ai_model.model_id,
                     messages=self.messages,
-                    toolConfig=self.tool_config,
+                    toolConfig=await self.aget_tool_config(),
                     system=[{"text": self.system_message}],
                     inferenceConfig=self.inference_config,
                 )
