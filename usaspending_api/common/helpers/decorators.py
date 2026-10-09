@@ -1,14 +1,19 @@
 import logging
+from typing import Callable
 
 from django.db import connection
 from django.db.utils import OperationalError
+from ninja import Router
+from rest_framework.request import Request
+from rest_framework.views import APIView
 
 from usaspending_api.common.exceptions import EndpointTimeoutException
+from usaspending_api.common.helpers.endpoint_documentation import DJANGO_NINJA_TEMP_NAME_FOR_DRF
 
 logger = logging.getLogger(__name__)
 
 
-def set_db_timeout(timeout_in_seconds):
+def set_db_timeout(timeout_in_seconds: int) -> Callable:
     """Decorator used to set the database statement timeout within the Django app scope
 
     Args:
@@ -32,8 +37,8 @@ def set_db_timeout(timeout_in_seconds):
     """
     timeout_in_ms = int(timeout_in_seconds * 1000)
 
-    def wrap(func):
-        def wrapper(*args, **kwargs):
+    def wrap(func: Callable) -> Callable:
+        def wrapper(*args, **kwargs) -> Callable:
             with connection.cursor() as cursor:
                 cursor.execute("show statement_timeout")
                 prev_timeout = cursor.fetchall()[0][0]
@@ -57,8 +62,10 @@ def set_db_timeout(timeout_in_seconds):
 
             try:
                 func_response = func(*args, **kwargs)
-            except OperationalError:
-                raise EndpointTimeoutException("Django ORM exceeded the specified timeout of %ds" % timeout_in_seconds)
+            except OperationalError as exc:
+                raise EndpointTimeoutException(
+                    "Django ORM exceeded the specified timeout of %ds" % timeout_in_seconds
+                ) from exc
             finally:
                 with connection.cursor() as cursor:
                     cursor.execute("show statement_timeout")
@@ -85,3 +92,36 @@ def set_db_timeout(timeout_in_seconds):
         return wrapper
 
     return wrap
+
+
+def _served_by_ninja(self: APIView, request: Request, *args, **kwargs) -> NotImplementedError:
+    """Real traffic is handled by the Django Ninja operation; this exists only so
+    DRF advertises the method and renders the browsable page for a browser GET."""
+    raise NotImplementedError
+
+
+def browsable(
+    router: Router, path: str, *, endpoint_doc: str, methods: tuple[str] = ("POST",), **ninja_kwargs
+) -> Callable:
+    """
+    This decorator is a temporary solution while we have the DRF API UI that needs to display the endpoints
+    defined with Django Ninja.
+    """
+
+    def decorator(view_func: Callable) -> Callable:
+        doc_view = type(
+            f"{view_func.__name__.title().replace('_', '')}",
+            (APIView,),
+            {
+                "__doc__": view_func.__doc__,
+                "endpoint_doc": endpoint_doc,
+                **{m.lower(): _served_by_ninja for m in methods},
+            },
+        )
+        rendered = doc_view.as_view()
+        router.get(path, auth=None, include_in_schema=False, url_name=DJANGO_NINJA_TEMP_NAME_FOR_DRF)(
+            lambda request: rendered(request)
+        )
+        return router.api_operation(list(methods), path, **ninja_kwargs)(view_func)
+
+    return decorator
