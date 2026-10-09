@@ -63,6 +63,16 @@ def get_defc_code_details(group_names: list[str]) -> list[dict]:
     )
 
 
+async def aget_defc_code_details(group_names: list[str]) -> list[dict]:
+    """Async counterpart to get_defc_code_details(); safe to call from an async context."""
+    return [
+        row
+        async for row in DisasterEmergencyFundCode.objects.filter(group_name__in=group_names)
+        .values("code", "group_name", "title", "public_law")
+        .order_by("group_name", "code")
+    ]
+
+
 def create_hash(payload: bytes) -> str:
     """
     Create a MD5 hash

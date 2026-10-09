@@ -1,11 +1,10 @@
-from functools import lru_cache
 from typing import Annotated, Any, Callable, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, RootModel, field_validator, model_validator
 
 from usaspending_api.awards.v2.lookups.lookups import all_awards_types_to_category
 from usaspending_api.common.helpers.orm_helpers import award_types_are_valid_groups
-from usaspending_api.references.helpers import get_defc_code_details
+from usaspending_api.references.helpers import aget_defc_code_details, get_defc_code_details
 
 
 class InferenceConfig(BaseModel):
@@ -154,19 +153,43 @@ class CodeLists(BaseModel):
 
 DEFC_GROUPS = ("covid_19", "infrastructure")
 
+# Shared by get_defc_rows()/aget_defc_rows() -- hits the DB once per process (whichever of the sync/async
+# getters is called first), then every subsequent call (sync or async) just reads this cache. A plain
+# module-level cache is used instead of @lru_cache since lru_cache can't safely work with async
+_defc_rows_cache: tuple[dict, ...] | None = None
 
-@lru_cache(maxsize=1)
+
+def clear_defc_rows_cache() -> None:
+    """Test helper: reset the process-wide DEFC rows cache shared by get_defc_rows()/aget_defc_rows()."""
+    global _defc_rows_cache
+    _defc_rows_cache = None
+
+
 def get_defc_rows() -> tuple[dict, ...]:
-    """DEFC rows for the frontend-supported groups; hits the DB once per process, then cached."""
-    return tuple(get_defc_code_details(list(DEFC_GROUPS)))
+    """DEFC rows for the frontend-supported groups; hits the DB once per process, then cached.
+
+    Sync entry point -- used by the (necessarily synchronous) Pydantic validator in DEFCodeLists.
+    See aget_defc_rows() for the async-safe counterpart.
+    """
+    global _defc_rows_cache
+    if _defc_rows_cache is None:
+        _defc_rows_cache = tuple(get_defc_code_details(list(DEFC_GROUPS)))
+    return _defc_rows_cache
+
+
+async def aget_defc_rows() -> tuple[dict, ...]:
+    """Async counterpart to get_defc_rows(); safe to call from an async context."""
+    global _defc_rows_cache
+    if _defc_rows_cache is None:
+        _defc_rows_cache = tuple(await aget_defc_code_details(list(DEFC_GROUPS)))
+    return _defc_rows_cache
 
 
 def get_valid_defc_codes() -> frozenset[str]:
     return frozenset(row["code"] for row in get_defc_rows())
 
 
-def build_defc_description() -> str:
-    """LLM-facing description for the defCodes field, built from the DB rows above."""
+def _format_defc_description(rows: tuple[dict, ...]) -> str:
     labels = {"covid_19": "COVID-19", "infrastructure": "Infrastructure"}
     lines = [
         "Disaster/Emergency Fund Codes (DEFC) filter with 'require'/'exclude' lists. Only COVID-19 and "
@@ -174,15 +197,25 @@ def build_defc_description() -> str:
         "from the matching group:",
     ]
     rows_by_group: dict[str, list[dict]] = {}
-    for row in get_defc_rows():
+    for row in rows:
         rows_by_group.setdefault(row["group_name"], []).append(row)
     for group_name in DEFC_GROUPS:
-        rows = rows_by_group.get(group_name, [])
-        codes = ", ".join(f"'{row['code']}'" for row in rows)
+        group_rows = rows_by_group.get(group_name, [])
+        codes = ", ".join(f"'{row['code']}'" for row in group_rows)
         lines.append(f"  {labels.get(group_name, group_name)}: [{codes}]")
-        for row in rows:
+        for row in group_rows:
             lines.append(f"    {row['code']} = {row['title']} ({row['public_law']})")
     return "\n".join(lines)
+
+
+def build_defc_description() -> str:
+    """LLM-facing description for the defCodes field, built from the DB rows above."""
+    return _format_defc_description(get_defc_rows())
+
+
+async def abuild_defc_description() -> str:
+    """Async counterpart to build_defc_description(); safe to call from an async context."""
+    return _format_defc_description(await aget_defc_rows())
 
 
 RecipientType = Literal[
