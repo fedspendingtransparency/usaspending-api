@@ -663,8 +663,8 @@ class SpendingByAwardVisualizationViewSet(APIView):
         # no values, within result window, use regular elasticsearch
         else:
             search = base_search.filter(filter_query).sort(*sorts)[
-                record_num : record_num + self.pagination["limit"]
-            ]
+                record_num : record_num + self.pagination["limit"] + 1
+            ]  # fetch one extra to detect if there's a next page
 
         response = search.handle_execute()
 
@@ -1023,11 +1023,9 @@ class SpendingByAwardVisualizationViewSet(APIView):
             has_next = len(results) > self.pagination["limit"]
             offset = 2
         else:
-            has_next = (
-                response.hits.total.value
-                - (self.pagination["page"] - 1) * self.pagination["limit"]
-                > self.pagination["limit"]
-            )
+            # Check if we got more results than requested (we fetch limit+1)
+            # This avoids relying on response.hits.total.value which caps at 10k
+            has_next = len(results) > self.pagination["limit"]
 
         if len(response) > 0 and has_next:
             last_record_unique_id = response[len(response) - offset].meta.sort[1]
