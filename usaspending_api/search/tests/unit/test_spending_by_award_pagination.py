@@ -2,10 +2,11 @@
 Unit tests for spending_by_award pagination bug fix (Issue #4793)
 Tests that hasNext correctly reflects availability of more pages beyond 10,000 records
 """
-import pytest
-from unittest.mock import Mock, MagicMock
-from usaspending_api.search.v2.views.spending_by_award import SpendingByAwardVisualizationViewSet
+
+from unittest.mock import Mock
+
 from usaspending_api.search.v2.views.enums import SpendingLevel
+from usaspending_api.search.v2.views.spending_by_award import SpendingByAwardVisualizationViewSet
 
 
 def create_mock_es_response(num_results, total_value=10000):
@@ -47,12 +48,13 @@ class TestSpendingByAwardPaginationBeyond10k:
 
         result = view.construct_es_response(mock_results, mock_response)
 
-        assert result["page_metadata"]["hasNext"] is True, \
+        assert result["page_metadata"]["hasNext"] is True, (
             "hasNext should be True when we fetch 101 results (indicating page 100 exists)"
-        assert len(result["results"]) == 100, \
-            "Should return exactly limit results, not the peek record"
-        assert result["page_metadata"]["last_record_unique_id"] == "unique_id_99", \
+        )
+        assert len(result["results"]) == 100, "Should return exactly limit results, not the peek record"
+        assert result["page_metadata"]["last_record_unique_id"] == "unique_id_99", (
             "Cursor should point to last returned record (index 99), not the peek record"
+        )
 
     def test_has_next_true_at_page_100_with_limit_100(self):
         """Page 100 (records 9900-9999) should have hasNext=True when page 101 exists
@@ -77,8 +79,9 @@ class TestSpendingByAwardPaginationBeyond10k:
 
         result = view.construct_es_response(mock_results, mock_response)
 
-        assert result["page_metadata"]["hasNext"] is True, \
+        assert result["page_metadata"]["hasNext"] is True, (
             "hasNext should be True at page 100 when 101 results returned (page 101 exists)"
+        )
 
     def test_has_next_false_at_last_page(self):
         """Last page should have hasNext=False when exactly limit or fewer results returned"""
@@ -95,16 +98,17 @@ class TestSpendingByAwardPaginationBeyond10k:
 
         result = view.construct_es_response(mock_results, mock_response)
 
-        assert result["page_metadata"]["hasNext"] is False, \
+        assert result["page_metadata"]["hasNext"] is False, (
             "hasNext should be False when we fetch exactly limit results (no more pages)"
+        )
 
     def test_has_next_with_different_page_sizes_at_10k_boundary(self):
         """Test various page sizes at the 10,000 boundary to ensure consistent behavior"""
         test_cases = [
             # (page, limit, num_results, expected_hasNext)
-            (200, 50, 51, True),   # Page 200 with limit 50: records 9950-9999, has page 201
+            (200, 50, 51, True),  # Page 200 with limit 50: records 9950-9999, has page 201
             (200, 50, 50, False),  # Page 200 with limit 50: last page
-            (400, 25, 26, True),   # Page 400 with limit 25: records 9975-9999, has page 401
+            (400, 25, 26, True),  # Page 400 with limit 25: records 9975-9999, has page 401
             (400, 25, 25, False),  # Page 400 with limit 25: last page
         ]
 
@@ -121,9 +125,9 @@ class TestSpendingByAwardPaginationBeyond10k:
 
             result = view.construct_es_response(mock_results, mock_response)
 
-            assert result["page_metadata"]["hasNext"] is expected_has_next, \
-                f"Page {page} with limit {limit} and {num_results} results: " \
-                f"expected hasNext={expected_has_next}"
+            assert result["page_metadata"]["hasNext"] is expected_has_next, (
+                f"Page {page} with limit {limit} and {num_results} results: expected hasNext={expected_has_next}"
+            )
 
     def test_search_after_pagination_unchanged(self):
         """Verify search_after pagination (with last_record_unique_id) still works correctly"""
@@ -141,8 +145,9 @@ class TestSpendingByAwardPaginationBeyond10k:
 
         result = view.construct_es_response(mock_results, mock_response)
 
-        assert result["page_metadata"]["hasNext"] is True, \
+        assert result["page_metadata"]["hasNext"] is True, (
             "search_after pagination should still use len(results) > limit"
+        )
 
         # Test when no more results
         mock_response_last = create_mock_es_response(num_results=50, total_value=10000)
@@ -150,5 +155,6 @@ class TestSpendingByAwardPaginationBeyond10k:
 
         result_last = view.construct_es_response(mock_results_last, mock_response_last)
 
-        assert result_last["page_metadata"]["hasNext"] is False, \
+        assert result_last["page_metadata"]["hasNext"] is False, (
             "search_after pagination should return hasNext=False when fewer than limit results"
+        )
