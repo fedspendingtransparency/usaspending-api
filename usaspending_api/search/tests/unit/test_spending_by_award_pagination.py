@@ -49,6 +49,10 @@ class TestSpendingByAwardPaginationBeyond10k:
 
         assert result["page_metadata"]["hasNext"] is True, \
             "hasNext should be True when we fetch 101 results (indicating page 100 exists)"
+        assert len(result["results"]) == 100, \
+            "Should return exactly limit results, not the peek record"
+        assert result["page_metadata"]["last_record_unique_id"] == "unique_id_99", \
+            "Cursor should point to last returned record (index 99), not the peek record"
 
     def test_has_next_true_at_page_100_with_limit_100(self):
         """Page 100 (records 9900-9999) should have hasNext=True when page 101 exists

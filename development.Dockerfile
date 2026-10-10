@@ -14,16 +14,22 @@ ARG SPARK_LOGGING_LEVEL=INFO
 # Install dependencies
 RUN dnf update \
     && dnf install -y \
+        gcc \
+        gcc-c++ \
         git \
+        libxcrypt-compat \
         libffi-devel \
         libpq-devel \
         nodejs \
         npm \
         postgresql16 \
+        python3-devel \
         sqlite-devel \
         wget \
         zlib-devel \
-    && dnf clean all
+    && dnf clean all \
+    && ln -s /usr/bin/gcc /usr/bin/aarch64-linux-gnu-gcc \
+    && ln -s /usr/bin/g++ /usr/bin/aarch64-linux-gnu-g++
 
 # Download the Postgres JAR
 RUN wget -P /usr/lib/spark/jars/ https://jdbc.postgresql.org/download/postgresql-42.7.5.jar

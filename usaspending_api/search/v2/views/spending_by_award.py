@@ -662,9 +662,9 @@ class SpendingByAwardVisualizationViewSet(APIView):
             )
         # no values, within result window, use regular elasticsearch
         else:
-            search = base_search.filter(filter_query).sort(*sorts)[
-                record_num : record_num + self.pagination["limit"] + 1
-            ]  # fetch one extra to detect if there's a next page
+            # Fetch limit+1 to detect next page, but cap at max_result_window to avoid ES errors
+            upper_bound = min(record_num + self.pagination["limit"] + 1, settings.ES_AWARDS_MAX_RESULT_WINDOW)
+            search = base_search.filter(filter_query).sort(*sorts)[record_num:upper_bound]
 
         response = search.handle_execute()
 
@@ -1018,14 +1018,10 @@ class SpendingByAwardVisualizationViewSet(APIView):
     ) -> dict[str, Any]:
         last_record_unique_id = None
         last_record_sort_value = None
-        offset = 1
-        if self.last_record_unique_id is not None:
-            has_next = len(results) > self.pagination["limit"]
-            offset = 2
-        else:
-            # Check if we got more results than requested (we fetch limit+1)
-            # This avoids relying on response.hits.total.value which caps at 10k
-            has_next = len(results) > self.pagination["limit"]
+        # Both pagination modes now fetch limit+1, so offset is 2 in both cases
+        # offset=2 skips the peek record and points to the last *returned* record
+        has_next = len(results) > self.pagination["limit"]
+        offset = 2
 
         if len(response) > 0 and has_next:
             last_record_unique_id = response[len(response) - offset].meta.sort[1]
