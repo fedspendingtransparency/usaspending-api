@@ -7,6 +7,7 @@ from rest_framework import status
 
 from usaspending_api.awards.v2.lookups.lookups import all_award_types_mappings
 from usaspending_api.common.helpers.generic_helper import get_generic_filters_message
+from usaspending_api.search.models import AwardSearch
 from usaspending_api.search.tests.data.search_filters_test_data import (
     legacy_filters,
     non_legacy_filters,
@@ -5149,3 +5150,136 @@ def test_spending_by_award_sort_contract_award_type_enhanced(
     expected_desc = ["BPA Call"] * len(results_desc_with_type)
     actual_desc = [result["Contract Award Type"] for result in results_desc_with_type]
     assert actual_desc == expected_desc, f"Expected {expected_desc} but got {actual_desc}"
+
+
+# Number of awards to create for the >10,000 record pagination tests (issue #4793).
+# Must exceed 10,000 so that Elasticsearch's default `hits.total.value` cap of 10,000
+# is reached. 10,100 lets us land exactly on the 10,000-record boundary at page 100
+# (limit 100) and still have a full page 101 beyond it.
+OVER_10K_COUNT = 10_100
+
+
+@pytest.fixture
+def spending_by_award_over_10k_data(db):
+    """Create >10,000 minimal contract awards so pagination crosses the 10k boundary.
+
+    The award ES ETL view (``award_delta_view``) selects straight from ``award_search``
+    with only ``action_date >= '2007-10-01'``, so no transactions are needed. ``piid``
+    is zero-padded to a fixed width so that an ascending "Award ID" sort matches numeric
+    order (award00001 .. award10100).
+    """
+    awards = [
+        AwardSearch(
+            award_id=i,
+            generated_unique_award_id=f"CONT_AWD_TEST_{i}",
+            type="A",
+            category="contract",
+            piid=f"award{i:05d}",
+            display_award_id=f"award{i:05d}",
+            action_date="2020-10-01",
+            award_amount=1000.00,
+            total_obligation=1000.00,
+            is_fpds=True,
+            type_description="BPA Call",
+        )
+        for i in range(1, OVER_10K_COUNT + 1)
+    ]
+    AwardSearch.objects.bulk_create(awards, batch_size=5000)
+
+
+def _spending_by_award_payload(**overrides):
+    payload = {
+        "filters": {"award_type_codes": ["A", "B", "C", "D"]},
+        "fields": ["Award ID"],
+        "sort": "Award ID",
+        "order": "asc",
+        "spending_level": "awards",
+        "page": 1,
+        "limit": 100,
+    }
+    payload.update(overrides)
+    return payload
+
+
+@pytest.mark.django_db
+def test_hasnext_true_past_10k_records(
+    client, monkeypatch, spending_by_award_over_10k_data, elasticsearch_award_index
+):
+    """Regression test for #4793.
+
+    With >10,000 matching awards, Elasticsearch caps ``hits.total.value`` at 10,000.
+    The old hasNext calculation derived from that capped total went false at exactly
+    the 10,000-record boundary (page 100 w/ limit 100), silently truncating clients.
+    hasNext must stay true while more pages exist.
+    """
+    setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
+
+    # Page 100 (records 9,901-10,000): 100 more records exist (10,001-10,100).
+    resp = client.post(
+        "/api/v2/search/spending_by_award",
+        content_type="application/json",
+        data=json.dumps(_spending_by_award_payload(page=100, limit=100)),
+    )
+    assert resp.status_code == status.HTTP_200_OK
+    assert len(resp.json()["results"]) == 100
+    assert resp.json()["page_metadata"]["hasNext"] is True, (
+        "hasNext must remain True at the 10,000-record boundary when more pages exist"
+    )
+
+    # Page 101 (records 10,001-10,100): the final page, so hasNext is False, and the
+    # data is reachable past the old 10k cutoff and contiguous.
+    resp = client.post(
+        "/api/v2/search/spending_by_award",
+        content_type="application/json",
+        data=json.dumps(_spending_by_award_payload(page=101, limit=100)),
+    )
+    assert resp.status_code == status.HTTP_200_OK
+    results = resp.json()["results"]
+    assert len(results) == 100
+    assert results[0]["Award ID"] == "award10001"
+    assert results[-1]["Award ID"] == "award10100"
+    assert resp.json()["page_metadata"]["hasNext"] is False
+
+
+@pytest.mark.django_db
+def test_pagination_cursor_is_contiguous(
+    client, monkeypatch, spending_by_award_over_10k_data, elasticsearch_award_index
+):
+    """The cursor handed back by standard pagination must point to the last *returned*
+    record, not the look-ahead ("peek") record fetched to compute hasNext. Otherwise a
+    client continuing via search_after silently skips one record at the handoff.
+    """
+    setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
+
+    # Standard page 1: records award00001-award00100.
+    resp = client.post(
+        "/api/v2/search/spending_by_award",
+        content_type="application/json",
+        data=json.dumps(_spending_by_award_payload(page=1, limit=100)),
+    )
+    assert resp.status_code == status.HTTP_200_OK
+    page_1 = resp.json()
+    assert page_1["results"][-1]["Award ID"] == "award00100"
+    assert page_1["page_metadata"]["hasNext"] is True
+
+    # Continue via search_after using the cursor returned by page 1. The next record
+    # must be award00101 (contiguous) -- not award00102 (which would mean the peek
+    # record leaked into the cursor and record 101 was skipped).
+    resp = client.post(
+        "/api/v2/search/spending_by_award",
+        content_type="application/json",
+        data=json.dumps(
+            _spending_by_award_payload(
+                limit=100,
+                last_record_unique_id=page_1["page_metadata"]["last_record_unique_id"],
+                last_record_sort_value=page_1["page_metadata"]["last_record_sort_value"],
+            )
+        ),
+    )
+    assert resp.status_code == status.HTTP_200_OK
+    results = resp.json()["results"]
+    assert results[0]["Award ID"] == "award00101", (
+        "search_after must resume at the record immediately after the last returned "
+        "record; a gap here means the pagination cursor skipped a record"
+    )
+    assert results[-1]["Award ID"] == "award00200"
