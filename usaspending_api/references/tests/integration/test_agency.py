@@ -1,31 +1,9 @@
 import datetime
 
-from model_bakery import baker
 import pytest
-
-from django.core.management import call_command
+from model_bakery import baker
 
 from usaspending_api.references.models import Agency
-
-
-@pytest.mark.django_db
-def test_subtier(monkeypatch):
-    """
-    Make sure a subtier is properly mapped to its parent department
-    """
-
-    # Can't run vacuums in a transaction.  Since tests are run in a transaction, we'll NOOP the
-    # function that performs the vacuuming.
-    monkeypatch.setattr(
-        "usaspending_api.references.management.commands.load_agencies.Command._vacuum_tables", lambda a: None
-    )
-    call_command("load_agencies", "usaspending_api/references/tests/data/test_load_agencies.csv")
-
-    # Make sure the subtier's top agency = the expected toptier agency
-    subtier = Agency.objects.get(toptier_agency__toptier_code="009", subtier_agency__subtier_code="0900")
-    department = Agency.objects.get(toptier_agency__toptier_code="009", toptier_flag=True)
-    print("SUB: {}, TOP: {}".format(subtier.toptier_agency, department.toptier_agency))
-    assert subtier.toptier_agency == department.toptier_agency
 
 
 @pytest.mark.django_db

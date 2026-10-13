@@ -155,6 +155,8 @@ services:
         dredd > dredd-results.txt && echo '! grep -E "^[warn:|error:]" dredd-results.txt' | bash
     environment:
       <<: *application-vars
+      # dredd-hooks (unmaintained since 2018) imports the `imp` module, removed in Python 3.12; patches/imp.py shims it
+      PYTHONPATH: patches
 
   usaspending-ci:
     profiles:

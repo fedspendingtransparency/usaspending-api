@@ -336,7 +336,6 @@ def test_spending_over_time_failure(client, monkeypatch, elasticsearch_transacti
 
 @pytest.mark.django_db
 def test_spending_over_time_subawards_success(client, monkeypatch, elasticsearch_subaward_index):
-
     setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
 
     resp = client.post(
@@ -3779,9 +3778,9 @@ def _test_correct_response_for_contract_pricing_type_codes(client):
         },
     ]
     assert resp.status_code == status.HTTP_200_OK
-    assert (
-        resp.json().get("results") == expected_result
-    ), "Contract Pricing Type Codes filter does not match expected result"
+    assert resp.json().get("results") == expected_result, (
+        "Contract Pricing Type Codes filter does not match expected result"
+    )
 
 
 def _test_correct_response_for_set_aside_type_codes(client):
@@ -4271,9 +4270,9 @@ def _test_correct_response_for_set_extent_competed_type_codes(client):
         },
     ]
     assert resp.status_code == status.HTTP_200_OK
-    assert (
-        resp.json().get("results") == expected_result
-    ), "Extent Competed Type Codes filter does not match expected result"
+    assert resp.json().get("results") == expected_result, (
+        "Extent Competed Type Codes filter does not match expected result"
+    )
 
 
 def _test_correct_response_for_recipient_id(client):
@@ -4655,10 +4654,6 @@ def test_defc_date_filter(client, monkeypatch, elasticsearch_transaction_index):
 def test_transactions_defc_date_filter(client, monkeypatch, elasticsearch_transaction_index):
     """Test that the Transactions ES query does NOT return transactions with an
     `action_date` before the applicable `earliest_public_law_enactment_date`"""
-
-    # Clear the LRU cache for `_get_def_codes` before this test case runs
-    from usaspending_api.common.validator.award_filter import _get_def_codes
-    _get_def_codes.cache_clear()
 
     baker.make(
         "references.DisasterEmergencyFundCode",
