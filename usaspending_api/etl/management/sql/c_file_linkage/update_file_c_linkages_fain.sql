@@ -19,9 +19,9 @@ WHERE
             FROM financial_accounts_by_awards AS faba_sub
         ) AS faba_sub
         JOIN (
-            SELECT fain
+            SELECT UPPER(fain) as fain
             FROM {file_d_table} as aw_sub
-            GROUP BY fain
+            GROUP BY UPPER(fain)
             HAVING count(*) = 1
         ) AS aw_sub
         ON UPPER(aw_sub.fain) = UPPER(faba_sub.fain)

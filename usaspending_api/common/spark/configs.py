@@ -21,9 +21,8 @@ LOCAL_BASIC_EXTRA_CONF = {
     # process is started from, even if started under the hood of a Py4J JavaGateway). With a "standalone" (not
     # YARN or Mesos or Kubernetes) cluster manager, only client mode is supported.
     "spark.submit.deployMode": "client",
-    # Default of 1g (1GiB) for Driver. Increase here if the Java process is crashing with memory errors
-    "spark.driver.memory": "1g",
-    "spark.executor.memory": "1g",
+    "spark.driver.memory": "2g",
+    "spark.executor.memory": "2g",
     "spark.ui.enabled": "false",  # Does the same as setting SPARK_TESTING=true env var
 }
 

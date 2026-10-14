@@ -1,4 +1,4 @@
-from usaspending_api.search.v2.es_sanitization import es_minimal_sanitize, es_sanitize
+from usaspending_api.search.v2.es_sanitization import es_minimal_sanitize, es_sanitize, es_sanitize_regex
 
 
 def test_es_sanitize():
@@ -8,6 +8,40 @@ def test_es_sanitize():
     test_string = "!-^~/&:*"
     processed_string = es_sanitize(test_string)
     assert processed_string == r"\!\-\^\~\/\&\:\*"
+    # `.` and `@` are not escaped by es_sanitize since they are not reserved
+    # outside of a `regexp` query.
+    test_string = ".@"
+    processed_string = es_sanitize(test_string)
+    assert processed_string == ".@"
+
+
+def test_es_sanitize_regex():
+    # Base reserved characters are still handled the same as es_sanitize.
+    test_string = '+|()[]{}?"<>\\'
+    processed_string = es_sanitize_regex(test_string)
+    assert processed_string == ""
+    test_string = "!-^~/&:*"
+    processed_string = es_sanitize_regex(test_string)
+    assert processed_string == r"\!\-\^\~\/\&\:\*"
+
+    # `.` (matches any character) and `@` (matches any string) must be escaped
+    # to prevent regexp-operator injection when used in a `regexp` query.
+    test_string = "."
+    processed_string = es_sanitize_regex(test_string)
+    assert processed_string == r"\."
+
+    test_string = "@"
+    processed_string = es_sanitize_regex(test_string)
+    assert processed_string == r"\@"
+
+    test_string = "foo.bar@baz"
+    processed_string = es_sanitize_regex(test_string)
+    assert processed_string == r"foo\.bar\@baz"
+
+    # Sanitizing an already-sanitized string should be idempotent.
+    once = es_sanitize_regex("foo.bar@baz")
+    twice = es_sanitize_regex(once)
+    assert once == twice
 
 
 def test_es_minimal_sanitize():
@@ -58,12 +92,12 @@ def test_es_minimal_sanitize_length_equality_bypass():
 def test_es_minimal_sanitize_removes_lucene_operators():
     """Test that dangerous Lucene query operators are properly sanitized."""
     dangerous_inputs = [
-        "[* TO *]",         # Range query.
-        "{a TO z}",         # Range query with braces.
-        "test\\",           # Escape character.
-        "field:[value]",    # Field query with brackets.
-        "test~0.5",         # Fuzzy search (~ should be escaped).
-        "test^2",           # Boost operator (^ should be escaped).
+        "[* TO *]",  # Range query.
+        "{a TO z}",  # Range query with braces.
+        "test\\",  # Escape character.
+        "field:[value]",  # Field query with brackets.
+        "test~0.5",  # Fuzzy search (~ should be escaped).
+        "test^2",  # Boost operator (^ should be escaped).
     ]
 
     for dangerous_input in dangerous_inputs:

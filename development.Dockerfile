@@ -4,11 +4,11 @@ FROM public.ecr.aws/emr-serverless/spark/emr-7.12.0:latest
 USER root
 
 # Copy UV from uv image
-COPY --from=ghcr.io/astral-sh/uv:0.7.19 /uv /uvx /bin/
+COPY --from=ghcr.io/astral-sh/uv:0.12.18 /uv /uvx /bin/
 
 # Build ARGs
 ARG PROJECT_LOG_DIR=/logs
-ARG PYTHON_VERSION=3.10.12
+ARG PYTHON_VERSION=3.12.11
 ARG SPARK_LOGGING_LEVEL=INFO
 
 # Install dependencies
@@ -29,7 +29,8 @@ RUN dnf update \
 RUN wget -P /usr/lib/spark/jars/ https://jdbc.postgresql.org/download/postgresql-42.7.5.jar
 
 # Install Dredd
-RUN npm install --global dredd@13.1.2
+RUN npm install --global dredd@13.1.2 && \
+    npm cache clean --force
 
 WORKDIR /usaspending-api
 
@@ -55,7 +56,7 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 # Make sure uv environment is active
 ENV PATH="/usr/local/.venv/bin:$PATH"
 
-# Set Python 3.10.12 as the default Python for PySpark
+# Set Python 3.12.11 as the default Python for PySpark
 ENV PYSPARK_PYTHON=/usr/local/.venv/bin/python3
 ENV PYSPARK_DRIVER_PYTHON=/usr/local/.venv/bin/python3
 

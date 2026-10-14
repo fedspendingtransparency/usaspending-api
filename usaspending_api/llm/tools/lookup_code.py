@@ -133,7 +133,7 @@ class SearchResultNode:
 class CodeLookupTool:
     """Generalized tool for looking up various code types using hybrid text + vector similarity search"""
 
-    def lookup_codes(
+    async def lookup_codes(
         self,
         query: str,
         code_type: Literal["naics", "psc", "cfda", "tas"],
@@ -152,12 +152,14 @@ class CodeLookupTool:
         config = CODE_TYPE_CONFIGS[code_type]
         budget_bureau_names = {}
 
-        results = self._handle_exact_search(query, config, code_type, budget_bureau_names, top_k)
+        results = await self._handle_exact_search(query, config, code_type, budget_bureau_names, top_k)
         if results is None:
-            results = self._handle_hybrid_search(query, config, code_type, budget_bureau_names, top_k, query_fanout)
+            results = await self._handle_hybrid_search(
+                query, config, code_type, budget_bureau_names, top_k, query_fanout
+            )
         return results
 
-    def _handle_exact_search(
+    async def _handle_exact_search(
         self,
         query: str,
         config: CodeTypeConfig,
@@ -168,19 +170,19 @@ class CodeLookupTool:
         exact_qs, prefix_qs = self._query_exact_and_prefix_matches(config, query)
 
         # Exact and prefix code matches skip embeddings/fanout entirely
-        if exact_qs.exists() or prefix_qs.exists():
-            exact_results = self._build_result_entries(
+        if await exact_qs.aexists() or await prefix_qs.aexists():
+            exact_results = await self._build_result_entries(
                 exact_qs, config, code_type, score=1.0, budget_bureau_names=budget_bureau_names
             )
-            prefix_results = self._build_result_entries(
+            prefix_results = await self._build_result_entries(
                 prefix_qs, config, code_type, score=0.95, budget_bureau_names=budget_bureau_names
             )
             all_results = prefix_results | exact_results
-            return self._finalize_results(all_results, config, code_type, budget_bureau_names, top_k)
+            return await self._finalize_results(all_results, config, code_type, budget_bureau_names, top_k)
         else:
             return None
 
-    def _handle_hybrid_search(
+    async def _handle_hybrid_search(
         self,
         query: str,
         config: CodeTypeConfig,
@@ -196,14 +198,16 @@ class CodeLookupTool:
         all_results = {}
         queries = [query]
         if bool(query_fanout):
-            queries = expand_query(query, AIModel.objects.get(name="nova micro"), query_fanout)
+            expansion_model = await AIModel.objects.aget(name="nova micro")
+            queries = await expand_query(query, expansion_model, query_fanout)
             logger.info(f"Generated variations: {queries}")
 
+        embedding_model = await AIModel.objects.aget(name="titan")
         for q in queries:
             logger.info(f"\nSearching for: '{q}'")
             try:
-                embedding_generator = EmbeddingGenerator(dimensions=model.embedding_dimensions)
-                embedding = embedding_generator.generate_embedding(q)
+                embedding_generator = EmbeddingGenerator(model=embedding_model, dimensions=model.embedding_dimensions)
+                embedding = await embedding_generator.agenerate_embedding(q)
                 logger.info(f"Generated embedding: '{embedding[:3]}'")
             except Exception as e:
                 logger.info(f"Embedding generation failed for '{q}': {e}")
@@ -230,7 +234,7 @@ class CodeLookupTool:
                 qs = self._dedupe_tas_by_period_of_availability(qs)
             qs = qs.order_by("-hybrid_score")[:top_k]
 
-            for result in qs:
+            async for result in qs:
                 code_value = getattr(result, config.code_field)
 
                 # Keep best score if duplicate
@@ -251,7 +255,7 @@ class CodeLookupTool:
                             budget_bureau_names[f"{aid}-{main}"] = result.budget_bureau_name
                     all_results[code_value] = entry
 
-        return self._finalize_results(all_results, config, code_type, budget_bureau_names, top_k)
+        return await self._finalize_results(all_results, config, code_type, budget_bureau_names, top_k)
 
     @staticmethod
     def _query_exact_and_prefix_matches(config: CodeTypeConfig, query: str) -> tuple[QuerySet, QuerySet]:
@@ -283,7 +287,7 @@ class CodeLookupTool:
         return ranked.filter(account_rank=1).order_by("-hybrid_score")
 
     @staticmethod
-    def _build_result_entries(
+    async def _build_result_entries(
         queryset: QuerySet,
         config: CodeTypeConfig,
         code_type: str,
@@ -291,7 +295,7 @@ class CodeLookupTool:
         budget_bureau_names: dict[str, str],
     ) -> dict[str, CodeResult]:
         entries = {}
-        for result in queryset:
+        async for result in queryset:
             code_value = getattr(result, config.code_field)
             entry = CodeResult(
                 code=code_value,
@@ -307,7 +311,7 @@ class CodeLookupTool:
             entries[code_value] = entry
         return entries
 
-    def _finalize_results(
+    async def _finalize_results(
         self,
         all_results: dict[str, CodeResult],
         config: CodeTypeConfig,
@@ -324,11 +328,11 @@ class CodeLookupTool:
             ancestor_codes.update(config.get_all_ancestors(code))
         if ancestor_codes:
             if code_type == "tas":
-                self._add_tas_ancestors(ancestor_codes, all_results, budget_bureau_names)
+                await self._add_tas_ancestors(ancestor_codes, all_results, budget_bureau_names)
             else:
                 model = config.model_class
                 ancestors = model.objects.filter(**{f"{config.code_field}__in": list(ancestor_codes)})
-                for ancestor in ancestors:
+                async for ancestor in ancestors:
                     ancestor_code = getattr(ancestor, config.code_field)
                     if ancestor_code not in all_results:
                         all_results[ancestor_code] = CodeResult(
@@ -356,7 +360,7 @@ class CodeLookupTool:
         }
 
     @staticmethod
-    def _add_tas_ancestors(
+    async def _add_tas_ancestors(
         ancestor_codes: set[str], all_results: dict[str, CodeResult], budget_bureau_names: dict[str, str]
     ) -> None:
         """
@@ -381,7 +385,7 @@ class CodeLookupTool:
         if toptier_codes:
             toptier_agencies = ToptierAgency.objects.filter(toptier_code__in=list(toptier_codes))
 
-            for agency in toptier_agencies:
+            async for agency in toptier_agencies:
                 if agency.toptier_code not in all_results:
                     # Use abbreviation if available, otherwise name
                     description = f"{agency.name} ({agency.abbreviation})"

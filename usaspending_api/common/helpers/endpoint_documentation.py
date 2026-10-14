@@ -1,5 +1,9 @@
+import inspect
 import os
 import re
+from typing import Callable
+
+from django.urls import URLPattern
 
 from usaspending_api.settings import REPO_DIR
 
@@ -20,8 +24,12 @@ _EXCLUDED_URLS = [
     "/api/v2/bulk_download/list_database_download_files",
 ]
 
+# A constant value used to distinguish the views created to satisfy display Django Ninja views
+# in the current Django REST Framework API UI
+DJANGO_NINJA_TEMP_NAME_FOR_DRF = "for_django_ninja_in_drf"
 
-def case_sensitive_file_exists(file_path):
+
+def case_sensitive_file_exists(file_path: str) -> bool:
     """
     File names are case insensitive on Macs and Windows and case sensitive on
     Linux.  This is one way to perform case sensitive file checking on a case
@@ -31,7 +39,7 @@ def case_sensitive_file_exists(file_path):
     return os.path.isfile(file_path) and filename in os.listdir(directory)
 
 
-def get_endpoint_urls_doc_paths_and_docstrings(endpoint_prefixes=None):
+def get_endpoint_urls_doc_paths_and_docstrings(endpoint_prefixes: str | None = None) -> list[tuple[str, URLPattern]]:
     """
     Compiles the list of endpoint URLs and associated RegexURLPattern objects
     serviced by Django.  If path_prefixes is supplied, returned URLS will be
@@ -44,11 +52,15 @@ def get_endpoint_urls_doc_paths_and_docstrings(endpoint_prefixes=None):
 
     results = []
 
-    def _traverse_urls(base, url_patterns):
+    def _traverse_urls(base: str, url_patterns: list[URLPattern], resolver_name: str | None = None) -> None:
         for url in url_patterns:
+            if resolver_name == "ninja" and getattr(url, "name", None) != DJANGO_NINJA_TEMP_NAME_FOR_DRF:
+                # For the purpose of the DRF docs on Django Ninja endpoints we only want the views that are created
+                # by the "browsable" decorator (see usaspending_api.common.helpers.decorators.browsable)
+                continue
             cleaned = base + url.pattern.regex.pattern.lstrip("^").rstrip("$")
             if hasattr(url, "url_patterns"):
-                _traverse_urls(cleaned, url.url_patterns)
+                _traverse_urls(cleaned, url.url_patterns, url.app_name)
             elif not endpoint_prefixes or cleaned.startswith(endpoint_prefixes):
                 results.append((cleaned, url))
 
@@ -56,7 +68,7 @@ def get_endpoint_urls_doc_paths_and_docstrings(endpoint_prefixes=None):
     return results
 
 
-def get_endpoints_from_endpoints_markdown():
+def get_endpoints_from_endpoints_markdown() -> list[str]:
     """
     Looks for and extracts URLs for patterns like |[display](url)|method|description|
     from the master endpoints.md markdown file.
@@ -66,7 +78,7 @@ def get_endpoints_from_endpoints_markdown():
     return [e.split("?")[0] for e in ENDPOINT_PATTERN.findall(contents) if e]
 
 
-def get_fully_qualified_name(obj):
+def get_fully_qualified_name(obj: object) -> str:
     """
     Fully qualifies an object name.  For example, would return
     "usaspending_api.common.helpers.endpoint_documentation.get_fully_qualified_name"
@@ -75,7 +87,7 @@ def get_fully_qualified_name(obj):
     return "{}.{}".format(obj.__module__, obj.__qualname__)
 
 
-def validate_docs(url, url_object, master_endpoint_list):
+def validate_docs(url: str, url_object: URLPattern, master_endpoint_list: list[str]) -> list[str]:  # noqa: PLR0912
     """
     Ensures that an endpoint_doc property and a docstring is provided for the
     view associated with the provided url and checks that the URL is mentioned
@@ -88,7 +100,7 @@ def validate_docs(url, url_object, master_endpoint_list):
         return []
 
     # Handles class and function based views.
-    view = url_object.callback.cls if getattr(url_object.callback, "cls", None) else url_object.callback
+    view = get_view_for_endpoint(url, url_object)
 
     messages = []
 
@@ -96,7 +108,7 @@ def validate_docs(url, url_object, master_endpoint_list):
         if url not in _EXCLUDED_URLS:
             messages.append("{} ({}) missing endpoint_doc property".format(qualified_name, url))
     else:
-        endpoint_doc = getattr(view, "endpoint_doc")
+        endpoint_doc = view.endpoint_doc
         if not endpoint_doc:
             messages.append("{}.endpoint_doc ({}) is invalid".format(qualified_name, url))
         else:
@@ -127,3 +139,40 @@ def validate_docs(url, url_object, master_endpoint_list):
             messages.append("No URL found in {} that matches {} ({})".format(ENDPOINTS_MD, url, qualified_name))
 
     return messages
+
+
+def get_view_for_endpoint(url: str, url_object: URLPattern) -> type:
+    view = url_object.callback.cls if getattr(url_object.callback, "cls", None) else url_object.callback
+
+    # Handle the possibility that "endpoint_doc" doesn't exist in the expected location because it was
+    # implemented with django-ninja
+    if not hasattr(view, "endpoint_doc") and url not in _EXCLUDED_URLS:
+        view = unwrap_ninja_view(view)
+
+    return view
+
+
+def unwrap_ninja_view(callback: type | Callable) -> type:
+    """
+    In order for Django Ninja endpoints to appear in the DRF API UI a new view is created that renders onto the DRF UI.
+    To handle this new view in a similar way as the current DRF views we need to step through the decorators and
+    retrieve the view class that has the docstring and "endpoint_doc" property added dynamically.
+    """
+    try:
+        path_view = inspect.getclosurevars(callback).nonlocals.get("self")
+    except TypeError:
+        return callback
+
+    operations = getattr(path_view, "operations", None)
+    if not operations:
+        return callback
+
+    view_func = operations[0].view_func
+
+    if not hasattr(view_func, "cls"):
+        try:
+            closure_vars = inspect.getclosurevars(view_func).nonlocals
+        except TypeError:
+            closure_vars = {}
+        view_func = next((v for v in closure_vars.values() if hasattr(v, "cls")), view_func)
+    return getattr(view_func, "cls", view_func)

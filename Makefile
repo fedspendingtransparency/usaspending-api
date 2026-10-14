@@ -25,7 +25,7 @@ endif
 # default ENV_CODE to lcl if not set
 ENV_CODE ?= lcl
 # default version if not set in .env or an env var
-PYTHON_VERSION ?= 3.10.12
+PYTHON_VERSION ?= 3.12.11
 venv_name := usaspending-api
 docker_compose_file := docker-compose.yml
 dockerfile_for_backend := Dockerfile

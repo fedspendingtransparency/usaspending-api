@@ -19,6 +19,15 @@ from usaspending_api.config.utils import convert_json_conf_to_url
 APP_DIR = Path(__file__).resolve().parent
 REPO_DIR = APP_DIR.parent
 
+# Evaluation datasets are generated from the stakeholder workbook and may be
+# supplied from a mounted or externally retrieved directory.
+LLM_EVAL_DATASET_DIRECTORY = Path(
+    os.environ.get(
+        "LLM_EVAL_DATASET_DIRECTORY",
+        APP_DIR / "llm" / "evals" / "data",
+    )
+)
+
 # Row-limited download limit
 MAX_DOWNLOAD_LIMIT = 500000
 
