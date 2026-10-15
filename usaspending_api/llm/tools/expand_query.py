@@ -1,17 +1,14 @@
 import logging
 
-import boto3
-
+from usaspending_api.common.helpers.aws_helpers import async_aws_client
 from usaspending_api.llm.models.db_models import AIModel
 
 logger = logging.getLogger(__name__)
 
 
-def expand_query(query: str, model: AIModel, num_variations: int = 3) -> list[str]:
+async def expand_query(query: str, model: AIModel, num_variations: int = 3) -> list[str]:
     """Generate related search queries using Amazon Bedrock converse API with tool"""
     try:
-        client = boto3.client(service_name="bedrock-runtime")
-
         # Define the tool for query expansion
         tool_spec = {
             "toolSpec": {
@@ -59,14 +56,15 @@ def expand_query(query: str, model: AIModel, num_variations: int = 3) -> list[st
             }
         ]
         model_id = model.model_id
-        # First call to get tool use
-        response = client.converse(
-            modelId=model_id,
-            messages=messages,
-            toolConfig=tool_config,
-            system=system,
-            inferenceConfig={"temperature": 0},
-        )
+        async with async_aws_client("bedrock-runtime") as client:
+            # First call to get tool use
+            response = await client.converse(
+                modelId=model_id,
+                messages=messages,
+                toolConfig=tool_config,
+                system=system,
+                inferenceConfig={"temperature": 0},
+            )
 
         output_message = response["output"]["message"]
         stop_reason = response["stopReason"]

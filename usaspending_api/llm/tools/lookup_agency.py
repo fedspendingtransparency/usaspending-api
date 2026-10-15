@@ -6,6 +6,7 @@ from django.db.models.functions import Greatest, Least, Upper
 from pgvector.django import CosineDistance
 
 from usaspending_api.llm.embeddings.embedding_generator import EmbeddingGenerator
+from usaspending_api.llm.models.db_models import AIModel
 from usaspending_api.llm.models.py_models import AITool, AIToolDescription
 from usaspending_api.references.models.agency import Agency
 from usaspending_api.search.models.mv_agency_autocomplete import AgencyAutocompleteMatview
@@ -29,22 +30,23 @@ class AgencyLookupTool:
     HYBRID_VECTOR_WEIGHT = 0.5
     VECTOR_DISTANCE_THRESHOLD = 0.75
 
-    def lookup_agencies(self, query: str, top_k: int = 10) -> dict:
+    async def lookup_agencies(self, query: str, top_k: int = 10) -> dict:
         normalized = query.strip()
-        matches = self._query_exact_and_prefix_matches(normalized)
+        matches = await self._query_exact_and_prefix_matches(normalized)
 
-        if matches.exists():
+        if await matches.aexists():
             ordered = matches.order_by("-toptier_flag", Upper("toptier_name"), Upper("subtier_name"))
-            results = [self._matview_row_to_entry(row) for row in ordered[:top_k]]
-            return {"results": results}
+            entries = [self._matview_row_to_entry(row) async for row in ordered[:top_k]]
+        else:
+            model = await AIModel.objects.aget(name="titan")
+            embedding = await EmbeddingGenerator(model=model).agenerate_embedding(normalized)
+            hybrid_matches = self._hybrid_search(normalized, embedding)
+            entries = [self._agency_row_to_entry(row) async for row in hybrid_matches[:top_k]]
 
-        embedding = EmbeddingGenerator().generate_embedding(normalized)
-        hybrid_matches = self._hybrid_search(normalized, embedding)
-        results = [self._agency_row_to_entry(row) for row in hybrid_matches[:top_k]]
-        return {"results": results}
+        return {f"{entry['id']}_{entry['agencyType']}": entry for entry in entries}
 
     @staticmethod
-    def _query_exact_and_prefix_matches(query: str) -> QuerySet:
+    async def _query_exact_and_prefix_matches(query: str) -> QuerySet:
         exact_filter = (
             Q(toptier_code__iexact=query)
             | Q(toptier_abbreviation__iexact=query)
@@ -53,7 +55,7 @@ class AgencyLookupTool:
             | Q(subtier_name__iexact=query)
         )
         exact_matches = AgencyAutocompleteMatview.objects.filter(exact_filter)
-        if exact_matches.exists():
+        if await exact_matches.aexists():
             return exact_matches
 
         prefix_filter = (
@@ -89,32 +91,42 @@ class AgencyLookupTool:
 
     @staticmethod
     def _matview_row_to_entry(row: AgencyAutocompleteMatview) -> dict:
-        return {
+        agency_type = "toptier" if row.toptier_flag else "subtier"
+        entry = {
             "id": row.agency_autocomplete_id,
+            "agencyType": agency_type,
             "toptier_flag": row.toptier_flag,
             "toptier_agency": {
+                "id": row.toptier_agency_id,
                 "toptier_code": row.toptier_code,
                 "abbreviation": row.toptier_abbreviation,
                 "name": row.toptier_name,
             },
-            "subtier_agency": {"abbreviation": row.subtier_abbreviation, "name": row.subtier_name},
         }
+        if agency_type == "subtier":
+            entry["subtier_agency"] = {"abbreviation": row.subtier_abbreviation, "name": row.subtier_name}
+        return entry
 
     @staticmethod
     def _agency_row_to_entry(row: Agency) -> dict:
-        return {
+        agency_type = "toptier" if row.toptier_flag else "subtier"
+        entry = {
             "id": row.id,
+            "agencyType": agency_type,
             "toptier_flag": row.toptier_flag,
             "toptier_agency": {
+                "id": row.toptier_agency_id,
                 "toptier_code": row.toptier_agency.toptier_code,
                 "abbreviation": row.toptier_agency.abbreviation,
                 "name": row.toptier_agency.name,
             },
-            "subtier_agency": {
-                "abbreviation": row.subtier_agency.abbreviation if row.subtier_agency else None,
-                "name": row.subtier_agency.name if row.subtier_agency else None,
-            },
         }
+        if agency_type == "subtier" and row.subtier_agency:
+            entry["subtier_agency"] = {
+                "abbreviation": row.subtier_agency.abbreviation,
+                "name": row.subtier_agency.name,
+            }
+        return entry
 
 
 lookup_agency_tool = AITool(
@@ -128,8 +140,18 @@ lookup_agency_tool = AITool(
 
             Agencies may be toptier (e.g. departments and independent agencies) or subtier
             (e.g. sub-agencies, bureaus, and offices within a toptier agency). Each result
-            includes both the toptier agency and, if applicable, the specific subtier agency
-            that matched.
+            includes the toptier agency; subtier results also include the specific subtier
+            agency that matched.
+
+            Returns a dictionary keyed by "{id}_{agencyType}" (e.g. "803_toptier"), where each
+            value has this shape:
+                {
+                    "id": 803,
+                    "agencyType": "toptier",           # or "subtier"
+                    "toptier_flag": true,
+                    "toptier_agency": {"id": 66, "toptier_code": "073", "abbreviation": "SBA", "name": "..."},
+                    "subtier_agency": {"abbreviation": "...", "name": "..."}   # only present for subtier results
+                }
 
             Matching behavior (in priority order):
             1. Exact match: if the query exactly matches an agency's toptier code,

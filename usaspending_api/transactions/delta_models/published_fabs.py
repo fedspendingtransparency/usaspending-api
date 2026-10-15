@@ -6,8 +6,12 @@ PUBLISHED_FABS_COLUMNS = {
     "action_type_description": {"delta": "STRING", "postgres": "TEXT"},
     "assistance_type": {"delta": "STRING", "postgres": "TEXT"},
     "assistance_type_desc": {"delta": "STRING", "postgres": "TEXT"},
+    "award_amount_basis_code": {"delta": "STRING", "postgres": "TEXT"},
+    "award_amount_basis_name": {"delta": "STRING", "postgres": "TEXT"},
     "award_description": {"delta": "STRING", "postgres": "TEXT"},
     "award_modification_amendme": {"delta": "STRING", "postgres": "TEXT"},
+    "award_recipient_basis_code": {"delta": "STRING", "postgres": "TEXT"},
+    "award_recipient_basis_name": {"delta": "STRING", "postgres": "TEXT"},
     "awardee_or_recipient_legal": {"delta": "STRING", "postgres": "TEXT"},
     "awardee_or_recipient_uniqu": {"delta": "STRING", "postgres": "TEXT"},
     "awarding_agency_code": {"delta": "STRING", "postgres": "TEXT"},
@@ -106,7 +110,7 @@ PUBLISHED_FABS_POSTGRES_COLUMNS = {k: v["postgres"] for k, v in PUBLISHED_FABS_C
 
 published_fabs_create_sql_string = rf"""
     CREATE OR REPLACE TABLE {{DESTINATION_TABLE}} (
-        {", ".join([f'{key} {val}' for key, val in PUBLISHED_FABS_DELTA_COLUMNS.items()])}
+        {", ".join([f"{key} {val}" for key, val in PUBLISHED_FABS_DELTA_COLUMNS.items()])}
     )
     USING DELTA
     LOCATION 's3a://{{SPARK_S3_BUCKET}}/{{DELTA_LAKE_S3_PATH}}/{{DESTINATION_DATABASE}}/{{DESTINATION_TABLE}}'

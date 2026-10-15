@@ -19,6 +19,15 @@ from usaspending_api.config.utils import convert_json_conf_to_url
 APP_DIR = Path(__file__).resolve().parent
 REPO_DIR = APP_DIR.parent
 
+# Evaluation datasets are generated from the stakeholder workbook and may be
+# supplied from a mounted or externally retrieved directory.
+LLM_EVAL_DATASET_DIRECTORY = Path(
+    os.environ.get(
+        "LLM_EVAL_DATASET_DIRECTORY",
+        APP_DIR / "llm" / "evals" / "data",
+    )
+)
+
 # Row-limited download limit
 MAX_DOWNLOAD_LIMIT = 500000
 
@@ -172,8 +181,14 @@ AGENCY_DOWNLOAD_URL = f"{FILES_SERVER_BASE_URL}/reference_data/agency_codes.csv"
 DATA_DICTIONARY_DOWNLOAD_URL = f"{FILES_SERVER_BASE_URL}/docs/{DATA_DICTIONARY_FILE_NAME}"
 
 # S3 Bucket and Key to retrieve the Data Dictionary
-DATA_DICTIONARY_S3_BUCKET_NAME = f"dti-da-public-files-{'nonprod' if CONFIG.ENV_CODE not in ('prd', 'stg') else 'prod'}"
-DATA_DICTIONARY_S3_KEY = f"user_reference_docs/{DATA_DICTIONARY_FILE_NAME}"
+DATA_DICTIONARY_S3_BUCKET_NAME = os.environ.get(
+    "DATA_DICTIONARY_S3_BUCKET_NAME",
+    f"dti-da-public-files-{'nonprod' if CONFIG.ENV_CODE not in ('prd', 'stg') else 'prod'}"
+)
+DATA_DICTIONARY_S3_KEY = os.environ.get(
+    "DATA_DICTIONARY_S3_KEY",
+    f"user_reference_docs/{DATA_DICTIONARY_FILE_NAME}"
+)
 
 # Local download files
 IDV_DOWNLOAD_README_FILE_PATH = str(APP_DIR / "data" / "idv_download_readme.txt")
@@ -428,6 +443,36 @@ console_log_file_path = logs_dir / "console.log"
 logs_dir.mkdir(parents=True, exist_ok=True)
 console_log_file_path.touch(exist_ok=True)
 
+# Logging settings adjusted based on env
+fapc = os.environ.get("FAPC", "")
+
+if fapc:
+    server_handler = {
+        "level": "DEBUG",
+        "class": "logging.StreamHandler",
+        "stream": "ext://sys.stdout",
+        "formatter": "user_readable"
+    }
+    console_file_handler = {
+        "level": "DEBUG",
+        "class": "logging.StreamHandler",
+        "stream": "ext://sys.stdout",
+        "formatter": "specifics"
+    }
+else:
+    server_handler = {
+        "level": "DEBUG",
+        "class": "logging.handlers.WatchedFileHandler",
+        "filename": str(APP_DIR / "logs" / "server.log"),
+        "formatter": "user_readable",
+    }
+    console_file_handler = {
+        "level": "DEBUG",
+        "class": "logging.handlers.WatchedFileHandler",
+        "filename": str(APP_DIR / "logs" / "console.log"),
+        "formatter": "specifics",
+    }
+
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
@@ -454,18 +499,8 @@ LOGGING = {
         },
     },
     "handlers": {
-        "server": {
-            "level": "DEBUG",
-            "class": "logging.handlers.WatchedFileHandler",
-            "filename": str(APP_DIR / "logs" / "server.log"),
-            "formatter": "user_readable",
-        },
-        "console_file": {
-            "level": "DEBUG",
-            "class": "logging.handlers.WatchedFileHandler",
-            "filename": str(APP_DIR / "logs" / "console.log"),
-            "formatter": "specifics",
-        },
+        "server": server_handler,
+        "console_file": console_file_handler,
         "console": {
             "level": "DEBUG",
             "class": "logging.StreamHandler",
