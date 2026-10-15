@@ -92,7 +92,7 @@ class Command(load_base.Command):
         # running in parallel.  Worst case scenario of running it outside of the main transaction is
         # that is that we load some program activities that are never used due to the submission failing
         # to load and then being deleted from Broker.
-        logger.info(f"Checking for new program activities created...")
+        logger.info("Checking for new program activities created...")
         new_program_activities = update_program_activities(self.submission_id)
         logger.info(f"{new_program_activities:,} new program activities created")
 
@@ -166,9 +166,9 @@ class Command(load_base.Command):
 
         logger.info("Committing transaction...")
 
-    def get_broker_submission(self):
+    def get_broker_submission(self) -> list | None:
         self.db_cursor.execute(
-            f"""
+            """
                 with publish_certify_history as (
                     select
                         distinct_pairings.submission_id,

@@ -69,6 +69,7 @@ class AppropriationAccountBalances(AbstractAppropriationAccountBalances):
     objects = CTEManager()
     final_objects = AppropriationAccountBalancesManager()
 
+    # Update the `final_of_fy` flag for all combinations of TAS & fiscal_year
     FINAL_OF_FY_SQL = """
         with submission_and_tai as (
             select distinct treasury_account_identifier, submission_id from (
@@ -92,7 +93,59 @@ class AppropriationAccountBalances(AbstractAppropriationAccountBalances):
                     (select treasury_account_identifier, submission_id from submission_and_tai));
     """
 
+    # Update the `final_of_fy` flag for a single TAS & fiscal_year combination containing the given submission_id
+    FINAL_OF_FY_SQL_SINGLE_SUBMISSION = """
+        WITH submission_and_tai as (
+            SELECT DISTINCT treasury_account_identifier, submission_id
+            FROM (
+                SELECT
+                    DISTINCT ON (aab.treasury_account_identifier)
+                    aab.treasury_account_identifier,
+                    s.submission_id
+                FROM submission_attributes s
+                INNER JOIN appropriation_account_balances aab
+                    ON s.submission_id = aab.submission_id
+                WHERE
+                    s.reporting_fiscal_year = %(fiscal_year)s
+                    AND
+                    aab.treasury_account_identifier = ANY(%(tai_list)s)
+                ORDER BY
+                    aab.treasury_account_identifier,
+                    s.reporting_period_end DESC,
+                    s.submission_id DESC
+            ) t
+        )
+        UPDATE appropriation_account_balances aab
+        SET
+            final_of_fy = (
+                (aab.treasury_account_identifier, aab.submission_id) IN (
+                    SELECT
+                        treasury_account_identifier,
+                        submission_id
+                    FROM
+                        submission_and_tai
+                )
+            )
+        FROM submission_attributes s
+        WHERE
+            aab.submission_id = s.submission_id
+            AND
+            s.reporting_fiscal_year = %(fiscal_year)s
+            AND
+            aab.treasury_account_identifier = ANY(%(tai_list)s)
+            AND
+            aab.final_of_fy != (
+                (aab.treasury_account_identifier, aab.submission_id) IN (
+                    SELECT treasury_account_identifier, submission_id
+                    FROM submission_and_tai
+                )
+            )
+    """
+
     @classmethod
-    def populate_final_of_fy(cls):
+    def populate_final_of_fy(cls, is_single_submission: bool = False):
         with connection.cursor() as cursor:
-            cursor.execute(cls.FINAL_OF_FY_SQL)
+            if is_single_submission:
+                cursor.execute(cls.FINAL_OF_FY_SQL_SINGLE_SUBMISSION)
+            else:
+                cursor.execute(cls.FINAL_OF_FY_SQL)
