@@ -175,15 +175,25 @@ class TestLookupAgenciesExactAndPrefix:
 
         result = await tool.lookup_agencies("NASA")
 
-        assert result["results"][0]["toptier_agency"]["toptier_code"] == "080"
+        assert list(result.values())[0]["toptier_agency"]["toptier_code"] == "080"
         mock_embedding_generator.agenerate_embedding.assert_not_called()
+
+    async def test_result_is_keyed_by_id_and_agency_type(self, tool, mock_embedding_generator):
+        row = await _make_matview_row("080", "National Aeronautics and Space Administration", "NASA")
+
+        result = await tool.lookup_agencies("NASA")
+
+        expected_key = f"{row.agency_autocomplete_id}_toptier"
+        assert expected_key in result
+        assert result[expected_key]["id"] == row.agency_autocomplete_id
+        assert result[expected_key]["agencyType"] == "toptier"
 
     async def test_prefix_match_skips_embedding_generation(self, tool, mock_embedding_generator):
         await _make_matview_row("200", "National Archives and Records Administration", "NARA")
 
         result = await tool.lookup_agencies("Nat")
 
-        assert len(result["results"]) == 1
+        assert len(result) == 1
         mock_embedding_generator.agenerate_embedding.assert_not_called()
 
     async def test_results_ordered_toptier_first_then_alphabetically(self, tool, mock_embedding_generator):
@@ -193,7 +203,7 @@ class TestLookupAgenciesExactAndPrefix:
 
         result = await tool.lookup_agencies("Bureau")
 
-        names = [r["toptier_agency"]["name"] for r in result["results"]]
+        names = [v["toptier_agency"]["name"] for v in result.values()]
         assert names[0] == "Bureau of Alpha"
         assert names[1] == "Bureau of Beta"
         assert names[-1] == "Bureau of Zeta"
@@ -204,14 +214,14 @@ class TestLookupAgenciesExactAndPrefix:
 
         result = await tool.lookup_agencies("Prefix", top_k=2)
 
-        assert len(result["results"]) == 2
+        assert len(result) == 2
 
     async def test_query_is_stripped_before_matching(self, tool, mock_embedding_generator):
         await _make_matview_row("080", "National Aeronautics and Space Administration", "NASA")
 
         result = await tool.lookup_agencies("  NASA  ")
 
-        assert result["results"][0]["toptier_agency"]["toptier_code"] == "080"
+        assert list(result.values())[0]["toptier_agency"]["toptier_code"] == "080"
         mock_embedding_generator.agenerate_embedding.assert_not_called()
 
 
@@ -225,7 +235,7 @@ class TestHybridSearch:
 
         result = await tool.lookup_agencies("orbital missions and rockets")
 
-        codes = {r["toptier_agency"]["toptier_code"] for r in result["results"]}
+        codes = {v["toptier_agency"]["toptier_code"] for v in result.values()}
         assert "999" in codes
         mock_embedding_generator.agenerate_embedding.assert_called_once()
 
@@ -240,7 +250,7 @@ class TestHybridSearch:
 
         result = await tool.lookup_agencies("some non matching query text")
 
-        codes = {r["toptier_agency"]["toptier_code"] for r in result["results"]}
+        codes = {v["toptier_agency"]["toptier_code"] for v in result.values()}
         assert "111" in codes
         assert "222" not in codes
 
@@ -258,7 +268,7 @@ class TestHybridSearch:
 
         result = await tool.lookup_agencies("orbital research")
 
-        codes = [r["toptier_agency"]["toptier_code"] for r in result["results"]]
+        codes = [v["toptier_agency"]["toptier_code"] for v in result.values()]
         assert codes[0] == "300"
 
     async def test_top_k_truncates_hybrid_results(self, tool, mock_embedding_generator):
@@ -273,7 +283,7 @@ class TestHybridSearch:
 
         result = await tool.lookup_agencies("matching agency query", top_k=2)
 
-        assert len(result["results"]) == 2
+        assert len(result) == 2
 
     async def test_hybrid_search_includes_subtier_agency_in_results(self, tool, mock_embedding_generator):
         dims = getattr(ToptierAgency, "embedding_dimensions", 256)
@@ -285,29 +295,48 @@ class TestHybridSearch:
 
         result = await tool.lookup_agencies("example bureau semantics")
 
-        subtier_names = {r["subtier_agency"]["name"] for r in result["results"]}
+        subtier_names = {v["subtier_agency"]["name"] for v in result.values() if "subtier_agency" in v}
         assert "Example Bureau" in subtier_names
 
 
 class TestMatviewRowToEntry:
-    async def test_maps_all_fields_correctly(self, tool):
+    async def test_maps_toptier_fields_correctly(self, tool):
         row = await _make_matview_row(
             "080",
             "National Aeronautics and Space Administration",
             "NASA",
             subtier_name="NASA Subtier",
             subtier_abbreviation="NS",
+            toptier_flag=True,
         )
 
         entry = AgencyLookupTool._matview_row_to_entry(row)
 
         assert entry["id"] == row.agency_autocomplete_id
+        assert entry["agencyType"] == "toptier"
         assert entry["toptier_flag"] == row.toptier_flag
         assert entry["toptier_agency"] == {
+            "id": row.toptier_agency_id,
             "toptier_code": "080",
             "abbreviation": "NASA",
             "name": "National Aeronautics and Space Administration",
         }
+        # subtier_agency is only present for subtier results.
+        assert "subtier_agency" not in entry
+
+    async def test_subtier_row_includes_subtier_agency(self, tool):
+        row = await _make_matview_row(
+            "080",
+            "National Aeronautics and Space Administration",
+            "NASA",
+            subtier_name="NASA Subtier",
+            subtier_abbreviation="NS",
+            toptier_flag=False,
+        )
+
+        entry = AgencyLookupTool._matview_row_to_entry(row)
+
+        assert entry["agencyType"] == "subtier"
         assert entry["subtier_agency"] == {"abbreviation": "NS", "name": "NASA Subtier"}
 
 
@@ -320,21 +349,24 @@ class TestAgencyRowToEntry:
         entry = AgencyLookupTool._agency_row_to_entry(agency)
 
         assert entry["id"] == agency.id
+        assert entry["agencyType"] == "subtier"
         assert entry["toptier_flag"] is False
         assert entry["toptier_agency"] == {
+            "id": top.toptier_agency_id,
             "toptier_code": "080",
             "abbreviation": "NASA",
             "name": "National Aeronautics and Space Administration",
         }
         assert entry["subtier_agency"] == {"abbreviation": "NS", "name": "NASA Subtier"}
 
-    async def test_handles_missing_subtier_agency(self, tool):
+    async def test_toptier_agency_omits_subtier_agency(self, tool):
         top = await _make_toptier_agency("080", "National Aeronautics and Space Administration", "NASA")
         agency = await _make_agency(top, subtier_agency=None, toptier_flag=True)
 
         entry = AgencyLookupTool._agency_row_to_entry(agency)
 
-        assert entry["subtier_agency"] == {"abbreviation": None, "name": None}
+        assert entry["agencyType"] == "toptier"
+        assert "subtier_agency" not in entry
 
 
 class TestLookupAgencyToolRegistration:

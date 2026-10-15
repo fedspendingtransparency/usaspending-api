@@ -97,7 +97,7 @@ def test_parse_json_cases_filters_by_tag(tmp_path: Path):
         "id": 2,
         "tags": ["award_id"],
         "expected_output": {
-            "selectedAwardIDs": {"N0001917C0001": {}},
+            "selectedAwardIDs": ["N0001917C0001"],
         },
         "expected_tools": ["execute_filter"],
     }

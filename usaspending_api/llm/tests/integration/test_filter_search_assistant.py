@@ -2,10 +2,13 @@ import uuid
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
+from asgiref.sync import sync_to_async
+from model_bakery import baker
 
 from usaspending_api.llm.assistants.filter_search import FilterSearchAssistant
 from usaspending_api.llm.models.db_models import AIModel, Assistant, Session
-from usaspending_api.llm.models.py_models import AITool
+from usaspending_api.llm.models.py_models import AITool, clear_defc_rows_cache
+from usaspending_api.llm.tools.execute_filter import execute_filter_tool
 
 
 @pytest.fixture
@@ -124,7 +127,7 @@ class TestFilterSearchAssistant:
         assert assistant.inference_config == {}
 
     def test_system_message_uses_assistant_prompt(self, assistant):
-        assert assistant.system_message == "Test system message"
+        assert assistant.system_message == "Test system message" + FilterSearchAssistant._fiscal_year_date_context()
 
     def test_system_message_uses_default_when_assistant_has_no_prompt(self, mock_assistant, mock_tool, mock_session):
         mock_assistant.system_prompt = None
@@ -336,14 +339,38 @@ class TestFilterSearchAssistant:
         assert assistant.tool_iterations == assistant.MAX_TOOL_ITERATIONS
         assert assistant.client.converse.call_count == assistant.MAX_TOOL_ITERATIONS + 1
 
-    def test_tool_config_property(self, assistant, mock_tool):
+    async def test_tool_config_property(self, assistant, mock_tool):
         """Test that tool_config is properly formatted."""
-        config = assistant.tool_config
+        config = await assistant.aget_tool_config()
 
         assert "tools" in config
         assert len(config["tools"]) == 2
         assert "toolSpec" in config["tools"][0]
         assert "inputSchema" in config["tools"][0]["toolSpec"]
+
+    @pytest.mark.django_db
+    async def test_tool_config_patches_defcodes_description_from_db(self, mock_assistant, mock_session):
+        """tool_config injects a DB-sourced defCodes description into execute_filter's schema.
+
+        The description is patched lazily here (not at execute_filter_tool's module-import time)
+        so the DB query only ever runs once real DB access is available -- see get_defc_rows/aget_defc_rows.
+        """
+        clear_defc_rows_cache()
+        await sync_to_async(baker.make)(
+            "references.DisasterEmergencyFundCode",
+            code="L",
+            public_law="PUBLIC LAW FOR CODE L",
+            title="TITLE FOR CODE L",
+            group_name="covid_19",
+        )
+
+        assistant = FilterSearchAssistant(assistant=mock_assistant, tools=[execute_filter_tool], session=mock_session)
+        config = await assistant.aget_tool_config()
+        description = config["tools"][0]["toolSpec"]["inputSchema"]["json"]["properties"]["defCodes"]["description"]
+
+        assert "TITLE FOR CODE L" in description
+
+        clear_defc_rows_cache()
 
     @patch("usaspending_api.llm.models.db_models.Message.objects.acreate", new_callable=AsyncMock)
     async def test_message_ordering(self, mock_message_create, assistant):

@@ -6,6 +6,7 @@ from django.db.models import Sum
 from django.http import HttpRequest, JsonResponse, StreamingHttpResponse
 from django.utils import timezone
 
+from usaspending_api.common.helpers.decorators import browsable
 from usaspending_api.llm.assistants.filter_search import FilterSearchAssistant
 from usaspending_api.llm.models.db_models import Assistant, Session, ToolUse
 from usaspending_api.llm.models.py_models import FilterSearchEvent, FilterSearchInput
@@ -15,6 +16,7 @@ from usaspending_api.llm.services.guardrails import (
     GuardrailServiceUnavailable,
 )
 from usaspending_api.llm.tools.execute_filter import execute_filter_tool
+from usaspending_api.llm.tools.list_recipient_types import list_recipient_types_tool
 from usaspending_api.llm.tools.lookup_agency import lookup_agency_tool
 from usaspending_api.llm.tools.lookup_code import lookup_code_tool
 from usaspending_api.llm.tools.lookup_location import lookup_location_tool
@@ -23,11 +25,12 @@ from usaspending_api.llm.v2.router import router
 
 logger = logging.getLogger(__name__)
 
-TOOLS = [
+tools = [
     lookup_agency_tool,
     lookup_code_tool,
     lookup_location_tool,
     lookup_recipient_tool,
+    list_recipient_types_tool,
     execute_filter_tool,
 ]
 
@@ -89,9 +92,11 @@ def _stream_response(event_source: AsyncGenerator[str, None]) -> StreamingHttpRe
     return response
 
 
-@router.post(
+@browsable(
+    router,
     "/filter-search/",
     url_name="filter_search",
+    endpoint_doc="usaspending_api/api_contracts/contracts/v2/llm/filter_search.md",
 )
 async def filter_search(request: HttpRequest, payload: FilterSearchInput) -> JsonResponse | StreamingHttpResponse:
     """
@@ -123,7 +128,7 @@ async def filter_search(request: HttpRequest, payload: FilterSearchInput) -> Jso
 
     session = await Session.objects.acreate(
         ai_model=ai_model,
-        tools=[tool.description.name for tool in TOOLS],
+        tools=[tool.description.name for tool in tools],
         system_prompt=assistant_config.system_prompt,
     )
     logger.info(
@@ -133,12 +138,12 @@ async def filter_search(request: HttpRequest, payload: FilterSearchInput) -> Jso
             "model_id": ai_model.model_id,
             "model_name": ai_model.name,
             "provider": ai_model.provider,
-            "tools": [tool.description.name for tool in TOOLS],
+            "tools": [tool.description.name for tool in tools],
             "query_length": len(query),
         },
     )
 
-    assistant = FilterSearchAssistant(assistant=assistant_config, tools=TOOLS, session=session)
+    assistant = FilterSearchAssistant(assistant=assistant_config, tools=tools, session=session)
 
     async def event_stream() -> AsyncGenerator[str, Any]:
         try:

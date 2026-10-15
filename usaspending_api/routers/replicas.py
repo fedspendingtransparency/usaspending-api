@@ -2,7 +2,7 @@ from django.db import DEFAULT_DB_ALIAS
 from django.db.models import Model
 
 from usaspending_api.download.models.download_job import DownloadJob
-from usaspending_api.llm.models.db_models import AIModel, Message, Prompts, Session, ToolUse
+from usaspending_api.llm.models.db_models import AIModel, Assistant, Message, Prompts, Session, ToolUse
 from usaspending_api.references.models import FilterHash
 
 
@@ -24,7 +24,7 @@ class ReadReplicaRouter:
         FilterHash, DownloadJob, and the LLM app models are writable tables so always read from source (default) to
         mitigate replication lag.  Otherwise, choose a connection randomly.
         """
-        if model in [FilterHash, DownloadJob, AIModel, Message, Prompts, Session, ToolUse]:
+        if model in [AIModel, Assistant, DownloadJob, FilterHash, Message, Prompts, Session, ToolUse]:
             return self.writable_database
 
         if len(self.read_replicas) > 0:

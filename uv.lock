@@ -2122,11 +2122,11 @@ wheels = [
 
 [[package]]
 name = "supervisor"
-version = "4.1.0"
+version = "4.3.0"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/de/87/ee1ad8fa533a4b5f2c7623f4a2b585d3c1947af7bed8e65bc7772274320e/supervisor-4.1.0.tar.gz", hash = "sha256:2dc86fe0476e945e61483d614ceb2cf4f93b95282eb243bdf792621994360383", size = 459020, upload-time = "2019-10-19T17:58:28.94Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/a9/b5/37e7a3706de436a8a2d75334711dad1afb4ddffab09f25e31d89e467542f/supervisor-4.3.0.tar.gz", hash = "sha256:4a2bf149adf42997e1bb44b70c43b613275ec9852c3edacca86a9166b27e945e", size = 468912, upload-time = "2025-08-23T18:25:02.418Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/ca/1f/07713b0e1e34c312450878801d496bce8b9eff5ea9e70d41ff4e299b2df5/supervisor-4.1.0-py2.py3-none-any.whl", hash = "sha256:a76b2f77a560f2dc411c0254a4eb15f555e99faac48621b0f1fc9ab013944f47", size = 318422, upload-time = "2019-10-19T17:58:26.052Z" },
+    { url = "https://files.pythonhosted.org/packages/0e/65/5e726c372da8a5e35022a94388b12252710aad0c2351699c3d76ae8dba78/supervisor-4.3.0-py2.py3-none-any.whl", hash = "sha256:0bcb763fddafba410f35cbde226aa7f8514b9fb82eb05a0c85f6588d1c13f8db", size = 320736, upload-time = "2025-08-23T18:25:00.767Z" },
 ]
 
 [[package]]
@@ -2436,7 +2436,7 @@ requires-dist = [
     { name = "ruff", marker = "extra == 'dev'", specifier = "==0.14.14" },
     { name = "setuptools", marker = "extra == 'server'", specifier = "<81" },
     { name = "sqlparse", specifier = "==0.6.*" },
-    { name = "supervisor", marker = "extra == 'server'", specifier = "==4.1.0" },
+    { name = "supervisor", marker = "extra == 'server'", specifier = "==4.3.*" },
     { name = "urllib3", specifier = "==2.8.*" },
     { name = "uwsgi", marker = "extra == 'server'", specifier = "==2.0.23" },
     { name = "xlrd3", specifier = "==1.1.0" },

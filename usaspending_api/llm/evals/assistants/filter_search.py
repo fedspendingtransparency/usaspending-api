@@ -1,6 +1,8 @@
+import asyncio
 import logging
 from typing import Any
 
+from asgiref.sync import sync_to_async
 from django.utils import timezone
 
 from usaspending_api.llm.assistants.filter_search import FilterSearchAssistant
@@ -11,11 +13,12 @@ from usaspending_api.llm.evals.models import EvalCase, EvalObservation, EvalResu
 from usaspending_api.llm.evals.registry import register_eval
 from usaspending_api.llm.models.db_models import Assistant, Session, ToolUse
 from usaspending_api.llm.tools.execute_filter import build_filter_request
-from usaspending_api.llm.v2.views.filter_search import TOOLS as FILTER_SEARCH_TOOLS
+from usaspending_api.llm.v2.views.filter_search import tools as filter_search_tools
 
 logger = logging.getLogger(__name__)
 
 
+@sync_to_async
 def get_active_filter_search_assistant() -> Assistant:
     """Retrieve the active filter-search Assistant."""
     try:
@@ -24,6 +27,7 @@ def get_active_filter_search_assistant() -> Assistant:
         raise ExecutionError("Active filter-search Assistant not found.") from exc
 
 
+@sync_to_async
 def create_eval_session(assistant_config: Assistant) -> Session:
     """
     Create a Session record for a live evaluation execution.
@@ -33,11 +37,12 @@ def create_eval_session(assistant_config: Assistant) -> Session:
     """
     return Session.objects.create(
         ai_model=assistant_config.ai_model,
-        tools=[tool.description.name for tool in FILTER_SEARCH_TOOLS],
+        tools=[tool.description.name for tool in filter_search_tools],
         system_prompt=assistant_config.system_prompt,
     )
 
 
+@sync_to_async
 def get_tool_calls(session: Session) -> tuple[ToolCall, ...]:
     """
     Read the tool trace persisted by FilterSearchAssistant.handle_tool_use().
@@ -54,6 +59,7 @@ def get_tool_calls(session: Session) -> tuple[ToolCall, ...]:
     return tuple(ToolCall(name=tool_use.name) for tool_use in tool_uses)
 
 
+@sync_to_async
 def get_final_filter_output(session: Session) -> dict[str, Any]:
     """
     Return canonical filters from the last successful execute_filter call.
@@ -82,7 +88,7 @@ def get_final_filter_output(session: Session) -> dict[str, Any]:
     return filter_request["filters"]
 
 
-def run_eval_case(case: EvalCase) -> EvalObservation:
+async def run_eval_case(case: EvalCase) -> EvalObservation:
     """
     Execute one real filter-search request through the same assistant class used by FilterSearchViewSet and return
     an evaluation-ready observation.
@@ -90,23 +96,23 @@ def run_eval_case(case: EvalCase) -> EvalObservation:
     The view itself is intentionally not called. Calling the view would require handling API-key behavior, request
     construction, and ND-JSON parsing, while the underlying assistant class provides the same meaningful execution path.
     """
-    assistant_config = get_active_filter_search_assistant()
-    session = create_eval_session(assistant_config)
+    assistant_config = await get_active_filter_search_assistant()
+    session = await create_eval_session(assistant_config)
     assistant = FilterSearchAssistant(
         assistant=assistant_config,
-        tools=FILTER_SEARCH_TOOLS,
+        tools=filter_search_tools,
         session=session,
     )
 
     events: list[dict[str, Any]] = []
 
     try:
-        events = list(assistant.search(case.input["query"]))
+        events = [event async for event in assistant.search(case.input["query"])]
     except Exception as exc:
         logger.exception(f"Filter Search execution failed for case '{case.name}': {exc}")
     finally:
         session.ended_at = timezone.now()
-        session.save(update_fields=["ended_at"])
+        await session.asave(update_fields=["ended_at"])
 
     error_events = [event for event in events if event.get("type") == "search_error"]
 
@@ -116,12 +122,12 @@ def run_eval_case(case: EvalCase) -> EvalObservation:
             f"{error_events[-1].get('message', 'Unknown search error')}"
         )
 
-    tool_calls = get_tool_calls(session)
+    tool_calls = await get_tool_calls(session)
 
     if not tool_calls:
         logger.error(f"Filter Search case '{case.name}' produced no tool calls.")
 
-    output = get_final_filter_output(session)
+    output = await get_final_filter_output(session)
 
     inference_config = assistant_config.inference_config or {}
 
@@ -160,7 +166,7 @@ class FilterSearchEval(BaseEval):
 
     def execute(self, case: EvalCase) -> EvalObservation:
         """Execute one actual Filter Search request through the concrete adapter."""
-        return run_eval_case(case)
+        return asyncio.run(run_eval_case(case))
 
     def evaluate(self, case: EvalCase, observation: EvalObservation) -> EvalResult:
         """Evaluates tool correctness and filter correctness independently."""
