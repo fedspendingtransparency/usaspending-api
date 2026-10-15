@@ -129,6 +129,23 @@ class SelectedAgency(BaseModel):
     subtier_agency: SubtierAgency | None = None
     agencyType: Literal["toptier", "subtier"] = "toptier"
 
+    @model_validator(mode="after")
+    def default_subtier_agency(self) -> "SelectedAgency":
+        """Ensure subtier_agency is always populated
+
+        If a subtier agency is not provided use the toptier agency's own name/abbreviation into
+        subtier_agency rather than leaving it None -- which, combined with `exclude_none=True`
+        on serialization, drops the key entirely and causes as error. A subtier selection, on
+        the other hand, must supply its own subtier_agency; it can't be defaulted.
+        """
+        if self.subtier_agency is None:
+            if self.agencyType == "subtier":
+                raise ValueError("subtier_agency is required when agencyType='subtier'.")
+            self.subtier_agency = SubtierAgency(
+                abbreviation=self.toptier_agency.abbreviation, name=self.toptier_agency.name
+            )
+        return self
+
 
 class CodeLists(BaseModel):
     """Base Model for code lists

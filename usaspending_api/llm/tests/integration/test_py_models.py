@@ -4,7 +4,13 @@ import pytest
 from model_bakery import baker
 from pydantic import ValidationError
 
-from usaspending_api.llm.models.py_models import AwardAmounts, Filters, InferenceConfig, clear_defc_rows_cache
+from usaspending_api.llm.models.py_models import (
+    AwardAmounts,
+    Filters,
+    InferenceConfig,
+    SelectedAgency,
+    clear_defc_rows_cache,
+)
 
 
 class TestInferenceConfig:
@@ -295,6 +301,69 @@ class TestSelectedAgencyRekeying:
         filters = Filters(selectedAwardingAgencies={})
 
         assert filters.selectedAwardingAgencies == {}
+
+
+class TestSelectedAgencySubtierDefaulting:
+    """Tests for the subtier_agency defaulting/validation on the SelectedAgency model.
+
+    The frontend reads subtier_agency.name/.abbreviation unconditionally, so a toptier-only selection must mirror
+    the toptier agency's own name/abbreviation into subtier_agency rather than leaving it None.
+    """
+
+    TOPTIER_AGENCY = {
+        "id": 126,
+        "toptier_code": "097",
+        "abbreviation": "DOD",
+        "name": "Department of Defense",
+    }
+
+    def test_toptier_selection_defaults_subtier_agency_to_toptier(self):
+        agency = SelectedAgency(
+            id=1173,
+            agencyType="toptier",
+            toptier_flag=True,
+            toptier_agency=self.TOPTIER_AGENCY,
+        )
+
+        assert agency.subtier_agency is not None
+        assert agency.subtier_agency.abbreviation == "DOD"
+        assert agency.subtier_agency.name == "Department of Defense"
+
+    def test_subtier_selection_keeps_its_own_subtier_agency(self):
+        agency = SelectedAgency(
+            id=42,
+            agencyType="subtier",
+            toptier_flag=False,
+            toptier_agency=self.TOPTIER_AGENCY,
+            subtier_agency={"abbreviation": "USA", "name": "Department of the Army"},
+        )
+
+        assert agency.subtier_agency.abbreviation == "USA"
+        assert agency.subtier_agency.name == "Department of the Army"
+
+    def test_subtier_selection_without_subtier_agency_is_rejected(self):
+        with pytest.raises(ValidationError) as exc_info:
+            SelectedAgency(
+                id=42,
+                agencyType="subtier",
+                toptier_flag=False,
+                toptier_agency=self.TOPTIER_AGENCY,
+            )
+
+        assert "subtier_agency is required when agencyType='subtier'" in str(exc_info.value)
+
+    def test_serialized_toptier_selection_always_includes_subtier_agency(self):
+        """exclude_none=True (used when persisting to FilterHash) must not drop subtier_agency."""
+        agency = SelectedAgency(
+            id=1173,
+            agencyType="toptier",
+            toptier_flag=True,
+            toptier_agency=self.TOPTIER_AGENCY,
+        )
+
+        dumped = agency.model_dump(exclude_none=True)
+
+        assert dumped["subtier_agency"] == {"abbreviation": "DOD", "name": "Department of Defense"}
 
 
 class TestRecipientType:
