@@ -157,7 +157,7 @@ class Command(load_base.Command):
         else:
             logger.info("Updating final_of_fy")
             start_time = datetime.now()
-            populate_final_of_fy()
+            populate_final_of_fy(is_single_submission=True)
             logger.info(f"Finished updating final_of_fy, took {datetime.now() - start_time}")
 
         # Once all the files have been processed, run any global cleanup/post-load tasks.
