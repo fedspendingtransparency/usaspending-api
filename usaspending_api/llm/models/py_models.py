@@ -1,3 +1,4 @@
+import re
 from typing import Annotated, Any, Callable, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, RootModel, field_validator, model_validator
@@ -485,6 +486,18 @@ class Filters(BaseModel):
             key = f"{agency_id}_{agency_type}" if agency_id is not None and agency_type else original_key
             rekeyed[key] = agency
         return rekeyed
+
+    @field_validator("timePeriodFY")
+    @classmethod
+    def validate_time_period_fy(cls, value: list[str]) -> list[str]:
+        """Fiscal years must be bare four-digit strings (e.g. '2026'), not 'FY2026'."""
+        invalid = [year for year in value if not re.fullmatch(r"\d{4}", year)]
+        if invalid:
+            raise ValueError(
+                f"Invalid fiscal year(s) in timePeriodFY: {invalid}. Fiscal years must be four-digit strings "
+                "(e.g. '2026'), without a 'FY' prefix."
+            )
+        return value
 
     @field_validator("awardType")
     @classmethod

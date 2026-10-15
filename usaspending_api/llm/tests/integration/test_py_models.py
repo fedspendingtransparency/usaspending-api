@@ -610,6 +610,49 @@ class TestRecipientType:
         assert len(filters.recipientType) == len(all_types)
 
 
+class TestTimePeriodFY:
+    """Tests for the timePeriodFY four-digit-year validation on the Filters model"""
+
+    def test_time_period_fy_default_empty_list(self):
+        filters = Filters()
+
+        assert filters.timePeriodFY == []
+
+    def test_time_period_fy_accepts_four_digit_years(self):
+        filters = Filters(timePeriodFY=["2023", "2024"])
+
+        assert filters.timePeriodFY == ["2023", "2024"]
+
+    def test_time_period_fy_accepts_single_year(self):
+        filters = Filters(timePeriodFY=["2026"])
+
+        assert filters.timePeriodFY == ["2026"]
+
+    def test_time_period_fy_rejects_fy_prefix(self):
+        with pytest.raises(ValidationError) as exc_info:
+            Filters(timePeriodFY=["FY2026"])
+
+        assert "Invalid fiscal year(s)" in str(exc_info.value)
+
+    def test_time_period_fy_rejects_fy_prefix_mixed_with_valid_year(self):
+        with pytest.raises(ValidationError) as exc_info:
+            Filters(timePeriodFY=["2024", "FY2026"])
+
+        assert "FY2026" in str(exc_info.value)
+
+    def test_time_period_fy_rejects_non_four_digit_year(self):
+        with pytest.raises(ValidationError) as exc_info:
+            Filters(timePeriodFY=["26"])
+
+        assert "Invalid fiscal year(s)" in str(exc_info.value)
+
+    def test_time_period_fy_rejects_non_numeric_value(self):
+        with pytest.raises(ValidationError) as exc_info:
+            Filters(timePeriodFY=["this year"])
+
+        assert "Invalid fiscal year(s)" in str(exc_info.value)
+
+
 class TestAwardType:
     """Tests for the awardType single-group validation on the Filters model"""
 
