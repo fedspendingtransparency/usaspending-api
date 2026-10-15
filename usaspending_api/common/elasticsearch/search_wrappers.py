@@ -166,7 +166,7 @@ class AsyncSearch(SearchBase):
     _index_name = None
 
     def __init__(self, **kwargs) -> None:
-        self.client: AsyncOpenSearch = self._create_es_client()
+        self.client: AsyncOpenSearch = kwargs.pop("using", None) or self._create_es_client()
         kwargs.update({"index": self._index_name, "using": self.client})
         super().__init__(**kwargs)
 

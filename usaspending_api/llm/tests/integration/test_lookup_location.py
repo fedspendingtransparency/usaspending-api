@@ -76,6 +76,8 @@ def mock_search():
         mock_search.__getitem__.return_value = mock_search
         mock_search.source.return_value = mock_search
         mock_search.handle_execute = AsyncMock()
+        mock_search.client = MagicMock()
+        mock_search.client.close = AsyncMock()
         yield mock_search
 
 
