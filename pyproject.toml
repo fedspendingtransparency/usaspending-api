@@ -134,6 +134,7 @@ server = [
 ]
 ansible = ["ansible==14.4.*"]
 awscli = ["awscli==1.34.*"]
+lambda = ["awslambdaric>=4.2.1"]
 
 [project.urls]
 homepage = 'https://www.usaspending.gov/'
