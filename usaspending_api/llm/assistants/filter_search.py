@@ -295,7 +295,7 @@ class FilterSearchAssistant:
                 "search_id": str(self.session.id),
                 "type": "tool_start",
                 "tool_use_id": str(t.id),
-                "message": tool.logging(tool_use["input"]) + "\n",
+                "message": tool.logging(tool_use["input"]),
             }
 
             tool_start_time = time.time()
