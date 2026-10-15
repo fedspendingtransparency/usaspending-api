@@ -32,7 +32,7 @@ class FilterSearchAssistant:
         self._tool_config: dict[str, list[dict]] | None = None
 
     @staticmethod
-    def _extract_text_from_content(content: dict[str, str | list[dict[str, Any]]]) -> str:
+    def _extract_text_from_content(content: list[dict]) -> str:
         """
         Safely extract text content from Bedrock message's "content" array.
 
@@ -42,8 +42,7 @@ class FilterSearchAssistant:
         - Multiple text blocks exist (-> concatenates them together); and,
         - Text blocks are in any position in the array (not just content[0]) -> (collects/concatenates them).
         """
-        inner_content = content.get("content", [])
-        text_blocks = [block["text"] for block in inner_content if "text" in block]
+        text_blocks = [block.get("text", "") for block in content if "text" in block]
         return " ".join(text_blocks).strip()
 
     @staticmethod
