@@ -1,9 +1,13 @@
 import logging
 import signal
-
 from datetime import datetime
-from django.core.management.base import CommandError
+from types import FrameType
+
+from django.core.management.base import CommandError, CommandParser
 from django.db import transaction
+from django.db.backends.utils import CursorWrapper
+
+from usaspending_api.accounts.models import AppropriationAccountBalances
 from usaspending_api.etl.broker_etl_helpers import dictfetchall
 from usaspending_api.etl.management import load_base
 from usaspending_api.etl.submission_loader_helpers.file_a import get_file_a, load_file_a
@@ -37,47 +41,47 @@ class Command(load_base.Command):
         "must set so we can pull submission data from their db."
     )
 
-    def add_arguments(self, parser):
+    def add_arguments(self, parser: CommandParser) -> None:
         parser.add_argument("submission_id", help="Broker submission_id to load", type=int)
         parser.add_argument(
             "--force-reload",
             action="store_true",
-            help=(
-                "Forces a full reload of the submission if it already exists in USAspending.  "
-                "Without this flag, the script will attempt to perform an update only if possible.",
-            ),
+            help="""
+                Forces a full reload of the submission if it already exists in USAspending.
+                Without this flag, the script will attempt to perform an update only if possible.
+            """,
         )
         parser.add_argument(
             "--skip-final-of-fy-calculation",
             action="store_true",
-            help=(
-                "This is mainly designed to be used by the multiple_submission_loader.  Prevents "
-                "the final_of_fy value from being recalculated for each submission that's loaded.",
-            ),
+            help="""
+                This is mainly designed to be used by the multiple_submission_loader.  Prevents
+                the final_of_fy value from being recalculated for each submission that's loaded.,
+            """,
         )
         parser.add_argument(
             "--skip-c-to-d-linkage",
             action="store_true",
-            help=(
-                "This flag skips the step to perform File C to D Linkages, which updates the "
-                "`award_id` field on File C records. File C to D linkages also take place in "
-                "subsequent Databricks steps in the pipeline and only takes place in this "
-                "command for earlier data consistency. It can safely be skipped in the case of "
-                "long running submissions.",
-            ),
+            help="""
+                This flag skips the step to perform File C to D Linkages, which updates the
+                `award_id` field on File C records. File C to D linkages also take place in
+                subsequent Databricks steps in the pipeline and only takes place in this
+                command for earlier data consistency. It can safely be skipped in the case of
+                long running submissions.
+            """,
         )
         parser.add_argument(
             "--file-c-chunk-size",
             type=int,
             default=self.file_c_chunk_size,
-            help=(
-                "Controls the number of File C records processed in a single batch.  Theoretically, "
-                "bigger should be faster... right up until you run out of memory.  Balance carefully."
-            ),
+            help="""
+                Controls the number of File C records processed in a single batch.  Theoretically,
+                bigger should be faster... right up until you run out of memory.  Balance carefully.
+            """,
         )
         super(Command, self).add_arguments(parser)
 
-    def handle_loading(self, db_cursor, *args, **options):
+    def handle_loading(self, db_cursor: CursorWrapper, *args, **options) -> None:
 
         self.submission_id = options["submission_id"]
         self.force_reload = options["force_reload"]
@@ -99,8 +103,8 @@ class Command(load_base.Command):
         self.load_in_transaction()
 
     @transaction.atomic
-    def load_in_transaction(self):
-        def signal_handler(signal, frame):
+    def load_in_transaction(self) -> None:
+        def signal_handler(signal: int, frame: FrameType | None) -> None:
             transaction.set_rollback(True)
             raise Exception("Received interrupt signal. Aborting...")
 
@@ -122,9 +126,7 @@ class Command(load_base.Command):
 
         logger.info("Getting File A data")
         appropriation_data = get_file_a(submission_attributes, self.db_cursor)
-        logger.info(
-            f"Acquired File A (appropriation) data for {self.submission_id}, there are {len(appropriation_data):,} rows."
-        )
+        logger.info(f"Acquired File A (appropriation) data for {self.submission_id}, {len(appropriation_data):,} rows.")
         logger.info("Loading File A data")
         start_time = datetime.now()
         load_file_a(submission_attributes, appropriation_data, self.db_cursor)
@@ -157,7 +159,16 @@ class Command(load_base.Command):
         else:
             logger.info("Updating final_of_fy")
             start_time = datetime.now()
-            populate_final_of_fy(is_single_submission=True)
+
+            tai_list = list(
+                AppropriationAccountBalances.objects.filter(submission_id=submission_attributes.submission_id)
+                .values_list("treasury_account_identifier", flat=True)
+                .distinct()
+            )
+            populate_final_of_fy(
+                is_single_submission=True, fiscal_year=submission_attributes.reporting_fiscal_year, tai_list=tai_list
+            )
+
             logger.info(f"Finished updating final_of_fy, took {datetime.now() - start_time}")
 
         # Once all the files have been processed, run any global cleanup/post-load tasks.
@@ -224,7 +235,7 @@ class Command(load_base.Command):
 
         return dictfetchall(self.db_cursor)
 
-    def validate_submission_data(self, submission_data):
+    def validate_submission_data(self, submission_data: list) -> list:
         if len(submission_data) == 0:
             raise CommandError(f"Could not find submission with id {self.submission_id}")
         elif len(submission_data) > 1:

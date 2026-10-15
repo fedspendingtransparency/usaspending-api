@@ -93,7 +93,7 @@ class AppropriationAccountBalances(AbstractAppropriationAccountBalances):
                     (select treasury_account_identifier, submission_id from submission_and_tai));
     """
 
-    # Update the `final_of_fy` flag for a single TAS & fiscal_year combination containing the given submission_id
+    # Update the `final_of_fy` flag for a single fiscal_year, scoped to the given list of treasury_account_identifiers
     FINAL_OF_FY_SQL_SINGLE_SUBMISSION = """
         WITH submission_and_tai as (
             SELECT DISTINCT treasury_account_identifier, submission_id
@@ -143,9 +143,17 @@ class AppropriationAccountBalances(AbstractAppropriationAccountBalances):
     """
 
     @classmethod
-    def populate_final_of_fy(cls, is_single_submission: bool = False):
+    def populate_final_of_fy(
+            cls,
+            is_single_submission: bool = False,
+            fiscal_year: int | None = None,
+            tai_list: list | None = None
+    ) -> None:
         with connection.cursor() as cursor:
             if is_single_submission:
-                cursor.execute(cls.FINAL_OF_FY_SQL_SINGLE_SUBMISSION)
+                cursor.execute(
+                    cls.FINAL_OF_FY_SQL_SINGLE_SUBMISSION,
+                    {"fiscal_year": fiscal_year, "tai_list": tai_list}
+                )
             else:
                 cursor.execute(cls.FINAL_OF_FY_SQL)
