@@ -430,6 +430,7 @@ class Filters(BaseModel):
     selectedCFDA: dict[str, Any] = Field(default_factory=dict)
     naicsCodes: CodeLists = Field(default_factory=CodeLists)
     pscCodes: CodeLists = Field(default_factory=CodeLists)
+    defCode: list[str] = []
     defCodes: DEFCodeLists = Field(default_factory=DEFCodeLists)
     pricingType: list[str] = Field(default_factory=list)
     setAside: list[SetAsideCode] = Field(default_factory=list)
