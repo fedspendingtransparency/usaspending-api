@@ -306,8 +306,7 @@ class TestSelectedAgencyRekeying:
 class TestSelectedAgencySubtierDefaulting:
     """Tests for the subtier_agency defaulting/validation on the SelectedAgency model.
 
-    The frontend reads subtier_agency.name/.abbreviation unconditionally (see
-    api_contracts/contracts/v2/references/filter.md), so a toptier-only selection must mirror
+    The frontend reads subtier_agency.name/.abbreviation unconditionally, so a toptier-only selection must mirror
     the toptier agency's own name/abbreviation into subtier_agency rather than leaving it None.
     """
 
