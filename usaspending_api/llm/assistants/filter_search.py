@@ -6,6 +6,7 @@ import boto3
 
 from usaspending_api.llm.models.db_models import AIModel, Message, Session, ToolUse
 from usaspending_api.llm.models.py_models import AITool
+from usaspending_api.llm.management.error_message_wrapper import search_error_handler
 
 logger = logging.getLogger(__name__)
 
@@ -176,11 +177,12 @@ class FilterSearchAssistant:
                 error_result = {"error": str(e)}
                 t.result = error_result
                 t.save()
+                error_message = search_error_handler(t.result, tool_use["input"])
                 yield {
                     "search_id": str(self.session.id),
                     "type": "tool_error",
                     "tool_use_id": t.id,
-                    "message": f"Tool execution failed: {str(e)}",
+                    "message": error_message,
                 }
             if tool.description.name == self.COMPLETION_TOOL_NAME and "error" not in result:
                 yield {"search_id": str(self.session.id), "type": "search_complete", "result": result["hash"]}
