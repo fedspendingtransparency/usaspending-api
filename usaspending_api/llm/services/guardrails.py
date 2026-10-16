@@ -60,7 +60,7 @@ class BedrockGuardrailService:
         # Cache duration (default: 5 minutes).
         self.version_cache_seconds = settings.AWS_BEDROCK_GUARDRAIL_VERSION_CACHE_SECONDS
         # AWS Region (default: same as USAspending AWS Region).
-        self.region_name = settings.AWS_BEDROCK_GUARDRAIL_AWS_REGION
+        self.region_name = settings.AWS_BEDROCK_GUARDRAIL_AWS_REGION or self.client
 
         self.bedrock_runtime_client = bedrock_runtime_client or self.client()
 
