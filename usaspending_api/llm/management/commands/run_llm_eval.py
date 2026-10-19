@@ -78,6 +78,12 @@ class Command(BaseCommand):
                 "Useful for long-running evaluations to preserve results if the run fails."
             ),
         )
+        parser.add_argument(
+            "--max-workers",
+            type=int,
+            default=1,
+            help=("Run this many cases concurrently (default: 1, i.e. sequential)."),
+        )
 
     def handle(self, *args, **options) -> None:
         """
@@ -99,6 +105,7 @@ class Command(BaseCommand):
                 tags=set(options["tags"] or []),
                 fail_under=options["fail_under"],
                 incremental_output=options.get("incremental_output"),
+                max_workers=options["max_workers"],
             )
             return evaluator.run()
         except (EvalError, ValueError) as exc:
