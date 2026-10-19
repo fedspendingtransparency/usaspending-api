@@ -97,7 +97,7 @@ class FilterSearchAssistant:
         output_message = response["output"]["message"]
 
         # Safely extract text content.
-        message_text = self._extract_text_from_content(output_message)
+        message_text = self._extract_text_from_content(output_message["content"])
 
         message = await Message.objects.acreate(
             session=self.session,
@@ -131,10 +131,11 @@ class FilterSearchAssistant:
         current_fy = today.year + 1 if today.month >= 10 else today.year
         return (
             f"\nThe current date is {today.strftime('%m/%d/%Y')}. The current federal fiscal year is "
-            f"FY{current_fy} (the federal fiscal year runs Oct 1 - Sep 30 and is named for the calendar "
-            f"year it ends in, so FY{current_fy} runs 10/01/{current_fy - 1} - 09/30/{current_fy}). "
-            f"Use FY{current_fy} directly as 'this fiscal year' and FY{current_fy - 1} as 'last fiscal "
-            f"year' - do not recompute the fiscal year from the date yourself."
+            f"{current_fy} (the federal fiscal year runs Oct 1 - Sep 30 and is named for the calendar "
+            f"year it ends in, so Fiscal Year {current_fy} runs 10/01/{current_fy - 1} - 09/30/{current_fy}). "
+            f"Use {current_fy} directly as 'this fiscal year' and {current_fy - 1} as 'last fiscal "
+            f"year' - do not recompute the fiscal year from the date yourself. When populating "
+            f"timePeriodFY, use the bare four-digit year (e.g. '{current_fy}'), never the 'FY' prefix."
         )
 
     @cached_property

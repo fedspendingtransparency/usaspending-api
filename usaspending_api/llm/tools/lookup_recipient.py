@@ -40,8 +40,8 @@ class RecipientLookupTool:
             extra={"query": query, "top_k": top_k},
         )
 
+        search = self._build_search(query_upper, top_k)
         try:
-            search = self._build_search(query_upper, top_k)
             logger.debug(f"Executing OpenSearch query for recipient: query='{query}'")
             response = await search.handle_execute()
             logger.info(
@@ -51,6 +51,9 @@ class RecipientLookupTool:
         except Exception as exception:
             logger.error(f"OpenSearch query failed for query='{query}': {str(exception)}", exc_info=True)
             return {"errors": [str(exception)]}
+        finally:
+            if search.client is not None:
+                await search.client.close()
 
         result = self._extract_recipient_names(response, query_upper)
         recipient_count = len(result.get("recipient_names", []))
