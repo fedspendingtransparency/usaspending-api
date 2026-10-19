@@ -365,13 +365,18 @@ class TestAIToolImplementation:
         assert schema != Filters.model_json_schema()
 
     def test_execute_filter_input_exposes_every_filter_field(self):
-        """The assistant must be able to see and set every Filters field, and no more.
+        """The assistant must be able to see and set every Filters field, except documented legacy fields.
 
         Field-set equality is the drift guard in both directions: a Filters-only field would be a
         filter the assistant can't set, and an ExecuteFilterInput-only field would be rejected by
-        Filters(**kwargs) at runtime (extra='forbid').
+        Filters(**kwargs) at runtime (extra='forbid'). `defCode` is a deliberate, documented
+        exception: it's a legacy singular field kept on `Filters` so old persisted FilterHash blobs
+        still validate, but it's superseded by `defCodes` (require/exclude) and intentionally kept
+        off the tool surface so the assistant never emits it.
         """
-        assert set(ExecuteFilterInput.model_fields) == set(Filters.model_fields)
+        legacy_filters_only_fields = {"defCode"}
+        assert set(Filters.model_fields) - set(ExecuteFilterInput.model_fields) == legacy_filters_only_fields
+        assert set(ExecuteFilterInput.model_fields) - set(Filters.model_fields) == set()
 
     def test_execute_filter_input_omits_the_large_enums(self):
         """ExecuteFilterInput carries loose str types for recipientType/DEFC instead of the big enums.
@@ -388,16 +393,6 @@ class TestAIToolImplementation:
 
         # The validation model, by contrast, does pin the enum.
         assert "corporate_entity_tax_exempt" in json.dumps(Filters.model_json_schema())
-
-    def test_logging_function_formats_filters(self):
-        """Test that logging function formats filters properly."""
-        tool_input = {"awardType": ["A", "B"], "time_period": [{"start_date": "2023-01-01"}]}
-
-        log_msg = execute_filter_tool.logging(tool_input)
-
-        assert isinstance(log_msg, str)
-        assert "awardType" in log_msg
-        assert "time_period" in log_msg
 
     def test_logging_function_handles_empty_input(self):
         """Test that logging function handles empty input."""

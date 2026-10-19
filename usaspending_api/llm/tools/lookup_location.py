@@ -86,8 +86,8 @@ class LocationLookupTool:
             extra={"query": query, "location_type": location_type, "top_k": top_k},
         )
 
+        search = self._build_search(query_upper, location_type, top_k)
         try:
-            search = self._build_search(query_upper, location_type, top_k)
             logger.debug(f"Executing OpenSearch query with filters: location_type={location_type}")
             response = await search.handle_execute()
             logger.info(
@@ -97,6 +97,9 @@ class LocationLookupTool:
         except Exception as e:
             logger.error(f"OpenSearch query failed for query='{query}': {str(e)}", exc_info=True)
             return {"error": f"OpenSearch query failed: {str(e)}", "results": {}}
+        finally:
+            if search.client is not None:
+                await search.client.close()
 
         # Transform results
         state_abbreviations = await self._get_state_abbreviations()
