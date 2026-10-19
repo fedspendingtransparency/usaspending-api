@@ -165,6 +165,40 @@ class TestFilterSearchAssistant:
         assert assistant.client.converse.call_count == 1
         assert mock_message_create.call_count == 2  # User message + assistant message
 
+    @patch("usaspending_api.llm.models.db_models.Message.objects.acreate", new_callable=AsyncMock)
+    async def test_assistant_message_text_is_persisted(self, mock_message_create, assistant):
+        """Regression test: the assistant's response text must be saved to Message.message.
+
+        Previously `_create_message_from_response` passed the whole `{role, content}` message
+        dict into `_extract_text_from_content` instead of its `content` list. Iterating a dict
+        yields its string keys ("role", "content"), none of which contain a "text" key, so the
+        extracted text was silently always "".
+        """
+
+        def create_message(**kwargs):
+            mock_message = Mock()
+            mock_message.input_tokens = kwargs.get("input_tokens", 10)
+            mock_message.output_tokens = kwargs.get("output_tokens", 20)
+            mock_message.id = len(assistant.session._test_messages) + 1
+            mock_message.tool_uses = Mock()
+            mock_message.tool_uses.count.return_value = 0
+            assistant.session._test_messages.append(mock_message)
+            return mock_message
+
+        mock_message_create.side_effect = create_message
+
+        assistant.client.converse.return_value = {
+            "output": {"message": {"role": "assistant", "content": [{"text": "Here's your answer"}]}},
+            "usage": {"inputTokens": 10, "outputTokens": 20},
+            "metrics": {"latencyMs": 100},
+            "stopReason": "end_turn",
+        }
+
+        _ = [event async for event in assistant.search("test query")]
+
+        assistant_message_call = mock_message_create.call_args_list[1]
+        assert assistant_message_call.kwargs["message"] == "Here's your answer"
+
     @patch("usaspending_api.llm.models.db_models.ToolUse.objects.acreate", new_callable=AsyncMock)
     @patch("usaspending_api.llm.models.db_models.Message.objects.acreate", new_callable=AsyncMock)
     async def test_search_with_tool_use(self, mock_message_create, mock_tool_use_create, assistant):
