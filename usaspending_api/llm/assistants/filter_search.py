@@ -97,7 +97,7 @@ class FilterSearchAssistant:
         output_message = response["output"]["message"]
 
         # Safely extract text content.
-        message_text = self._extract_text_from_content(output_message)
+        message_text = self._extract_text_from_content(output_message["content"])
 
         message = await Message.objects.acreate(
             session=self.session,
