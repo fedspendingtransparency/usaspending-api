@@ -126,7 +126,7 @@ class FilterSearchAssistant:
         if self.tool_iterations >= self.MAX_TOOL_ITERATIONS - 1:
             return {**self._tool_config, "toolChoice": {"tool": {"name": self.COMPLETION_TOOL_NAME}}}
 
-        return {**self._tool_config, "toolChoice": {"auto": {}}}
+        return {**self._tool_config, "toolChoice": {"any": {}}}
 
     @staticmethod
     def _fiscal_year_date_context() -> str:
