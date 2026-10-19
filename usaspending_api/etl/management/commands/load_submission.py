@@ -79,6 +79,17 @@ class Command(load_base.Command):
                 bigger should be faster... right up until you run out of memory.  Balance carefully.
             """,
         )
+        parser.add_argument(
+            "--single-writer",
+            action="store_true",
+            help="""
+            Asserts that no other load_submission process can be running at the same time as this one (e.g. because this
+            is deployed as a Lambda with ReservedConcurrentExecutions=1). Allows update_program_activities to use a
+            cheaper, submission-scoped UPSERT insta of reloading the entire ref_program_activity table.
+            Do NOT set this when running under 'load_multiple_submissions' or any other context where concurrent loaders
+            are possible.
+            """
+        )
         super(Command, self).add_arguments(parser)
 
     def handle_loading(self, db_cursor: CursorWrapper, *args, **options) -> None:
@@ -89,6 +100,7 @@ class Command(load_base.Command):
         self.skip_final_of_fy_calculation = options["skip_final_of_fy_calculation"]
         self.skip_c_to_d_linkage = options["skip_c_to_d_linkage"]
         self.db_cursor = db_cursor
+        self.single_writer = options["single_writer"]
 
         logger.info(f"Starting processing for submission {self.submission_id}...")
 
@@ -97,7 +109,7 @@ class Command(load_base.Command):
         # that is that we load some program activities that are never used due to the submission failing
         # to load and then being deleted from Broker.
         logger.info("Checking for new program activities created...")
-        new_program_activities = update_program_activities(self.submission_id)
+        new_program_activities = update_program_activities(self.submission_id, single_writer=self.single_writer)
         logger.info(f"{new_program_activities:,} new program activities created")
 
         self.load_in_transaction()
