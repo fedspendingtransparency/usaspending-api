@@ -112,7 +112,7 @@ class FilterSearchAssistant:
         self.messages.append(output_message)
         return message
 
-    async def aget_tool_config(self) -> dict[str, list[dict]]:
+    async def aget_tool_config(self) -> dict[str, Any]:
         if self._tool_config is None:
             specs = [tool.description.model_dump() for tool in self.tools]
             for spec in specs:
@@ -122,7 +122,11 @@ class FilterSearchAssistant:
             self._tool_config = {
                 "tools": [{"toolSpec": {"inputSchema": {"json": spec.pop("input_schema")}, **spec}} for spec in specs]
             }
-        return self._tool_config
+
+        if self.tool_iterations >= self.MAX_TOOL_ITERATIONS - 1:
+            return {**self._tool_config, "toolChoice": {"tool": {"name": self.COMPLETION_TOOL_NAME}}}
+
+        return {**self._tool_config, "toolChoice": {"auto": {}}}
 
     @staticmethod
     def _fiscal_year_date_context() -> str:
