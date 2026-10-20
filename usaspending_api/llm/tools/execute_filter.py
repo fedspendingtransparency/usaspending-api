@@ -72,9 +72,7 @@ async def execute_filter(**kwargs) -> FilterResponse:
 
 execute_filter_tool = AITool(
     function=execute_filter,
-    logging=lambda tool_input: (
-        "Selecting filters:\n" + "\n".join([f"    - {_filter}: {_value}" for _filter, _value in tool_input.items()])
-    ),
+    logging=lambda _: "Selecting filters",
     description=AIToolDescription(
         name="execute_filter",
         description="""
