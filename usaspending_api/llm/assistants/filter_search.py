@@ -97,7 +97,7 @@ class FilterSearchAssistant:
         output_message = response["output"]["message"]
 
         # Safely extract text content.
-        message_text = self._extract_text_from_content(output_message)
+        message_text = self._extract_text_from_content(output_message["content"])
 
         message = await Message.objects.acreate(
             session=self.session,
@@ -296,7 +296,7 @@ class FilterSearchAssistant:
                 "search_id": str(self.session.id),
                 "type": "tool_start",
                 "tool_use_id": str(t.id),
-                "message": tool.logging(tool_use["input"]) + "\n",
+                "message": tool.logging(tool_use["input"]),
             }
 
             tool_start_time = time.time()
