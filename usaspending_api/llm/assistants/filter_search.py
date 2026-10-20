@@ -6,7 +6,7 @@ import boto3
 
 from usaspending_api.llm.models.db_models import AIModel, Message, Session, ToolUse
 from usaspending_api.llm.models.py_models import AITool
-from usaspending_api.llm.management.error_message_wrapper import search_error_handler
+from usaspending_api.llm.error_messaging.error_message_wrapper import search_error_handler
 
 logger = logging.getLogger(__name__)
 
