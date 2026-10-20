@@ -382,11 +382,11 @@ class TestFilterSearchAssistant:
         assert "toolSpec" in config["tools"][0]
         assert "inputSchema" in config["tools"][0]["toolSpec"]
 
-    async def test_tool_config_defaults_to_auto_tool_choice(self, assistant):
-        """On a normal turn the model is free to pick which tool (if any) to call."""
+    async def test_tool_config_defaults_to_any_tool_choice(self, assistant):
+        """Force the model to call one of the configured tools."""
         config = await assistant.aget_tool_config()
 
-        assert config["toolChoice"] == {"auto": {}}
+        assert config["toolChoice"] == {"any": {}}
 
     async def test_tool_config_forces_completion_tool_on_final_iteration(self, assistant):
         """On the last tool-use iteration, execute_filter is forced so the search always completes."""
