@@ -1,6 +1,7 @@
 import logging
 from functools import cached_property
 from typing import Any, Generator
+import re
 
 #from usaspending_api.llm.models.db_models import AIModel, Message, Session, ToolUse
 #from usaspending_api.llm.models.py_models import AITool
@@ -14,16 +15,16 @@ def search_error_handler(result, request) -> Callable:
 
 
     #Parse the input string from the error, return the appropriate error message
-    detailed_message = classify_error(result)
+    detailed_message = list(classify_error(result))[0]
 
     #Parse the tool input to extract details from the message
     tool_extract = extract_input(request)
 
-    return (detailed_message + tool_extract)
+    return (detailed_message + str(tool_extract))
     
 
 
-def classify_error(basic_error: str) -> Dict[str, Any]:
+def classify_error(basic_error: str) -> str:
     """This function is used to sort the incoming message and classify the error into one of the expected states. If no state match is found but an error is encountered a default message is displayed - classified as "BaseResponse"."""
 
     # handle blank or empty errors up front
@@ -149,7 +150,7 @@ def classify_error(basic_error: str) -> Dict[str, Any]:
     # Scan through possible error states sequentially 
     for state in classification_match_table:
         for wordmatch in state["keywords"]:
-            if wordmatch in normalized_msg:
+            if wordmatch in normalized_basic_error:
                 return {
                     state["message"]
                 }
@@ -170,13 +171,13 @@ def extract_input(tool_input):
 
 BaseResponse = "We are unable to provide an answer to your question at this time. "
 
-ApiTimeoutErrorMessage = "The API took too long to respond"
-DbConnectionErrorMessage = "Unable to connect to the database"
-UsageLimitErrorMessage = "The user has reached their usage limit for the day"
-InternalConnectionErrorMessage = "Internal connection issue"
-ResourceLimitErrorMessage = "Resource Limit has been reached"
-ResourceUnavailableErrorMessage = "The requested resource is unavailable"
-DnsErrorMessage = "DNS ErrorMessage"
+ApiTimeoutErrorMessage = "The API took too long to respond "
+DbConnectionErrorMessage = "Unable to connect to the database "
+UsageLimitErrorMessage = "The user has reached their usage limit for the day "
+InternalConnectionErrorMessage = "Internal connection issue "
+ResourceLimitErrorMessage = "Resource Limit has been reached "
+ResourceUnavailableErrorMessage = "The requested resource is unavailable "
+DnsErrorMessage = "DNS ErrorMessage "
 
 InvalidAwardIDErrorMessage = "Unable to filter. Invalid award ID format: " 
 InvalidAgencyNameErrorMessage = "Unable to filter. We couldn’t find an agency with the specified name: "
