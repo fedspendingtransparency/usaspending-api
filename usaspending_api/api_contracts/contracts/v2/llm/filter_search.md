@@ -63,6 +63,34 @@ This endpoint accepts a natural language query and returns a streaming response 
             {"search_id": "a3e2c8f1-4b6d-4e9a-9c21-7f8b2d1e5a04", "tool_use_id": "12346", "type": "tool_complete", "message": "Finished applying filters."}
             {"search_id": "a3e2c8f1-4b6d-4e9a-9c21-7f8b2d1e5a04", "type": "search_complete", "message": "Showing results for contracts with an award amount greater than 3 million dollars in California for IT services in Fiscal Year 2023", "result": "16ebdca405791cb0f23d4c7120606fa1"}
 
++ Response 400 (application/json)
+ 
+    The submitted request passed structural validation but was rejected by the configured Amazon Bedrock Guardrail. No search session is created and the submitted content is not processed or stored.
+ 
+    + Attributes (object)
+        + `detail` (required, string)
+            A generic message indicating that the submitted request cannot be processed.
+ 
+    + Body
+ 
+            {
+                "detail": "The submitted request cannot be processed."
+            }
+ 
++ Response 503 (application/json)
+ 
+    The request could not be moderated because the configured Amazon Bedrock Guardrail or its tag configuration was unavailable. The endpoint fails closed, so unmoderated content is not processed or stored.
+ 
+    + Attributes (object)
+        + `detail` (required, string)
+            A generic message indicating that the filter-search service is temporarily unavailable.
+ 
+    + Body
+ 
+            {
+                "detail": "The filter-search service is temporarily unavailable."
+            }
+
 # Data Structures
 
 ## StreamChunk (object)
