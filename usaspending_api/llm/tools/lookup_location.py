@@ -22,7 +22,7 @@ class LocationLookupTool:
         "state": "State",
         "city": "City",
         "county": "County",
-        "zip_code": "Zip code",
+        "zip_code": "ZIP Code",
         "current_cd": "Current congressional district",
         "original_cd": "Original congressional district",
     }
@@ -333,8 +333,27 @@ class LocationLookupTool:
 
         standalone = standalone_map.get(location_type, full_location)
         entity = self.ENTITY_DISPLAY_MAP.get(location_type, "Location")
+        title = self._build_title(data, location_type, standalone)
 
         return LocationDisplay(entity=entity, standalone=standalone,title=full_location)
+
+    @staticmethod
+    def _build_title(data: dict[str, Any], location_type: str, standalone: str) -> str:
+        """
+        Build the title display value that is used in the filter UI.
+
+        Title is just the standalone name for every type except city and county, which
+        append state (or country, for a foreign city) for disambiguation.
+        """
+        state_name = data.get("state_name")
+
+        if location_type == "city":
+            qualifier = state_name or data.get("country_name", "")
+            return f"{standalone}, {qualifier}" if qualifier else standalone
+        if location_type == "county":
+            return f"{standalone}, {state_name}" if state_name else standalone
+
+        return standalone
 
     @staticmethod
     def _get_state_abbr(state_name: str, state_abbreviations: dict[str, str]) -> str:

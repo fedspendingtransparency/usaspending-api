@@ -157,6 +157,24 @@ class TestLocationTypes:
         assert location_obj.filter.city == "CHICAGO"
         assert location_obj.filter.state == "IL"
         assert location_obj.display.entity == "City"
+        assert location_obj.display.title == "CHICAGO, ILLINOIS"
+
+    async def test_foreign_city_lookup(self, location_tool, mock_search):
+        """AC: Foreign city title keeps the country since there's no state to disambiguate it with."""
+        mock_search.handle_execute.return_value.hits = [
+            create_mock_hit(
+                "PARIS, FRANCE",
+                "city",
+                json.dumps({"city_name": "PARIS", "state_name": None, "country_name": "FRANCE"}),
+            )
+        ]
+
+        resultFilter = await location_tool.lookup_location("Paris")
+        result = resultFilter.selectedLocations
+
+        location_obj = next(iter(result["results"].values()))
+        assert location_obj["display"]["standalone"] == "PARIS"
+        assert location_obj["display"]["title"] == "PARIS, FRANCE"
 
     async def test_county_lookup(self, location_tool, mock_search):
         """AC: County name and code lookup."""
@@ -182,11 +200,16 @@ class TestLocationTypes:
         assert location_obj.identifier == "USA_MO_095"
         assert location_obj.filter.county == "095"
         assert location_obj.display.entity == "County"
+        assert location_obj.display.title == "JACKSON, MISSOURI"
 
     async def test_zip_code_lookup(self, location_tool, mock_search):
         """AC: ZIP code lookup."""
         mock_search.handle_execute.return_value.hits = [
-            create_mock_hit("64198", "zip_code", json.dumps({"zip_code": "64198", "country_name": "UNITED STATES"}))
+            create_mock_hit(
+                "64198, MISSOURI",
+                "zip_code",
+                json.dumps({"zip_code": "64198", "state_name": "MISSOURI", "country_name": "UNITED STATES"}),
+            )
         ]
 
         resultFilter = await location_tool.lookup_location("64198")
@@ -195,7 +218,8 @@ class TestLocationTypes:
         location_obj = result["USA_64198"]
         assert location_obj.identifier == "USA_64198"
         assert location_obj.filter.zip == "64198"
-        assert location_obj.display.entity == "Zip code"
+        assert location_obj.display.entity == "ZIP Code"
+        assert location_obj.display.title == "64198"
 
     async def test_congressional_district_current(self, location_tool, mock_search):
         """AC: Congressional district lookup (current)."""
@@ -213,6 +237,7 @@ class TestLocationTypes:
         assert location_obj.identifier == "USA_MO_04"
         assert location_obj.filter.district_current == "04"
         assert location_obj.display.entity == "Current congressional district"
+        assert location_obj.display.title == "MO-04"
 
     async def test_congressional_district_original(self, location_tool, mock_search):
         """AC: Congressional district lookup (original)."""
@@ -229,6 +254,7 @@ class TestLocationTypes:
 
         location_obj = result["USA_NY_12"]
         assert location_obj.filter.district_original == "12"
+        assert location_obj.display.title == "NY-12"
 
     async def test_country_lookup(self, location_tool, mock_search):
         """AC: Country name and code lookup."""
@@ -243,6 +269,7 @@ class TestLocationTypes:
         assert location_obj.identifier == "DEU"
         assert location_obj.filter.country == "DEU"
         assert location_obj.display.entity == "Country"
+        assert location_obj.display.title == "GERMANY"
 
 
 class TestFuzzyMatching:
