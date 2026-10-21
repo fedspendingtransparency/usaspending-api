@@ -13,7 +13,7 @@ from usaspending_api.llm.models.db_models import AIModel
 from usaspending_api.llm.models.py_models import AITool, AIToolDescription
 from usaspending_api.llm.tools.expand_query import expand_query
 from usaspending_api.llm.tools.helpers import hierarchy_parsers
-from usaspending_api.llm.tools.helpers.exceptions import (
+from usaspending_api.llm.tools.exceptions import (
     AssistanceListingNotRecognizedError,
     NaicsCodeNotRecognizedError,
     PscCodeNotRecognizedError,

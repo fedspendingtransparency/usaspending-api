@@ -5,7 +5,7 @@ from asgiref.sync import sync_to_async
 from model_bakery import baker
 
 from usaspending_api.accounts.models.treasury_appropriation_account import TreasuryAppropriationAccount
-from usaspending_api.llm.tools.helpers.exceptions import (
+from usaspending_api.llm.tools.exceptions import (
     AssistanceListingNotRecognizedError,
     NaicsCodeNotRecognizedError,
     PscCodeNotRecognizedError,

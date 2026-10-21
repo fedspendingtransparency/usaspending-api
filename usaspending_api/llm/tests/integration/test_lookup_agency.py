@@ -6,7 +6,7 @@ import pytest
 from asgiref.sync import sync_to_async
 from model_bakery import baker
 
-from usaspending_api.llm.tools.helpers.exceptions import AgencyNotRecognizedError
+from usaspending_api.llm.tools.exceptions import AgencyNotRecognizedError
 from usaspending_api.llm.tools.lookup_agency import AgencyLookupTool, lookup_agency_tool
 from usaspending_api.references.models.agency import Agency
 from usaspending_api.references.models.subtier_agency import SubtierAgency

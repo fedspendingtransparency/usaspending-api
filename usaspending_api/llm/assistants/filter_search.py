@@ -10,7 +10,7 @@ from django.db.models import Sum
 from usaspending_api.common.helpers.aws_helpers import async_aws_client
 from usaspending_api.llm.models.db_models import Assistant, Message, Session, ToolUse
 from usaspending_api.llm.models.py_models import AITool, abuild_defc_description
-from usaspending_api.llm.tools.helpers.exceptions import ToolUseRuntimeError
+from usaspending_api.llm.tools.exceptions import ToolUseRuntimeError
 
 logger = logging.getLogger(__name__)
 
@@ -331,12 +331,12 @@ class FilterSearchAssistant:
                     }
             except Exception as e:
                 execution_time_ms = (time.time() - tool_start_time) * 1000
-                error_result = {"error": str(e)}
+                is_known_error = isinstance(e, ToolUseRuntimeError)
+                error_message = e.user_message if is_known_error else "Tool execution failed."
+                model_detail = e.model_detail if is_known_error else str(e)
+                error_result = {"error": model_detail}
                 t.result = error_result
                 await t.asave()
-
-                is_known_error = isinstance(e, ToolUseRuntimeError)
-                error_message = str(e) if is_known_error else "Tool execution failed."
 
                 log = logger.warning if is_known_error else logger.error
                 log(

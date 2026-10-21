@@ -9,6 +9,7 @@ from usaspending_api.llm.assistants.filter_search import FilterSearchAssistant
 from usaspending_api.llm.models.db_models import AIModel, Assistant, Session
 from usaspending_api.llm.models.py_models import AITool, clear_defc_rows_cache
 from usaspending_api.llm.tools.execute_filter import execute_filter_tool
+from usaspending_api.llm.tools.exceptions import DefcCodeNotRecognizedError
 
 
 @pytest.fixture
@@ -501,3 +502,38 @@ class TestFilterSearchAssistant:
 
         # Should not yield search_complete when there's an error
         assert not any(r.get("type") == "search_complete" for r in results)
+
+    @patch("usaspending_api.llm.models.db_models.ToolUse.objects.acreate", new_callable=AsyncMock)
+    async def test_handle_tool_use_splits_user_and_model_messages(self, mock_tool_use_create, assistant, mock_search_tool):
+        """A ToolUseRuntimeError's user_message goes to the tool_error event shown to the user;
+        model_detail (the richer pydantic guidance) goes to the toolResult content fed back to the
+        model so it can self-correct."""
+        mock_tool_use = Mock()
+        mock_tool_use.id = "tool-use-456"
+        mock_tool_use.asave = AsyncMock()
+        mock_tool_use_create.return_value = mock_tool_use
+
+        mock_search_tool.function.side_effect = DefcCodeNotRecognizedError(
+            "DEFC code not found: BAD.", model_detail="Value error, Invalid DEFC code(s): ['BAD']."
+        )
+
+        tool_requests = [
+            {
+                "toolUse": {
+                    "toolUseId": "tool-456",
+                    "name": "execute_filter",
+                    "input": {"defCodes": {"require": ["BAD"]}},
+                }
+            }
+        ]
+        mock_message = Mock()
+
+        events = [event async for event in assistant.handle_tool_use(tool_requests, mock_message)]
+
+        tool_error_events = [e for e in events if e["type"] == "tool_error"]
+        assert len(tool_error_events) == 1
+        assert tool_error_events[0]["message"] == "DEFC code not found: BAD."
+
+        tool_result_message = assistant.messages[-1]
+        tool_result_content = tool_result_message["content"][0]["toolResult"]["content"][0]["json"]
+        assert tool_result_content["error"] == "Value error, Invalid DEFC code(s): ['BAD']."

@@ -8,7 +8,7 @@ from pgvector.django import CosineDistance
 from usaspending_api.llm.embeddings.embedding_generator import EmbeddingGenerator
 from usaspending_api.llm.models.db_models import AIModel
 from usaspending_api.llm.models.py_models import AITool, AIToolDescription
-from usaspending_api.llm.tools.helpers.exceptions import AgencyNotRecognizedError
+from usaspending_api.llm.tools.exceptions import AgencyNotRecognizedError
 from usaspending_api.references.models.agency import Agency
 from usaspending_api.search.models.mv_agency_autocomplete import AgencyAutocompleteMatview
 

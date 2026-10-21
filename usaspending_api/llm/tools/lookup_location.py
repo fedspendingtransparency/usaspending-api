@@ -6,7 +6,7 @@ from opensearchpy.helpers.query import Q
 
 from usaspending_api.common.elasticsearch.search_wrappers import AsyncLocationSearch
 from usaspending_api.llm.models.py_models import AITool, AIToolDescription
-from usaspending_api.llm.tools.helpers.exceptions import LocationNotRecognizedError
+from usaspending_api.llm.tools.exceptions import LocationNotRecognizedError
 from usaspending_api.references.models import PopCongressionalDistrict, RefCountryCode
 
 logger = logging.getLogger(__name__)
