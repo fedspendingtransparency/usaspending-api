@@ -10,16 +10,11 @@ from model_bakery import baker
 from usaspending_api.etl.transaction_loaders.data_load_helpers import format_insert_or_update_column_sql
 from usaspending_api.references.models import GTASSF133Balances
 
-# With these TAS components the loader's CONCAT builds this rendering label, so a
-# TreasuryAppropriationAccount with the same label is required for the row to survive the join.
+
 MATCHING_TAS_LABEL = "009-010-X-0100-000"
 
 
 def _sf_133_row(**overrides) -> dict:
-    """
-    A single sf_133 fixture row.  The group-key columns default to one group; override line / amount /
-    period (and the TAS components, to land in a different group) per row.
-    """
     row = {
         "fiscal_year": 2024,
         "period": 11,
@@ -40,9 +35,6 @@ def _sf_133_row(**overrides) -> dict:
         "bea_category": "disc",
     }
     row.update(overrides)
-    # sf_133.tas is NOT NULL and part of the table's unique index.  Its model default (concat_tas) is a
-    # Python-side SQLAlchemy default that does NOT fire on a raw INSERT, so set it explicitly to a value
-    # consistent with the component fields (keeps distinct component sets on distinct tas values).
     availability = (
         f"{row['beginning_period_of_availa']}/{row['ending_period_of_availabil']}"
         if row["beginning_period_of_availa"]
@@ -73,11 +65,10 @@ class TestLoadGtas(TestCase):
 
     @classmethod
     def setUpTestData(cls):
-        # References the GTAS foreign keys / join point at.
         baker.make("references.DisasterEmergencyFundCode", code="A")
         baker.make("references.ProgramActivityPark", code="PARK01")
         baker.make("accounts.TreasuryAppropriationAccount", tas_rendering_label=MATCHING_TAS_LABEL)
-        # The three most-recent revealed monthly windows drive which periods --incremental reloads.
+
         for year, month in [(2024, 11), (2024, 10), (2024, 9)]:
             baker.make(
                 "submissions.DABSSubmissionWindowSchedule",
@@ -88,19 +79,19 @@ class TestLoadGtas(TestCase):
             )
 
     def test_full_reload(self):
-        """No arguments -> truncate and reload every period, keeping only rows that match a TAS."""
+        """No arguments mean truncate and reload every period, keeping only rows that match a TAS."""
         _seed_broker_sf_133(
             [
-                _sf_133_row(line=1000, amount=100),  # budget_authority_unobligated_balance_brought_forward_cpe
-                _sf_133_row(line=1910, amount=300),  # total_budgetary_resources_cpe
-                _sf_133_row(line=3020, amount=70),  # gross_outlay_amount_by_tas_cpe (inverted -> -70)
-                _sf_133_row(agency_identifier="999", line=1000, amount=5),  # no matching TAS -> dropped by join
+                _sf_133_row(line=1000, amount=100),
+                _sf_133_row(line=1910, amount=300),
+                _sf_133_row(line=3020, amount=70),
+                _sf_133_row(agency_identifier="999", line=1000, amount=5),
             ]
         )
 
         call_command("load_gtas")
 
-        assert GTASSF133Balances.objects.count() == 1  # three lines collapse to one group; no-TAS group dropped
+        assert GTASSF133Balances.objects.count() == 1
         row = GTASSF133Balances.objects.get()
         assert row.fiscal_year == 2024
         assert row.fiscal_period == 11
@@ -129,7 +120,7 @@ class TestLoadGtas(TestCase):
             [
                 _sf_133_row(period=11, line=1000, amount=100),
                 _sf_133_row(period=9, line=1000, amount=50),
-                _sf_133_row(period=8, line=1000, amount=25),  # outside the 3-window lookback -> not loaded
+                _sf_133_row(period=8, line=1000, amount=25),
             ]
         )
 
