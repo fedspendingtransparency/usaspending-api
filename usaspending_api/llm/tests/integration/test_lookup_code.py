@@ -5,6 +5,12 @@ from asgiref.sync import sync_to_async
 from model_bakery import baker
 
 from usaspending_api.accounts.models.treasury_appropriation_account import TreasuryAppropriationAccount
+from usaspending_api.llm.tools.helpers.exceptions import (
+    AssistanceListingNotRecognizedError,
+    NaicsCodeNotRecognizedError,
+    PscCodeNotRecognizedError,
+    TasNotRecognizedError,
+)
 from usaspending_api.llm.tools.lookup_code import (
     CODE_TYPE_CONFIGS,
     CodeLookupTool,
@@ -253,21 +259,20 @@ class TestHybridSearch:
         self, tool, mock_embedding_generator, mock_expand_query, mock_get_aimodel
     ):
         dims = getattr(NAICS, "embedding_dimensions", 256)
+        await _make_naics("999999", "Matching description", embedding=_unit_vector(dims, 0))
         mock_embedding_generator.agenerate_embedding.return_value = _unit_vector(dims, 0)
 
         await tool.lookup_codes("query text", "naics", query_fanout=None)
 
         mock_expand_query.assert_not_called()
 
-    async def test_embedding_failure_does_not_raise(
+    async def test_embedding_failure_raises_not_recognized(
         self, tool, mock_embedding_generator, mock_expand_query, mock_get_aimodel
     ):
         mock_embedding_generator.agenerate_embedding.side_effect = Exception("API down")
 
-        result = await tool.lookup_codes("query text", "naics")
-
-        assert result["hierarchy"] == {}
-        assert result["total_codes"] == 0
+        with pytest.raises(NaicsCodeNotRecognizedError, match="query text"):
+            await tool.lookup_codes("query text", "naics")
 
     async def test_duplicate_matches_across_fanout_keep_higher_score(
         self, tool, mock_embedding_generator, mock_get_aimodel
@@ -414,13 +419,30 @@ class TestErrorHandling:
         assert "error" in result
         assert result["results"] == []
 
-    async def test_no_matches_anywhere_returns_empty_hierarchy(
+    async def test_no_matches_anywhere_raises_not_recognized(
         self, tool, mock_embedding_generator, mock_expand_query, mock_get_aimodel
     ):
         mock_embedding_generator.agenerate_embedding.return_value = None
 
-        result = await tool.lookup_codes("nothing matches this", "naics")
-        assert result == {"hierarchy": {}, "total_codes": 0}
+        with pytest.raises(NaicsCodeNotRecognizedError, match="nothing matches this"):
+            await tool.lookup_codes("nothing matches this", "naics")
+
+    @pytest.mark.parametrize(
+        "code_type, exception_class",
+        [
+            ("naics", NaicsCodeNotRecognizedError),
+            ("psc", PscCodeNotRecognizedError),
+            ("cfda", AssistanceListingNotRecognizedError),
+            ("tas", TasNotRecognizedError),
+        ],
+    )
+    async def test_no_matches_raises_code_type_specific_error(
+        self, tool, mock_embedding_generator, mock_expand_query, mock_get_aimodel, code_type, exception_class
+    ):
+        mock_embedding_generator.agenerate_embedding.return_value = None
+
+        with pytest.raises(exception_class):
+            await tool.lookup_codes("nothing matches this", code_type)
 
 
 class TestAIToolWiring:

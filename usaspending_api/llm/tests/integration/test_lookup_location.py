@@ -4,6 +4,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 
 from usaspending_api.llm.models.py_models import Filters, SelectedLocation
+from usaspending_api.llm.tools.helpers.exceptions import LocationNotRecognizedError
 from usaspending_api.llm.tools.lookup_location import LocationLookupTool, lookup_location_tool
 
 pytestmark = pytest.mark.django_db(transaction=True)
@@ -396,11 +397,8 @@ class TestErrorHandling:
         """Test handling when no results found."""
         mock_search.handle_execute.return_value.hits = []
 
-        result = await location_tool.lookup_location("NOTAREALPLACE123")
-
-        assert result["count"] == 0
-        assert result["results"] == {}
-        assert "error" not in result
+        with pytest.raises(LocationNotRecognizedError, match="NOTAREALPLACE123"):
+            await location_tool.lookup_location("NOTAREALPLACE123")
 
 
 class TestIntegrationWithFilters:
