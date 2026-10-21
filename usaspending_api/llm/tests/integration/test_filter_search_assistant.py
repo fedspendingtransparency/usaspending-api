@@ -8,8 +8,8 @@ from model_bakery import baker
 from usaspending_api.llm.assistants.filter_search import FilterSearchAssistant
 from usaspending_api.llm.models.db_models import AIModel, Assistant, Session
 from usaspending_api.llm.models.py_models import AITool, clear_defc_rows_cache
-from usaspending_api.llm.tools.execute_filter import execute_filter_tool
 from usaspending_api.llm.tools.exceptions import DefcCodeNotRecognizedError
+from usaspending_api.llm.tools.execute_filter import execute_filter_tool
 
 
 @pytest.fixture
@@ -504,7 +504,9 @@ class TestFilterSearchAssistant:
         assert not any(r.get("type") == "search_complete" for r in results)
 
     @patch("usaspending_api.llm.models.db_models.ToolUse.objects.acreate", new_callable=AsyncMock)
-    async def test_handle_tool_use_splits_user_and_model_messages(self, mock_tool_use_create, assistant, mock_search_tool):
+    async def test_handle_tool_use_splits_user_and_model_messages(
+        self, mock_tool_use_create, assistant, mock_search_tool
+    ):
         """A ToolUseRuntimeError's user_message goes to the tool_error event shown to the user;
         model_detail (the richer pydantic guidance) goes to the toolResult content fed back to the
         model so it can self-correct."""

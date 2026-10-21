@@ -6,12 +6,12 @@ from asgiref.sync import sync_to_async
 from model_bakery import baker
 
 from usaspending_api.llm.models.py_models import ExecuteFilterInput, Filters, aget_defc_rows, clear_defc_rows_cache
-from usaspending_api.llm.tools.execute_filter import execute_filter, execute_filter_tool
 from usaspending_api.llm.tools.exceptions import (
     AwardAmountNotParseableError,
     DefcCodeNotRecognizedError,
     TimePeriodNotParseableError,
 )
+from usaspending_api.llm.tools.execute_filter import execute_filter, execute_filter_tool
 from usaspending_api.references.models import FilterHash
 
 pytestmark = pytest.mark.django_db(transaction=True)

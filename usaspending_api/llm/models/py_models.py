@@ -112,8 +112,8 @@ class TimePeriod(BaseModel):
         """Dates must be parseable in YYYY-MM-DD format."""
         try:
             date.fromisoformat(value)
-        except ValueError:
-            raise ValueError(f"'{value}' is not a valid date; dates must be in YYYY-MM-DD format.")
+        except ValueError as exc:
+            raise ValueError(f"'{value}' is not a valid date; dates must be in YYYY-MM-DD format.") from exc
         return value
 
 
