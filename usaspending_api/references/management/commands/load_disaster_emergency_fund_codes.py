@@ -1,53 +1,86 @@
 import argparse
 import logging
-import re
-from collections import namedtuple
-from datetime import datetime
-from typing import Any, Union
 
+import duckdb
 from django.core.management.base import BaseCommand
-from django.db import transaction
-from psycopg.sql import SQL
 
-from usaspending_api.common.csv_helpers import read_csv_file_as_list_of_dictionaries
-from usaspending_api.common.etl.postgres import ETLTable, ETLTemporaryTable, mixins
-from usaspending_api.common.etl.postgres.operations import (
-    insert_missing_rows,
-    update_changed_rows,
-)
-from usaspending_api.common.helpers.sql_helpers import get_connection
+from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
 from usaspending_api.common.helpers.timing_helpers import ConsoleTimer as Timer
-
-DEF_CODE_PATTERN = re.compile("[a-zA-Z0-9]+")
-
-CREATE_TEMP_TABLE = """
-    drop table if exists temp_load_disaster_emergency_fund_codes;
-
-    create temporary table temp_load_disaster_emergency_fund_codes (
-        row_number int,
-        code text,
-        public_law text,
-        title text,
-        group_name text,
-        urls text,
-        earliest_public_law_enactment_date date
-    );
-"""
 
 logger = logging.getLogger("script")
 
-DisasterEmergencyFundCode = namedtuple(
-    "DisasterEmergencyFundCode",
-    ["row_number", "code", "public_law", "title", "group_name", "urls", "earliest_public_law_enactment_date"],
-)
+VALIDATE_SQL = """
+    WITH numbered AS (
+        SELECT
+            row_number() OVER () AS row_number,
+            trim("DEFC"::VARCHAR) AS code,
+            trim("Public Law"::VARCHAR) AS public_law
+        FROM csv_source
+    ),
+    problems AS (
+        SELECT
+            CASE WHEN NOT regexp_full_match(code, '[a-zA-Z0-9]+')
+                THEN format(
+                    'Invalid DEF Code ''{}'' in row {}. DEF codes must be only one or two alphanumeric characters.',
+                    code,
+                    row_number
+                )
+            END AS code_error,
+            CASE WHEN public_law = '' OR public_law IS NULL
+                THEN format('DEF Code public law is required in row {}.', row_number)
+            END AS law_error
+        FROM numbered
+    ),
+    messages AS (
+        SELECT unnest(list_filter([code_error, law_error], x -> x IS NOT NULL)) AS message
+        FROM problems
+    )
+    SELECT count(*) AS problem_count, string_agg(message, chr(10)) AS messages
+    FROM messages
+"""
+
+MERGE_SQL = """
+    MERGE INTO pg.public.disaster_emergency_fund_code AS target
+    USING csv_source AS source
+    ON target.code = source."DEFC"
+    WHEN MATCHED THEN UPDATE SET
+        public_law = source."Public Law",
+        title = NULLIF(
+            trim(source."Public Law Short Title"),
+            ''
+        ),
+        group_name = NULLIF(
+            trim(source."Group Name"),
+            ''
+        ),
+        urls = NULLIF(
+            trim(source."URLs"),
+            ''
+        ),
+        earliest_public_law_enactment_date = NULLIF(
+            trim(source."Earliest Public Law Enactment Date"::VARCHAR),
+            ''
+        )::DATE,
+        update_date = now()
+    WHEN NOT MATCHED THEN INSERT (
+        code, public_law, title, group_name, urls, earliest_public_law_enactment_date, create_date, update_date
+    ) VALUES (
+        source."DEFC",
+        source."Public Law",
+        NULLIF(trim(source."Public Law Short Title"), ''),
+        NULLIF(trim(source."Group Name"), ''),
+        NULLIF(trim(source."URLs"), ''),
+        NULLIF(trim(source."Earliest Public Law Enactment Date"::VARCHAR), '')::DATE,
+        now(),
+        now()
+    )
+"""
 
 
-class Command(mixins.ETLMixin, BaseCommand):
-    """Used to load DEF Codes either from URI or a local file."""
+class Command(BaseCommand):
+    """Load DEF Code CSV file via DuckDB.  If anything fails, nothing gets saved."""
 
-    help = "Load DEF Code CSV file.  If anything fails, nothing gets saved.  DOES NOT DELETE RECORDS."
-    def_code_file = None
-    etl_logger_function = logger.info
+    help = __doc__
 
     def add_arguments(self, parser: argparse.ArgumentParser) -> None:
         parser.add_argument(
@@ -58,140 +91,32 @@ class Command(mixins.ETLMixin, BaseCommand):
         )
 
     def handle(self, *args, **options) -> None:
-        self.def_code_file = options["def_code_file"]
-        logger.info(f"Attempting to load from file: {self.def_code_file}")
+        def_code_file = options["def_code_file"]
+        logger.info(f"Attempting to load from file: {def_code_file}")
+        con = duckdb.connect()
+        for statement in ("INSTALL httpfs", "LOAD httpfs", "INSTALL postgres", "LOAD postgres"):
+            con.execute(statement)
+        con.execute(f"ATTACH '{get_database_dsn_string()}' AS pg (TYPE postgres)")
+        con.read_csv(def_code_file, all_varchar=True).create_view("csv_source")
+
+        self._validate(con)
 
         with Timer("Load DEF Code"):
             try:
-                with transaction.atomic():
-                    self._perform_load()
-                    t = Timer("Commit transaction")
-                    t.log_starting_message()
-                t.log_success_message()
+                con.execute(MERGE_SQL)
             except Exception:
                 logger.error("ALL CHANGES ROLLED BACK DUE TO EXCEPTION")
                 raise
 
-            try:
-                self._vacuum_tables()
-            except Exception:
-                logger.error("CHANGES WERE SUCCESSFULLY COMMITTED EVEN THOUGH VACUUMS FAILED")
-                raise
-
     @staticmethod
-    def _prep(text: Any) -> Any:
-        """
-        A semi-common problem with CSV files that have been edited by third party tools is the
-        introduction of leading and/or trailing spaces. Strip them.
-        """
-        if text and type(text) is str:
-            return text.strip()
-        return text
+    def _validate(con: duckdb.DuckDBPyConnection) -> None:
+        (total_rows,) = con.sql("SELECT count(*) FROM csv_source").fetchone()
+        if total_rows == 0:
+            raise RuntimeError("DEF Code file appears to be empty")
 
-    @staticmethod
-    def _prep_date(date_string: str) -> Union[datetime, None]:
-        """Convert a string to a datetime object or None if no string was provided.
-        This assumes the date is in the following format: 2023-12-25 (yyyy-mm-dd)
-
-        Args:
-            date_string (str): `Earliest Public Law Enactment Date` value from def_codes.csv file
-
-        Returns:
-            Union[datetime, None]: Return the `Earliest Public Law Enactment Date` converted to a datetime
-                or None
-        """
-        if date_string and type(date_string) is str:
-            return datetime.strptime(date_string, "%Y-%m-%d")
-        else:
-            return None
-
-    def _read_raw_def_code_csv(self) -> int:
-        raw_def_codes = read_csv_file_as_list_of_dictionaries(self.def_code_file)
-        if len(raw_def_codes) < 1:
-            raise RuntimeError(f"File '{self.def_code_file}' appears to be empty")
-        self.def_codes = [
-            DisasterEmergencyFundCode(
-                row_number=row_number,
-                code=self._prep(def_code["DEFC"]),
-                public_law=self._prep(def_code["Public Law"]),
-                title=self._prep(def_code["Public Law Short Title"]) or None,
-                group_name=self._prep(def_code["Group Name"]) or None,
-                urls=self._prep(def_code["URLs"]) or None,
-                earliest_public_law_enactment_date=self._prep_date(def_code["Earliest Public Law Enactment Date"]),
-            )
-            for row_number, def_code in enumerate(raw_def_codes, start=1)
-        ]
-
-        return len(self.def_codes)
-
-    @staticmethod
-    def _validate_raw_def_code(raw_def_codes: DisasterEmergencyFundCode) -> list[str]:
-        messages = []
-
-        if not DEF_CODE_PATTERN.fullmatch(raw_def_codes.code):
-            messages.append(
-                f"Invalid DEF Code '{raw_def_codes.code}' in row "
-                f"{raw_def_codes.row_number:,}. DEF codes must be only one or two alphanumeric characters."
-            )
-
-        if not raw_def_codes.public_law:
-            messages.append(f"DEF Code public law is required in row {raw_def_codes.row_number:,}.")
-
-        return messages
-
-    def _validate_raw_def_codes(self) -> None:
-        messages = []
-
-        for raw_def_code in self.def_codes:
-            messages += self._validate_raw_def_code(raw_def_code)
-
-        if messages:
-            for message in messages:
-                logger.error(message)
+        problem_count, messages = con.sql(VALIDATE_SQL).fetchone()
+        if problem_count:
+            logger.error(messages)
             raise RuntimeError(
-                f"{len(messages):,} problem(s) have been found with the raw DEF Code file.  See log for details."
+                f"{problem_count:,} problem(s) have been found with the raw DEF Code file.  See log for details."
             )
-
-    def _import_def_codes(self) -> int:
-        with get_connection(read_only=False).cursor() as cursor:
-            cursor.executemany(
-                """
-                    insert into temp_load_disaster_emergency_fund_codes (
-                        row_number,
-                        code,
-                        public_law,
-                        title,
-                        group_name,
-                        urls,
-                        earliest_public_law_enactment_date
-                    ) values (%s, %s, %s, %s, %s, %s, %s)
-                """,
-                self.def_codes,
-            )
-            return cursor.rowcount
-
-    def _perform_load(self) -> None:
-        overrides = {
-            "insert_overrides": {"create_date": SQL("now()"), "update_date": SQL("now()")},
-            "update_overrides": {"update_date": SQL("now()")},
-        }
-
-        def_code_table = ETLTable("disaster_emergency_fund_code", **overrides)
-        temp_def_code_table = ETLTemporaryTable("temp_load_disaster_emergency_fund_codes")
-
-        self._execute_dml_sql(CREATE_TEMP_TABLE, "Create disaster_emergency_fund_code temp table")
-        self._execute_function_and_log(self._read_raw_def_code_csv, "Read raw DEF Code csv")
-        self._execute_function(self._validate_raw_def_codes, "Validate raw DEF Codes")
-        self._execute_function_and_log(self._import_def_codes, "Import DEF Codes")
-
-        self._execute_function_and_log(
-            update_changed_rows, "Update changed DEF Codes", temp_def_code_table, def_code_table
-        )
-        self._execute_function_and_log(
-            insert_missing_rows, "Insert missing DEF Codes", temp_def_code_table, def_code_table
-        )
-
-    def _vacuum_tables(self) -> None:
-        self._execute_dml_sql(
-            "vacuum (analyze) disaster_emergency_fund_code", "Vacuum disaster_emergency_fund_code table"
-        )
