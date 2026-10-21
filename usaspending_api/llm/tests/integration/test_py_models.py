@@ -614,9 +614,7 @@ class TestTimePeriod:
     """Tests for the start_date/end_date format validation on the TimePeriod model"""
 
     def test_time_period_accepts_valid_dates(self):
-        filters = Filters(
-            timePeriodType="dr", time_period=[{"start_date": "2023-01-15", "end_date": "2023-12-31"}]
-        )
+        filters = Filters(timePeriodType="dr", time_period=[{"start_date": "2023-01-15", "end_date": "2023-12-31"}])
 
         assert filters.time_period[0].start_date == "2023-01-15"
         assert filters.time_period[0].end_date == "2023-12-31"
