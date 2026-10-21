@@ -382,6 +382,19 @@ class TestFilterSearchAssistant:
         assert "toolSpec" in config["tools"][0]
         assert "inputSchema" in config["tools"][0]["toolSpec"]
 
+    async def test_tool_config_defaults_to_any_tool_choice(self, assistant):
+        """Force the model to call one of the configured tools."""
+        config = await assistant.aget_tool_config()
+
+        assert config["toolChoice"] == {"any": {}}
+
+    async def test_tool_config_forces_completion_tool_on_final_iteration(self, assistant):
+        """On the last tool-use iteration, execute_filter is forced so the search always completes."""
+        assistant.tool_iterations = assistant.MAX_TOOL_ITERATIONS - 1
+        config = await assistant.aget_tool_config()
+
+        assert config["toolChoice"] == {"tool": {"name": assistant.COMPLETION_TOOL_NAME}}
+
     @pytest.mark.django_db
     async def test_tool_config_patches_defcodes_description_from_db(self, mock_assistant, mock_session):
         """tool_config injects a DB-sourced defCodes description into execute_filter's schema.
