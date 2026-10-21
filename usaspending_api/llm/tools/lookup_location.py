@@ -335,7 +335,7 @@ class LocationLookupTool:
         entity = self.ENTITY_DISPLAY_MAP.get(location_type, "Location")
         title = self._build_title(data, location_type, standalone)
 
-        return LocationDisplay(entity=entity, standalone=standalone,title=full_location)
+        return LocationDisplay(entity=entity, standalone=standalone,title=title)
 
     @staticmethod
     def _build_title(data: dict[str, Any], location_type: str, standalone: str) -> str:

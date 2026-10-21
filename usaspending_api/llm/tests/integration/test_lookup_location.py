@@ -172,9 +172,9 @@ class TestLocationTypes:
         resultFilter = await location_tool.lookup_location("Paris")
         result = resultFilter.selectedLocations
 
-        location_obj = next(iter(result["results"].values()))
-        assert location_obj["display"]["standalone"] == "PARIS"
-        assert location_obj["display"]["title"] == "PARIS, FRANCE"
+        location_obj = next(iter(result.values()))
+        assert location_obj.display.standalone == "PARIS"
+        assert location_obj.display.title == "PARIS, FRANCE"
 
     async def test_county_lookup(self, location_tool, mock_search):
         """AC: County name and code lookup."""
