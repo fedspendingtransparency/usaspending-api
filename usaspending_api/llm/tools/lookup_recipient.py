@@ -4,7 +4,7 @@ from typing import Any
 from opensearchpy.helpers.query import Q as ES_Q
 
 from usaspending_api.common.elasticsearch.search_wrappers import AsyncRecipientSearch
-from usaspending_api.llm.models.py_models import AITool, AIToolDescription
+from usaspending_api.llm.models.py_models import AITool, AIToolDescription, Filters
 from usaspending_api.search.v2.es_sanitization import es_sanitize
 
 logger = logging.getLogger(__name__)
@@ -25,7 +25,7 @@ class RecipientLookupTool:
         self,
         query: str,
         top_k: int = 10,
-    ) -> dict[str, list[str]]:
+    ) -> Filters | dict[str, list[str]]:
         """
         Search for recipients by name, uei, duns, and return recipient names.
         """
@@ -56,7 +56,7 @@ class RecipientLookupTool:
                 await search.client.close()
 
         result = self._extract_recipient_names(response, query_upper)
-        recipient_count = len(result.get("recipient_names", []))
+        recipient_count = len(result.selectedRecipients)
 
         # Log zero results as a warning for quality monitoring.
         if recipient_count == 0:
@@ -68,7 +68,6 @@ class RecipientLookupTool:
                     "zero_results": True,
                 },
             )
-            result = {**result, "messages": ["No results returned for recipient lookup."]}
 
         logger.info(
             f"Recipient lookup completed: query='{query}', recipient_names_count={recipient_count}",
@@ -107,7 +106,7 @@ class RecipientLookupTool:
             .sort({"_score": {"order": "desc"}})[:top_k]
         )
 
-    def _extract_recipient_names(self, response: Any, query_upper: str) -> dict[str, list[str]]:
+    def _extract_recipient_names(self, response: Any, query_upper: str) -> Filters:
         recipient_names = []
         seen_values = set()
         for hit in response.hits:
@@ -124,7 +123,7 @@ class RecipientLookupTool:
                 continue
             seen_values.add(recipient_name)
             recipient_names.append(recipient_name)
-        return {"recipient_names": recipient_names}
+        return Filters(selectedRecipients=recipient_names)
 
     @staticmethod
     def _matched_identifier(hit_dict: dict, query_upper: str) -> str | None:
