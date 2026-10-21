@@ -5,7 +5,7 @@ from typing import Any
 from opensearchpy.helpers.query import Q
 
 from usaspending_api.common.elasticsearch.search_wrappers import AsyncLocationSearch
-from usaspending_api.llm.models.py_models import AITool, AIToolDescription
+from usaspending_api.llm.models.py_models import AITool, AIToolDescription, Filters, LocationDisplay, LocationFilter, SelectedLocation
 from usaspending_api.references.models import PopCongressionalDistrict, RefCountryCode
 
 logger = logging.getLogger(__name__)
@@ -60,7 +60,7 @@ class LocationLookupTool:
                     self._country_code_cache[country_name.lower()] = country_code
         return self._country_code_cache
 
-    async def lookup_location(self, query: str, location_type: str | None = None, top_k: int = 15) -> dict[str, Any]:
+    async def lookup_location(self, query: str, location_type: str | None = None, top_k: int = 15) -> Filters | dict[str, Any]:
         """
         Search for locations using fuzzy matching.
 
@@ -123,7 +123,8 @@ class LocationLookupTool:
             extra={"query": query, "results_count": len(results), "location_type": location_type},
         )
 
-        return {"results": results, "count": len(results), "query": query, "location_type": location_type}
+        # return {"results": results, "count": len(results), "query": query, "location_type": location_type}
+        return Filters(selectedLocations=results)
 
     def _validate_inputs(self, query: str, location_type: str | None) -> dict[str, Any] | None:
         """Validate input parameters and return error dict if invalid, None otherwise."""
@@ -167,7 +168,7 @@ class LocationLookupTool:
 
     def _transform_results(
         self, response: Any, state_abbreviations: dict[str, str], country_codes: dict[str, str]
-    ) -> list[dict[str, Any]]:
+    ) -> dict[str, SelectedLocation]:
         """Transform OpenSearch hits to SelectedLocation format."""
         results = {}
         seen_identifiers = set()
@@ -184,7 +185,7 @@ class LocationLookupTool:
                     country_codes=country_codes,
                 )
 
-                identifier = location_obj["identifier"]
+                identifier = location_obj.identifier
 
                 # Skip duplicates (can happen with fuzzy matching)
                 if identifier in seen_identifiers:
@@ -213,7 +214,7 @@ class LocationLookupTool:
         score: float,
         state_abbreviations: dict[str, str],
         country_codes: dict[str, str],
-    ) -> dict[str, Any]:
+    ) -> SelectedLocation:
         """
         Transform OpenSearch result to SelectedLocation format.
 
@@ -229,12 +230,7 @@ class LocationLookupTool:
         filter_obj = self._build_filter(location_data, location_type, state_abbreviations, country_codes)
         display_obj = self._build_display(location_data, location_type, location)
 
-        return {
-            "identifier": identifier,
-            "filter": filter_obj,
-            "display": display_obj,
-            "score": score,
-        }
+        return SelectedLocation(identifier=identifier, filter=filter_obj, display=display_obj)
 
     def _build_identifier(
         self,
@@ -291,37 +287,38 @@ class LocationLookupTool:
         location_type: str,
         state_abbreviations: dict[str, str],
         country_codes: dict[str, str],
-    ) -> dict[str, Any]:
+    ) -> LocationFilter:
         """Build the filter object for the location."""
-        filter_obj = {}
+        filter_obj = LocationFilter()
 
         # Always include country
         country_name = data.get("country_name", "UNITED STATES")
-        filter_obj["country"] = self._get_country_code(country_name, country_codes)
+        filter_obj.country = self._get_country_code(country_name, country_codes)
 
         # Add type-specific fields (only non-None values)
         if data.get("state_name"):
-            filter_obj["state"] = self._get_state_abbr(data["state_name"], state_abbreviations)
+            filter_obj.state = self._get_state_abbr(data["state_name"], state_abbreviations)
 
         if data.get("city_name"):
-            filter_obj["city"] = data["city_name"]
+            filter_obj.city = data["city_name"]
 
         if data.get("county_fips"):
-            filter_obj["county"] = data["county_fips"]
+            filter_obj.county = data["county_fips"]
 
         if data.get("zip_code"):
-            filter_obj["zip"] = data["zip_code"]
+            filter_obj.zip = data["zip_code"]
 
         # Handle congressional districts
         for cd_type, filter_key in [("current_cd", "district_current"), ("original_cd", "district_original")]:
             if data.get(cd_type):
                 cd_parts = data[cd_type].split("-")
                 if len(cd_parts) == 2:
-                    filter_obj[filter_key] = cd_parts[1]
+                    filter_obj.__setattr__(filter_key, cd_parts[1])
+        
 
         return filter_obj
 
-    def _build_display(self, data: dict[str, Any], location_type: str, full_location: str) -> dict[str, str]:
+    def _build_display(self, data: dict[str, Any], location_type: str, full_location: str) -> LocationDisplay:
         """Build the display object for UI."""
         # Determine standalone name
         standalone_map = {
@@ -338,11 +335,7 @@ class LocationLookupTool:
         entity = self.ENTITY_DISPLAY_MAP.get(location_type, "Location")
         title = self._build_title(data, location_type, standalone)
 
-        return {
-            "entity": entity,
-            "standalone": standalone,
-            "title": title,
-        }
+        return LocationDisplay(entity=entity, standalone=standalone,title=title)
 
     @staticmethod
     def _build_title(data: dict[str, Any], location_type: str, standalone: str) -> str:
