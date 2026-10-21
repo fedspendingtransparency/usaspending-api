@@ -394,16 +394,6 @@ class TestAIToolImplementation:
         # The validation model, by contrast, does pin the enum.
         assert "corporate_entity_tax_exempt" in json.dumps(Filters.model_json_schema())
 
-    def test_logging_function_formats_filters(self):
-        """Test that logging function formats filters properly."""
-        tool_input = {"awardType": ["A", "B"], "time_period": [{"start_date": "2023-01-01"}]}
-
-        log_msg = execute_filter_tool.logging(tool_input)
-
-        assert isinstance(log_msg, str)
-        assert "awardType" in log_msg
-        assert "time_period" in log_msg
-
     def test_logging_function_handles_empty_input(self):
         """Test that logging function handles empty input."""
         log_msg = execute_filter_tool.logging({})

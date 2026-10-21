@@ -66,10 +66,12 @@ class LocationDisplay(BaseModel):
         "City",
         "Current congressional district",
         "Original congressional district",
-        "Zip code",
+        "ZIP Code",
     ] = Field(description="The type of geographic entity")
     standalone: str = Field(description="Short location name for filter chips (e.g., 'Texas', 'Chicago', '64198')")
-    title: str = Field(description="Full location name. Cities include state (e.g., 'KANSAS CITY, MISSOURI')")
+    title: str = Field(
+        description="Display name for the location filter UI. Cities include state (e.g., 'KANSAS CITY, MISSOURI')"
+    )
 
 
 class SelectedLocation(BaseModel):
