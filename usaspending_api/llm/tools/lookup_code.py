@@ -5,6 +5,7 @@ from typing import Any, Callable, Literal
 from django.contrib.postgres.search import TrigramSimilarity
 from django.db.models import F, FloatField, Model, QuerySet, Value, Window
 from django.db.models.functions import Greatest, RowNumber
+from django.utils.functional import cached_property
 from pgvector.django import CosineDistance
 
 from usaspending_api.accounts.models.treasury_appropriation_account import TreasuryAppropriationAccount
@@ -86,12 +87,15 @@ class SearchResultNode:
         score: float,
         all_results: dict[str, CodeResult],
         config: CodeTypeConfig,
+        is_root: bool = True,
     ):
         self.code = code
         self.description = description
         self.score = score
         self.children: list[SearchResultNode] = []
         self.config = config
+
+        self._is_root = is_root
 
         # Build children
         self._populate_children(all_results)
@@ -107,6 +111,7 @@ class SearchResultNode:
                     score=child_data.score,
                     all_results=all_results,
                     config=self.config,
+                    is_root=False,
                 )
                 self.children.append(child_node)
 
@@ -124,10 +129,33 @@ class SearchResultNode:
             "code": self.code,
             "description": self.description,
             "score": self.score,
+            "is_root": self.is_root,
+            "is_leaf": self.is_leaf,
             "children": {
                 child.code: child.to_dict() for child in sorted(self.children, key=lambda x: x.score, reverse=True)
             },
         }
+
+    @property
+    def is_leaf(self) -> bool:
+        return len(self.children) == 0
+
+    @property
+    def is_root(self) -> bool:
+        return self._is_root
+
+    @cached_property
+    def leaf_node_count(self) -> int:
+        def _node_count(node: SearchResultNode, counter: int = 0) -> int:
+            if len(node.children) > 0:
+                for child_node in node.children:
+                    counter = _node_count(child_node, counter)
+            else:
+                return counter + 1
+
+            return counter
+
+        return _node_count(self)
 
 
 class CodeLookupTool:
@@ -349,15 +377,13 @@ class CodeLookupTool:
                 score=root_data.score,
                 all_results=all_results,
                 config=config,
+                is_root=True,
             )
-            hierarchy[root_code] = root_node.to_dict()
+            hierarchy[root_code] = {**root_node.to_dict(), "leaf_node_count": root_node.leaf_node_count}
         sorted_hierarchy = dict(
             sorted(hierarchy.items(), key=lambda x: self._get_best_score_in_tree(x[1]), reverse=True)
         )
-        return {
-            "hierarchy": sorted_hierarchy,
-            "total_codes": sum(self._count_codes_in_tree(node) for node in sorted_hierarchy.values()),
-        }
+        return sorted_hierarchy
 
     @staticmethod
     async def _add_tas_ancestors(
@@ -445,9 +471,42 @@ lookup_code_tool = AITool(
                from generated text embeddings. The query may also be automatically expanded into
                related variations to broaden semantic recall.
 
-            Results are returned as a hierarchy: parent/ancestor codes are automatically
-            included and nested above their matching descendants, even if the ancestor itself
-            didn't match the query directly.
+            A hierarchical tree is a data structure that starts with a "root" node and references other
+            nodes in the tier below as "children". There is only one root and all children are capable
+            of having children of their own. Nodes that don't contain any children are considered "leafs".
+            Results are returned as a hierarchical tree where the first value is the root's code which
+            points to details about the root. Then children of the root, and then their children, are
+            found in each step through the tree. Root nodes are automatically included and nested
+            above their matching children, even if the root itself didn't match the query directly.
+
+            Sample Hierarchical Tree:
+            - 33 | Manufacturing (root) | Leaf Count: 4
+                - 3315 | Foundries
+                    - 331511 | Iron Foundries (leaf)
+                    - 331512 | Steel Investment Foundries (leaf)
+                - 3321 | Forging and Stamping
+                    - 332111 | Iron and Steel Forging (leaf)
+                    - 332112 | Nonferrous Forging (leaf)
+
+            Building on the sample above, it is possible for two independent queries to return trees with
+            the same root. This leaf count should be combined across all of the identical roots based on
+            the "value". Meaning, in the updated sample below a search for "1131", "3315", and "3321" would
+            yield those three codes and a leaf count of 1 for "11" and 4 for "33".
+
+            Sample Hierarchical Trees with Matching Roots:
+            - 11 | Agriculture, Forestry, Fishing and Hunting (root) | Leaf Count: 1
+                - 1131 | Timber Tract Operations
+                    - 113110 | Timber Tract Operations
+
+            - 33 | Manufacturing (root) | Leaf Count: 2
+                - 3315 | Foundries
+                    - 331511 | Iron Foundries (leaf)
+                    - 331512 | Steel Investment Foundries (leaf)
+
+            - 33 | Manufacturing (root) | Leaf Count: 2
+                - 3321 | Forging and Stamping
+                    - 332111 | Iron and Steel Forging (leaf)
+                    - 332112 | Nonferrous Forging (leaf)
 
             Examples:
             - lookup_codes('541330', 'naics') -> Exact match, returns the specific NAICS code

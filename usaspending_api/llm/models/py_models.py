@@ -1,10 +1,12 @@
 import re
-from typing import Annotated, Any, Callable, Literal
+from typing import Annotated, Any, Callable, ClassVar, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, RootModel, field_validator, model_validator
+from pydantic_core import PydanticCustomError
 
 from usaspending_api.awards.v2.lookups.lookups import all_awards_types_to_category
 from usaspending_api.common.helpers.orm_helpers import award_types_are_valid_groups
+from usaspending_api.llm.tools.helpers.hierarchy_parsers import get_naics_parent, get_psc_parent, get_tas_parent
 from usaspending_api.references.helpers import aget_defc_code_details, get_defc_code_details
 
 
@@ -147,6 +149,83 @@ class SelectedAgency(BaseModel):
         return self
 
 
+class CodeDisplay(BaseModel):
+    """Model containing details for how a collection of codes are displayed"""
+
+    _get_parent: ClassVar[Callable[[str], str | None]]
+
+    count: Annotated[
+        int,
+        Field(
+            description="The number of leaf nodes under the root node represented by codes in 'require'",
+            json_schema_extra={"examples": 279},
+        ),
+    ]
+    label: Annotated[
+        str,
+        Field(
+            description="The name or description on the root node represented by codes in 'require'",
+            json_schema_extra={"examples": "Manufacturing"},
+        ),
+    ]
+    value: Annotated[
+        str,
+        Field(
+            description="The code on the root node represented by codes in 'require'",
+            json_schema_extra={"examples": "33"},
+        ),
+    ]
+
+    @model_validator(mode="after")
+    def validate_code_and_label_are_different(self) -> "CodeDisplay":
+        if self.value == self.label:
+            raise PydanticCustomError(
+                "incorrect_label",
+                "The label cannot be the same as the value. It must be the description of the code",
+            )
+        return self
+
+    @field_validator("value", mode="after")
+    @classmethod
+    def validate_is_root_code(cls, value: str) -> str:
+        if cls._get_parent(value):
+            raise PydanticCustomError(
+                "root_code_required",
+                "The code in 'value' must be a root node in its hierarchical tree",
+            )
+        return value
+
+    @field_validator("count", mode="after")
+    @classmethod
+    def validate_non_zero_count(cls, value: int) -> int:
+        if value == 0:
+            raise PydanticCustomError("non_zero_count_required", "'count' must be greater than 0")
+        return value
+
+
+class NaicsCodeDisplay(CodeDisplay):
+    _get_parent = staticmethod(get_naics_parent)
+
+
+class PscCodeDisplay(CodeDisplay):
+    _get_parent = staticmethod(get_psc_parent)
+
+
+class TasCodeDisplay(CodeDisplay):
+    _get_parent = staticmethod(get_tas_parent)
+
+
+def _counts_field(code_display_type: type[CodeDisplay]) -> Annotated:
+    """Build the 'counts' field annotation, parameterized by the CodeDisplay subtype each CodeLists uses."""
+    return Annotated[
+        list[code_display_type],
+        Field(
+            description="List of details about the root nodes represented by the codes in 'require'.",
+            json_schema_extra={"examples": [{"count": 279, "label": "Manufacturing", "value": "33"}]},
+        ),
+    ]
+
+
 class CodeLists(BaseModel):
     """Base Model for code lists
     e.g. naics codes, psc codes, and tas codes
@@ -166,7 +245,70 @@ class CodeLists(BaseModel):
             default_factory=list, description="List of codes to exclude", json_schema_extra={"examples": [["336413"]]}
         ),
     ]
-    counts: list = Field(default_factory=list)
+    counts: _counts_field(CodeDisplay)
+
+    @model_validator(mode="before")
+    @classmethod
+    def require_counts_when_other_values_present(cls, data: Any) -> Any:
+        """Handle setting a default inside the validator as this is a conditionally required field"""
+        if isinstance(data, dict):
+            data["counts"] = data.get("counts", [])
+
+            if not data.get("counts") and data.get("require"):
+                msg = (
+                    "There must be a unique entry in 'counts' that contains the code, name, and count of the leaf "
+                    "nodes for each root node from the trees represented by the codes in 'require'. If two or more "
+                    "codes in 'require' share a root node then the leaf count from each tree should be combined as "
+                    "one total count. Don't change or remove a code from 'require'."
+                )
+                raise (PydanticCustomError("counts_required", msg))
+
+        return data
+
+    @field_validator("counts", mode="after")
+    @classmethod
+    def counts_contains_only_unique_nonzero_root_nodes(cls, code_display_list: list[CodeDisplay]) -> list[CodeDisplay]:
+        unique_code_values = {}
+        for code_display in code_display_list:
+            if code_display.value in unique_code_values:
+                unique_code_values[code_display.value] += 1
+            else:
+                unique_code_values[code_display.value] = 0
+
+        if len(code_display_list) != len(unique_code_values):
+            raise PydanticCustomError(
+                "duplicate_codes_in_counts",
+                "Their counts should be combined under a new entry that represents the root node.",
+                {"duplicate_codes": [code for code in unique_code_values if unique_code_values[code] > 1]},
+            )
+
+        return code_display_list
+
+    @model_validator(mode="after")
+    def codes_in_require_exist_in_counts(self) -> "CodeLists":
+        counts_pattern = "|".join([re.escape(code_display.value) for code_display in self.counts])
+        counts_pattern = f"^(?:{counts_pattern}).*$"
+
+        missing_codes = [code for code in self.require if re.fullmatch(counts_pattern, code) is None]
+        if missing_codes:
+            raise PydanticCustomError(
+                "missing_codes_in_counts",
+                "'counts' must contain a code from each root node represented by the codes in 'require'.",
+                {"missing_codes": missing_codes},
+            )
+        return self
+
+
+class NaicsCodeLists(CodeLists):
+    counts: _counts_field(NaicsCodeDisplay)
+
+
+class PscCodeLists(CodeLists):
+    counts: _counts_field(PscCodeDisplay)
+
+
+class TasCodeLists(CodeLists):
+    counts: _counts_field(TasCodeDisplay)
 
 
 DEFC_GROUPS = ("covid_19", "infrastructure")
@@ -446,15 +588,15 @@ class Filters(BaseModel):
     selectedAwardIDs: list[str] = Field(default_factory=list)
     awardAmounts: AwardAmounts = Field(default_factory=lambda: AwardAmounts({}))
     selectedCFDA: dict[str, Any] = Field(default_factory=dict)
-    naicsCodes: CodeLists = Field(default_factory=CodeLists)
-    pscCodes: CodeLists = Field(default_factory=CodeLists)
+    naicsCodes: NaicsCodeLists = Field(default_factory=NaicsCodeLists)
+    pscCodes: PscCodeLists = Field(default_factory=PscCodeLists)
     defCode: list[str] = []
     defCodes: DEFCodeLists = Field(default_factory=DEFCodeLists)
     pricingType: list[str] = Field(default_factory=list)
     setAside: list[SetAsideCode] = Field(default_factory=list)
     extentCompeted: list[ExtentCompetedCode] = Field(default_factory=list)
     treasuryAccounts: dict[str, Any] = Field(default_factory=dict)
-    tasCodes: CodeLists = Field(default_factory=CodeLists)
+    tasCodes: TasCodeLists = Field(default_factory=TasCodeLists)
     awardDescription: str = ""
     filterNewAwardsOnlySelected: bool = False
     filterNewAwardsOnlyActive: bool = False
@@ -725,8 +867,8 @@ class ExecuteFilterInput(BaseModel):
         default_factory=dict,
         description="CFDA / Assistance Listing filter keyed by program number. Use the lookup_code tool.",
     )
-    naicsCodes: CodeLists = Field(default_factory=CodeLists)
-    pscCodes: CodeLists = Field(default_factory=CodeLists)
+    naicsCodes: NaicsCodeLists = Field(default_factory=NaicsCodeLists)
+    pscCodes: PscCodeLists = Field(default_factory=PscCodeLists)
     defCodes: DEFCodeListsWithoutEnum = Field(
         default_factory=DEFCodeListsWithoutEnum,
         description=(
@@ -793,7 +935,7 @@ class ExecuteFilterInput(BaseModel):
     treasuryAccounts: dict[str, Any] = Field(
         default_factory=dict, description="Treasury Account Symbol (TAS) filter keyed by identifier."
     )
-    tasCodes: CodeLists = Field(default_factory=CodeLists)
+    tasCodes: TasCodeLists = Field(default_factory=TasCodeLists)
     awardDescription: str = Field(
         default="",
         description=(
