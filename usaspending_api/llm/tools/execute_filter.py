@@ -11,10 +11,31 @@ from usaspending_api.llm.models.py_models import (
     FilterResponse,
     Filters,
 )
+from usaspending_api.llm.tools.exceptions import (
+    AwardAmountNotParseableError,
+    DefcCodeNotRecognizedError,
+    TimePeriodNotParseableError,
+)
 from usaspending_api.references.helpers import create_hash
 from usaspending_api.references.models import FilterHash
 
 logger = logging.getLogger(__name__)
+
+_SINGLE_FIELD_ERRORS = {
+    "defCodes": DefcCodeNotRecognizedError,
+    "awardAmounts": AwardAmountNotParseableError,
+    "time_period": TimePeriodNotParseableError,
+}
+
+
+def _build_user_message(field: str, kwargs: dict) -> str:
+    if field == "defCodes":
+        def_codes = kwargs.get("defCodes", {})
+        codes = [*def_codes.get("require", []), *def_codes.get("exclude", [])]
+        return f"DEFC code not found: {', '.join(codes)}."
+    if field == "awardAmounts":
+        return f"Unable to filter awards based on the criteria {kwargs.get('awardAmounts')}."
+    return "Unable to filter based on the specified time period. Try rephrasing the dates you're looking for."
 
 
 def build_filter_request(filter_input: dict) -> dict:
@@ -40,6 +61,9 @@ async def execute_filter(**kwargs) -> dict[str, str]:
     try:
         filter_request = build_filter_request(kwargs)
     except ValidationError as exc:
+        fields = {error["loc"][0] if error["loc"] else None for error in exc.errors()}
+        if len(fields) == 1 and (field := next(iter(fields))) in _SINGLE_FIELD_ERRORS:
+            raise _SINGLE_FIELD_ERRORS[field](_build_user_message(field, kwargs), model_detail=str(exc)) from exc
         return {
             "error": str(exc),
             "message": "The input parameters are invalid. Look at the error message and try again.",

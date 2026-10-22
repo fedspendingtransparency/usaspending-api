@@ -4,6 +4,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 
 from usaspending_api.llm.models.py_models import Filters, SelectedLocation
+from usaspending_api.llm.tools.exceptions import LocationNotRecognizedError
 from usaspending_api.llm.tools.lookup_location import LocationLookupTool, lookup_location_tool
 
 pytestmark = pytest.mark.django_db(transaction=True)
@@ -110,11 +111,13 @@ class TestInputValidation:
         mock_search.handle_execute.return_value.hits = []
 
         # Test minimum
-        await location_tool.lookup_location("test", top_k=-5)
+        with pytest.raises(LocationNotRecognizedError):
+            await location_tool.lookup_location("test", top_k=-5)
         assert mock_search.__getitem__.call_args[0][0].stop == 1
 
         # Test maximum
-        await location_tool.lookup_location("test", top_k=200)
+        with pytest.raises(LocationNotRecognizedError):
+            await location_tool.lookup_location("test", top_k=200)
         assert mock_search.__getitem__.call_args[0][0].stop == 100
 
 
@@ -327,7 +330,8 @@ class TestQueryBehavior:
         """AC: Tool queries OpenSearch index only once."""
         mock_search.handle_execute.return_value.hits = []
 
-        await location_tool.lookup_location("Texas")
+        with pytest.raises(LocationNotRecognizedError):
+            await location_tool.lookup_location("Texas")
 
         # handle_execute should be called exactly once
         assert mock_search.handle_execute.call_count == 1
@@ -336,7 +340,8 @@ class TestQueryBehavior:
         """Test that location_type filter is applied when provided."""
         mock_search.handle_execute.return_value.hits = []
 
-        await location_tool.lookup_location("Test", location_type="state")
+        with pytest.raises(LocationNotRecognizedError):
+            await location_tool.lookup_location("Test", location_type="state")
 
         # Verify filter was called with location_type
         mock_search.filter.assert_called_once_with("term", location_type="state")
@@ -345,7 +350,8 @@ class TestQueryBehavior:
         """Test that no type filter is applied when location_type is None."""
         mock_search.handle_execute.return_value.hits = []
 
-        await location_tool.lookup_location("Test", location_type=None)
+        with pytest.raises(LocationNotRecognizedError):
+            await location_tool.lookup_location("Test", location_type=None)
 
         # Filter should not be called
         mock_search.filter.assert_not_called()
@@ -409,12 +415,8 @@ class TestErrorHandling:
         """Test handling when no results found."""
         mock_search.handle_execute.return_value.hits = []
 
-        resultFilter = await location_tool.lookup_location("NOTAREALPLACE123")
-        result = resultFilter.selectedLocations
-
-        assert len(result) == 0
-        assert result == {}
-        assert "error" not in result
+        with pytest.raises(LocationNotRecognizedError, match="NOTAREALPLACE123"):
+            await location_tool.lookup_location("NOTAREALPLACE123")
 
 
 class TestAIToolImplementation:
@@ -817,7 +819,8 @@ class TestSingleQueryRequirement:
         """AC: Single query should use multiple matching strategies (exact, fuzzy, wildcard)."""
         mock_search.handle_execute.return_value.hits = []
 
-        await location_tool.lookup_location("Texas")
+        with pytest.raises(LocationNotRecognizedError):
+            await location_tool.lookup_location("Texas")
 
         # handle_execute should be called exactly once
         assert mock_search.handle_execute.call_count == 1

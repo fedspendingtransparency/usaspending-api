@@ -610,6 +610,35 @@ class TestRecipientType:
         assert len(filters.recipientType) == len(all_types)
 
 
+class TestTimePeriod:
+    """Tests for the start_date/end_date format validation on the TimePeriod model"""
+
+    def test_time_period_accepts_valid_dates(self):
+        filters = Filters(timePeriodType="dr", time_period=[{"start_date": "2023-01-15", "end_date": "2023-12-31"}])
+
+        assert filters.time_period[0].start_date == "2023-01-15"
+        assert filters.time_period[0].end_date == "2023-12-31"
+
+    def test_time_period_rejects_unparseable_start_date(self):
+        with pytest.raises(ValidationError) as exc_info:
+            Filters(timePeriodType="dr", time_period=[{"start_date": "not-a-date", "end_date": "2023-12-31"}])
+
+        assert "not a valid date" in str(exc_info.value)
+
+    def test_time_period_rejects_unparseable_end_date(self):
+        with pytest.raises(ValidationError) as exc_info:
+            Filters(timePeriodType="dr", time_period=[{"start_date": "2023-01-15", "end_date": "12/31/2023"}])
+
+        assert "not a valid date" in str(exc_info.value)
+
+    def test_time_period_rejects_malformed_but_numeric_date(self):
+        """Dates must be real calendar dates, not just digit-shaped strings."""
+        with pytest.raises(ValidationError) as exc_info:
+            Filters(timePeriodType="dr", time_period=[{"start_date": "2023-13-01", "end_date": "2023-12-31"}])
+
+        assert "not a valid date" in str(exc_info.value)
+
+
 class TestTimePeriodFY:
     """Tests for the timePeriodFY four-digit-year validation on the Filters model"""
 
