@@ -12,6 +12,12 @@ from usaspending_api.accounts.models.treasury_appropriation_account import Treas
 from usaspending_api.llm.embeddings.embedding_generator import EmbeddingGenerator
 from usaspending_api.llm.models.db_models import AIModel
 from usaspending_api.llm.models.py_models import AITool, AIToolDescription
+from usaspending_api.llm.tools.exceptions import (
+    AssistanceListingNotRecognizedError,
+    NaicsCodeNotRecognizedError,
+    PscCodeNotRecognizedError,
+    TasNotRecognizedError,
+)
 from usaspending_api.llm.tools.expand_query import expand_query
 from usaspending_api.llm.tools.helpers import hierarchy_parsers
 from usaspending_api.references.models import ToptierAgency
@@ -20,6 +26,13 @@ from usaspending_api.references.models.naics import NAICS
 from usaspending_api.references.models.psc import PSC
 
 logger = logging.getLogger(__name__)
+
+CODE_NOT_RECOGNIZED_ERRORS = {
+    "naics": (NaicsCodeNotRecognizedError, "NAICS code not found"),
+    "psc": (PscCodeNotRecognizedError, "PSC code not found"),
+    "cfda": (AssistanceListingNotRecognizedError, "Assistance listing code not found"),
+    "tas": (TasNotRecognizedError, "TAS not found"),
+}
 
 
 @dataclass
@@ -185,6 +198,11 @@ class CodeLookupTool:
             results = await self._handle_hybrid_search(
                 query, config, code_type, budget_bureau_names, top_k, query_fanout
             )
+
+        if results["total_codes"] == 0:
+            error_class, label = CODE_NOT_RECOGNIZED_ERRORS[code_type]
+            raise error_class(f"{label}: {query}")
+
         return results
 
     async def _handle_exact_search(

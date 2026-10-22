@@ -8,6 +8,7 @@ from pgvector.django import CosineDistance
 from usaspending_api.llm.embeddings.embedding_generator import EmbeddingGenerator
 from usaspending_api.llm.models.db_models import AIModel
 from usaspending_api.llm.models.py_models import AITool, AIToolDescription
+from usaspending_api.llm.tools.exceptions import AgencyNotRecognizedError
 from usaspending_api.references.models.agency import Agency
 from usaspending_api.search.models.mv_agency_autocomplete import AgencyAutocompleteMatview
 
@@ -42,6 +43,9 @@ class AgencyLookupTool:
             embedding = await EmbeddingGenerator(model=model).agenerate_embedding(normalized)
             hybrid_matches = self._hybrid_search(normalized, embedding)
             entries = [self._agency_row_to_entry(row) async for row in hybrid_matches[:top_k]]
+
+        if not entries:
+            raise AgencyNotRecognizedError(f"Unable to filter. We couldn't find an agency with the name: {query}")
 
         return {f"{entry['id']}_{entry['agencyType']}": entry for entry in entries}
 
