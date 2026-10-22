@@ -10,7 +10,7 @@ from pgvector.django import CosineDistance
 from usaspending_api.accounts.models.treasury_appropriation_account import TreasuryAppropriationAccount
 from usaspending_api.llm.embeddings.embedding_generator import EmbeddingGenerator
 from usaspending_api.llm.models.db_models import AIModel
-from usaspending_api.llm.models.py_models import AITool, AIToolDescription
+from usaspending_api.llm.models.py_models import AITool, AIToolDescription, CodeLists, Filters
 from usaspending_api.llm.tools.expand_query import expand_query
 from usaspending_api.llm.tools.helpers import hierarchy_parsers
 from usaspending_api.references.models import ToptierAgency
@@ -137,6 +137,7 @@ class CodeLookupTool:
         self,
         query: str,
         code_type: Literal["naics", "psc", "cfda", "tas"],
+        inclusion: Literal["require", "exclude"],
         top_k: int = 20,
         query_fanout: int | None = 3,
     ) -> dict[str, Any]:
@@ -148,14 +149,19 @@ class CodeLookupTool:
                 "error": f"Unsupported code type: {code_type}. Supported types: {list(CODE_TYPE_CONFIGS.keys())}",
                 "results": [],
             }
+        elif inclusion not in ["require", "exclude"]:
+            return {
+                "error": f"Unsupported code inclusion mode: {inclusion}. Supported types: [require, exclude]",
+                "results": [],
+            }
 
         config = CODE_TYPE_CONFIGS[code_type]
         budget_bureau_names = {}
 
-        results = await self._handle_exact_search(query, config, code_type, budget_bureau_names, top_k)
+        results = await self._handle_exact_search(query, config, code_type, budget_bureau_names, top_k, inclusion)
         if results is None:
             results = await self._handle_hybrid_search(
-                query, config, code_type, budget_bureau_names, top_k, query_fanout
+                query, config, code_type, budget_bureau_names, top_k, inclusion, query_fanout
             )
         return results
 
@@ -166,6 +172,7 @@ class CodeLookupTool:
         code_type: Literal["naics", "psc", "cfda", "tas"],
         budget_bureau_names: dict[str, str],
         top_k: int,
+        inclusion: Literal["require", "exclude"],
     ) -> dict[str, Any] | None:
         exact_qs, prefix_qs = self._query_exact_and_prefix_matches(config, query)
 
@@ -178,7 +185,7 @@ class CodeLookupTool:
                 prefix_qs, config, code_type, score=0.95, budget_bureau_names=budget_bureau_names
             )
             all_results = prefix_results | exact_results
-            return await self._finalize_results(all_results, config, code_type, budget_bureau_names, top_k)
+            return await self._finalize_results(all_results, config, code_type, budget_bureau_names, top_k, inclusion)
         else:
             return None
 
@@ -189,6 +196,7 @@ class CodeLookupTool:
         code_type: Literal["naics", "psc", "cfda", "tas"],
         budget_bureau_names: dict[str, str],
         top_k: int,
+        inclusion: Literal["require", "exclude"],
         query_fanout: int | None = 3,
     ) -> dict[str, Any]:
         TEXT_WEIGHT: float = 0.5
@@ -255,7 +263,7 @@ class CodeLookupTool:
                             budget_bureau_names[f"{aid}-{main}"] = result.budget_bureau_name
                     all_results[code_value] = entry
 
-        return await self._finalize_results(all_results, config, code_type, budget_bureau_names, top_k)
+        return await self._finalize_results(all_results, config, code_type, budget_bureau_names, top_k, inclusion)
 
     @staticmethod
     def _query_exact_and_prefix_matches(config: CodeTypeConfig, query: str) -> tuple[QuerySet, QuerySet]:
@@ -318,6 +326,7 @@ class CodeLookupTool:
         code_type: str,
         budget_bureau_names: dict,
         top_k: int,
+        inclusion: str,
     ) -> dict[str, Any]:
         top_codes = [
             result.code for result in sorted(all_results.values(), key=lambda x: x.score, reverse=True)[:top_k]
@@ -354,10 +363,20 @@ class CodeLookupTool:
         sorted_hierarchy = dict(
             sorted(hierarchy.items(), key=lambda x: self._get_best_score_in_tree(x[1]), reverse=True)
         )
-        return {
-            "hierarchy": sorted_hierarchy,
-            "total_codes": sum(self._count_codes_in_tree(node) for node in sorted_hierarchy.values()),
-        }
+
+        final_codes = self._flatten_codes(sorted_hierarchy)
+        results = Filters()
+        if code_type == "cfda":
+            cfda_codes = {}
+            for code in final_codes:
+                cfda_codes[code] = {}
+            results.selectedCFDA = cfda_codes
+        else:
+            code_lists = CodeLists()
+            code_lists.__setattr__(inclusion, final_codes)
+            results.__setattr__(f"{code_type}Codes", code_lists)
+
+        return results
 
     @staticmethod
     async def _add_tas_ancestors(
@@ -419,6 +438,14 @@ class CodeLookupTool:
                 count += self._count_codes_in_tree(child)
         return count
 
+    def _flatten_codes(self, hierarchy: dict) -> set[str]:
+        codes = set()
+        for code, node in hierarchy.items():
+            if code not in codes:
+                codes.add(code)
+                codes.update(self._flatten_codes(node.get("children", {})))
+        return codes
+
 
 lookup_code_tool = AITool(
     function=CodeLookupTool().lookup_codes,
@@ -445,9 +472,9 @@ lookup_code_tool = AITool(
                from generated text embeddings. The query may also be automatically expanded into
                related variations to broaden semantic recall.
 
-            Results are returned as a hierarchy: parent/ancestor codes are automatically
-            included and nested above their matching descendants, even if the ancestor itself
-            didn't match the query directly.
+            Results are returned as a list generated from a flattened hierarchy:
+            parent/ancestor codes are automatically included following their matching descendants,
+            even if the ancestor itself didn't match the query directly.
 
             Examples:
             - lookup_codes('541330', 'naics') -> Exact match, returns the specific NAICS code
@@ -473,9 +500,14 @@ lookup_code_tool = AITool(
                     "enum": ["naics", "psc", "cfda", "tas"],
                     "description": "Type of code to search for",
                 },
+                "inclusion": {
+                    "type": "string",
+                    "enum": ["require", "exclude"],
+                    "description": "Indication of whether the generated codes should be required or blocked from filtered results" 
+                },
                 "top_k": {"type": "integer", "description": "Number of results to return (default: 20)", "default": 20},
             },
-            "required": ["query", "code_type"],
+            "required": ["query", "code_type", "inclusion"],
         },
     ),
 )

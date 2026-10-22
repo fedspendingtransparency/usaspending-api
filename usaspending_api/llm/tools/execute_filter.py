@@ -34,7 +34,7 @@ def build_filter_request(filter_input: dict) -> dict:
     return filter_request
 
 
-async def execute_filter(**kwargs) -> FilterResponse:
+async def execute_filter(**kwargs) -> dict[str, str]:
     logger.info(f"Starting execute_filter with {len(kwargs)} filter parameter(s)", extra={"filter_count": len(kwargs)})
 
     try:
@@ -67,7 +67,7 @@ async def execute_filter(**kwargs) -> FilterResponse:
             }
 
     logger.info(f"Execute filter completed successfully: hash={hash_key}", extra={"hash": hash_key})
-    return FilterResponse(hash=hash_key)
+    return {"hash": hash_key}
 
 
 execute_filter_tool = AITool(

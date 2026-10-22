@@ -124,12 +124,12 @@ def tool():
     return CodeLookupTool()
 
 
-def _flatten_codes(hierarchy: dict) -> set[str]:
-    codes = set()
-    for code, node in hierarchy.items():
-        codes.add(code)
-        codes.update(_flatten_codes(node.get("children", {})))
-    return codes
+# def _flatten_codes(hierarchy: dict) -> set[str]:
+#     codes = set()
+#     for code, node in hierarchy.items():
+#         codes.add(code)
+#         codes.update(_flatten_codes(node.get("children", {})))
+#     return codes
 
 
 class TestQueryExactAndPrefixMatches:
