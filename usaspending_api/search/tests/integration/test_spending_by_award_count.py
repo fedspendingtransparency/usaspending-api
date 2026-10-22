@@ -328,6 +328,79 @@ def test_spending_by_award_count_new_awards_only(client, monkeypatch, elasticsea
 
 
 @pytest.mark.django_db
+def test_spending_by_award_count_new_awards_only_is_subset_of_default(
+        client, monkeypatch, elasticsearch_award_index, db
+):
+    """new_awards_only must not return awards excluded by the default time filter
+
+    Default award filter: action_date >= start and date_signed <= end
+    new_awards_only should additionally require date_signed >= start (keeping action_date >= start)
+    """
+    baker.make(
+        "search.AwardSearch",
+        award_id=9001,
+        category="contracts",
+        type="A",
+        date_signed="2020-06-15",
+        action_date="2019-01-01",  # before start -> in old new_awards_only, not in default
+        latest_transaction_id=9001,
+        generated_unique_award_id="CONT_AWD_NAO_REGRESSION_1",
+        piid="NAOREG1",
+    )
+    baker.make(
+        "search.AwardSearch",
+        award_id=9002,
+        category="contracts",
+        type="A",
+        date_signed="2020-06-15",
+        action_date="2020-07-01",  # AFTER start -> in both
+        latest_transaction_id=9002,
+        generated_unique_award_id="CONT_AWD_NAO_REGRESSION_2",
+        piid="NAOREG2",
+    )
+    baker.make(
+        "search.TransactionSearch",
+        transaction_id=9001,
+        action_date="2019-01-01",
+        award_id=9001
+    )
+    baker.make(
+        "search.TransactionSearch",
+        transaction_id=9002,
+        action_date="2019-07-01",
+        award_id=9002
+    )
+    setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
+    time_window = {"start_date": "2020-01-01", "end_date": "2020-12-31"}
+    default_response = client.post(
+        get_spending_by_award_count_url(),
+        content_type="application/json",
+        data=json.dumps({
+            "subawards": False,
+            "filters": {
+                "time_period": [time_window]
+            }
+        })
+    )
+    new_awards_only_response = client.post(
+        get_spending_by_award_count_url(),
+        content_type="application/json",
+        data=json.dumps({
+            "subawards": False,
+            "filters": {
+                "time_period": [{**time_window, "date_type": "new_awards_only"}]
+            }
+        })
+    )
+
+    assert default_response.status_code == status.HTTP_200_OK
+    assert new_awards_only_response.status_code == status.HTTP_200_OK
+    assert default_response.data["results"]["contracts"] == 1
+    assert new_awards_only_response.data["results"]["contracts"] == 1
+    assert new_awards_only_response.data["results"]["contracts"] <= default_response.data["results"]["contracts"]
+
+
+@pytest.mark.django_db
 def test_spending_by_award_count_program_activity_subawards(
     client, monkeypatch, elasticsearch_award_index, elasticsearch_subaward_index, award_data_fixture
 ):

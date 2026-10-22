@@ -1,9 +1,11 @@
+import uuid
+
 from django.db import models
 
 
 class AIModel(models.Model):
     name = models.CharField(max_length=100)
-    model_id = models.CharField(max_length=100)
+    model_id = models.CharField(max_length=100, unique=True)
     provider = models.CharField(max_length=100)
 
     def __str__(self):
@@ -29,6 +31,7 @@ class Prompts(models.Model):
 
 
 class Session(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False, serialize=False)
     ai_model = models.ForeignKey(AIModel, on_delete=models.SET_NULL, null=True, related_name="sessions")
     tools = models.JSONField(default=list)
     system_prompt = models.ForeignKey(Prompts, on_delete=models.SET_NULL, null=True, related_name="sessions")
@@ -37,8 +40,8 @@ class Session(models.Model):
     feedback = models.BooleanField(default=None, null=True, blank=True, help_text="positive=True, negative=False")
 
     def __str__(self):
-        model_name = self.ai_model.name if self.ai_model else 'No Model'
-        timestamp = self.started_at.strftime('%Y-%m-%d %H:%M')
+        model_name = self.ai_model.name if self.ai_model else "No Model"
+        timestamp = self.started_at.strftime("%Y-%m-%d %H:%M")
         return f"Session {self.id} - {model_name} ({timestamp})"
 
     class Meta:
@@ -90,4 +93,45 @@ class ToolUse(models.Model):
         indexes = [
             models.Index(fields=["name"]),
             models.Index(fields=["created_at"]),
+        ]
+
+
+class Assistant(models.Model):
+    name = models.TextField()
+    ai_model = models.ForeignKey(AIModel, on_delete=models.PROTECT, related_name="assistants")
+    system_prompt = models.ForeignKey(Prompts, on_delete=models.SET_NULL, null=True, related_name="assistants")
+    inference_config = models.JSONField(
+        default=dict,
+        blank=True,
+        help_text="Inference configuration (e.g., temperature, topP, maxTokens)",
+    )
+    is_active = models.BooleanField(default=False, help_text="Active/Inactive state for the assistant")
+    description = models.TextField(blank=True, default="")
+
+    def __str__(self):
+        model_name = self.ai_model.name if self.ai_model else "No Model Selected"
+        if self.system_prompt:
+            prompt_preview = (
+                # Truncate output if longer than 50 characters.
+                self.system_prompt.text[:50] + "..." if len(self.system_prompt.text) > 50 else self.system_prompt.text
+            )
+        else:
+            prompt_preview = "No Prompt Selected"
+        return (
+            f"Assistant: {self.name} (PK: {self.pk}) | Model: {model_name} | Active: {self.is_active} "
+            f"Prompt Preview: {prompt_preview} | Config: {self.inference_config} | Description: {self.description}"
+        )
+
+    class Meta:
+        db_table = "assistant"
+        ordering = ["-id"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["name", "is_active"],
+                condition=models.Q(is_active=True),
+                name="only_one_active_assistant_per_name",
+            )
+        ]
+        indexes = [
+            models.Index(fields=["name"]),
         ]

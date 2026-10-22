@@ -1,50 +1,36 @@
 import logging
+import time
+import uuid
+from datetime import date
 from functools import cached_property
-from typing import Any, Generator
+from typing import Any, AsyncGenerator, Callable
 
-import boto3
+from django.db.models import Sum
 
-from usaspending_api.llm.models.db_models import AIModel, Message, Session, ToolUse
-from usaspending_api.llm.models.py_models import AITool
+from usaspending_api.common.helpers.aws_helpers import async_aws_client
+from usaspending_api.llm.models.db_models import Assistant, Message, Session, ToolUse
+from usaspending_api.llm.models.py_models import AITool, abuild_defc_description
+from usaspending_api.llm.tools.exceptions import ToolUseRuntimeError
 
 logger = logging.getLogger(__name__)
 
 
 class FilterSearchAssistant:
-
     MAX_TOOL_ITERATIONS = 15
     COMPLETION_TOOL_NAME = "execute_filter"
+    DEFAULT_SYSTEM_MESSAGE = (
+        "You are USAspending search assistant. Help the user select filters to search for federal spending"
+    )
 
-    def __init__(
-        self,
-        model: AIModel,
-        tools: list[AITool],
-        session: Session,
-        system_message: str = (
-            "You are USASpending search assistant. " "Help the user select filters to search for federal spending"
-        ),
-    ) -> None:
-        self.model = model
+    def __init__(self, assistant: Assistant, tools: list[AITool], session: Session) -> None:
+        self.assistant = assistant
         self.tools = tools
         self.tools_by_name = {tool.description.name: tool for tool in tools}
         self.session = session
-        self.system_message = system_message
-
         self.message_order = 0
         self.messages = []
-
         self.tool_iterations = 0
-
-    @cached_property
-    def client(self) -> Any:
-        """
-        Lazy-load the Bedrock client so instantiation is deferred to first access and cached thereafter.
-        This prevents the client from being created and never used (e.g., if __init__ fails).
-
-        Returns:
-            boto3 Bedrock Runtime client.
-        """
-        return boto3.client("bedrock-runtime")
+        self._tool_config: dict[str, list[dict]] | None = None
 
     @staticmethod
     def _extract_text_from_content(content: list[dict]) -> str:
@@ -56,28 +42,65 @@ class FilterSearchAssistant:
         - No text block exists (e.g., tool-only response -> returns empty string);
         - Multiple text blocks exist (-> concatenates them together); and,
         - Text blocks are in any position in the array (not just content[0]) -> (collects/concatenates them).
-
-        Args:
-            content: List of content blocks from Bedrock response.
-
-        Returns:
-            Concatenated text from all text blocks, or an empty string if none are found.
-
-        References:
-            AWS Bedrock ContentBlock documentation:
-            https://docs.aws.amazon.com/bedrock/latest/APIReference/API_runtime_ContentBlock.html
         """
         text_blocks = [block.get("text", "") for block in content if "text" in block]
         return " ".join(text_blocks).strip()
 
-    def _create_message_from_response(self, response: dict) -> Message:
+    @staticmethod
+    def _rekey_empty_string_key(value: Any, derive_key: Callable[[dict], str | None]) -> Any:
+        """Replace an empty-string dict key with one derived from its value.
+
+        Bedrock's Converse API rejects empty-string object keys anywhere in `toolUse.input`,
+        and it validates the full message history on every call -- so once a message with such
+        a key is in `self.messages`, every subsequent `converse()` call fails, permanently
+        blocking the conversation. The model occasionally emits dict fields keyed by "" instead
+        of the documented key format; rebuild the key from the value's own fields when possible.
+        """
+        if not isinstance(value, dict) or "" not in value:
+            return value
+
+        rekeyed = dict(value)
+        entry = rekeyed.pop("")
+        new_key = derive_key(entry) if isinstance(entry, dict) else None
+        rekeyed[new_key or f"unknown_{uuid.uuid4().hex}"] = entry
+        return rekeyed
+
+    @classmethod
+    def _sanitize_tool_use_input(cls, content: list[dict]) -> None:
+        """Fix empty-string dict keys in `toolUse.input` blocks, in place.
+
+        This insures that the selected agency and selected location filters have the correct keys
+        """
+        for block in content:
+            tool_use = block.get("toolUse")
+            tool_input = tool_use.get("input") if tool_use else None
+            if not isinstance(tool_input, dict):
+                continue
+
+            for field in ("selectedAwardingAgencies", "selectedFundingAgencies"):
+                if field in tool_input:
+                    tool_input[field] = cls._rekey_empty_string_key(
+                        tool_input[field],
+                        lambda agency: (
+                            f"{agency.get('id')}_{agency.get('agencyType')}"
+                            if agency.get("id") is not None and agency.get("agencyType")
+                            else None
+                        ),
+                    )
+
+            if "selectedLocations" in tool_input:
+                tool_input["selectedLocations"] = cls._rekey_empty_string_key(
+                    tool_input["selectedLocations"], lambda location: location.get("identifier")
+                )
+
+    async def _create_message_from_response(self, response: dict) -> Message:
         """Create a Message record from Bedrock's response."""
         output_message = response["output"]["message"]
 
         # Safely extract text content.
-        message_text = self._extract_text_from_content(output_message)
+        message_text = self._extract_text_from_content(output_message["content"])
 
-        message = Message.objects.create(
+        message = await Message.objects.acreate(
             session=self.session,
             role=output_message["role"],
             message=message_text,
@@ -90,101 +113,253 @@ class FilterSearchAssistant:
         self.messages.append(output_message)
         return message
 
+    async def aget_tool_config(self) -> dict[str, list[dict]]:
+        if self._tool_config is None:
+            specs = [tool.description.model_dump() for tool in self.tools]
+            for spec in specs:
+                def_codes_property = spec["input_schema"].get("properties", {}).get("defCodes")
+                if def_codes_property is not None:
+                    def_codes_property["description"] = await abuild_defc_description()
+            self._tool_config = {
+                "tools": [{"toolSpec": {"inputSchema": {"json": spec.pop("input_schema")}, **spec}} for spec in specs]
+            }
+        return self._tool_config
+
+    @staticmethod
+    def _fiscal_year_date_context() -> str:
+        """Build the current-date/fiscal-year string appended to the system prompt."""
+        today = date.today()
+        current_fy = today.year + 1 if today.month >= 10 else today.year
+        return (
+            f"\nThe current date is {today.strftime('%m/%d/%Y')}. The current federal fiscal year is "
+            f"{current_fy} (the federal fiscal year runs Oct 1 - Sep 30 and is named for the calendar "
+            f"year it ends in, so Fiscal Year {current_fy} runs 10/01/{current_fy - 1} - 09/30/{current_fy}). "
+            f"Use {current_fy} directly as 'this fiscal year' and {current_fy - 1} as 'last fiscal "
+            f"year' - do not recompute the fiscal year from the date yourself. When populating "
+            f"timePeriodFY, use the bare four-digit year (e.g. '{current_fy}'), never the 'FY' prefix."
+        )
+
     @cached_property
-    def tool_config(self) -> dict[str, list[dict]]:
-        specs = [tool.description.model_dump() for tool in self.tools]
-        return {"tools": [{"toolSpec": {"inputSchema": {"json": spec.pop("input_schema")}, **spec}} for spec in specs]}
+    def system_message(self) -> str:
+        """Return the active Assistant's system prompt or the default prompt."""
+        if self.assistant.system_prompt:
+            return self.assistant.system_prompt.text + self._fiscal_year_date_context()
+        return self.DEFAULT_SYSTEM_MESSAGE
 
-    def search(self, query: str) -> Generator[dict[str, str], None, None]:
+    @cached_property
+    def inference_config(self) -> dict:
+        """
+        Controls LLM response behavior.
 
+        Uses the active Assistant's inference configuration when provided; otherwise falls back to defaults.
+        Defaults are optimized for deterministic responses.
+
+        Returns:
+            Dictionary with inference parameters (temperature, topP, maxTokens, stopSequences).
+        """
+        if self.assistant.inference_config:
+            return {key: value for key, value in self.assistant.inference_config.items() if value is not None}
+
+        # Default configuration for deterministic output.
+        return {
+            "temperature": 0.0,
+            "topP": 1.0,
+            "maxTokens": 5000,
+            "stopSequences": [],
+        }
+
+    async def search(self, query: str) -> AsyncGenerator[dict[str, str], None]:
         yield {"search_id": str(self.session.id), "type": "search_start", "message": "Thinking..."}
 
-        Message.objects.create(session=self.session, role="user", message=query, order=self.message_order)
+        logger.info(
+            f"Starting filter search: session={self.session.id}, query_length={len(query)}",
+            extra={
+                "session_id": str(self.session.id),
+                "model_id": self.assistant.ai_model.model_id,
+                "query_length": len(query),
+            },
+        )
+
+        await Message.objects.acreate(session=self.session, role="user", message=query, order=self.message_order)
         self.message_order += 1
         self.messages.append({"role": "user", "content": [{"text": query}]})
-        response = self.client.converse(
-            modelId=self.model.model_id,
-            messages=self.messages,
-            toolConfig=self.tool_config,
-            system=[{"text": self.system_message}],
-        )
-        m = self._create_message_from_response(response)
-        stop_reason = response["stopReason"]
-        search_complete = False
-        while stop_reason == "tool_use" and not search_complete and self.tool_iterations < self.MAX_TOOL_ITERATIONS:
-            self.tool_iterations += 1
-            tool_requests = [request for request in response["output"]["message"]["content"] if "toolUse" in request]
 
-            for event in self.handle_tool_use(tool_requests, m):
-                yield event
-                if event.get("type") == "search_complete":
-                    search_complete = True
-
-            if search_complete:
-                break
-
-            response = self.client.converse(
-                modelId=self.model.model_id,
+        async with async_aws_client("bedrock-runtime") as client:
+            response = await client.converse(
+                modelId=self.assistant.ai_model.model_id,
                 messages=self.messages,
-                toolConfig=self.tool_config,
+                toolConfig=await self.aget_tool_config(),
                 system=[{"text": self.system_message}],
+                inferenceConfig=self.inference_config,
             )
-            m = self._create_message_from_response(response)
+            self._sanitize_tool_use_input(response["output"]["message"]["content"])
+            m = await self._create_message_from_response(response)
             stop_reason = response["stopReason"]
+            search_complete = False
 
-        # Communicate if tool iteration limit reached.
-        if self.tool_iterations >= self.MAX_TOOL_ITERATIONS and not search_complete:
-            yield {
-                "search_id": str(self.session.id),
-                "type": "search_error",
-                "message": f"Maximum tool iterations ({self.MAX_TOOL_ITERATIONS}) reached without completing search.",
-            }
+            logger.info(
+                f"Initial filter search response received: session={self.session.id}, stop_reason={stop_reason}",
+                extra={
+                    "session_id": str(self.session.id),
+                    "model_id": self.assistant.ai_model.model_id,
+                    "input_tokens": response["usage"]["inputTokens"],
+                    "output_tokens": response["usage"]["outputTokens"],
+                    "latency_ms": response["metrics"]["latencyMs"],
+                    "stop_reason": stop_reason,
+                    "iteration": 0,
+                    "message_id": m.id,
+                    "message_text": m.message,
+                },
+            )
+            while stop_reason == "tool_use" and not search_complete and self.tool_iterations < self.MAX_TOOL_ITERATIONS:
+                self.tool_iterations += 1
+                tool_requests = [
+                    request for request in response["output"]["message"]["content"] if "toolUse" in request
+                ]
+
+                async for event in self.handle_tool_use(tool_requests, m):
+                    yield event
+                    if event.get("type") == "search_complete":
+                        search_complete = True
+
+                if search_complete:
+                    break
+
+                response = await client.converse(
+                    modelId=self.assistant.ai_model.model_id,
+                    messages=self.messages,
+                    toolConfig=await self.aget_tool_config(),
+                    system=[{"text": self.system_message}],
+                    inferenceConfig=self.inference_config,
+                )
+                self._sanitize_tool_use_input(response["output"]["message"]["content"])
+                m = await self._create_message_from_response(response)
+                stop_reason = response["stopReason"]
+
+                logger.info(
+                    f"Filter search response received (iteration {self.tool_iterations}): "
+                    f"session={self.session.id}, stop_reason={stop_reason}",
+                    extra={
+                        "session_id": str(self.session.id),
+                        "model_id": self.assistant.ai_model.model_id,
+                        "input_tokens": response["usage"]["inputTokens"],
+                        "output_tokens": response["usage"]["outputTokens"],
+                        "latency_ms": response["metrics"]["latencyMs"],
+                        "stop_reason": stop_reason,
+                        "iteration": self.tool_iterations,
+                        "message_id": m.id,
+                        "message_text": m.message,
+                    },
+                )
+
+        # Calculate total token usage for this search.
+        totals = await self.session.messages.aaggregate(
+            input_tokens=Sum("input_tokens"), output_tokens=Sum("output_tokens")
+        )
+        total_input_tokens = totals["input_tokens"] or 0
+        total_output_tokens = totals["output_tokens"] or 0
+        total_tokens = total_input_tokens + total_output_tokens
+
+        if not search_complete:
+            raise RuntimeError(f"Filter search session {self.session.id} ended without completing")
 
         # Log each search.
         logger.info(
             f"Search completed for session {self.session.id}",
             extra={
-                "session_id": self.session.id,
+                "session_id": str(self.session.id),
                 "tool_iterations": self.tool_iterations,
                 "search_complete": search_complete,
+                "total_input_tokens": total_input_tokens,
+                "total_output_tokens": total_output_tokens,
+                "total_tokens": total_tokens,
             },
         )
 
-    def handle_tool_use(self, tool_requests: list[dict], message: Message) -> Generator[dict, None, None]:
+    async def handle_tool_use(self, tool_requests: list[dict], message: Message) -> AsyncGenerator[dict, None]:
         tool_result_message = {"role": "user", "content": []}
         for tool_request in tool_requests:
             tool_use = tool_request["toolUse"]
-            t = ToolUse.objects.create(name=tool_use["name"], tool_input=tool_use["input"], message=message, result="")
+            t = await ToolUse.objects.acreate(
+                name=tool_use["name"], tool_input=tool_use["input"], message=message, result=""
+            )
             tool = self.tools_by_name[tool_use["name"]]
 
             yield {
-                "search_id": self.session.id,
+                "search_id": str(self.session.id),
                 "type": "tool_start",
-                "tool_use_id": t.id,
-                "message": tool.logging(tool_use["input"]) + "\n",
+                "tool_use_id": str(t.id),
+                "message": tool.logging(tool_use["input"]),
             }
 
+            tool_start_time = time.time()
             try:
-                result = tool.function(**tool_use["input"])
+                result = await tool.function(**tool_use["input"])
+                execution_time_ms = (time.time() - tool_start_time) * 1000
                 t.result = result
-                t.save()
+                await t.asave()
 
-                yield {"search_id": str(self.session.id), "type": "tool_complete", "tool_use_id": t.id}
+                logger.info(
+                    f"Filter search tool execution successful: tool={tool.description.name}, "
+                    f"execution_time_ms={execution_time_ms:.3f}",
+                    extra={
+                        "tool_name": tool.description.name,
+                        "execution_time_ms": execution_time_ms,
+                        "session_id": str(self.session.id),
+                        "has_error": "error" in result,
+                        "tool_use_id": t.id,
+                        "tool_input": t.tool_input,
+                        "tool_result": t.result,
+                    },
+                )
+
+                yield {
+                    "search_id": str(self.session.id),
+                    "type": "tool_complete",
+                    "tool_use_id": str(t.id),
+                    "message": "Success.",
+                }
                 tool_result = {"toolUseId": tool_use["toolUseId"], "content": [{"json": result}]}
                 tool_result_message["content"].append({"toolResult": tool_result})
+
+                if tool.description.name == self.COMPLETION_TOOL_NAME and "error" not in result:
+                    yield {
+                        "search_id": str(self.session.id),
+                        "type": "search_complete",
+                        "result": result["hash"],
+                        "message": "Search complete.",
+                    }
             except Exception as e:
-                error_result = {"error": str(e)}
+                execution_time_ms = (time.time() - tool_start_time) * 1000
+                is_known_error = isinstance(e, ToolUseRuntimeError)
+                error_message = e.user_message if is_known_error else "Tool execution failed."
+                model_detail = e.model_detail if is_known_error else str(e)
+                error_result = {"error": model_detail}
                 t.result = error_result
-                t.save()
+                await t.asave()
+
+                log = logger.warning if is_known_error else logger.error
+                log(
+                    f"Filter search tool execution failed: tool={tool.description.name}, "
+                    f"execution_time_ms={execution_time_ms:.3f}, error={str(e)}",
+                    extra={
+                        "tool_name": tool.description.name,
+                        "execution_time_ms": execution_time_ms,
+                        "session_id": str(self.session.id),
+                        "error": str(e),
+                        "tool_use_id": t.id,
+                        "tool_input": t.tool_input,
+                        "tool_result": t.result,
+                    },
+                    exc_info=not is_known_error,
+                )
+
                 yield {
                     "search_id": str(self.session.id),
                     "type": "tool_error",
-                    "tool_use_id": t.id,
-                    "message": f"Tool execution failed: {str(e)}",
+                    "tool_use_id": str(t.id),
+                    "message": error_message,
                 }
-
-            tool_result = {"toolUseId": tool_use["toolUseId"], "content": [{"json": result}]}
-            tool_result_message["content"].append({"toolResult": tool_result})
-            if tool.description.name == self.COMPLETION_TOOL_NAME and "error" not in result:
-                yield {"search_id": str(self.session.id), "type": "search_complete", "result": result["hash"]}
+                tool_result = {"toolUseId": tool_use["toolUseId"], "content": [{"json": error_result}]}
+                tool_result_message["content"].append({"toolResult": tool_result})
         self.messages.append(tool_result_message)

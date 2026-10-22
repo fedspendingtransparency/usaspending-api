@@ -30,14 +30,10 @@ In general, follow the form `<prefix>/[dev|gh]-###-short-description`
 
 ## Code Style
 Use of these tools locally creates an excellent chance of passing our automated CI syntax checks.
-* [flake8](https://flake8.pycqa.org/en/latest/)
-    * Will be installed when following the steps in the [readme](README.md)
-    * From repo root dir, run: `flake8`
-    * If using a plugin in an IDE or code editor, ensure the configuration matches the `[flake8]` section in [setup.cfg](setup.cfg)
-* [black](https://black.readthedocs.io/en/stable/)
-    * Will be installed when following the steps in the [readme](README.md)
-    * From repo root dir, run: `black .`
-    * If using a plugin in an IDE or code editor, ensure the Black tool configuration matches the `[tool.black]` section in [pyproject.toml](pyproject.toml)
+* [ruff](https://docs.astral.sh/ruff/)
+    * Installed as part of the dev dependencies
+    * Can be run locally via `uv run ruff check ...` or `uv run ruff format ...`
+    * Optionally, can use the `docker compose --profile ci run --rm usaspending-style-checks` to run all relevant style checks
 
 ### Pre-commit Hooks
 To assist developers it is possible to leverage pre-commit hooks to run several checks before git creates a commit. The Python dependency is included in the requirements files. To get started, run
@@ -115,10 +111,10 @@ This project is in the public domain within the United States, and copyright and
 All contributions to this project will be released under the [CC0 dedication](LICENSE). By submitting a pull request, you are agreeing to comply with this waiver of copyright interest.
 
 ## Additional Resources
-- [USAspending.gov Community](https://usaspending-help.zendesk.com/hc/en-us/community/topics)
+- [USAspending.gov Community](https://onevoicecrm.my.site.com/usaspending/s/)
 - [USAspending Release Notes](https://github.com/fedspendingtransparency/usaspending-website/wiki)
 - [About Federal Spending Transparency](http://fedspendingtransparency.github.io/)
 - [Our Amazing Frontend Repo](https://github.com/fedspendingtransparency/usaspending-website)
-- [Full Dataset as PostgreSQL Dump](https://files.usaspending.gov/database_download/)
+- [Full Dataset as PostgreSQL Dump](https://onevoicecrm.my.site.com/usaspending/s/database-download)
 - [General GitHub Documentation](https://help.github.com/)
 - [GitHub Pull Request Documentation](https://help.github.com/articles/creating-a-pull-request/)

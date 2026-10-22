@@ -1,11 +1,12 @@
+import hashlib
 from typing import Optional
 
 from django.contrib.postgres.aggregates import ArrayAgg
 from django.utils.text import slugify
 
+from usaspending_api.references.models import DisasterEmergencyFundCode, ToptierAgencyPublishedDABSView
 from usaspending_api.references.models.cgac import CGAC
 from usaspending_api.references.models.frec import FREC
-from usaspending_api.references.models import ToptierAgencyPublishedDABSView, DisasterEmergencyFundCode
 
 
 def retrive_agency_name_from_code(code: str) -> Optional[str]:
@@ -22,7 +23,7 @@ def retrive_agency_name_from_code(code: str) -> Optional[str]:
     return None
 
 
-def generate_agency_slugs_for_agency_list(agency_list):
+def generate_agency_slugs_for_agency_list(agency_list: list) -> dict:
     """
     Generates a dictionary of { <toptier_agency_id>: <agency_slug> } if the toptier_agency
     has a valid File C submission. This dictionary can then be used to populate results for an
@@ -51,3 +52,34 @@ def get_def_codes_by_group(group_names: list[str] | None) -> dict[str, list[str]
         )
 
     return {group_name: def_codes for group_name, def_codes in def_codes_by_group}
+
+
+def get_defc_code_details(group_names: list[str]) -> list[dict]:
+    """Return code/title/public_law rows for the given DEFC groups, ordered by group then code."""
+    return list(
+        DisasterEmergencyFundCode.objects.filter(group_name__in=group_names)
+        .values("code", "group_name", "title", "public_law")
+        .order_by("group_name", "code")
+    )
+
+
+async def aget_defc_code_details(group_names: list[str]) -> list[dict]:
+    """Async counterpart to get_defc_code_details(); safe to call from an async context."""
+    return [
+        row
+        async for row in DisasterEmergencyFundCode.objects.filter(group_name__in=group_names)
+        .values("code", "group_name", "title", "public_law")
+        .order_by("group_name", "code")
+    ]
+
+
+def create_hash(payload: bytes) -> str:
+    """
+    Create a MD5 hash
+    """
+    m = hashlib.md5(usedforsecurity=False)
+    m.update(payload)
+    hash_key = m.hexdigest().encode("utf8")
+    if len(str(hash_key)) > 2 and str(hash_key)[:2] == "b'":
+        hash_key = str(hash_key)[2:-1]
+    return hash_key

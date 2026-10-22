@@ -1,17 +1,14 @@
 import logging
-import pandas as pd
-
-from datetime import datetime
-from datetime import timezone
+from datetime import datetime, timezone
 from time import perf_counter
 
+import pandas as pd
+from django.core.management import CommandParser
 from django.core.management.base import BaseCommand
 
-from usaspending_api.common.retrieve_file_from_uri import RetrieveFileFromUri
-from usaspending_api.common.retrieve_file_from_uri import SCHEMA_HELP_TEXT
 from usaspending_api.common.operations_reporter import OpsReporter
+from usaspending_api.common.retrieve_file_from_uri import SCHEMA_HELP_TEXT, RetrieveFileFromUri
 from usaspending_api.references.models import Cfda
-
 
 logger = logging.getLogger("script")
 Reporter = OpsReporter(iso_start_datetime=datetime.now(timezone.utc).isoformat(), job_name="loadcfda.py")
@@ -46,7 +43,7 @@ DATA_CLEANING_MAP = {
     "range_and_average_of_financial_assistance_(123)": "range_and_average_of_financial_assistance",
     "program_accomplishments_(130)": "program_accomplishments",
     "regulations__guidelines__and_literature_(140)": "regulations_guidelines_and_literature",
-    "regional_or__local_office_(151)": "regional_or_local_office",
+    "regional_or_local_office_(151)": "regional_or_local_office",
     "headquarters_office_(152)": "headquarters_office",
     "website_address_(153)": "website_address",
     "related_programs_(160)": "related_programs",
@@ -62,14 +59,13 @@ DATA_CLEANING_MAP = {
 
 
 class Command(BaseCommand):
-
     help = "Load new CFDA data into references_cfda from the provided source CSV file"
 
-    def add_arguments(self, parser):
+    def add_arguments(self, parser: CommandParser) -> None:
         arg_help = "A RFC URL to the CFDA data file. ({})"
         parser.add_argument("cfda-data-uri", type=str, help=arg_help.format(SCHEMA_HELP_TEXT))
 
-    def handle(self, *args, **options):
+    def handle(self, *args, **options) -> None:
         logger.info("Loading data into pandas DataFrames")
         start = perf_counter()
         external_data_df = load_from_url(options["cfda-data-uri"])
@@ -90,12 +86,12 @@ class Command(BaseCommand):
             raise SystemExit(3)
 
 
-def load_from_url(rfc_path_string):
+def load_from_url(rfc_path_string: str) -> pd.DataFrame:
     with RetrieveFileFromUri(rfc_path_string).get_file_object() as data_file_handle:
         return load_cfda_csv_into_pandas(data_file_handle)
 
 
-def load_cfda_csv_into_pandas(data_file_handle):
+def load_cfda_csv_into_pandas(data_file_handle: str) -> pd.DataFrame:
     df = pd.read_csv(data_file_handle, dtype=str, encoding="cp1252", encoding_errors="ignore", na_filter=False)
     df.rename(columns=clean_col_names, inplace=True)
 
@@ -112,13 +108,13 @@ def load_cfda_csv_into_pandas(data_file_handle):
     return df
 
 
-def clean_col_names(field):
+def clean_col_names(field: str) -> str:
     """Define some data-munging functions that can be applied to pandas
     dataframes as necessary"""
     return str(field).lower().strip().replace(" ", "_").replace(",", "_")
 
 
-def load_cfda_table_into_pandas():
+def load_cfda_table_into_pandas() -> pd.DataFrame:
     database_records = list(Cfda.objects.all().values())
     if not database_records:
         return pd.DataFrame()
@@ -129,7 +125,7 @@ def load_cfda_table_into_pandas():
     return df
 
 
-def fully_order_pandas_dataframe(df, sort_column):
+def fully_order_pandas_dataframe(df: pd.DataFrame, sort_column: str) -> pd.DataFrame:
     if df.empty:
         return df
     df.sort_values(sort_column, inplace=True)  # sort the rows using the provided column
@@ -138,7 +134,7 @@ def fully_order_pandas_dataframe(df, sort_column):
     return df
 
 
-def load_cfda(original_df, new_df):
+def load_cfda(original_df: pd.DataFrame, new_df: pd.DataFrame) -> bool:
     if new_df.equals(original_df):
         logger.info("Skipping CFDA load, no new data")
         return False

@@ -95,7 +95,7 @@ class AwardingAgencyViewSet(AbstractAgencyViewSet):
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/search/spending_by_category/awarding_agency.md"
 
     agency_type = AgencyType.AWARDING_TOPTIER
-    category = Category(name="awarding_agency", agg_key="awarding_toptier_agency_agg_key")
+    _category = Category(name="awarding_agency", agg_key="awarding_toptier_agency_agg_key")
 
 
 class AwardingSubagencyViewSet(AbstractAgencyViewSet):
@@ -106,7 +106,7 @@ class AwardingSubagencyViewSet(AbstractAgencyViewSet):
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/search/spending_by_category/awarding_subagency.md"
 
     agency_type = AgencyType.AWARDING_SUBTIER
-    category = Category(name="awarding_subagency", agg_key="awarding_subtier_agency_agg_key")
+    _category = Category(name="awarding_subagency", agg_key="awarding_subtier_agency_agg_key")
 
 
 class FundingAgencyViewSet(AbstractAgencyViewSet):
@@ -117,7 +117,7 @@ class FundingAgencyViewSet(AbstractAgencyViewSet):
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/search/spending_by_category/funding_agency.md"
 
     agency_type = AgencyType.FUNDING_TOPTIER
-    category = Category(name="funding_agency", agg_key="funding_toptier_agency_agg_key")
+    _category = Category(name="funding_agency", agg_key="funding_toptier_agency_agg_key")
 
 
 class FundingSubagencyViewSet(AbstractAgencyViewSet):
@@ -128,4 +128,4 @@ class FundingSubagencyViewSet(AbstractAgencyViewSet):
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/search/spending_by_category/funding_subagency.md"
 
     agency_type = AgencyType.FUNDING_SUBTIER
-    category = Category(name="funding_subagency", agg_key="funding_subtier_agency_agg_key")
+    _category = Category(name="funding_subagency", agg_key="funding_subtier_agency_agg_key")

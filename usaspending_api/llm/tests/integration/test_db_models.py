@@ -1,8 +1,10 @@
+import uuid
+
 import pytest
-from django.db import IntegrityError
+from django.db import IntegrityError, connection, models
 from django.utils import timezone
 
-from usaspending_api.llm.models.db_models import AIModel, Message, Prompts, Session, ToolUse
+from usaspending_api.llm.models.db_models import AIModel, Assistant, Message, Prompts, Session, ToolUse
 
 
 @pytest.mark.django_db
@@ -10,9 +12,7 @@ class TestAIModel:
     def test_create_ai_model(self):
         """Test creating an AIModel instance"""
         ai_model = AIModel.objects.create(
-            name="claude 3.5",
-            model_id="anthropic.claude-3-5-sonnet",
-            provider="anthropic"
+            name="claude 3.5", model_id="anthropic.claude-3-5-sonnet", provider="anthropic"
         )
 
         assert ai_model.id is not None
@@ -20,12 +20,16 @@ class TestAIModel:
         assert ai_model.model_id == "anthropic.claude-3-5-sonnet"
         assert ai_model.provider == "anthropic"
 
+    def test_model_id_is_unique(self):
+        AIModel.objects.create(name="model 1", model_id="duplicate-id", provider="provider1")
+
+        with pytest.raises(IntegrityError):
+            AIModel.objects.create(name="model 2", model_id="duplicate-id", provider="provider2")
+
     def test_ai_model_str_representation(self):
         """Test __str__ method of AIModel"""
         ai_model = AIModel.objects.create(
-            name="claude 3.5",
-            model_id="anthropic.claude-3-5-sonnet",
-            provider="anthropic"
+            name="claude 3.5", model_id="anthropic.claude-3-5-sonnet", provider="anthropic"
         )
 
         assert str(ai_model) == "claude 3.5 - anthropic.claude-3-5-sonnet (anthropic)"
@@ -47,9 +51,7 @@ class TestPrompts:
     def test_create_prompt(self):
         """Test creating a Prompts instance"""
         prompt = Prompts.objects.create(
-            name="test_prompt",
-            description="Test prompt",
-            text="You are a helpful assistant"
+            name="test_prompt", description="Test prompt", text="You are a helpful assistant"
         )
 
         assert prompt.id is not None
@@ -61,9 +63,7 @@ class TestPrompts:
     def test_prompt_str_representation(self):
         """Test __str__ method of Prompts"""
         prompt = Prompts.objects.create(
-            name="test_prompt",
-            description="Test prompt",
-            text="You are a helpful assistant"
+            name="test_prompt", description="Test prompt", text="You are a helpful assistant"
         )
 
         assert str(prompt) == "test_prompt"
@@ -72,9 +72,7 @@ class TestPrompts:
         """Test that created_at is automatically set"""
         before = timezone.now()
         prompt = Prompts.objects.create(
-            name="test_prompt",
-            description="Test prompt",
-            text="You are a helpful assistant"
+            name="test_prompt", description="Test prompt", text="You are a helpful assistant"
         )
         after = timezone.now()
 
@@ -82,18 +80,10 @@ class TestPrompts:
 
     def test_prompt_unique_name(self):
         """Test that prompt names must be unique"""
-        Prompts.objects.create(
-            name="unique_prompt",
-            description="First prompt",
-            text="Text 1"
-        )
+        Prompts.objects.create(name="unique_prompt", description="First prompt", text="Text 1")
 
         with pytest.raises(IntegrityError):
-            Prompts.objects.create(
-                name="unique_prompt",
-                description="Second prompt",
-                text="Text 2"
-            )
+            Prompts.objects.create(name="unique_prompt", description="Second prompt", text="Text 2")
 
 
 @pytest.mark.django_db
@@ -101,29 +91,56 @@ class TestSession:
     def test_create_session(self):
         """Test creating a Session instance"""
         ai_model = AIModel.objects.create(
-            name="claude 3.5",
-            model_id="anthropic.claude-3-5-sonnet",
-            provider="anthropic"
+            name="claude 3.5", model_id="anthropic.claude-3-5-sonnet", provider="anthropic"
         )
         prompt = Prompts.objects.create(
-            name="system_prompt",
-            description="System prompt",
-            text="You are a search assistant"
+            name="system_prompt", description="System prompt", text="You are a search assistant"
         )
 
-        session = Session.objects.create(
-            ai_model=ai_model,
-            system_prompt=prompt,
-            tools=["tool1", "tool2"]
-        )
+        session = Session.objects.create(ai_model=ai_model, system_prompt=prompt, tools=["tool1", "tool2"])
 
         assert session.id is not None
+        assert isinstance(session.id, uuid.UUID)
         assert session.ai_model == ai_model
         assert session.system_prompt == prompt
         assert session.tools == ["tool1", "tool2"]
         assert session.started_at is not None
         assert session.ended_at is None
         assert session.feedback is None
+
+    def test_session_id_is_uuid_field(self):
+        """session.id is a UUID both on the model and on the session table"""
+        id_field = Session._meta.get_field("id")
+        assert isinstance(id_field, models.UUIDField)
+        assert id_field.primary_key is True
+        assert id_field.default is uuid.uuid4
+
+        session = Session.objects.create()
+        assert isinstance(session.id, uuid.UUID)
+
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                SELECT data_type
+                FROM information_schema.columns
+                WHERE table_schema = current_schema()
+                  AND table_name = 'session'
+                  AND column_name = 'id'
+                """
+            )
+            row = cursor.fetchone()
+
+        assert row is not None
+        assert row[0] == "uuid"
+
+    def test_session_id_generates_unique_uuid_on_save(self):
+        """Confirms actual instances get valid, unique UUID values assigned"""
+        session1 = Session.objects.create()
+        session2 = Session.objects.create()
+
+        assert isinstance(session1.id, uuid.UUID)
+        assert isinstance(session2.id, uuid.UUID)
+        assert session1.id != session2.id
 
     def test_session_without_ai_model(self):
         """Test creating a session without an AI model"""
@@ -163,7 +180,7 @@ class TestSession:
     def test_session_str_representation(self):
         """Test __str__ method of Session"""
         session = Session.objects.create()
-        expected_start = session.started_at.strftime('%Y-%m-%d %H:%M')
+        expected_start = session.started_at.strftime("%Y-%m-%d %H:%M")
         expected = f"Session {session.id} - No Model ({expected_start})"
         assert str(session) == expected
 
@@ -180,11 +197,7 @@ class TestSession:
 
     def test_session_cascade_on_ai_model_delete(self):
         """Test that session.ai_model is set to NULL when AIModel is deleted"""
-        ai_model = AIModel.objects.create(
-            name="test model",
-            model_id="test-id",
-            provider="test-provider"
-        )
+        ai_model = AIModel.objects.create(name="test model", model_id="test-id", provider="test-provider")
         session = Session.objects.create(ai_model=ai_model)
 
         ai_model.delete()
@@ -193,11 +206,7 @@ class TestSession:
 
     def test_session_cascade_on_prompt_delete(self):
         """Test that session.system_prompt is set to NULL when Prompts is deleted"""
-        prompt = Prompts.objects.create(
-            name="test_prompt",
-            description="Test",
-            text="Test prompt"
-        )
+        prompt = Prompts.objects.create(name="test_prompt", description="Test", text="Test prompt")
         session = Session.objects.create(system_prompt=prompt)
 
         prompt.delete()
@@ -210,12 +219,7 @@ class TestMessage:
     def test_create_message(self):
         """Test creating a Message instance"""
         session = Session.objects.create()
-        message = Message.objects.create(
-            session=session,
-            role="user",
-            message="Hello, assistant!",
-            order=0
-        )
+        message = Message.objects.create(session=session, role="user", message="Hello, assistant!", order=0)
 
         assert message.id is not None
         assert message.session == session
@@ -237,7 +241,7 @@ class TestMessage:
             order=1,
             input_tokens=100,
             output_tokens=50,
-            latency=250
+            latency=250,
         )
 
         assert message.input_tokens == 100
@@ -247,12 +251,7 @@ class TestMessage:
     def test_message_str_representation(self):
         """Test __str__ method of Message"""
         session = Session.objects.create()
-        message = Message.objects.create(
-            session=session,
-            role="user",
-            message="Test message",
-            order=0
-        )
+        message = Message.objects.create(session=session, role="user", message="Test message", order=0)
 
         assert str(message) == "user (Order 0): Test message"
 
@@ -279,12 +278,7 @@ class TestMessage:
     def test_message_cascade_delete_with_session(self):
         """Test that messages are deleted when session is deleted"""
         session = Session.objects.create()
-        message = Message.objects.create(
-            session=session,
-            role="user",
-            message="Test",
-            order=0
-        )
+        message = Message.objects.create(session=session, role="user", message="Test", order=0)
 
         session.delete()
         assert not Message.objects.filter(id=message.id).exists()
@@ -295,17 +289,9 @@ class TestToolUse:
     def test_create_tool_use(self):
         """Test creating a ToolUse instance"""
         session = Session.objects.create()
-        message = Message.objects.create(
-            session=session,
-            role="assistant",
-            message="Using tool",
-            order=0
-        )
+        message = Message.objects.create(session=session, role="assistant", message="Using tool", order=0)
         tool_use = ToolUse.objects.create(
-            message=message,
-            name="lookup_location",
-            tool_input={"query": "Texas"},
-            result={"identifier": "USA_TX"}
+            message=message, name="lookup_location", tool_input={"query": "Texas"}, result={"identifier": "USA_TX"}
         )
 
         assert tool_use.id is not None
@@ -318,37 +304,19 @@ class TestToolUse:
     def test_tool_use_str_representation(self):
         """Test __str__ method of ToolUse"""
         session = Session.objects.create()
-        message = Message.objects.create(
-            session=session,
-            role="assistant",
-            message="Using tool",
-            order=0
-        )
+        message = Message.objects.create(session=session, role="assistant", message="Using tool", order=0)
         tool_use = ToolUse.objects.create(
-            message=message,
-            name="lookup_location",
-            tool_input={"query": "Texas"},
-            result={"identifier": "USA_TX"}
+            message=message, name="lookup_location", tool_input={"query": "Texas"}, result={"identifier": "USA_TX"}
         )
 
-        expected_time = tool_use.created_at.strftime('%Y-%m-%d %H:%M:%S')
+        expected_time = tool_use.created_at.strftime("%Y-%m-%d %H:%M:%S")
         assert str(tool_use) == f"lookup_location - {expected_time}"
 
     def test_tool_use_cascade_delete_with_message(self):
         """Test that tool uses are deleted when message is deleted"""
         session = Session.objects.create()
-        message = Message.objects.create(
-            session=session,
-            role="assistant",
-            message="Using tool",
-            order=0
-        )
-        tool_use = ToolUse.objects.create(
-            message=message,
-            name="test_tool",
-            tool_input={},
-            result={}
-        )
+        message = Message.objects.create(session=session, role="assistant", message="Using tool", order=0)
+        tool_use = ToolUse.objects.create(message=message, name="test_tool", tool_input={}, result={})
 
         message.delete()
         assert not ToolUse.objects.filter(id=tool_use.id).exists()
@@ -356,24 +324,13 @@ class TestToolUse:
     def test_multiple_tool_uses_per_message(self):
         """Test that a message can have multiple tool uses"""
         session = Session.objects.create()
-        message = Message.objects.create(
-            session=session,
-            role="assistant",
-            message="Using multiple tools",
-            order=0
-        )
+        message = Message.objects.create(session=session, role="assistant", message="Using multiple tools", order=0)
 
         tool1 = ToolUse.objects.create(
-            message=message,
-            name="tool1",
-            tool_input={"param": "value1"},
-            result={"result": "output1"}
+            message=message, name="tool1", tool_input={"param": "value1"}, result={"result": "output1"}
         )
         tool2 = ToolUse.objects.create(
-            message=message,
-            name="tool2",
-            tool_input={"param": "value2"},
-            result={"result": "output2"}
+            message=message, name="tool2", tool_input={"param": "value2"}, result={"result": "output2"}
         )
 
         assert message.tool_uses.count() == 2
@@ -385,16 +342,8 @@ class TestToolUse:
 class TestModelRelationships:
     def test_session_relationships(self):
         """Test Session reverse relationships"""
-        ai_model = AIModel.objects.create(
-            name="test model",
-            model_id="test-id",
-            provider="test-provider"
-        )
-        prompt = Prompts.objects.create(
-            name="test_prompt",
-            description="Test prompt",
-            text="Test"
-        )
+        ai_model = AIModel.objects.create(name="test model", model_id="test-id", provider="test-provider")
+        prompt = Prompts.objects.create(name="test_prompt", description="Test prompt", text="Test")
 
         Session.objects.create(ai_model=ai_model, system_prompt=prompt)
         Session.objects.create(ai_model=ai_model, system_prompt=prompt)
@@ -415,31 +364,18 @@ class TestModelRelationships:
     def test_full_conversation_flow(self):
         """Test a complete conversation flow with all models"""
         # Setup
-        ai_model = AIModel.objects.create(
-            name="claude",
-            model_id="claude-3",
-            provider="anthropic"
-        )
+        ai_model = AIModel.objects.create(name="claude", model_id="claude-3", provider="anthropic")
         prompt = Prompts.objects.create(
-            name="search_assistant",
-            description="Search assistant",
-            text="You are a helpful search assistant"
+            name="search_assistant", description="Search assistant", text="You are a helpful search assistant"
         )
 
         # Create session
         session = Session.objects.create(
-            ai_model=ai_model,
-            system_prompt=prompt,
-            tools=["lookup_location", "advanced_search"]
+            ai_model=ai_model, system_prompt=prompt, tools=["lookup_location", "advanced_search"]
         )
 
         # Create user message
-        Message.objects.create(
-            session=session,
-            role="user",
-            message="Find contracts in Texas",
-            order=0
-        )
+        Message.objects.create(session=session, role="user", message="Find contracts in Texas", order=0)
 
         # Create assistant message with tool use
         assistant_msg = Message.objects.create(
@@ -449,12 +385,89 @@ class TestModelRelationships:
             order=1,
             input_tokens=50,
             output_tokens=30,
-            latency=200
+            latency=200,
         )
 
         ToolUse.objects.create(
             message=assistant_msg,
             name="lookup_location",
             tool_input={"query": "Texas"},
-            result={"identifier": "USA_TX"}
+            result={"identifier": "USA_TX"},
         )
+
+
+@pytest.mark.django_db
+class TestAssistant:
+    def test_create_assistant(self):
+        """Test creating an Assistant instance."""
+        ai_model = AIModel.objects.create(name="test model", model_id="test-id", provider="test-provider")
+        prompt = Prompts.objects.create(name="test_prompt", description="Test", text="You are a helpful assistant")
+
+        assistant = Assistant.objects.create(
+            name="test-assistant",
+            ai_model=ai_model,
+            system_prompt=prompt,
+            inference_config={"temperature": 0.5, "topP": 0.9, "maxTokens": 4096, "stopSequences": []},
+        )
+
+        assert assistant.id is not None
+        assert assistant.name == "test-assistant"
+        assert assistant.ai_model == ai_model
+        assert assistant.system_prompt == prompt
+        assert assistant.inference_config["temperature"] == 0.5
+
+    def test_assistant_requires_ai_model(self):
+        """Test that creating an assistant without an AI model fails."""
+        with pytest.raises(IntegrityError):
+            Assistant.objects.create(name="test-assistant")
+
+    def test_assistant_without_system_prompt(self):
+        """Test creating an assistant without a system prompt."""
+        model = AIModel.objects.create(name="test model", model_id="test-id", provider="test-provider")
+        assistant = Assistant.objects.create(name="test-assistant", ai_model=model)
+        assert assistant.system_prompt is None
+
+    def test_assistant_inference_config_default_value(self):
+        """Test that inference_config defaults to empty dict."""
+        model = AIModel.objects.create(name="test model", model_id="test-id", provider="test-provider")
+        assistant = Assistant.objects.create(name="test-assistant", ai_model=model)
+        assert assistant.inference_config == {}
+
+    def test_assistant_with_inference_config(self):
+        """Test creating an Assistant with custom inference config."""
+        model = AIModel.objects.create(name="test model", model_id="test-id", provider="test-provider")
+        assistant = Assistant.objects.create(
+            name="test-assistant",
+            ai_model=model,
+            inference_config={
+                "temperature": 0.7,
+                "topP": 0.8,
+                "maxTokens": 8192,
+                "stopSequences": ["Human:", "User:"],
+            },
+        )
+
+        assert assistant.inference_config["temperature"] == 0.7
+        assert assistant.inference_config["topP"] == 0.8
+        assert assistant.inference_config["maxTokens"] == 8192
+        assert assistant.inference_config["stopSequences"] == ["Human:", "User:"]
+
+    def test_assistant_update_inference_config(self):
+        """Test updating inference_config on existing assistant."""
+        model = AIModel.objects.create(name="test model", model_id="test-id", provider="test-provider")
+        assistant = Assistant.objects.create(
+            name="test-assistant", ai_model=model, inference_config={"temperature": 0.0, "maxTokens": 1000}
+        )
+
+        assistant.inference_config = {
+            "temperature": 0.9,
+            "topP": 0.95,
+            "maxTokens": 5000,
+            "stopSequences": [],
+        }
+        assistant.save()
+        assistant.refresh_from_db()
+
+        assert assistant.inference_config["temperature"] == 0.9
+        assert assistant.inference_config["topP"] == 0.95
+        assert assistant.inference_config["maxTokens"] == 5000

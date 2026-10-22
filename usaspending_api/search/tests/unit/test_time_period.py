@@ -1,10 +1,10 @@
+from usaspending_api.search.filters.elasticsearch.filter import QueryType
+from usaspending_api.search.filters.time_period.decorators import NewAwardsOnlyTimePeriod
 from usaspending_api.search.filters.time_period.query_types import (
     AwardSearchTimePeriod,
     SubawardSearchTimePeriod,
     TransactionSearchTimePeriod,
 )
-from usaspending_api.search.filters.time_period.decorators import NewAwardsOnlyTimePeriod
-from usaspending_api.search.filters.elasticsearch.filter import QueryType
 
 
 def test_transaction_search_time_period():
@@ -178,7 +178,10 @@ def test_new_awards_only_award_search_time_period():
     search_obj_decorator.filter_value = time_period_filter
     expected_start_date = "2020-10-01"
     expected_end_date = "2021-09-30"
-    expected_gte_date_type_range = [{"date_signed": {"gte": f"{expected_start_date}"}}]
+    expected_gte_date_type_range = [
+        {"date_signed": {"gte": f"{expected_start_date}"}},
+        {"action_date": {"gte": f"{expected_start_date}"}},
+    ]
     expected_lte_date_type_range = [{"date_signed": {"lte": f"{expected_end_date}"}}]
     expected_new_awards_only = True
     assert search_obj_decorator.start_date() == expected_start_date

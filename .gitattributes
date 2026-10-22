@@ -1,0 +1,6 @@
+# Normalize line endings for all text files to avoid CRLF issues on Windows checkouts.
+* text=auto
+
+# Dredd's API Blueprint parser (drafter) rejects CR characters outright, so these
+# must be checked out with LF endings regardless of local core.autocrlf settings.
+usaspending_api/api_contracts/**/*.md text eol=lf

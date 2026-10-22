@@ -336,7 +336,6 @@ def test_spending_over_time_failure(client, monkeypatch, elasticsearch_transacti
 
 @pytest.mark.django_db
 def test_spending_over_time_subawards_success(client, monkeypatch, elasticsearch_subaward_index):
-
     setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
 
     resp = client.post(
@@ -3779,9 +3778,9 @@ def _test_correct_response_for_contract_pricing_type_codes(client):
         },
     ]
     assert resp.status_code == status.HTTP_200_OK
-    assert (
-        resp.json().get("results") == expected_result
-    ), "Contract Pricing Type Codes filter does not match expected result"
+    assert resp.json().get("results") == expected_result, (
+        "Contract Pricing Type Codes filter does not match expected result"
+    )
 
 
 def _test_correct_response_for_set_aside_type_codes(client):
@@ -4271,9 +4270,9 @@ def _test_correct_response_for_set_extent_competed_type_codes(client):
         },
     ]
     assert resp.status_code == status.HTTP_200_OK
-    assert (
-        resp.json().get("results") == expected_result
-    ), "Extent Competed Type Codes filter does not match expected result"
+    assert resp.json().get("results") == expected_result, (
+        "Extent Competed Type Codes filter does not match expected result"
+    )
 
 
 def _test_correct_response_for_recipient_id(client):
@@ -4553,7 +4552,7 @@ def test_failure_with_invalid_group(client, monkeypatch, elasticsearch_transacti
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
     assert (
         resp.json().get("detail")
-        == "Field 'group' is outside valid values ['calendar_year', 'cy', 'quarter', 'q', 'fiscal_year', 'fy', 'month', 'm']"
+        == "Field 'group' is outside valid values ['calendar_year', 'cy', 'quarter', 'q', 'fiscal_year', 'fy', 'month', 'm']"  # noqa E501
     ), "Expected to fail with invalid group"
 
     # Fails with no group
@@ -4659,12 +4658,14 @@ def test_transactions_defc_date_filter(client, monkeypatch, elasticsearch_transa
     baker.make(
         "references.DisasterEmergencyFundCode",
         code="L",
+        public_law="L law",
         group_name="covid_19",
         earliest_public_law_enactment_date="2020-03-06",
     )
     baker.make(
         "references.DisasterEmergencyFundCode",
         code="A",
+        public_law="A law",
         group_name=None,
         earliest_public_law_enactment_date=None,
     )

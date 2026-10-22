@@ -1,0 +1,13 @@
+- model: llm.assistant
+  pk: 1
+  fields:
+    name: filter-search
+    ai_model: 4  # nova micro model
+    system_prompt: 3  # filter-preference-v3 prompt
+    inference_config:
+      temperature: 0.0
+      topP: 1.0
+      maxTokens: 5000
+      stopSequences: []
+    is_active: true
+    description: "Initial assistant created via fixture"

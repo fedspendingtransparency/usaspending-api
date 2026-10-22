@@ -20,8 +20,8 @@ List Autocomplete Glossary
     + Attributes (object)
         + `search_text` (required, string)
             The text snippet that you are trying to autocomplete using a glossary term.
-        + `limit` (optional, number)
-            Maximum number to return
+        + `limit` (optional, number) - Number of results to return (min: 1, max: 500)
+          + Default: `10`
     + Body
 
             {

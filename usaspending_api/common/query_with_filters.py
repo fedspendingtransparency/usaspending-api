@@ -19,15 +19,13 @@ from usaspending_api.search.filters.elasticsearch.filter import QueryType, _Filt
 from usaspending_api.search.filters.elasticsearch.naics import NaicsCodes
 from usaspending_api.search.filters.elasticsearch.psc import PSCCodes
 from usaspending_api.search.filters.elasticsearch.tas import TasCodes, TreasuryAccounts
-from usaspending_api.search.filters.time_period.decorators import (
-     NewAwardsOnlyTimePeriod,
-)
+from usaspending_api.search.filters.time_period.decorators import NewAwardsOnlyTimePeriod
 from usaspending_api.search.filters.time_period.query_types import (
     AwardSearchTimePeriod,
     SubawardSearchTimePeriod,
     TransactionSearchTimePeriod,
 )
-from usaspending_api.search.v2.es_sanitization import es_sanitize
+from usaspending_api.search.v2.es_sanitization import es_minimal_sanitize, es_sanitize, es_sanitize_regex
 
 logger = logging.getLogger(__name__)
 
@@ -195,9 +193,10 @@ class _KeywordSearch(_Filter):
             "sub_ultimate_parent_uei",
         ]
         for filter_value in filter_values:
-            keyword_queries.append(ES_Q("multi_match", query=filter_value, fields=text_fields, type="phrase_prefix"))
+            sanitized_value = es_minimal_sanitize(filter_value)
+            keyword_queries.append(ES_Q("multi_match", query=sanitized_value, fields=text_fields, type="phrase_prefix"))
             keyword_queries.append(
-                ES_Q("query_string", query=filter_value, default_operator="OR", fields=keyword_fields)
+                ES_Q("query_string", query=sanitized_value, default_operator="OR", fields=keyword_fields)
             )
 
         return ES_Q("dis_max", queries=keyword_queries)
@@ -230,7 +229,6 @@ class _TimePeriods(_Filter):
 
     @classmethod
     def generate_elasticsearch_query(cls, filter_values: List[dict], query_type: QueryType, **options) -> ES_Q:
-
         # Temporary until rest of dependencies are updated
         if "time_period_obj" not in options or options.get("time_period_obj") is None:
             return cls._default_elasticsearch_query(filter_values, query_type, **options)
@@ -368,7 +366,6 @@ class _RecipientSearchText(_Filter):
         recipient_search_query = []
 
         for filter_value in filter_values:
-
             is_exact_match = re.match(r'^".*"$', filter_value) is not None
             search_text = filter_value.upper()  # Recipient Search No longer escapes special characters
 
@@ -557,8 +554,13 @@ class _PlaceOfPerformanceLocations(_Filter):
         return ES_Q("bool", should=pop_locations_query, minimum_should_match=1)
 
     @staticmethod
-    def _validate_district(state: str | None, country: str | None, county: str | None,
-            district_current: str | None, district_original: str | None):
+    def _validate_district(
+        state: str | None,
+        country: str | None,
+        county: str | None,
+        district_current: str | None,
+        district_original: str | None,
+    ):
         if (state is None or country != "USA" or county is not None) and (
             district_current is not None or district_original is not None
         ):
@@ -604,10 +606,11 @@ class _AwardIds(_Filter):
                     ES_Q("term", **{es_field: {"query": es_sanitize(filter_value)}}) for es_field in award_id_fields
                 )
             else:
-                filter_value = es_sanitize(filter_value)
+                filter_value = es_sanitize_regex(filter_value)
                 filter_value = " +".join(filter_value.split())
                 award_ids_query.extend(
-                    ES_Q("regexp", **{es_field: {"value": es_sanitize(filter_value)}}) for es_field in award_id_fields
+                    ES_Q("regexp", **{es_field: {"value": es_sanitize_regex(filter_value)}})
+                    for es_field in award_id_fields
                 )
 
         return ES_Q("bool", should=award_ids_query, minimum_should_match=1)
@@ -669,9 +672,7 @@ class _ObjectClasses(_Filter):
         # object_classes (CODES ONLY - not names) is only indexed on the Award index,
         # so it is only available for award queries
         if query_type != QueryType.AWARDS:
-            raise InvalidParameterException(
-                "object_classes query type in only for 'awards'"
-            )
+            raise InvalidParameterException("object_classes query type in only for 'awards'")
 
         object_classes_match_queries = []
 
@@ -773,7 +774,7 @@ class _DisasterEmergencyFundCodes(_Filter):
     @classmethod
     def generate_elasticsearch_query(cls, filter_values: List[str], query_type: QueryType, **options) -> ES_Q:
         nested_path = options.get("nested_path", "")
-        plural_code = 's' if query_type != QueryType.ACCOUNTS else ''
+        plural_code = "s" if query_type != QueryType.ACCOUNTS else ""
         def_code_field = f"{nested_path}{'.' if nested_path else ''}disaster_emergency_fund_code{plural_code}"
 
         # Get all COVID and IIJA disaster codes from the database
@@ -807,8 +808,9 @@ class _DisasterEmergencyFundCodes(_Filter):
         other_filters = list(set(filter_values) - set(all_covid_iija_defc.keys()))
         other_queries = [ES_Q("match", **{def_code_field: filter_value}) for filter_value in other_filters]
 
-        def_codes_query = cls._generate_defc_query_segment(query_type, covid_filters,
-                                                           iija_filters, def_code_field, other_queries)
+        def_codes_query = cls._generate_defc_query_segment(
+            query_type, covid_filters, iija_filters, def_code_field, other_queries
+        )
 
         if len(def_codes_query) != 1:
             final_query = ES_Q("bool", should=def_codes_query, minimum_should_match=1)
@@ -818,8 +820,14 @@ class _DisasterEmergencyFundCodes(_Filter):
         return final_query
 
     @classmethod
-    def _generate_defc_query_segment(cls, query_type: QueryType, covid_filters: dict,
-                                     iija_filters: dict, def_code_field: str, other_queries: list[ES_Q]) -> list[ES_Q]:
+    def _generate_defc_query_segment(
+        cls,
+        query_type: QueryType,
+        covid_filters: dict,
+        iija_filters: dict,
+        def_code_field: str,
+        other_queries: list[ES_Q],
+    ) -> list[ES_Q]:
         def_codes_query = []
 
         # Filter on the `disaster_emergency_fund_code` AND `action_date` values for transactions
@@ -934,7 +942,6 @@ class _AwardUniqueId(_Filter):
 
     @classmethod
     def generate_elasticsearch_query(cls, filter_values: str, query_type: QueryType, **options) -> ES_Q:
-
         fields = {
             QueryType.AWARDS: ["generated_unique_award_id"],
             QueryType.SUBAWARDS: ["unique_award_key"],
@@ -947,7 +954,6 @@ class _AwardUniqueId(_Filter):
 
 
 class QueryWithFilters:
-
     @property
     def filter_lookup(self) -> dict[str, _Filter]:
         result = {

@@ -1,8 +1,10 @@
 from abc import ABC, abstractmethod
-from django.db import connection
 from logging import Logger
 from typing import List
-from django.db import models
+
+from django.db import connection
+from django.db.models import Model
+
 from usaspending_api.references.models import PopCongressionalDistrict, PopCounty
 from usaspending_api.references.models.ref_country_code import RefCountryCode
 
@@ -31,7 +33,7 @@ class Loader(ABC):
         pass
 
     @abstractmethod
-    def load_data(self, data: List[dict], model: models = None) -> None:
+    def load_data(self, data: List[dict], model: Model = None) -> None:
         """Handles the loading of population data.
 
         Args:
@@ -58,24 +60,32 @@ class GenericPopulationLoader(Loader):
     TEMP_TABLE_NAME = "temp_population_load"
     TEMP_TABLE_SQL = "CREATE TABLE {table} ({columns});"
 
-    def __init__(self, column_mapper, logger: Logger):
+    def __init__(self, column_mapper: dict[str, str], logger: Logger):
         self._columns_mapper = column_mapper
         self._logger = logger
 
-    def drop_temp_tables(self):
+    def drop_temp_tables(self) -> None:
         self._logger.info(f"Dropping temp table {self.TEMP_TABLE_NAME}")
         with connection.cursor() as cursor:
             cursor.execute(f"DROP TABLE IF EXISTS {self.TEMP_TABLE_NAME}")
 
-    def create_tables(self, columns):
+    def create_tables(self, columns: list[str]) -> None:
         self._logger.info(f"Creating temp table {self.TEMP_TABLE_NAME}")
-        with connection.cursor() as cursor:
-            cursor.execute(f"DROP TABLE IF EXISTS {self.TEMP_TABLE_NAME}")
-            cursor.execute(
-                self.TEMP_TABLE_SQL.format(table=self.TEMP_TABLE_NAME, columns=",".join([f"{c} TEXT" for c in columns]))
-            )
 
-    def load_data(self, data, model=None):
+        # checks to see if the column is an expected value
+        approved_cols = [c for c in columns if c in self._columns_mapper.keys()]
+
+        if len(approved_cols) == len(columns):
+            with connection.cursor() as cursor:
+                cursor.execute(f"DROP TABLE IF EXISTS {self.TEMP_TABLE_NAME}")
+                cursor.execute(
+                    self.TEMP_TABLE_SQL.format(
+                        table=self.TEMP_TABLE_NAME,
+                        columns=",".join([f"{c} TEXT" for c in approved_cols])
+                    )
+                )
+
+    def load_data(self, data: list[dict], model: Model = None) -> None:
         self._logger.info(f"Attempting to load {len(data)} records into {model.__name__}")
         model.objects.all().delete()
         model.objects.bulk_create(
@@ -83,7 +93,7 @@ class GenericPopulationLoader(Loader):
         )
         self._logger.info("Success? Please Verify")
 
-    def cleanup(self):
+    def cleanup(self) -> None:
         self.drop_temp_tables()
 
 
@@ -92,7 +102,7 @@ class DistrictPopulationLoader(GenericPopulationLoader):
     district population data.
     """
 
-    def load_data(self, data, model=None):
+    def load_data(self, data: list[dict], model: Model = None) -> None:
         model = PopCongressionalDistrict
         super().load_data(data, model)
 
@@ -102,7 +112,7 @@ class CountyPopulationLoader(GenericPopulationLoader):
     county population data.
     """
 
-    def load_data(self, data, model=None):
+    def load_data(self, data: list[dict], model: Model = None) -> None:
         model = PopCounty
         super().load_data(data, model)
 
@@ -114,7 +124,7 @@ class CountryPopulationLoader(GenericPopulationLoader):
 
     ERROR_THRESHOLD = 0.5
 
-    def load_data(self, data, model=None):
+    def load_data(self, data: list[dict], model: Model = None) -> None:
         model = RefCountryCode
         # Ensuring that the update will result under our accepted error threshold
         total_countries = model.objects.all().distinct("country_code")
@@ -139,14 +149,14 @@ class CountryPopulationLoader(GenericPopulationLoader):
                 record.save()
         self._logger.info("Success? Please Verify")
 
-    def drop_temp_tables(self):
+    def drop_temp_tables(self) -> None:
         # This implementation is purely an update, no need to drop temp tables
         pass
 
-    def create_tables(self, columns):
+    def create_tables(self, columns: list[str]) -> None:
         # This implementation is purely an update, no need to create temp tables
         pass
 
-    def cleanup(self):
+    def cleanup(self) -> None:
         # This implementation is purely an update, no need to cleanup temp tables
         pass

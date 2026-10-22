@@ -1,7 +1,7 @@
 import copy
 import logging
 from abc import ABCMeta, abstractmethod
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import List, Optional, Union
 
 from django.conf import settings
@@ -32,7 +32,7 @@ from usaspending_api.search.v2.views.enums import SpendingLevel
 logger = logging.getLogger(__name__)
 
 
-@dataclass
+@dataclass(frozen=True)
 class Category:
     name: str
     agg_key: str
@@ -49,7 +49,7 @@ class AbstractSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
     Abstract class inherited by the different spending by category endpoints.
     """
 
-    category: Category
+    _category: Category
     filters: dict
     pagination: Pagination
     high_cardinality_categories: List[str] = ["recipient", "recipient_duns"]
@@ -69,7 +69,10 @@ class AbstractSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
         original_filters = request.data.get("filters")
 
         # Handles case where the request has already been validated by an implementation of the abstract class
-        validated_payload = kwargs.get("validated_payload", self.validate_payload(request))
+        if kwargs.get("validated_payload"):
+            validated_payload = kwargs.get("validated_payload")
+        else:
+            validated_payload = self.validate_payload(request)
 
         self.filters = validated_payload.get("filters", {})
         self.pagination = self._get_pagination(validated_payload)
@@ -79,6 +82,10 @@ class AbstractSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
         return Response(raw_response)
 
     def validate_payload(self, request: Request) -> dict:
+        # Creates an instance copy for the category for each request
+        # Prevents modifications from previous requests affecting current requests
+        self.category = copy.deepcopy(self._category)
+
         models = [
             {"name": "subawards", "key": "subawards", "type": "boolean", "default": False, "optional": True},
             {
@@ -126,8 +133,10 @@ class AbstractSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
     def perform_search(self, original_filters: dict) -> dict:
         if self.spending_level == SpendingLevel.SUBAWARD:
             # Swap the agg_key fields for the equivalent Subaward fields, if applicable
-            self.category.agg_key = self.subaward_agg_key_mapper.get(self.category.agg_key, self.category.agg_key)
-
+            self.category = replace(
+                self.category,
+                agg_key=self.subaward_agg_key_mapper.get(self.category.agg_key, self.category.agg_key)
+            )
             query_with_filters = QueryWithFilters(QueryType.SUBAWARDS)
             filter_query = query_with_filters.generate_elasticsearch_query(self.filters)
             results = self.query_elasticsearch(filter_query)

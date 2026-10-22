@@ -5,7 +5,7 @@ HOST: https://api.usaspending.gov
 
 ## POST
 
-This endpoint takes award filters and returns a list containing filtered award ids, the number of subawards in each award, the total amount of obligations of all the subawards, and the award unique id.
+This endpoint takes award filters and returns a list containing filtered award ids, the number of subawards in each award, the total amount of obligations of all the subawards, the prime award obligation, the ratio of subaward to the prime award obligation, and the award unique id.
 
 + Request (application/json)
     + Schema
@@ -27,8 +27,10 @@ This endpoint takes award filters and returns a list containing filtered award i
             + Members
                 + `award_generated_internal_id`
                 + `award_id`
+                + `award_obligation`
                 + `subaward_count`
                 + `subaward_obligation`
+                + `subaward_to_award_ratio`
         + `order` (optional, enum[string])
             Indicates what direction results should be sorted by. Valid options include asc for ascending order or desc for descending order.
             + Default: `desc`
@@ -65,61 +67,81 @@ This endpoint takes award filters and returns a list containing filtered award i
                         "award_id": "0007",
                         "subaward_count": 23,
                         "award_generated_internal_id": "CONT_AWD_0007_9700_W31P4Q09A0021_9700",
-                        "subaward_obligation": 6942858.2
+                        "subaward_obligation": 6942858.2,
+                        "award_obligation": 10000000.0,
+                        "subaward_to_award_ratio": 0.69428582
                     },
                     {
                         "award_id": "1333LB19F00000306",
                         "subaward_count": 6,
                         "award_generated_internal_id": "CONT_AWD_1333LB19F00000306_1323_GS35F110DA_4732",
-                        "subaward_obligation": 1158693.0
+                        "subaward_obligation": 1158693.0,
+                        "award_obligation": 2500000.0,
+                        "subaward_to_award_ratio": 0.4634772
                     },
                     {
                         "award_id": "91003119F0003",
                         "subaward_count": 50,
                         "award_generated_internal_id": "CONT_AWD_91003119F0003_9100_HHSN316201200002W_7529",
-                        "subaward_obligation": 16349055.0
+                        "subaward_obligation": 16349055.0,
+                        "award_obligation": 20000000.0,
+                        "subaward_to_award_ratio": 0.81745275 
                     },
                     {
                         "award_id": "FA852818F0030",
                         "subaward_count": 5,
                         "award_generated_internal_id": "CONT_AWD_FA852818F0030_9700_FA852816D0009_9700",
-                        "subaward_obligation": 482721.0
+                        "subaward_obligation": 482721.0,
+                        "award_obligation": 1000000.0,
+                        "subaward_to_award_ratio": 0.482721
                     },
                     {
                         "award_id": "FA865118F1016",
                         "subaward_count": 3,
                         "award_generated_internal_id": "CONT_AWD_FA865118F1016_9700_FA865116D0314_9700",
-                        "subaward_obligation": 258711.38
+                        "subaward_obligation": 258711.38,
+                        "award_obligation": 500000.0,
+                        "subaward_to_award_ratio": 0.51742276
                     },
                     {
                         "award_id": "HSHQDC17J00370",
                         "subaward_count": 47,
                         "award_generated_internal_id": "CONT_AWD_HSHQDC17J00370_7001_HSHQDC14DE2035_7001",
-                        "subaward_obligation": 25170243.97
+                        "subaward_obligation": 25170243.97,
+                        "award_obligation": 30000000.0,
+                        "subaward_to_award_ratio": 0.83900813
                     },
                     {
                         "award_id": "N0042118F0167",
                         "subaward_count": 16,
                         "award_generated_internal_id": "CONT_AWD_N0042118F0167_9700_N0042116D0013_9700",
-                        "subaward_obligation": 3587182.87
+                        "subaward_obligation": 3587182.87,
+                        "award_obligation": 5000000.0,
+                        "subaward_to_award_ratio": 0.71743657
                     },
                     {
                         "award_id": "N4008518F7138",
                         "subaward_count": 4,
                         "award_generated_internal_id": "CONT_AWD_N4008518F7138_9700_N4008514D7744_9700",
-                        "subaward_obligation": 338369.0
+                        "subaward_obligation": 338369.0,
+                        "award_obligation":750000.0,
+                        "subaward_to_award_ratio": 0.45115867
                     },
                     {
                         "award_id": "N6247318F4138",
                         "subaward_count": 311,
                         "award_generated_internal_id": "CONT_AWD_N6247318F4138_9700_N6247316D1884_9700",
-                        "subaward_obligation": 134815478.55
+                        "subaward_obligation": 134815478.55,
+                        "award_obligation": 200000000.0,
+                        "subaward_to_award_ratio": 0.67407739
                     },
                     {
                         "award_id": "N6247319F4131",
                         "subaward_count": 4,
                         "award_generated_internal_id": "CONT_AWD_N6247319F4131_9700_N6247316D2411_9700",
-                        "subaward_obligation": 541913.0
+                        "subaward_obligation": 541913.0,
+                        "award_obligation": 1000000.0,
+                        "subaward_to_award_ratio": 0.541913
                     }
                 ],
                 "page_metadata": {
@@ -138,6 +160,11 @@ This endpoint takes award filters and returns a list containing filtered award i
 + `subaward_count` (required, number)
 + `award_generated_internal_id` (required, string)
 + `subaward_obligation` (required, number)
++ `award_obligation` (required, number)
+    Prime award amount used as the ratio denominator. `total_subsidy_cost` for loans and `total_obligation` for 
+    all other award types.
++ `subaward_to_award_ratio` (required, number)
+    `subaward_obligation` divided by `award_obligation`. `0` when `award_obligation` is `0` or null.
 
 ### PageMetaDataObject (object)
 + `page`: 1 (required, number)

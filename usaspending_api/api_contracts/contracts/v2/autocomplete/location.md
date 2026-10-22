@@ -18,8 +18,8 @@ This route sends a request to the backend to retrieve locations matching the spe
             }
 
     + Attributes (object)
-        + `limit` (optional, number)
-            + Default: 5
+        + `limit` (optional, number) - Number of results to return (min: 1, max: 500)
+          + Default: `10`
         + `search_text` (required, string)
     + Body
 

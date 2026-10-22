@@ -1,14 +1,16 @@
 import json
 import logging
-import subprocess
+from argparse import ArgumentParser
+from pathlib import Path
 from time import perf_counter
+from typing import Any
+from urllib.parse import urlparse, urlunparse
 
+import requests
 from django.conf import settings
 from django.core.management.base import BaseCommand
 
 logger = logging.getLogger("script")
-
-CURL_STATEMENT = 'curl -XPUT "{url}" -H "Content-Type: application/json" -d \'{data}\''
 
 CURL_COMMANDS = {
     "template": "{host}/_template/{name}?pretty",
@@ -31,7 +33,7 @@ class Command(BaseCommand):
     Requires env var ES_HOSTNAME to be set
     """
 
-    def add_arguments(self, parser):
+    def add_arguments(self, parser: ArgumentParser) -> None:
         parser.add_argument(
             "--load-type",
             type=str,
@@ -54,7 +56,7 @@ class Command(BaseCommand):
             help="When this flag is set, skip the cluster and index settings. Useful when creating a new index",
         )
 
-    def handle(self, *args, **options):
+    def handle(self, *args, **options) -> None:
         logger.info("Starting ES Configure")
         start = perf_counter()
         if not settings.ES_HOSTNAME:
@@ -97,26 +99,44 @@ class Command(BaseCommand):
 
     def run_curl_cmd(self, **kwargs) -> None:
         url = kwargs["url"].format(**kwargs)
-        cmd = CURL_STATEMENT.format(url=url, data=json.dumps(kwargs["payload"]))
+        parsed = urlparse(url)
+
+        # Extract auth if present in URL.
+        auth = (parsed.username, parsed.password) if parsed.username and parsed.password else None
+
+        # Rebuild URL without credentials.
+        clean_netloc = parsed.hostname
+        if parsed.port:
+            clean_netloc += f":{parsed.port}"
+        clean_url = urlunparse(parsed._replace(netloc=clean_netloc))
 
         try:
-            subprocess.Popen(cmd, shell=True).wait()
-        except Exception as e:
-            logger.exception(f"Failed on command: {cmd}")
+            response = requests.put(
+                clean_url,
+                json=kwargs["payload"],
+                auth=auth,
+                headers={"Content-Type": "application/json"},
+                timeout=30,
+            )
+            response.raise_for_status()
+            logger.info(f"Successfully configured Elasticsearch at {parsed.hostname}")
+        except requests.RequestException as e:
+            logger.exception(f"Failed to configure Elasticsearch at {parsed.hostname}")
             raise e
 
-    def get_elasticsearch_settings(self):
+    def get_elasticsearch_settings(self) -> dict[str, Any]:
         es_config = self.return_json_from_file(FILES["settings"])
         return es_config["cluster"]
 
-    def get_index_template(self):
+    def get_index_template(self) -> dict[str, Any]:
         template = self.return_json_from_file(FILES[self.template_name])
         template["index_patterns"] = [self.index_pattern]
         template["settings"]["index.max_result_window"] = self.max_result_window
         return template
 
-    def return_json_from_file(self, path):
-        """Read and parse file as JSON
+    def return_json_from_file(self, path: Path) -> dict[str, Any]:
+        """
+        Read and parse file as JSON
 
         Library performs JSON validation which is helpful before sending to ES
         """

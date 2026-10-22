@@ -13,11 +13,19 @@ from pathlib import Path
 from typing import Optional, Tuple
 
 import psutil as ps
+from django import setup as django_setup
+from django.apps import apps as django_apps
 from django.conf import settings
 from django.db.models import QuerySet
 from django.db.models.expressions import Ref
 from opentelemetry import trace
 from opentelemetry.trace import SpanKind
+
+# execute_psql/split_and_zip_data_files are run via multiprocessing.get_context("spawn").Process, which
+# re-imports this module in a fresh interpreter with no prior Django configuration. Ensure Django is set
+# up before importing the Django models below (NOTE: DJANGO_SETTINGS_MODULE must already be set in the env).
+if not django_apps.ready:
+    django_setup()
 
 from usaspending_api.awards.v2.lookups.lookups import assistance_type_mapping, contract_type_mapping, idv_type_mapping
 from usaspending_api.common.csv_helpers import count_rows_in_delimited_file, partition_large_delimited_file
@@ -35,6 +43,7 @@ from usaspending_api.download.filestreaming.zip_file import append_files_to_zip_
 from usaspending_api.download.helpers import verify_requested_columns_available
 from usaspending_api.download.helpers import write_to_download_log as write_to_log
 from usaspending_api.download.helpers.cleanup_helpers import cleanup_download_files, cleanup_previous_download_attempt
+from usaspending_api.download.helpers.psql_helpers import build_psql_env, run_psql_to_file
 from usaspending_api.download.lookups import FILE_FORMATS, JOB_STATUS_DICT, VALUE_MAPPINGS
 from usaspending_api.download.models.download_job import DownloadJob
 from usaspending_api.download.models.download_job_lookup import DownloadJobLookup
@@ -86,41 +95,50 @@ def generate_download(download_job: DownloadJob, origination: Optional[str] = No
 def _log_download_start(download_job: DownloadJob, file_name: str, request_type: str) -> None:
     """Log the start of download generation with tracing"""
     with SubprocessTrace(
-            name=f"job.{JOB_TYPE}.generate_download_{request_type}",
-            kind=SpanKind.INTERNAL,
-            service="bulk-download",
+        name=f"job.{JOB_TYPE}.generate_download_{request_type}",
+        kind=SpanKind.INTERNAL,
+        service="bulk-download",
     ) as main_trace:
-        main_trace.set_attributes({
-            "service": "bulk-download",
-            "span_type": "Internal",
-            "job_type": str(JOB_TYPE),
-            "message": "Creating data archive files from the download job object",
-            "download_job_id": str(download_job.download_job_id),
-            "download_job_status": str(download_job.job_status.name),
-            "download_file_name": str(download_job.file_name),
-            "download_file_size": download_job.file_size if download_job.file_size is not None else 0,
-            "number_of_rows": download_job.number_of_rows if download_job.number_of_rows is not None else 0,
-            "number_of_columns": download_job.number_of_columns if download_job.number_of_columns is not None else 0,
-            "error_message": download_job.error_message if download_job.error_message else "",
-            "monthly_download": str(download_job.monthly_download),
-            "json_request": str(download_job.json_request) if download_job.json_request else "",
-            "file_name": str(file_name),
-        })
+        main_trace.set_attributes(
+            {
+                "service": "bulk-download",
+                "span_type": "Internal",
+                "job_type": str(JOB_TYPE),
+                "message": "Creating data archive files from the download job object",
+                "download_job_id": str(download_job.download_job_id),
+                "download_job_status": str(download_job.job_status.name),
+                "download_file_name": str(download_job.file_name),
+                "download_file_size": download_job.file_size if download_job.file_size is not None else 0,
+                "number_of_rows": download_job.number_of_rows if download_job.number_of_rows is not None else 0,
+                "number_of_columns": download_job.number_of_columns
+                if download_job.number_of_columns is not None
+                else 0,
+                "error_message": download_job.error_message if download_job.error_message else "",
+                "monthly_download": str(download_job.monthly_download),
+                "json_request": str(download_job.json_request) if download_job.json_request else "",
+                "file_name": str(file_name),
+            }
+        )
 
 
 def _validate_and_setup_download(download_job: DownloadJob, json_request: dict, file_name: str) -> str:
     """Validate download limits and setup working directory"""
     limit = json_request.get("limit", None)
+    msg = None
 
-    if limit is not None and limit > MAX_DOWNLOAD_LIMIT:
-        msg = (
-            f"Unable to process this download because it includes more than the current limit of "
-            f"{MAX_DOWNLOAD_LIMIT} records"
-        )
+    if limit is not None:
+        if limit > MAX_DOWNLOAD_LIMIT:
+            msg = (
+                f"Unable to process this download because it includes more than the current limit of "
+                f"{MAX_DOWNLOAD_LIMIT} records"
+            )
+        if limit <= 0:
+            msg = "Unable to process this download because it has a limit of 0 or less records"
+    if msg is not None:
         with SubprocessTrace(
-                name=f"job.{JOB_TYPE}.generate_download_{json_request.get('request_type')}",
-                kind=SpanKind.INTERNAL,
-                service="bulk-download",
+            name=f"job.{JOB_TYPE}.generate_download_{json_request.get('request_type')}",
+            kind=SpanKind.INTERNAL,
+            service="bulk-download",
         ) as limit_exceeded:
             limit_exceeded.set_attributes({"message": msg, "limit": limit})
         raise Exception(msg)
@@ -139,12 +157,7 @@ def _validate_and_setup_download(download_job: DownloadJob, json_request: dict, 
     return working_dir
 
 
-def _process_download_sources(
-        download_job: DownloadJob,
-        json_request: dict,
-        working_dir: str,
-        file_name: str
-) -> None:
+def _process_download_sources(download_job: DownloadJob, json_request: dict, working_dir: str, file_name: str) -> None:
     """Process all download sources and generate data files"""
     columns = json_request.get("columns", None)
     limit = json_request.get("limit", None)
@@ -158,9 +171,7 @@ def _process_download_sources(
     for source in sources:
         source_column_count = len(source.columns(columns))
         if source_column_count == 0:
-            create_empty_data_file(
-                source, download_job, working_dir, piid, assistance_id, zip_file_path, file_format
-            )
+            create_empty_data_file(source, download_job, working_dir, piid, assistance_id, zip_file_path, file_format)
         else:
             download_job.number_of_columns += source_column_count
             parse_source(
@@ -168,8 +179,9 @@ def _process_download_sources(
             )
 
 
-def _add_supplemental_files(download_job: DownloadJob, json_request: dict, working_dir: str,
-                            zip_file_path: str) -> None:
+def _add_supplemental_files(
+    download_job: DownloadJob, json_request: dict, working_dir: str, zip_file_path: str
+) -> None:
     """Add data dictionary and file description if requested"""
     if json_request.get("include_data_dictionary"):
         add_data_dictionary_to_zip(working_dir, zip_file_path)
@@ -192,16 +204,18 @@ def _handle_invalid_parameter_exception(download_job: DownloadJob, e: InvalidPar
     """Handle InvalidParameterException with tracing"""
     exc_msg = "InvalidParameterException was raised while attempting to process the DownloadJob"
     with SubprocessTrace(
-            name=f"job.{JOB_TYPE}.generate_download",
-            kind=SpanKind.INTERNAL,
-            service="bulk-download",
+        name=f"job.{JOB_TYPE}.generate_download",
+        kind=SpanKind.INTERNAL,
+        service="bulk-download",
     ) as error_span:
-        error_span.set_attributes({
-            "service": "bulk-download",
-            "span_type": "Internal",
-            "message": exc_msg,
-            "error": str(e),
-        })
+        error_span.set_attributes(
+            {
+                "service": "bulk-download",
+                "span_type": "Internal",
+                "message": exc_msg,
+                "error": str(e),
+            }
+        )
     fail_download(download_job, e, exc_msg)
 
 
@@ -209,16 +223,18 @@ def _handle_general_exception(download_job: DownloadJob, e: Exception) -> None:
     """Handle general exceptions with tracing"""
     exc_msg = "An exception was raised while attempting to process the DownloadJob"
     with SubprocessTrace(
-            name=f"job.{JOB_TYPE}.process_download_job",
-            kind=SpanKind.INTERNAL,
-            service="bulk-download",
+        name=f"job.{JOB_TYPE}.process_download_job",
+        kind=SpanKind.INTERNAL,
+        service="bulk-download",
     ) as error_span:
-        error_span.set_attributes({
-            "service": "bulk-download",
-            "span_type": "Internal",
-            "message": exc_msg,
-            "error": str(e),
-        })
+        error_span.set_attributes(
+            {
+                "service": "bulk-download",
+                "span_type": "Internal",
+                "message": exc_msg,
+                "error": str(e),
+            }
+        )
     fail_download(download_job, e, exc_msg)
 
 
@@ -241,30 +257,36 @@ def _upload_to_s3(download_job: DownloadJob, file_name: str) -> None:
     zip_file_path = settings.CSV_LOCAL_PATH + file_name
 
     with SubprocessTrace(
-            name=f"job.{JOB_TYPE}.download.s3",
-            kind=SpanKind.INTERNAL,
-            service="bulk-download",
+        name=f"job.{JOB_TYPE}.download.s3",
+        kind=SpanKind.INTERNAL,
+        service="bulk-download",
     ) as span:
-        span.set_attributes({
-            "service": "bulk-download",
-            "span_type": "Internal",
-            "resource": f"s3://{CONFIG.BULK_DOWNLOAD_S3_BUCKET_NAME}",
-            "message": "Push file to S3 bucket, if not local",
-        })
+        span.set_attributes(
+            {
+                "service": "bulk-download",
+                "span_type": "Internal",
+                "resource": f"s3://{CONFIG.BULK_DOWNLOAD_S3_BUCKET_NAME}",
+                "message": "Push file to S3 bucket, if not local",
+            }
+        )
 
     with SubprocessTrace(
-            name=f"job.{JOB_TYPE}.s3.command",
-            kind=SpanKind.SERVER,
-            service="bulk-download",
+        name=f"job.{JOB_TYPE}.s3.command",
+        kind=SpanKind.SERVER,
+        service="bulk-download",
     ) as s3_span:
-        s3_span.set_attributes({
-            "service": "aws.s3",
-            "span_type": "WEB",
-            "resource": ".".join([
-                multipart_upload.__module__,
-                (multipart_upload.__qualname__ or multipart_upload.__name__)
-            ]),
-        })
+        s3_span.set_attributes(
+            {
+                "service": "aws.s3",
+                "span_type": "WEB",
+                "resource": ".".join(
+                    [
+                        multipart_upload.__module__,
+                        (multipart_upload.__qualname__ or multipart_upload.__name__),
+                    ]
+                ),
+            }
+        )
 
         try:
             bucket = CONFIG.BULK_DOWNLOAD_S3_BUCKET_NAME
@@ -273,22 +295,23 @@ def _upload_to_s3(download_job: DownloadJob, file_name: str) -> None:
             start_uploading = time.perf_counter()
             multipart_upload(bucket, region, zip_file_path, os.path.basename(zip_file_path))
             write_to_log(
-                message=f"Uploading took {time.perf_counter() - start_uploading:.2f}s",
-                download_job=download_job
+                message=f"Uploading took {time.perf_counter() - start_uploading:.2f}s", download_job=download_job
             )
         except Exception as e:
             exc_msg = "An exception was raised while attempting to upload the file"
             with SubprocessTrace(
-                    name=f"job.{JOB_TYPE}.upload_file_to_aws",
-                    kind=SpanKind.SERVER,
-                    service="bulk-download",
+                name=f"job.{JOB_TYPE}.upload_file_to_aws",
+                kind=SpanKind.SERVER,
+                service="bulk-download",
             ) as error_span:
-                error_span.set_attributes({
-                    "service": "bulk-download",
-                    "span_type": "Internal",
-                    "message": exc_msg,
-                    "error": str(e),
-                })
+                error_span.set_attributes(
+                    {
+                        "service": "bulk-download",
+                        "span_type": "Internal",
+                        "message": exc_msg,
+                        "error": str(e),
+                    }
+                )
             fail_download(download_job, e, exc_msg)
             if isinstance(e, InvalidParameterException):
                 raise InvalidParameterException(e) from e
@@ -535,8 +558,15 @@ def parse_source(  # noqa: PLR0913
     start_time = time.perf_counter()
 
     try:
+        # Resolve the DSN in this (parent) process, not inside the spawned child: the child is a fresh
+        # interpreter that re-imports this module, so any test-time mock of retrieve_db_string() here
+        # would be lost if it were called from within execute_psql instead.
+        dsn = retrieve_db_string()
+
         # Create a separate process to run the PSQL command; wait
-        psql_process = multiprocessing.Process(target=execute_psql, args=(temp_file_path, source_path, download_job))
+        psql_process = multiprocessing.get_context("spawn").Process(
+            target=execute_psql, args=(temp_file_path, source_path, download_job, dsn)
+        )
         write_to_log(message=f"Running {source.file_name} using psql", download_job=download_job)
         psql_process.start()
         wait_for_process(psql_process, start_time, download_job)
@@ -556,7 +586,7 @@ def parse_source(  # noqa: PLR0913
         download_job.save()
 
         # Create a separate process to split the large data files into smaller file and write to zip; wait
-        zip_process = multiprocessing.Process(
+        zip_process = multiprocessing.get_context("spawn").Process(
             target=split_and_zip_data_files,
             args=(zip_file_path, source_path, data_file_name, file_format, download_job),
         )
@@ -683,6 +713,13 @@ def wait_for_process(process: multiprocessing.Process, start_time: float, downlo
             )
         else:
             # An error occurred in the process
+            exitcode = process.exitcode
+            signal_note = f" (killed by signal {-exitcode})" if exitcode is not None and exitcode < 0 else ""
+            write_to_log(
+                message=f"Process (pid {process.pid}) exited with code {exitcode}{signal_note}",
+                download_job=download_job,
+                is_error=True,
+            )
             e = Exception("Command failed. Please see the logs for details.")
 
         raise e
@@ -745,15 +782,21 @@ def apply_annotations_to_sql(
 
     cte_sql, select_statements = _select_columns(raw_query)
 
-    DIRECT_SELECT_QUERY_REGEX = r'^[^ ]*\."[^"]*"$'  # Django is pretty consistent with how it prints out queries
+    # Django is pretty consistent with how it prints out queries
+    # !!! IMPORTANT: This can change when changing versions of Django !!!
+    DIRECT_SELECT_QUERY_REGEX = r'^("?[^"|\.]*"?\."[^"]*") AS "[^"]*"$'
     # Create a list from the non-derived values between SELECT and FROM
-    selects_list = [val for val in select_statements if re.search(DIRECT_SELECT_QUERY_REGEX, val)]
+    selects_list = [
+        re.fullmatch(DIRECT_SELECT_QUERY_REGEX, val).group(1)
+        for val in select_statements
+        if re.fullmatch(DIRECT_SELECT_QUERY_REGEX, val)
+    ]
 
     # Create a list from the derived values between SELECT and FROM
     aliased_list = [
         (idx + 1, val)
         for idx, val in enumerate(select_statements)
-        if not re.search(DIRECT_SELECT_QUERY_REGEX, val.strip())
+        if not re.fullmatch(DIRECT_SELECT_QUERY_REGEX, val.strip())
     ]
     deriv_dict = {}
 
@@ -768,20 +811,16 @@ def apply_annotations_to_sql(
     for idx, val in aliased_list:
         split_string = _top_level_split(val, " AS ")
         alias = split_string[1].replace('"', "").replace(",", "").strip()
+        if alias not in aliases:
+            raise Exception(f'alias "{alias}" not found!')
         col_select = split_string[0]
-        if alias in aliases:
-            deriv_dict[alias] = col_select
-            if annotated_group_by_columns and alias in annotated_group_by_columns:
-                group_by_to_replace.append((idx, col_select))
-        else:
-            # Django 5.2 emits an "AS <query_path>" alias on every values()-projected field
-            # (e.g. "treasury_account__funding_toptier_agency__name"). The query path is not a caller-known alias, so
-            # strip it and use the expression just like a direct SELECT in older Django
-            selects_list.append(col_select.strip())
+        deriv_dict[alias] = col_select
+        if annotated_group_by_columns and alias in annotated_group_by_columns:
+            group_by_to_replace.append((idx, col_select))
 
     if group_by_to_replace:
         first_half_query, second_half_query = _top_level_split(raw_query, " GROUP BY ")
-        # Fist we replace the position with a valid parameter we can use for formatting
+        # First we replace the position with a valid parameter we can use for formatting
         for idx, _ in group_by_to_replace:
             # It is assumed that all non-positional values in the GROUP BY are column names meaning the first number
             # matching the value of "idx" will be the position. However, this is not guaranteed in the rest of the
@@ -795,7 +834,7 @@ def apply_annotations_to_sql(
             elif second_half_query.startswith(f"{idx},"):
                 second_half_query = second_half_query.replace(f"{idx},", f" {{idx_{idx}}},", 1)
             elif second_half_query.endswith(f" {idx}"):
-                second_half_query = second_half_query[:-1 * len(f" {idx}")] + f" {{idx_{idx}}}"
+                second_half_query = second_half_query[: -1 * len(f" {idx}")] + f" {{idx_{idx}}}"
         second_half_query = second_half_query.format(
             **{f"idx_{idx}": col_select for idx, col_select in group_by_to_replace}
         )
@@ -880,17 +919,15 @@ def _top_level_split(sql: str, splitter: str) -> str:
         if parens_depth == 0:
             if sql[index : index + len(splitter)] == splitter:
                 return [sql[:index], sql[index + len(splitter) :]]
-    raise Exception(f"SQL string ${sql} cannot be split on ${splitter}")
+    raise ValueError(f"SQL string ${sql} cannot be split on ${splitter}")
 
 
-def execute_psql(temp_sql_file_path: str, source_path: str, download_job: DownloadJob) -> None:
+def execute_psql(temp_sql_file_path: str, source_path: str, download_job: DownloadJob, dsn: str) -> None:
     """Executes a single PSQL command within its own Subprocess"""
     download_sql = Path(temp_sql_file_path).read_text()
     if download_sql.startswith("\\COPY"):
-        # Trace library parses the SQL, but cannot understand the psql-specific \COPY command. Use standard COPY here.
         download_sql = download_sql[1:]
 
-    # Stack 3 context managers: (1) psql code, (2) Download replica query, (3) (same) Postgres query
     subprocess_trace = SubprocessTrace(
         name=f"job.{JOB_TYPE}.download.psql",
         kind=SpanKind.INTERNAL,
@@ -904,15 +941,14 @@ def execute_psql(temp_sql_file_path: str, source_path: str, download_job: Downlo
                 "resource": str(download_sql),
                 "span_type": "Internal",
                 "source_path": str(source_path),
-                # download job details
                 "download_job_id": str(download_job.download_job_id),
                 "download_job_status": str(download_job.job_status.name),
                 "download_file_name": str(download_job.file_name),
                 "download_file_size": download_job.file_size if download_job.file_size is not None else 0,
                 "number_of_rows": download_job.number_of_rows if download_job.number_of_rows is not None else 0,
-                "number_of_columns": (
-                    download_job.number_of_columns if download_job.number_of_columns is not None else 0
-                ),
+                "number_of_columns": download_job.number_of_columns
+                if download_job.number_of_columns is not None
+                else 0,
                 "error_message": download_job.error_message if download_job.error_message else "",
                 "monthly_download": str(download_job.monthly_download),
                 "json_request": str(download_job.json_request) if download_job.json_request else "",
@@ -921,21 +957,26 @@ def execute_psql(temp_sql_file_path: str, source_path: str, download_job: Downlo
 
         try:
             log_time = time.perf_counter()
-            temp_env = os.environ.copy()
-            if download_job and not download_job.monthly_download:
-                # Since terminating the process isn't guaranteed to end the DB statement,
-                # add timeout to client connection
-                temp_env["PGOPTIONS"] = (
-                    f"--statement-timeout={settings.DOWNLOAD_DB_TIMEOUT_IN_HOURS}h "
-                    f"--work-mem={settings.DOWNLOAD_DB_WORK_MEM_IN_MB}MB"
-                )
 
-            cat_command = subprocess.Popen(["cat", temp_sql_file_path], stdout=subprocess.PIPE)
-            subprocess.check_output(
-                ["psql", "-q", "-o", source_path, retrieve_db_string(), "-v", "ON_ERROR_STOP=1"],
-                stdin=cat_command.stdout,
-                stderr=subprocess.STDOUT,
-                env=temp_env,
+            # Build PostgreSQL environment using helper
+            psql_env = build_psql_env(
+                dsn=dsn,
+                statement_timeout_hours=settings.DOWNLOAD_DB_TIMEOUT_IN_HOURS
+                if (download_job and not download_job.monthly_download)
+                else None,
+                work_mem_mb=settings.DOWNLOAD_DB_WORK_MEM_IN_MB
+                if (download_job and not download_job.monthly_download)
+                else None,
+            )
+
+            # Execute psql using helper
+            run_psql_to_file(
+                sql_path=temp_sql_file_path,
+                output_path=source_path,
+                env=psql_env,
+                job_id=download_job.download_job_id,
+                quiet=True,
+                on_error_stop=True,
             )
 
             duration = time.perf_counter() - log_time
@@ -948,12 +989,13 @@ def execute_psql(temp_sql_file_path: str, source_path: str, download_job: Downlo
             raise e
         except Exception as e:
             if not settings.IS_LOCAL:
-                # Not logging the command as it can contain the database connection string
                 e.cmd = "[redacted psql command]"
             write_to_log(message=e, is_error=True, download_job=download_job)
             sql = subprocess.check_output(["cat", temp_sql_file_path]).decode()
             write_to_log(message=f"Faulty SQL: {sql}", is_error=True, download_job=download_job)
             raise e
+
+    write_to_log(message=f"execute_psql returning normally (pid={os.getpid()})", download_job=download_job)
 
 
 def retrieve_db_string() -> str:

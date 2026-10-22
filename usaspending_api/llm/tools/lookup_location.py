@@ -4,9 +4,10 @@ from typing import Any
 
 from opensearchpy.helpers.query import Q
 
-from usaspending_api.common.elasticsearch.search_wrappers import LocationSearch
+from usaspending_api.common.elasticsearch.search_wrappers import AsyncLocationSearch
 from usaspending_api.llm.models.py_models import AITool, AIToolDescription
-from usaspending_api.references.models import PopCounty, RefCountryCode
+from usaspending_api.llm.tools.exceptions import LocationNotRecognizedError
+from usaspending_api.references.models import PopCongressionalDistrict, RefCountryCode
 
 logger = logging.getLogger(__name__)
 
@@ -15,70 +16,52 @@ class LocationLookupTool:
     """Tool for looking up locations in OpenSearch with fuzzy matching support."""
 
     # Location type mappings
-    LOCATION_TYPES = {
-        "country", "state", "city", "county", "zip_code", "current_cd", "original_cd"
-    }
+    LOCATION_TYPES = {"country", "state", "city", "county", "zip_code", "current_cd", "original_cd"}
 
     ENTITY_DISPLAY_MAP = {
         "country": "Country",
         "state": "State",
         "city": "City",
         "county": "County",
-        "zip_code": "Zip code",
+        "zip_code": "ZIP Code",
         "current_cd": "Current congressional district",
         "original_cd": "Original congressional district",
     }
 
     def __init__(self):
         """Initialize with cached lookups from database."""
-        self._state_code_cache = None
+        self._state_abbr_cache = None
         self._country_code_cache = None
 
-    @property
-    def state_codes(self) -> dict[str, str]:
-        """Lazy-load state codes from PopCounty model."""
-        if self._state_code_cache is None:
-            self._state_code_cache = {}
-            for county in PopCounty.objects.values('state_name', 'state_code').distinct():
-                state_name = county['state_name']
-                state_code = county['state_code']
-                if state_name and state_code:
+    async def _get_state_abbreviations(self) -> dict[str, str]:
+        """Lazy-load state abbreviations from PopCounty model."""
+        if self._state_abbr_cache is None:
+            self._state_abbr_cache = {}
+            counties = PopCongressionalDistrict.objects.values("state_name", "state_abbreviation").distinct()
+            async for county in counties:
+                state_name = county["state_name"]
+                state_abbr = county["state_abbreviation"]
+                if state_name and state_abbr:
                     # Store with multiple case variations for flexible lookup
-                    self._state_code_cache[state_name] = state_code
-                    self._state_code_cache[state_name.lower()] = state_code
-                    self._state_code_cache[state_name.upper()] = state_code
-        return self._state_code_cache
+                    self._state_abbr_cache[state_name] = state_abbr
+                    self._state_abbr_cache[state_name.lower()] = state_abbr
+                    self._state_abbr_cache[state_name.upper()] = state_abbr
+        return self._state_abbr_cache
 
-    @property
-    def country_codes(self) -> dict[str, str]:
+    async def _get_country_codes(self) -> dict[str, str]:
         """Lazy-load country codes from RefCountryCode model."""
         if self._country_code_cache is None:
             self._country_code_cache = {}
-            for country in RefCountryCode.objects.values('country_name', 'country_code'):
-                country_name = country['country_name']
-                country_code = country['country_code']
+            countries = RefCountryCode.objects.values("country_name", "country_code")
+            async for country in countries:
+                country_name = country["country_name"]
+                country_code = country["country_code"]
                 if country_name and country_code:
                     # Store lowercase for case-insensitive lookup
                     self._country_code_cache[country_name.lower()] = country_code
         return self._country_code_cache
 
-    def lookup_location(
-            self,
-            query: str,
-            location_type: str | None = None,
-            top_k: int = 15
-    ) -> dict[str, Any]:
-        """
-        Search for locations using fuzzy matching.
-
-        Args:
-            query: Location search term (name, code, zip, or district)
-            location_type: Optional filter by location type
-            top_k: Number of results to return (max 100)
-
-        Returns:
-            Dictionary with results or error information
-        """
+    async def lookup_location(self, query: str, location_type: str | None = None, top_k: int = 15) -> dict[str, Any]:
         # Validation
         error_response = self._validate_inputs(query, location_type)
         if error_response:
@@ -88,42 +71,64 @@ class LocationLookupTool:
         top_k = max(1, min(top_k, 100))
         query_upper = query.strip().upper()
 
+        logger.info(
+            f"Starting location lookup: query='{query}', location_type={location_type}, top_k={top_k}",
+            extra={"query": query, "location_type": location_type, "top_k": top_k},
+        )
+
+        search = self._build_search(query_upper, location_type, top_k)
         try:
-            search = self._build_search(query_upper, location_type, top_k)
-            response = search.execute()
+            logger.debug(f"Executing OpenSearch query with filters: location_type={location_type}")
+            response = await search.handle_execute()
+            logger.info(
+                f"OpenSearch query successful: query='{query}', hits={len(response.hits)}",
+                extra={"query": query, "hits_count": len(response.hits), "took_ms": response.took},
+            )
         except Exception as e:
             logger.error(f"OpenSearch query failed for query='{query}': {str(e)}", exc_info=True)
-            return {"error": f"OpenSearch query failed: {str(e)}", "results": []}
+            return {"error": f"OpenSearch query failed: {str(e)}", "results": {}}
+        finally:
+            if search.client is not None:
+                await search.client.close()
 
         # Transform results
-        results = self._transform_results(response)
+        state_abbreviations = await self._get_state_abbreviations()
+        country_codes = await self._get_country_codes()
+        results = self._transform_results(response, state_abbreviations, country_codes)
 
-        return {
-            "results": results,
-            "count": len(results),
-            "query": query,
-            "location_type": location_type
-        }
+        if not results:
+            logger.warning(
+                f"Zero results returned for location lookup: query='{query}', location_type={location_type}",
+                extra={
+                    "query": query,
+                    "location_type": location_type,
+                    "hits_count": len(response.hits),
+                    "zero_results": True,
+                },
+            )
+            raise LocationNotRecognizedError(f"Unable to filter. Location not recognized: {query}")
+
+        logger.info(
+            f"Location lookup completed: query='{query}', results_count={len(results)}",
+            extra={"query": query, "results_count": len(results), "location_type": location_type},
+        )
+
+        return {"results": results, "count": len(results), "query": query, "location_type": location_type}
 
     def _validate_inputs(self, query: str, location_type: str | None) -> dict[str, Any] | None:
         """Validate input parameters and return error dict if invalid, None otherwise."""
         if not query or not query.strip():
-            return {"error": "Query cannot be empty", "results": []}
+            return {"error": "Query cannot be empty", "results": {}}
 
         if location_type and location_type not in self.LOCATION_TYPES:
             return {
                 "error": f"Invalid location_type. Must be one of: {', '.join(sorted(self.LOCATION_TYPES))}",
-                "results": []
+                "results": {},
             }
 
         return None
 
-    def _build_search(
-            self,
-            query_upper: str,
-            location_type: str | None,
-            top_k: int
-    ) -> LocationSearch:
+    def _build_search(self, query_upper: str, location_type: str | None, top_k: int) -> AsyncLocationSearch:
         """Build the OpenSearch query with fuzzy matching."""
         # Enhanced search queries with better boosting strategy
         should_queries = [
@@ -134,25 +139,27 @@ class LocationLookupTool:
             # Fuzzy match for typo tolerance (AUTO: 0 edits for 1-2 chars, 1 edit for 3-5, 2 edits for >5)
             Q("match", location={"query": query_upper, "fuzziness": "AUTO", "boost": 5.0}),
             # Contains match for partial matches
-            Q("match", location__contains={"query": query_upper, "boost": 3.0}),
+            Q("match_phrase_prefix", location__contains={"query": query_upper, "boost": 3.0}),
             # Wildcard for prefix matching
             Q("wildcard", location__keyword={"value": f"{query_upper}*", "boost": 2.0}),
         ]
 
-        search = LocationSearch()
+        search = AsyncLocationSearch()
         search = search.query("bool", should=should_queries, minimum_should_match=1)
 
         if location_type:
             search = search.filter("term", location_type=location_type)
 
         search = search[:top_k]
-        search = search.source("location", "location_json", "location_type")
+        search = search.source(["location", "location_json", "location_type"])
 
         return search
 
-    def _transform_results(self, response: Any) -> list[dict[str, Any]]:
+    def _transform_results(
+        self, response: Any, state_abbreviations: dict[str, str], country_codes: dict[str, str]
+    ) -> list[dict[str, Any]]:
         """Transform OpenSearch hits to SelectedLocation format."""
-        results = []
+        results = {}
         seen_identifiers = set()
 
         for hit in response.hits:
@@ -163,6 +170,8 @@ class LocationLookupTool:
                     location_json=source.get("location_json", ""),
                     location_type=source.get("location_type", ""),
                     score=hit.meta.score,
+                    state_abbreviations=state_abbreviations,
+                    country_codes=country_codes,
                 )
 
                 identifier = location_obj["identifier"]
@@ -174,31 +183,31 @@ class LocationLookupTool:
                 seen_identifiers.add(identifier)
 
                 # Return in the format expected by selectedLocations
-                results.append(
-                    {identifier: location_obj}
-                )
+                results[identifier] = location_obj
 
             except Exception as e:
                 logger.warning(
                     f"Failed to transform location result: {str(e)}",
-                    extra={"hit": source if 'source' in locals() else None},
-                    exc_info=True
+                    extra={"hit": source if "source" in locals() else None},
+                    exc_info=True,
                 )
                 continue
 
         return results
 
     def _transform_to_selected_location(
-            self,
-            location: str,
-            location_json: str,
-            location_type: str,
-            score: float
+        self,
+        location: str,
+        location_json: str,
+        location_type: str,
+        score: float,
+        state_abbreviations: dict[str, str],
+        country_codes: dict[str, str],
     ) -> dict[str, Any]:
         """
         Transform OpenSearch result to SelectedLocation format.
 
-        Returns a dictionary with identifier, filter, and display objects.
+        Returns a dictionary with identifier, filter, display, and score properties.
         """
         try:
             location_data = json.loads(location_json) if location_json else {}
@@ -206,8 +215,8 @@ class LocationLookupTool:
             logger.error(f"Failed to parse location_json: {e}")
             location_data = {}
 
-        identifier = self._build_identifier(location_data, location_type)
-        filter_obj = self._build_filter(location_data, location_type)
+        identifier = self._build_identifier(location_data, location_type, state_abbreviations, country_codes)
+        filter_obj = self._build_filter(location_data, location_type, state_abbreviations, country_codes)
         display_obj = self._build_display(location_data, location_type, location)
 
         return {
@@ -217,7 +226,13 @@ class LocationLookupTool:
             "score": score,
         }
 
-    def _build_identifier(self, data: dict[str, Any], location_type: str) -> str:
+    def _build_identifier(
+        self,
+        data: dict[str, Any],
+        location_type: str,
+        state_abbreviations: dict[str, str],
+        country_codes: dict[str, str],
+    ) -> str:
         """Build the identifier string based on location type."""
         match location_type:
             case "country":
@@ -225,22 +240,22 @@ class LocationLookupTool:
 
             case "state":
                 state_name = data.get("state_name", "")
-                state_code = self._get_state_code(state_name)
-                result = f"USA_{state_code}"
+                state_abbr = self._get_state_abbr(state_name, state_abbreviations)
+                result = f"USA_{state_abbr}"
 
             case "city":
                 country = data.get("country_name", "USA")
-                country_code = self._get_country_code(country)
+                country_code = self._get_country_code(country, country_codes)
                 state = data.get("state_name", "")
-                state_code = self._get_state_code(state) if state else "undefined"
+                state_abbr = self._get_state_abbr(state, state_abbreviations) if state else "undefined"
                 city = data.get("city_name", "").replace(" ", "_")  # Normalize spaces
-                result = f"{country_code}_{state_code}_{city}"
+                result = f"{country_code}_{state_abbr}_{city}"
 
             case "county":
                 state = data.get("state_name", "")
-                state_code = self._get_state_code(state)
+                state_abbr = self._get_state_abbr(state, state_abbreviations)
                 county_fips = data.get("county_fips", "")
-                result = f"USA_{state_code}_{county_fips}"
+                result = f"USA_{state_abbr}_{county_fips}"
 
             case "zip_code":
                 zip_code = data.get("zip_code", "")
@@ -260,17 +275,23 @@ class LocationLookupTool:
 
         return result
 
-    def _build_filter(self, data: dict[str, Any], location_type: str) -> dict[str, Any]:
+    def _build_filter(
+        self,
+        data: dict[str, Any],
+        location_type: str,
+        state_abbreviations: dict[str, str],
+        country_codes: dict[str, str],
+    ) -> dict[str, Any]:
         """Build the filter object for the location."""
         filter_obj = {}
 
         # Always include country
         country_name = data.get("country_name", "UNITED STATES")
-        filter_obj["country"] = self._get_country_code(country_name)
+        filter_obj["country"] = self._get_country_code(country_name, country_codes)
 
         # Add type-specific fields (only non-None values)
         if data.get("state_name"):
-            filter_obj["state"] = self._get_state_code(data["state_name"])
+            filter_obj["state"] = self._get_state_abbr(data["state_name"], state_abbreviations)
 
         if data.get("city_name"):
             filter_obj["city"] = data["city_name"]
@@ -290,12 +311,7 @@ class LocationLookupTool:
 
         return filter_obj
 
-    def _build_display(
-            self,
-            data: dict[str, Any],
-            location_type: str,
-            full_location: str
-    ) -> dict[str, str]:
+    def _build_display(self, data: dict[str, Any], location_type: str, full_location: str) -> dict[str, str]:
         """Build the display object for UI."""
         # Determine standalone name
         standalone_map = {
@@ -310,32 +326,55 @@ class LocationLookupTool:
 
         standalone = standalone_map.get(location_type, full_location)
         entity = self.ENTITY_DISPLAY_MAP.get(location_type, "Location")
+        title = self._build_title(data, location_type, standalone)
 
         return {
             "entity": entity,
             "standalone": standalone,
-            "title": full_location,
+            "title": title,
         }
 
-    def _get_state_code(self, state_name: str) -> str:
-        """Convert state name to 2-letter code."""
+    @staticmethod
+    def _build_title(data: dict[str, Any], location_type: str, standalone: str) -> str:
+        """
+        Build the title display value that is used in the filter UI.
+
+        Title is just the standalone name for every type except city and county, which
+        append state (or country, for a foreign city) for disambiguation.
+        """
+        state_name = data.get("state_name")
+
+        if location_type == "city":
+            qualifier = state_name or data.get("country_name", "")
+            return f"{standalone}, {qualifier}" if qualifier else standalone
+        if location_type == "county":
+            return f"{standalone}, {state_name}" if state_name else standalone
+
+        return standalone
+
+    @staticmethod
+    def _get_state_abbr(state_name: str, state_abbreviations: dict[str, str]) -> str:
+        """Convert state name to 2-letter abbreviation."""
         if not state_name:
             return "XX"
 
         # Try multiple case variations
-        code = (self.state_codes.get(state_name) or
-                self.state_codes.get(state_name.lower()) or
-                self.state_codes.get(state_name.upper()))
+        code = (
+            state_abbreviations.get(state_name)
+            or state_abbreviations.get(state_name.lower())
+            or state_abbreviations.get(state_name.upper())
+        )
 
         return code if code else "XX"
 
-    def _get_country_code(self, country_name: str) -> str:
+    @staticmethod
+    def _get_country_code(country_name: str, country_codes: dict[str, str]) -> str:
         """Convert country name to 3-letter code."""
         if not country_name:
             return "USA"
 
         # Case-insensitive lookup
-        code = self.country_codes.get(country_name.lower())
+        code = country_codes.get(country_name.lower())
 
         return code if code else "UNK"
 
@@ -354,7 +393,7 @@ lookup_location_tool = AITool(
 
                 This tool supports:
                 - Country names and codes (e.g., 'USA', 'United States', 'Germany')
-                - State names and codes (e.g., 'Texas', 'TX', 'Texa' with fuzzy match)
+                - State names and abbreviations (e.g., 'Texas', 'TX', 'Texa' with fuzzy match)
                 - City names (e.g., 'Chicago', 'New York', 'Chicgo' with fuzzy match)
                 - County names and FIPS codes
                 - ZIP codes (e.g., '64198', '10001')
@@ -384,16 +423,14 @@ lookup_location_tool = AITool(
                 "query": {
                     "type": "string",
                     "description": (
-                        "Location search term (name, code, zip, or district). "
-                        "Supports fuzzy matching for typos."
+                        "Location search term (name, code, zip, or district). Supports fuzzy matching for typos."
                     ),
                 },
                 "location_type": {
                     "type": "string",
                     "enum": ["country", "state", "city", "county", "zip_code", "current_cd", "original_cd"],
                     "description": (
-                        "Optional: Filter results by specific location type "
-                        "to narrow down ambiguous queries"
+                        "Optional: Filter results by specific location type to narrow down ambiguous queries"
                     ),
                 },
                 "top_k": {

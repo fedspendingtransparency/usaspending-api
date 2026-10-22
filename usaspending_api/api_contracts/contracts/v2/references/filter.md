@@ -9,6 +9,8 @@ These endpoints support the advanced search page and allow for complex filtering
 
 Generates a hash for URL, based on selected filter criteria.
 
+**Request Size Limit:** The request body must not exceed 512KB. Requests larger than this limit will be rejected with a 413 status code.
+
 + Request (application/json)
     + Schema
 
@@ -129,3 +131,23 @@ Generates a hash for URL, based on selected filter criteria.
             {
                 "hash":"3ef42b40bda7dd723e1ffcd542a7d9c7"
             }
+
++ Response 400 (application/json)
+    + Body
+
+            {
+                "error": "Invalid request format",
+                "details": [
+                    {
+                        "type": "string_type",
+                        "loc": ["filters"],
+                        "msg": "Input should be a valid dictionary or string",
+                        "input": null
+                    }
+                ]
+            }
+
++ Response 413 (text/plain)
+    + Body
+
+            Request body exceeds maximum allowed size

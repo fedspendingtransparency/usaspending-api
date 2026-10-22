@@ -18,7 +18,7 @@ class RecipientViewSet(AbstractSpendingByCategoryViewSet):
     """
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/search/spending_by_category/recipient.md"
-    category = Category(name="recipient", agg_key="recipient_agg_key")
+    _category = Category(name="recipient", agg_key="recipient_agg_key")
 
     def build_elasticsearch_result(self, response: dict) -> List[dict]:
         # Get the codes
@@ -81,4 +81,4 @@ class RecipientDunsViewSet(RecipientViewSet):
     """
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/search/spending_by_category/recipient_duns.md"
-    category = Category(name="recipient_duns", agg_key="recipient_agg_key")
+    _category = Category(name="recipient_duns", agg_key="recipient_agg_key")

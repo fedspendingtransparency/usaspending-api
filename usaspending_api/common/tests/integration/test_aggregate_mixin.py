@@ -5,11 +5,10 @@ from operator import itemgetter
 from unittest.mock import Mock
 
 import pytest
-from model_bakery.recipe import Recipe
 from model_bakery import baker
+from model_bakery.recipe import Recipe
 
-from usaspending_api.awards.models import Award
-from usaspending_api.awards.models import TransactionNormalized
+from usaspending_api.awards.models import Award, TransactionNormalized
 from usaspending_api.common.mixins import AggregateQuerysetMixin
 from usaspending_api.search.models import AwardSearch
 
@@ -353,3 +352,60 @@ def test_aggregate_nulls(monkeypatch, aggregate_models_with_nulls):
     assert agg_list[0]["aggregate"] is None
     assert agg_list[1]["aggregate"] == 10.0
     assert agg_list[2]["aggregate"] == 30.0
+
+
+@pytest.mark.django_db
+def test_aggregate_group_with_fk_traversal(client, aggregate_models):
+    """Test that legitimate FK traversal in group fields works."""
+    response = client.post(
+        "/api/v1/awards/total/",
+        {"field": "total_obligation", "aggregate": "sum", "group": "type"},
+        content_type="application/json",
+    )
+    assert response.status_code == 200
+
+
+@pytest.mark.django_db
+def test_aggregate_group_with_fy_transform(client, aggregate_models):
+    """Test that __fy transform suffix works."""
+    response = client.post(
+        "/api/v1/awards/total/",
+        {"field": "total_obligation", "aggregate": "sum", "group": "period_of_performance_start_date__fy"},
+        content_type="application/json",
+    )
+    assert response.status_code == 200
+
+
+@pytest.mark.django_db
+def test_aggregate_group_blocks_regex_injection(client, aggregate_models):
+    """Test that __regex injection is blocked in aggregate group fields."""
+    response = client.post(
+        "/api/v1/awards/total/",
+        {"field": "total_obligation", "aggregate": "sum", "group": "type__regex"},
+        content_type="application/json",
+    )
+    assert response.status_code == 400
+    assert "Invalid field" in response.json()["detail"]
+
+
+@pytest.mark.django_db
+def test_aggregate_group_blocks_iregex_injection(client, aggregate_models):
+    """Test that __iregex injection is blocked in aggregate group fields."""
+    response = client.post(
+        "/api/v1/awards/total/",
+        {"field": "total_obligation", "aggregate": "sum", "group": "type__iregex"},
+        content_type="application/json",
+    )
+    assert response.status_code == 400
+    assert "Invalid field" in response.json()["detail"]
+
+
+@pytest.mark.django_db
+def test_aggregate_group_blocks_invalid_field_path(client, aggregate_models):
+    """Test that non-existent fields in group are rejected."""
+    response = client.post(
+        "/api/v1/awards/total/",
+        {"field": "total_obligation", "aggregate": "sum", "group": "nonexistent_field__name"},
+        content_type="application/json",
+    )
+    assert response.status_code == 400

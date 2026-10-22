@@ -456,12 +456,8 @@ AWARD_SEARCH_DELTA_COLUMNS = {
     **{k: v["delta"] for k, v in AWARD_SEARCH_COLUMNS.items()},
     **DELTA_ONLY_COLUMNS,
 }
-AWARD_SEARCH_POSTGRES_COLUMNS = {
-    k: v["postgres"] for k, v in AWARD_SEARCH_COLUMNS.items() if not v["gold"]
-}
-AWARD_SEARCH_POSTGRES_GOLD_COLUMNS = {
-    k: v["gold"] for k, v in AWARD_SEARCH_COLUMNS.items()
-}
+AWARD_SEARCH_POSTGRES_COLUMNS = {k: v["postgres"] for k, v in AWARD_SEARCH_COLUMNS.items() if not v["gold"]}
+AWARD_SEARCH_POSTGRES_GOLD_COLUMNS = {k: v["gold"] for k, v in AWARD_SEARCH_COLUMNS.items()}
 
 ALL_AWARD_TYPES = list(award_type_mapping.keys())
 
@@ -471,5 +467,8 @@ award_search_create_sql_string = rf"""
     )
     USING DELTA
     LOCATION 's3a://{{SPARK_S3_BUCKET}}/{{DELTA_LAKE_S3_PATH}}/{{DESTINATION_DATABASE}}/{{DESTINATION_TABLE}}'
-    TBLPROPERTIES (delta.enableChangeDataFeed = true)
+    TBLPROPERTIES (
+        delta.enableChangeDataFeed = true,
+        delta.enableDeletionVectors = true
+    )
 """

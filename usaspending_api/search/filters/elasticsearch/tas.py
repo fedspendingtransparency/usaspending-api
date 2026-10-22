@@ -6,6 +6,7 @@ from usaspending_api.common.exceptions import InvalidParameterException, Unproce
 from usaspending_api.search.filters.elasticsearch.filter import QueryType, _Filter
 from usaspending_api.search.filters.elasticsearch.HierarchicalFilter import HierarchicalFilter, Node
 from usaspending_api.search.filters.postgres.tas import string_to_dictionary
+from usaspending_api.search.filters.shared.utils import escape_regex_chars
 
 
 class TasCodes(_Filter, HierarchicalFilter):
@@ -34,16 +35,8 @@ def search_regex_of(v: str | dict) -> str:
         v = string_to_dictionary(v, "agency")
 
     code_lookup = {
-        "agency": f"agency={v['agency']}" if v.get("agency") else "*",
-        "faaid": f"faaid={v['faaid']}" if v.get("faaid") else "*",
-        "famain": f"famain={v['famain']}" if v.get("famain") else "*",
-        "aid": f"aid={v['aid']}" if v.get("aid") else "*",
-        "main": f"main={v['main']}" if v.get("main") else "*",
-        "ata": f"ata={v['ata']}" if v.get("ata") else "*",
-        "sub": f"sub={v['sub']}" if v.get("sub") else "*",
-        "bpoa": f"bpoa={v['bpoa']}" if v.get("bpoa") else "*",
-        "epoa": f"epoa={v['epoa']}" if v.get("epoa") else "*",
-        "a": f"a={v['a']}" if v.get("a") else "*",
+        component: f"{component}={escape_regex_chars(v[component], char_set='lucene')}" if v.get(component) else "*"
+        for component in ["agency", "faaid", "famain", "aid", "main", "ata", "sub", "bpoa", "epoa", "a"]
     }
 
     # This is NOT the order of elements as displayed in the tas rendering label,
@@ -62,7 +55,7 @@ def search_regex_of(v: str | dict) -> str:
     )
 
     # TODO: move this to a Tinyshield filter
-    if not re.match(r"^(\d|\w|-|\*|=)+$", search_regex):
+    if not re.match(r"^(\d|\w|-|\*|=|\\)+$", search_regex):
         raise UnprocessableEntityException("Unable to parse TAS filter")
 
     return search_regex
@@ -85,13 +78,8 @@ class TreasuryAccounts(_Filter):
 
         for v in filter_values:
             code_lookup = {
-                "aid": v.get("aid", ".*"),
-                "main": v.get("main", ".*"),
-                "ata": v.get("ata", ".*"),
-                "sub": v.get("sub", ".*"),
-                "bpoa": v.get("bpoa", ".*"),
-                "epoa": v.get("epoa", ".*"),
-                "a": v.get("a", ".*"),
+                component: escape_regex_chars(v.get(component), char_set="lucene") or ".*"
+                for component in ["aid", "main", "ata", "sub", "bpoa", "epoa", "a"]
             }
 
             search_regex = f"aid={code_lookup['aid']}main={code_lookup['main']}ata={code_lookup['ata']}sub={code_lookup['sub']}bpoa={code_lookup['bpoa']}epoa={code_lookup['epoa']}a={code_lookup['a']}"  # noqa: E501

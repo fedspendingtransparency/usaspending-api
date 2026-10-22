@@ -149,7 +149,6 @@ def test_data_transfer_from_broker(load_broker_data):
     table = SourceAssistanceTransaction().table_name
 
     with connections[settings.DEFAULT_DB_ALIAS].cursor() as cursor:
-
         cursor.execute(f"SELECT COUNT(*) FROM {table}")
         assert cursor.fetchall()[0][0] == NUMBER_OF_SOURCE_RECORDS - 1, "Inactive Record Copied!"
 
@@ -262,6 +261,10 @@ def test_data_transfer_from_broker(load_broker_data):
             "funding-opportunity-goals",
             "funding-opportunity-number",
             123456,
+            None,
+            None,
+            None,
+            None,
         )
 
 
@@ -312,9 +315,9 @@ VALUES
 
     with connections[settings.DEFAULT_DB_ALIAS].cursor() as cursor:
         cursor.execute(f"SELECT COUNT(*) FROM {table}")
-        assert (
-            cursor.fetchall()[0][0] == NUMBER_OF_SOURCE_RECORDS - 1
-        ), "Reload of correction caused errant additional records"
+        assert cursor.fetchall()[0][0] == NUMBER_OF_SOURCE_RECORDS - 1, (
+            "Reload of correction caused errant additional records"
+        )
 
         cursor.execute(f"SELECT * FROM {table} WHERE UPPER(afa_generated_unique) = '{original_afa.upper()}'")
         assert len(cursor.fetchall()) == 1
@@ -425,6 +428,10 @@ VALUES
             "funding-opportunity-goals",
             "funding-opportunity-number",
             123456,
+            None,
+            None,
+            None,
+            None,
         )
 
 
@@ -450,7 +457,6 @@ def test_delete(load_broker_data):
         "3620_-NONE-_18040416.0120635_64.012_-NONE-",
     )
     with connections[settings.DEFAULT_DB_ALIAS].cursor() as cursor:
-
         cursor.cursor.execute(
             f"SELECT COUNT(*) FROM {table} WHERE UPPER({transaction_unique_field}) = ANY(%s)",
             [list(deleted_transactions)],
@@ -466,9 +472,7 @@ def test_delete(load_broker_data):
             (E'2017-09-16 22:22:42.760993',E'2017-09-16 22:22:42.760993',123123124,E'07/12/2017',E'C',E'06',E'UNKNOWN TITLE',E'Columbus State Community College',NULL,E'091',NULL,E'9100',E'3',E'NON',E'06',E'84.033',E'D',0,E'p033a173267',520000,NULL,E'091',NULL,NULL,E'550 E Spring St',NULL,NULL,E'USA',NULL,NULL,NULL,E'43215',E'1722',0,0,E'08/31/2023',NULL,E'OH18000',E'03',E'USA',NULL,E'432151722',2,NULL,NULL,E'03',E'520000.0',E'Federal Work-Study Program',E'Department of Education (ED)',E'Department of Education',E'EDUCATION, DEPARTMENT OF (9100)',NULL,TRUE,E'Delaware',E'Ohio',E'COLUMBUS',E'Columbus',E'049',E'Franklin',E'OH',E'Ohio',E'2017-07-21 00:00:00',E'{}',FALSE,NULL,NULL,NULL,NULL,E'UNITED STATES',E'UNITED STATES',E'041',NULL,E'OH',E'43215',E'1722',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,E'ASST_NON_P033A173267_9100',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,E'Single ZIP Code',E'awardee-uei',E'parent-uei',E'funding-opportunity-goals',E'funding-opportunity-number',123456),
             (E'2017-09-16 23:41:06.101705',E'2017-09-16 23:41:06.101705',123123125,E'08/25/2016',E'C',E'06',E'PELL GRANTS',E'Central Carolina Technical College',E'073708414',E'091',NULL,E'9100',E'0002',E'NON',E'06',E'84.063',E'D',0,E'p063q152482',1090,NULL,NULL,NULL,NULL,E'506 N Guignard Dr',NULL,NULL,E'USA',NULL,NULL,NULL,E'29150',E'2468',0,0,E'08/31/2021',E'03/23/2015',E'4570405',E'05',E'USA',NULL,E'291502468',2,E'SAI NOT AVAILABLE',NULL,E'05',E'1090.0',E'PELL',E'Department of Education (ED)',E'Department of Education',NULL,NULL,TRUE,E'Sumter',E'SOUTH CAROLINA',E'SUMTER',E'Sumter',E'085',E'Sumter',E'SC',E'South Carolina',E'2016-09-07 00:00:00',E'{}',FALSE,NULL,NULL,E'70405',NULL,E'UNITED STATES',E'UNITED STATES',E'085',NULL,E'SC',E'29150',E'2468',NULL,NULL,NULL,NULL,NULL,NULL,NULL,E'CENTRAL CAROLINA TECHNICAL COLLEGE',E'073708414',E'ASST_NON_P063Q152482_9100',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL),
             (E'2018-04-17 16:36:57.918546',E'2018-04-17 16:36:57.918552',123123126,E'20180131',NULL,E'11',NULL,E'MULTIPLE RECIPIENTS',NULL,E'036',NULL,E'3620',NULL,E'NON',E'X',E'64.012',E'D',NULL,NULL,33254,NULL,E'036',NULL,E'3600',NULL,NULL,NULL,E'USA',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,E'IA**029',E'03',E'USA',NULL,NULL,1,NULL,E'18040416.0120635',E'03',E'33254',E'Veterans Prescription Service',E'Department of Veterans Affairs (VA)',E'Under Secretary for Health/Veterans Health Administration',E'Department of Veterans Affairs (VA)',E'Department of Veterans Affairs',NULL,E'Cass',E'Iowa',NULL,NULL,E'029',E'Cass',E'IA',E'Iowa',E'2018-04-17 16:36:57.917212',E'{}',FALSE,NULL,NULL,NULL,NULL,E'UNITED STATES',E'UNITED STATES',E'029',9640,E'IA',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,E'ASST_AGG_18040416.0120635_3620',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,E'County-wide',NULL,NULL,NULL,NULL,NULL)
-    """.format(
-        BROKER_TABLE, *[trx_id.lower() for trx_id in deleted_transactions]
-    )
+    """.format(BROKER_TABLE, *[trx_id.lower() for trx_id in deleted_transactions])
 
     update_delete_transactions = f"""
         UPDATE "{BROKER_TABLE}"

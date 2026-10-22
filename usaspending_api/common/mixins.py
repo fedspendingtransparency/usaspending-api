@@ -1,8 +1,20 @@
-from django.db.models import Avg, Count, F, Q, Max, Min, Sum, Func, IntegerField, ExpressionWrapper
-from django.db.models.functions import ExtractDay, ExtractMonth, ExtractYear
+import logging
+from typing import Any
 
-from usaspending_api.common.api_request_utils import FilterGenerator, AutoCompleteHandler
+from django.core.exceptions import FieldDoesNotExist
+from django.db import models
+from django.db.models import Avg, Count, ExpressionWrapper, F, Func, IntegerField, Max, Min, Model, Q, QuerySet, Sum
+from django.db.models.fields import Field
+from django.db.models.functions import ExtractDay, ExtractMonth, ExtractYear
+from django.utils import timezone
+from pgvector.django import VectorField
+from rest_framework.request import Request
+
+from usaspending_api.common.api_request_utils import AutoCompleteHandler, FilterGenerator
 from usaspending_api.common.exceptions import InvalidParameterException
+from usaspending_api.llm.embeddings.embedding_generator import EmbeddingGenerator
+
+logger = logging.getLogger(__name__)
 
 
 class AggregateQuerysetMixin(object):
@@ -12,7 +24,7 @@ class AggregateQuerysetMixin(object):
     in the get_queryset method).
     """
 
-    def aggregate(self, request, *args, **kwargs):
+    def aggregate(self, request: Request, *args, **kwargs) -> QuerySet:
         """Perform an aggregate function on a Django queryset with an optional group by field."""
         # create a single dict that contains the requested aggregate parameters, regardless of request type
         # (e.g., GET, POST) (not sure if this is a good practice, or we should be more prescriptive that aggregate
@@ -72,7 +84,41 @@ class AggregateQuerysetMixin(object):
 
     _sql_function_transformations = {"fy": IntegerField}
 
-    def _wrapped_f_expression(self, col_name):
+    def _resolve_field_path(self, model: type[Model], field_path: str) -> tuple[str, Field | None]:
+        segments = field_path.split("__")
+        current_model = model
+        resolved_field = None
+
+        for index, segment in enumerate(segments):
+            try:
+                resolved_field = current_model._meta.get_field(segment)
+            except FieldDoesNotExist:
+                # If this is the last segment and it's a known transform, allow it.
+                is_last = index == len(segments) - 1
+                if is_last and segment in self._sql_function_transformations:
+                    # Valid transform suffix, no need to continue validation.
+                    return field_path, None
+                raise InvalidParameterException(f"Invalid field: {field_path}") from None
+
+            is_last = index == len(segments) - 1
+            if resolved_field.is_relation and not is_last:
+                current_model = resolved_field.related_model
+            elif not is_last:
+                # Check if the next segment is a valid SQL function transformation
+                next_segment = segments[index + 1]
+                is_next_last = (index + 1) == len(segments) - 1
+                if is_next_last and next_segment in self._sql_function_transformations:
+                    # Valid transform suffix on this field, allow it
+                    return field_path, None
+                raise InvalidParameterException(f"Invalid field: {field_path}")
+
+        return field_path, resolved_field
+
+    def _validate_field_path(self, model: type[Model], field_path: str) -> str:
+        self._resolve_field_path(model, field_path)
+        return field_path
+
+    def _wrapped_f_expression(self, col_name: str) -> F | ExpressionWrapper:
         """F-expression of col, wrapped if needed with SQL function call
 
         Assumes that there's an SQL function defined for each registered lookup.
@@ -87,7 +133,7 @@ class AggregateQuerysetMixin(object):
                 return result
         return F(col_name)
 
-    def validate_request(self, params, queryset):
+    def validate_request(self, params: dict[str, Any], queryset: QuerySet) -> tuple[str, list[str], str | None]:
         """Validate request parameters."""
 
         agg_field = params.get("field")
@@ -102,8 +148,7 @@ class AggregateQuerysetMixin(object):
         # make sure the field we're aggregating exists in the model
         if hasattr(model, agg_field) is False:
             raise InvalidParameterException(
-                "Field {} not found in model {}. "
-                "Please specify a valid field in the request.".format(agg_field, model)
+                "Field {} not found in model {}. Please specify a valid field in the request.".format(agg_field, model)
             )
 
         # make sure the field we're aggregating on is numeric
@@ -131,6 +176,9 @@ class AggregateQuerysetMixin(object):
         if not isinstance(group_fields, list):
             group_fields = [group_fields]
 
+        for group_field in group_fields:
+            self._validate_field_path(model, group_field)
+
         # if a groupby date part is specified, make sure the groupby field is
         # a date and the groupby value is year, quarter, or month
         if date_part is not None:
@@ -140,7 +188,8 @@ class AggregateQuerysetMixin(object):
             # if the request is asking to group by a date component, the field
             # we're grouping by must be a date-related field (there is probably a better way to do this?)
             date_fields = ["DateField", "DateTimeField"]
-            if model._meta.get_field(group_fields[0]).get_internal_type() not in date_fields:
+            _, group_field = self._resolve_field_path(model, group_fields[0])
+            if group_field.get_internal_type() not in date_fields:
                 raise InvalidParameterException(
                     "Group by date part ({}) requested for a non-date group by ({})".format(date_part, group_fields[0])
                 )
@@ -158,7 +207,7 @@ class AggregateQuerysetMixin(object):
 class FilterQuerysetMixin(object):
     """Handles queryset filtering."""
 
-    def filter_records(self, request, *args, **kwargs):
+    def filter_records(self, request: Request, *args, **kwargs) -> QuerySet:
         """Filter a queryset based on request parameters"""
         queryset = kwargs.get("queryset")
 
@@ -188,14 +237,15 @@ class FilterQuerysetMixin(object):
         if len(filters) > 0:
             subwhere = Q(
                 **{
-                    queryset.model._meta.pk.name
-                    + "__in": queryset.filter(filters).values_list(queryset.model._meta.pk.name, flat=True)
+                    queryset.model._meta.pk.name + "__in": queryset.filter(filters).values_list(
+                        queryset.model._meta.pk.name, flat=True
+                    )
                 }
             )
 
         return queryset.filter(subwhere)
 
-    def order_records(self, request, *args, **kwargs):
+    def order_records(self, request: Request, *args, **kwargs) -> QuerySet:
         """Order a queryset based on request parameters."""
         queryset = kwargs.get("queryset")
 
@@ -212,7 +262,7 @@ class FilterQuerysetMixin(object):
         else:
             return queryset
 
-    def get_submission_id_filters(self):
+    def get_submission_id_filters(self) -> tuple[int | None, list[int]]:
         """
         Returns the federal_account_id and the list of fiscal_years from the list of incoming
         filters if they exist. If not, return None and an empty list respectively
@@ -231,7 +281,7 @@ class FilterQuerysetMixin(object):
 class AutocompleteResponseMixin(object):
     """Handles autocomplete responses and requests"""
 
-    def build_response(self, request, *args, **kwargs):
+    def build_response(self, request: Request, *args, **kwargs) -> Any:
         queryset = kwargs.get("queryset")
 
         serializer = kwargs.get("serializer")
@@ -240,3 +290,64 @@ class AutocompleteResponseMixin(object):
         params.update(request.data.copy())
 
         return AutoCompleteHandler.handle(queryset, params, serializer)
+
+
+class EmbeddingMixin(models.Model):
+    embedding_dimensions: int = 256
+    embedding: VectorField = VectorField(dimensions=embedding_dimensions, null=True, blank=True)
+    embedding_generated_at: models.DateTimeField = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        abstract = True
+
+    def get_embedding_text(self) -> str | None:
+        raise NotImplementedError(f"{self.__class__.__name__} must implement get_embedding_text()")
+
+    def get_embedding_generator(self) -> EmbeddingGenerator:
+        return EmbeddingGenerator(dimensions=self.embedding_dimensions)
+
+    def generate_embedding(self, force: bool = False, verbose: bool = False) -> bool:
+        did_generate = False
+        if self.embedding is not None and not force:
+            logger.debug(f"Embedding already exists for: {self.__class__.__name__} {self.pk}")
+        else:
+            text = self.get_embedding_text()
+
+            if not text or not text.strip():
+                logger.warning(f"Embedding text is empty for: {self.__class__.__name__} {self.pk}")
+            else:
+                try:
+                    generator = self.get_embedding_generator()
+                    self.embedding = generator.generate_embedding(text)
+                    if self.embedding is not None:
+                        self.embedding_generated_at = timezone.now()
+                        did_generate = True
+                        if verbose:
+                            logger.info(f"Generated embedding for {self.__class__.__name__} {self.pk}")
+                    else:
+                        did_generate = False
+
+                except Exception as e:
+                    logger.exception(f"Failed to generate embedding for {self.__class__.__name__} {self.pk}: {e}")
+        return did_generate
+
+    @property
+    def has_embedding(self) -> bool:
+        return self.embedding is not None
+
+    def save(
+        self,
+        auto_generate_embedding: bool = True,
+        force_generate_embedding: bool = False,
+        verbose: bool = False,
+        *args,
+        **kwargs,
+    ) -> None:
+        if (auto_generate_embedding and not self.has_embedding) or force_generate_embedding:
+            try:
+                self.generate_embedding(verbose=verbose, force=force_generate_embedding)
+            except Exception as e:
+                logger.error(
+                    f"Failed to auto-generate embedding during save for {self.__class__.__name__} {self.pk}: {e}"
+                )
+        super().save(*args, **kwargs)

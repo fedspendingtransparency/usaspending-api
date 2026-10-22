@@ -1,10 +1,10 @@
+from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from usaspending_api.common.cache_decorator import cache_response
-from usaspending_api.spending_explorer.v2.filters.type_filter import type_filter
 
-# Limits the amount of results the spending explorer returns
-SPENDING_EXPLORER_LIMIT = 1000
+from usaspending_api.common.cache_decorator import cache_response
+from usaspending_api.spending_explorer.v2.filters.explorer import SPENDING_EXPLORER_LIMIT
+from usaspending_api.spending_explorer.v2.filters.type_filter import type_filter
 
 
 class SpendingExplorerViewSet(APIView):
@@ -15,8 +15,7 @@ class SpendingExplorerViewSet(APIView):
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/spending.md"
 
     @cache_response()
-    def post(self, request):
-
+    def post(self, request: Request) -> Response:
         json_request = request.data
         _type = json_request.get("type")
         filters = json_request.get("filters", None)

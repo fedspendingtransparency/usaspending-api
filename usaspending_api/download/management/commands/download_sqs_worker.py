@@ -7,16 +7,16 @@ from typing import Callable
 
 import boto3
 
-# Third-party library imports
-from opentelemetry.trace import SpanKind, Status, StatusCode
-
 # Django imports
 from django.conf import settings
 from django.core.management.base import BaseCommand
 
+# Third-party library imports
+from opentelemetry.trace import SpanKind, Status, StatusCode
+
 # Application imports
 from usaspending_api.common.logging import configure_logging
-from usaspending_api.common.spark.jobs import SparkJobs, LocalStrategy, EmrServerlessStrategy
+from usaspending_api.common.spark.jobs import EmrServerlessStrategy, LocalStrategy, SparkJobs
 from usaspending_api.common.sqs.sqs_handler import DownloadLogic, get_sqs_queue
 from usaspending_api.common.sqs.sqs_job_logging import log_job_message
 from usaspending_api.common.sqs.sqs_work_dispatcher import (
@@ -29,15 +29,15 @@ from usaspending_api.download.filestreaming.download_generation import generate_
 from usaspending_api.download.helpers.monthly_helpers import download_job_to_log_dict
 from usaspending_api.download.lookups import JOB_STATUS_DICT
 from usaspending_api.download.models.download_job import DownloadJob
+from usaspending_api.download.v2.base_download_viewset import DownloadJobMessage
 from usaspending_api.settings import TRACE_ENV
-
 
 logger = logging.getLogger(__name__)
 JOB_TYPE = "USAspendingDownloader"
 
 
 class Command(BaseCommand):
-    def handle(self, *args, **options):
+    def handle(self, *args, **options) -> None:
         configure_logging(service_name="usaspending-downloader-" + TRACE_ENV)
         # Start a main trace for the SQS worker session
         with SubprocessTrace(
@@ -153,7 +153,7 @@ class Command(BaseCommand):
         return message_found
 
 
-def run_download(download_job_id: int, download_logic: DownloadLogic, **kwargs):
+def run_download(download_job_id: int, download_logic: DownloadLogic, **kwargs) -> None:
     match download_logic:
         case DownloadLogic.POSTGRES:
             _run_postgres_download(download_job_id)
@@ -164,7 +164,7 @@ def run_download(download_job_id: int, download_logic: DownloadLogic, **kwargs):
 def _run_spark_download(download_job_id: int, job_name: str) -> None:
     if settings.IS_LOCAL:
         strategy = LocalStrategy()
-        command_options = [f"--skip-local-cleanup"]
+        command_options = ["--skip-local-cleanup"]
         extra_options = {"run_as_container": True}
     else:
         strategy = EmrServerlessStrategy()
@@ -202,7 +202,7 @@ def _run_postgres_download(download_job_id: int) -> None:
     generate_download(download_job=download_job)
 
 
-def _retrieve_download_job_from_db(download_job_id):
+def _retrieve_download_job_from_db(download_job_id: int) -> DownloadJob:
 
     download_job = DownloadJob.objects.filter(download_job_id=download_job_id).first()
     if download_job is None:
@@ -212,7 +212,9 @@ def _retrieve_download_job_from_db(download_job_id):
     return download_job
 
 
-def _update_download_job_status(download_job_id, status, error_message=None, overwrite_error_message=False):
+def _update_download_job_status(
+    download_job_id: int, status: str, error_message: str | None = None, overwrite_error_message: bool = False
+) -> None:
     """Handles status updates on the DownloadJob records
 
     Args:
@@ -235,7 +237,7 @@ def _update_download_job_status(download_job_id, status, error_message=None, ove
     download_job.save()
 
 
-def _handle_queue_error(exc):
+def _handle_queue_error(exc: QueueWorkerProcessError | QueueWorkDispatcherError) -> None:
     """Handles exceptions raised when processing a message from the queue.
 
     It handles two types:
@@ -249,7 +251,8 @@ def _handle_queue_error(exc):
     try:
         download_job_id = None
         if exc.queue_message and exc.queue_message.body:
-            download_job_id = int(exc.queue_message.body)
+            message = DownloadJobMessage.model_validate_json(exc.queue_message.body)
+            download_job_id = message.download_job_id
         log_job_message(
             logger=logger,
             message=f"{type(exc).__name__} caught. Attempting to fail the DownloadJob with id = {download_job_id}",
@@ -284,7 +287,7 @@ def _handle_queue_error(exc):
     raise exc
 
 
-def _log_and_trace_download_job(message: str, download_job: DownloadJob):
+def _log_and_trace_download_job(message: str, download_job: DownloadJob) -> None:
     """
     Logs information about a download_job and pulls information of out it to send
     as a trace.
@@ -334,7 +337,7 @@ class DownloadJobNoneError(ValueError):
     exist in the database with the given ID.
     """
 
-    def __init__(self, download_job_id, *args, **kwargs):
+    def __init__(self, download_job_id: int, *args, **kwargs) -> None:
         default_message = f"DownloadJob with id = {download_job_id} was not found in the database."
 
         if args or kwargs:

@@ -12,6 +12,7 @@ chunked_matviews/**
 csv_downloads/**
 data/**
 derby.log
+dredd-results.txt
 log/**
 logs/**
 matviews/**
@@ -60,6 +61,8 @@ __pycache__
 \.cache
 .devcontainer/
 tempo-data/
+*.override.yml
+*.override.yaml
 
 # Global overrides -- KEEP AT THE BOTTOM (must be below their ignores)
 # Also, entire directories can't be ignored (like: ignore_this_dir/)

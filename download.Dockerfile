@@ -1,6 +1,6 @@
 FROM usaspending-backend:latest
 
-WORKDIR /dockermount
+WORKDIR /usaspending-api
 
 RUN apt update && apt install -y \
     build-essential \
@@ -28,6 +28,8 @@ RUN apt update && apt install -y \
     containerd.io \
     docker-buildx-plugin \
     docker-compose-plugin
+
+COPY README.md ./
 
 RUN --mount=type=cache,target=/root/.cache/uv \
     --mount=type=bind,source=uv.lock,target=uv.lock \

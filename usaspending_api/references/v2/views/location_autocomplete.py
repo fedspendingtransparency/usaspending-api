@@ -4,34 +4,17 @@ from collections import OrderedDict
 from opensearchpy.helpers.query import Q as ES_Q
 from opensearchpy.helpers.response import Response as ES_Response
 from opensearchpy.helpers.utils import AttrList
+from pydantic import ValidationError
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.elasticsearch.search_wrappers import LocationSearch
-from usaspending_api.common.validator.tinyshield import validate_post_request
-
-models = [
-    {
-        "key": "search_text",
-        "name": "search_text",
-        "type": "text",
-        "text_type": "search",
-        "optional": False,
-    },
-    {
-        "key": "limit",
-        "name": "limit",
-        "type": "integer",
-        "max": 20,
-        "optional": True,
-        "default": 5,
-    },
-]
+from usaspending_api.common.exceptions import InvalidParameterException
+from usaspending_api.references.pydantic_models import AutocompleteRequest
 
 
-@validate_post_request(models)
 class LocationAutocompleteViewSet(APIView):
     """
     This end point returns a list of locations from Elasticsearch that match the given search_text value.
@@ -41,7 +24,13 @@ class LocationAutocompleteViewSet(APIView):
 
     @cache_response()
     def post(self, request: Request) -> Response:
-        es_results: ES_Response = self._query_elasticsearch(request.data["search_text"], request.data["limit"])
+        try:
+            validated_data = AutocompleteRequest(**request.data)
+        except ValidationError as e:
+            error_messages = "; ".join([f"{err['loc'][0]}: {err['msg']}" for err in e.errors()])
+            raise InvalidParameterException(error_messages) from e
+
+        es_results: ES_Response = self._query_elasticsearch(validated_data.search_text, validated_data.limit)
 
         if len(es_results.aggregations.location_types.buckets) == 0:
             return Response(OrderedDict([("count", 0), ("results", {}), ("messages", [""])]))

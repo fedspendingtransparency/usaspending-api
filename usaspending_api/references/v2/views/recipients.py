@@ -1,35 +1,49 @@
 import itertools
 from collections import OrderedDict
-from typing import Any, Union
+from typing import Any, Literal, Union
 
 from opensearchpy.helpers.aggs import A
 from opensearchpy.helpers.query import Q as ES_Q
 from opensearchpy.helpers.response import Response as AggResponse
+from pydantic import Field, ValidationError, field_validator
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.elasticsearch.search_wrappers import RecipientSearch
-from usaspending_api.common.validator.tinyshield import validate_post_request
+from usaspending_api.common.exceptions import InvalidParameterException
+from usaspending_api.references.pydantic_models import AutocompleteRequest
 from usaspending_api.search.v2.es_sanitization import es_sanitize
 
-models = [
-    {"name": "search_text", "key": "search_text", "type": "text", "text_type": "search", "optional": False},
-    {"name": "limit", "key": "limit", "type": "integer", "max": 500, "optional": True, "default": 10},
-    {
-        "name": "recipient_levels",
-        "key": "recipient_levels",
-        "type": "array",
-        "array_type": "text",
-        "text_type": "search",
-        "items": {"type": "string"},
-        "optional": True,
-    },
-]
+
+class RecipientAutocompleteRequest(AutocompleteRequest):
+    recipient_levels: list[Literal["C", "P", "R"]] = Field(
+        default_factory=list,
+        description="Recipient levels to filter by: C (Child), P (Parent), R (Recipient)"
+    )
+
+    @field_validator('recipient_levels', mode='before')
+    @classmethod
+    def validate_recipient_levels(cls, v: list[str]) -> list[str]:
+        if not v:
+            return []
+
+        if isinstance(v, str):
+            v = [v]
+
+        valid_levels = {"C", "P", "R"}
+        invalid = set(v) - valid_levels
+        if invalid:
+            raise ValueError(
+                f"Invalid recipient levels: {', '.join(sorted(invalid))}. "
+                "Must be one or more of: C, P, R"
+            )
+
+        seen = set()
+        return [x for x in v if not (x in seen or seen.add(x))]
 
 
-@validate_post_request(models)
 class RecipientAutocompleteViewSet(APIView):
     """
     This endpoint is used for the Recipient autocomplete filter which returns a list of recipients matching the
@@ -59,8 +73,15 @@ class RecipientAutocompleteViewSet(APIView):
         Returns:
             Returns a list of Recipients matching the input search_text and recipient_levels, if passed in.
         """
-        self.search_text, self.recipient_levels = self._prepare_search_terms(request.data)
-        self.limit = request.data["limit"]
+
+        try:
+            validated_data = RecipientAutocompleteRequest(**request.data)
+        except ValidationError as e:
+            error_messages = "; ".join([f"{err['loc'][0]}: {err['msg']}" for err in e.errors()])
+            raise InvalidParameterException(error_messages) from e
+
+        self.search_text, self.recipient_levels = self._prepare_search_terms(validated_data.model_dump())
+        self.limit = validated_data.limit
         search = self._create_es_search()
         results = self._query_elasticsearch(search)
         recipient_level_response_message = (
