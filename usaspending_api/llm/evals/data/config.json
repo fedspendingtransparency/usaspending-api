@@ -2416,7 +2416,12 @@
         "expected_output": {
             "pscCodes": {
                 "require": [
+                  [
+                    "Research and Development",
+                    "AA",
+                    "AA1",
                     "AA11"
+                  ]
                 ],
                 "exclude": [],
                 "counts": [{"count": 1, "label":  "", "value": "Research and Development"}]
@@ -2439,10 +2444,10 @@
         "expected_output": {
             "pscCodes": {
                 "require": [
-                    "AA"
+                    ["Research and Development", "AA"]
                 ],
                 "exclude": [],
-                "counts": [{"count": 39, "label":  "", "value": "Research and Development"}]
+                "counts": [{"count": 39, "label": "", "value": "Research and Development"}]
             }
         },
         "expected_tools": [
@@ -2462,10 +2467,10 @@
         "expected_output": {
             "pscCodes": {
                 "require": [
-                    "10"
+                    ["Product", "10"]
                 ],
                 "exclude": [],
-                "counts": [{"count": 15, "label":  "", "value": "Product"}]
+                "counts": [{"count": 15, "label": "", "value": "Product"}]
             },
             "awardType": [
                 "A",
@@ -2496,12 +2501,10 @@
                 "C",
                 "D"
             ],
-            "naicsCodes": {
-                "require": [
-                    "5417"
-                ],
+            "pscCodes": {
+                "require": [["Research and Development", "AA"]],
                 "exclude": [],
-                "counts": [{"count": 1, "label":  "", "value": "Product"}]
+                "counts": [{"count": 890, "label":  "", "value": "Research and Development"}]
             }
         },
         "expected_tools": [
@@ -2522,7 +2525,12 @@
         "expected_output": {
             "pscCodes": {
                 "require": [
+                  [
+                    "Research and Development",
+                    "AA",
+                    "AA1",
                     "AA11"
+                  ]
                 ],
                 "exclude": [],
                 "counts": [{"count": 1, "label":  "", "value": "Research and Development"}]
@@ -2545,21 +2553,21 @@
         "expected_output": {
             "pscCodes": {
                 "require": [
-                    "1040",
-                    "1045",
-                    "1355",
-                    "1356",
-                    "4921",
-                    "1005",
-                    "1010",
-                    "1015",
-                    "1020",
-                    "1025",
-                    "1030",
-                    "1035"
+                    ["Product", "1040"],
+                    ["Product", "1045"],
+                    ["Product", "1355"],
+                    ["Product", "1356"],
+                    ["Product", "4921"],
+                    ["Product", "1005"],
+                    ["Product", "1010"],
+                    ["Product", "1015"],
+                    ["Product", "1020"],
+                    ["Product", "1025"],
+                    ["Product", "1030"],
+                    ["Product", "1035"]
                 ],
                 "exclude": [],
-                "counts": [{"count": 12, "label":  "", "value": "Product"}]
+                "counts": [{"count": 12, "label": "", "value": "Product"}]
             },
             "awardType": [
                 "A",
@@ -2591,10 +2599,10 @@
             ],
             "pscCodes": {
                 "require": [
-                    "1040"
+                    ["Product", "1040"]
                 ],
                 "exclude": [],
-                "counts": [{"count": 1, "label":  "", "value": "Product"}]
+                "counts": [{"count": 1, "label": "", "value": "Product"}]
             },
             "awardType": [
                 "A",
@@ -2807,10 +2815,10 @@
         "expected_output": {
             "tasCodes": {
                 "require": [
-                    "310-2012/2012-3200-000"
+                    ["310", "310-3200", "310-2012/2012-3200-000"]
                 ],
                 "exclude": [],
-                "counts": [{"count": 1, "label":  "Access Board (USAB)", "value": "310"}]
+                "counts": [{"count": 1, "label": "Access Board (USAB)", "value": "310"}]
             }
         },
         "expected_tools": [
@@ -2830,10 +2838,10 @@
         "expected_output": {
             "tasCodes": {
                 "require": [
-                    "310-2012/2012-3200-000"
+                    ["310", "310-3200", "310-2012/2012-3200-000"]
                 ],
                 "exclude": [],
-                "counts": [{"count": 1, "label":  "Access Board (USAB)", "value": "310"}]
+                "counts": [{"count": 1, "label": "Access Board (USAB)", "value": "310"}]
             }
         },
         "expected_tools": [
@@ -2853,10 +2861,10 @@
         "expected_output": {
             "tasCodes": {
                 "require": [
-                    "310-3200"
+                    ["310", "310-3200"]
                 ],
                 "exclude": [],
-                "counts": [{"count": 15, "label":  "Access Board (USAB)", "value": "310"}]
+                "counts": [{"count": 15, "label": "Access Board (USAB)", "value": "310"}]
             }
         },
         "expected_tools": [
@@ -2876,10 +2884,10 @@
         "expected_output": {
             "tasCodes": {
                 "require": [
-                    "310-3200"
+                    ["310", "310-3200"]
                 ],
                 "exclude": [],
-                "counts": [{"count": 15, "label":  "Access Board (USAB)", "value": "310"}]
+                "counts": [{"count": 15, "label": "Access Board (USAB)", "value": "310"}]
             }
         },
         "expected_tools": [
@@ -2899,10 +2907,10 @@
         "expected_output": {
             "tasCodes": {
                 "require": [
-                    "310-3200"
+                    ["310", "310-3200"]
                 ],
                 "exclude": [],
-                "counts": [{"count": 15, "label":  "Access Board (USAB)", "value": "310"}]
+                "counts": [{"count": 15, "label": "Access Board (USAB)", "value": "310"}]
             }
         },
         "expected_tools": [
@@ -2922,10 +2930,10 @@
         "expected_output": {
             "tasCodes": {
                 "require": [
-                    "310-3200"
+                    ["310", "310-3200"]
                 ],
                 "exclude": [],
-                "counts": [{"count": 15, "label":  "Access Board (USAB)", "value": "310"}]
+                "counts": [{"count": 15, "label": "Access Board (USAB)", "value": "310"}]
             }
         },
         "expected_tools": [
@@ -2945,10 +2953,10 @@
         "expected_output": {
             "tasCodes": {
                 "require": [
-                    "020"
+                    ["020"]
                 ],
                 "exclude": [],
-                "counts": [{"count": 501, "label":  "Department of the Treasury (TREAS)", "value": "020"}]
+                "counts": [{"count": 501, "label": "Department of the Treasury (TREAS)", "value": "020"}]
             }
         },
         "expected_tools": [
@@ -2968,13 +2976,13 @@
         "expected_output": {
             "tasCodes": {
                 "require": [
-                    "089-0213",
-                    "089-0218",
-                    "089-0219",
-                    "089-0233"
+                    ["089", "089-0213"],
+                    ["089", "089-0218"],
+                    ["089", "089-0219"],
+                    ["089", "089-0233"]
                 ],
                 "exclude": [],
-                "counts": [{"count": 20, "label":  "Department of Energy (DOE)", "value": "089"}]
+                "counts": [{"count": 20, "label": "Department of Energy (DOE)", "value": "089"}]
             }
         },
         "expected_tools": [
@@ -3092,22 +3100,16 @@
             },
             "pscCodes": {
                 "require": [
-                    "R415",
-                    "R540",
-                    "R544",
-                    "W070",
-                    "B540",
-                    "D",
-                    "U012"
+                    ["Service", "R415"],
+                    ["Service", "R540"],
+                    ["Service", "R544"],
+                    ["Service", "W070"],
+                    ["Service", "B540"],
+                    ["Service", "D"],
+                    ["Service", "U012"]
                 ],
                 "exclude": [],
-                "counts": [
-                    {"count": 3, "label": "", "value": "R"},
-                    {"count": 1, "label": "", "value": "W"},
-                    {"count": 1, "label": "", "value": "B"},
-                    {"count": 59, "label": "", "value": "D"},
-                    {"count": 1, "label": "", "value": "U"}
-                ]
+                "counts": [{"count": 65, "label": "", "value": "Service"}]
             },
             "awardType": [
                 "A",
@@ -3166,22 +3168,16 @@
             },
             "pscCodes": {
                 "require": [
-                    "R415",
-                    "R540",
-                    "R544",
-                    "W070",
-                    "B540",
-                    "D",
-                    "U012"
+                    ["Service", "R415"],
+                    ["Service", "R540"],
+                    ["Service", "R544"],
+                    ["Service", "W070"],
+                    ["Service", "B540"],
+                    ["Service", "D"],
+                    ["Service", "U012"]
                 ],
                 "exclude": [],
-                "counts": [
-                    {"count": 3, "label": "", "value": "R"},
-                    {"count": 1, "label": "", "value": "W"},
-                    {"count": 1, "label": "", "value": "B"},
-                    {"count": 59, "label": "", "value": "D"},
-                    {"count": 1, "label": "", "value": "U"}
-                ]
+                "counts": [{"count": 65, "label": "", "value": "Service"}]
             },
             "awardType": [
                 "A",
@@ -3490,27 +3486,19 @@
             ],
             "pscCodes": {
                 "require": [
-                    "F011",
-                    "H138",
-                    "H238",
-                    "H338",
-                    "H938",
-                    "J038",
-                    "K038",
-                    "L038",
-                    "N038",
-                    "W038"
+                    ["Service", "F011"],
+                    ["Service", "H138"],
+                    ["Service", "H238"],
+                    ["Service", "H338"],
+                    ["Service", "H938"],
+                    ["Service", "J038"],
+                    ["Service", "K038"],
+                    ["Service", "L038"],
+                    ["Service", "N038"],
+                    ["Service", "W038"]
                 ],
                 "exclude": [],
-                "counts": [
-                    {"count": 1, "label": "", "value": "F"},
-                    {"count": 4, "label": "", "value": "H"},
-                    {"count": 1, "label": "", "value": "J"},
-                    {"count": 1, "label": "", "value": "K"},
-                    {"count": 1, "label": "", "value": "L"},
-                    {"count": 1, "label": "", "value": "N"},
-                    {"count": 1, "label": "", "value": "W"}
-                ]
+                "counts": [{"count": 10, "label": "", "value": "Service"}]
             }
         },
         "expected_tools": [
@@ -3747,7 +3735,7 @@
         "expected_output": {
             "pscCodes": {
                 "require": [
-                    "AC"
+                    ["Research and Development", "AC"]
                 ],
                 "exclude": [],
                 "counts": [{"count": 56, "label": "", "value": "Research and Development"}]
@@ -4256,7 +4244,7 @@
             ],
             "tasCodes": {
                 "require": [
-                    "310-2012/2012-3200-000"
+                    ["310", "310-3200", "310-2012/2012-3200-000"]
                 ],
                 "exclude": [],
                 "counts": [{"count": 1, "label": "Access Board (USAB)", "value": "310"}]
@@ -4280,8 +4268,8 @@
         "expected_output": {
             "tasCodes": {
                 "require": [
-                    "310",
-                    "302"
+                    ["310"],
+                    ["302"]
                 ],
                 "exclude": [],
                 "counts": [
@@ -4308,7 +4296,7 @@
         "expected_output": {
             "tasCodes": {
                 "require": [
-                    "310"
+                    ["310"]
                 ],
                 "exclude": [],
                 "counts": [{"count": 15, "label": "Access Board (USAB)", "value": "310"}]
@@ -4495,7 +4483,7 @@
         "expected_output": {
             "pscCodes": {
                 "require": [
-                    "AR1"
+                    ["Research and Development", "AR1"]
                 ],
                 "exclude": [],
                 "counts": [{"count": 7, "label": "", "value": "Research and Development"}]
@@ -4862,7 +4850,7 @@
         "expected_output": {
             "pscCodes": {
                 "require": [
-                    "AC"
+                    ["Research and Development", "AC"]
                 ],
                 "exclude": [],
                 "counts": [{"count": 56, "label": "", "value": "Research and Development"}]
