@@ -12,6 +12,7 @@ from usaspending_api.llm.tools.exceptions import (
     AwardNotRecognizedError,
     AwardTypeEraMismatchError,
     DefcCodeNotRecognizedError,
+    FilterValidationError,
     RecipientNotRecognizedError,
     TimePeriodNotParseableError,
 )
@@ -371,8 +372,10 @@ class TestValidationErrorTranslation:
     """Single-category pydantic validation failures (DEFC, award amount, time period) are raised
     as specific exceptions instead of being swallowed into a generic error dict, so the assistant
     can show a clean user-facing message while still receiving the full pydantic detail for
-    self-correction. Anything spanning more than one category, or an unrecognized field, keeps the
-    original generic-error-dict behavior."""
+    self-correction. Failures spanning more than one category are raised as a generic
+    FilterValidationError for the same reason -- a returned error dict never reaches the frontend
+    as a visible error, even though it looks like one to the model. An unrecognized field by
+    itself keeps the original generic-error-dict behavior."""
 
     @pytest.fixture(autouse=True)
     async def seed_defc_codes(self):
@@ -422,17 +425,19 @@ class TestValidationErrorTranslation:
         )
         assert "not a valid date" in exc_info.value.model_detail
 
-    async def test_mixed_category_failure_falls_back_to_error_dict(self):
-        """Errors spanning more than one recognized category keep the original behavior: a
-        returned error dict, not a raised exception."""
-        result = await execute_filter(
-            defCodes={"require": ["NOT_REAL"]},
-            timePeriodType="dr",
-            time_period=[{"start_date": "invalid-date", "end_date": "2023-12-31"}],
-        )
+    async def test_mixed_category_failure_raises_generic_validation_error(self):
+        """Errors spanning more than one recognized category are raised, not returned as a dict,
+        so the assistant emits a visible tool_error event to the frontend instead of the tool call
+        looking like a success."""
+        with pytest.raises(FilterValidationError) as exc_info:
+            await execute_filter(
+                defCodes={"require": ["NOT_REAL"]},
+                timePeriodType="dr",
+                time_period=[{"start_date": "invalid-date", "end_date": "2023-12-31"}],
+            )
 
-        assert "error" in result
-        assert "message" in result
+        assert "invalid" in exc_info.value.user_message.lower()
+        assert "NOT_REAL" in exc_info.value.model_detail
 
 
 class TestAwardTypeEraMismatch:

@@ -16,6 +16,7 @@ from usaspending_api.llm.tools.exceptions import (
     AwardNotRecognizedError,
     AwardTypeEraMismatchError,
     DefcCodeNotRecognizedError,
+    FilterValidationError,
     RecipientNotRecognizedError,
     TimePeriodNotParseableError,
 )
@@ -139,6 +140,11 @@ async def execute_filter(**kwargs) -> dict[str, str]:
             and (field != "awardType" or "mix legacy numeric codes" in str(exc))
         ):
             raise _SINGLE_FIELD_ERRORS[field](_build_user_message(field, kwargs), model_detail=str(exc)) from exc
+        if len(fields) > 1:
+            raise FilterValidationError(
+                "The input parameters are invalid. Look at the error message and try again.",
+                model_detail=str(exc),
+            ) from exc
         return {
             "error": str(exc),
             "message": "The input parameters are invalid. Look at the error message and try again.",

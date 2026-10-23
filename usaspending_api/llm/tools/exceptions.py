@@ -57,3 +57,7 @@ class AwardNotRecognizedError(ToolUseRuntimeError):
 
 class RecipientNotRecognizedError(ToolUseRuntimeError):
     pass
+
+
+class FilterValidationError(ToolUseRuntimeError):
+    pass
