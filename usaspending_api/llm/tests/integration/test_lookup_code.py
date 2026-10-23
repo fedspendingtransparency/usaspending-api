@@ -365,7 +365,7 @@ class TestSearchResultNode:
         node = SearchResultNode(code="54", description="Root", score=0.1, all_results=all_results, config=config)
         d = node.to_dict()
 
-        assert set(d.keys()) == {"code", "description", "score", "children"}
+        assert set(d.keys()) == {"code", "description", "score", "children", "is_root", "is_leaf"}
         assert list(d["children"].keys()) == ["5413", "5411"]  # sorted by score desc
 
     def test_no_children_when_config_has_no_parent_fn(self):
