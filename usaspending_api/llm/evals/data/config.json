@@ -1253,7 +1253,7 @@
                     "23"
                 ],
                 "exclude": [],
-                "counts": []
+                "counts": [{"count": 31, "label":  "Construction", "value": "23"}]
             }
         },
         "expected_tools": [
@@ -2197,7 +2197,7 @@
                     "1111"
                 ],
                 "exclude": [],
-                "counts": []
+                "counts": [{"count": 8, "label":  "Agriculture, Forestry, Fishing and Hunting", "value": "11"}]
             }
         },
         "expected_tools": [
@@ -2220,7 +2220,7 @@
                     "111110"
                 ],
                 "exclude": [],
-                "counts": []
+                "counts": [{"count": 1, "label":  "Agriculture, Forestry, Fishing and Hunting", "value": "11"}]
             }
         },
         "expected_tools": [
@@ -2243,7 +2243,7 @@
                     "21"
                 ],
                 "exclude": [],
-                "counts": []
+                "counts": [{"count": 38, "label":  "Mining, Quarrying, and Oil and Gas Extraction", "value": "21"}]
             },
             "awardType": [
                 "A",
@@ -2273,7 +2273,7 @@
                     "212115"
                 ],
                 "exclude": [],
-                "counts": []
+                "counts": [{"count": 1, "label":  "Mining, Quarrying, and Oil and Gas Extraction", "value": "21"}]
             },
             "awardType": [
                 "A",
@@ -2303,7 +2303,7 @@
                     "1121"
                 ],
                 "exclude": [],
-                "counts": []
+                "counts": [{"count": 4, "label":  "Agriculture, Forestry, Fishing and Hunting", "value": "11"}]
             }
         },
         "expected_tools": [
@@ -2328,7 +2328,7 @@
                     "111930"
                 ],
                 "exclude": [],
-                "counts": []
+                "counts": [{"count": 3, "label":  "Agriculture, Forestry, Fishing and Hunting", "value": "11"}]
             }
         },
         "expected_tools": [
@@ -2352,7 +2352,7 @@
                     "111910"
                 ],
                 "exclude": [],
-                "counts": []
+                "counts": [{"count": 1, "label":  "Agriculture, Forestry, Fishing and Hunting", "value": "11"}]
             },
             "selectedRecipientLocations": {
                 "USA_AK": {
@@ -2395,7 +2395,7 @@
                     "111910"
                 ],
                 "exclude": [],
-                "counts": []
+                "counts": [{"count": 1, "label":  "Agriculture, Forestry, Fishing and Hunting", "value": "11"}]
             }
         },
         "expected_tools": [
@@ -2419,7 +2419,7 @@
                     "AA11"
                 ],
                 "exclude": [],
-                "counts": []
+                "counts": [{"count": 1, "label":  "", "value": "Research and Development"}]
             }
         },
         "expected_tools": [
@@ -2442,7 +2442,7 @@
                     "AA"
                 ],
                 "exclude": [],
-                "counts": []
+                "counts": [{"count": 39, "label":  "", "value": "Research and Development"}]
             }
         },
         "expected_tools": [
@@ -2465,7 +2465,7 @@
                     "10"
                 ],
                 "exclude": [],
-                "counts": []
+                "counts": [{"count": 15, "label":  "", "value": "Product"}]
             },
             "awardType": [
                 "A",
@@ -2501,7 +2501,7 @@
                     "5417"
                 ],
                 "exclude": [],
-                "counts": []
+                "counts": [{"count": 1, "label":  "", "value": "Product"}]
             }
         },
         "expected_tools": [
@@ -2525,7 +2525,7 @@
                     "AA11"
                 ],
                 "exclude": [],
-                "counts": []
+                "counts": [{"count": 1, "label":  "", "value": "Research and Development"}]
             }
         },
         "expected_tools": [
@@ -2559,7 +2559,7 @@
                     "1035"
                 ],
                 "exclude": [],
-                "counts": []
+                "counts": [{"count": 12, "label":  "", "value": "Product"}]
             },
             "awardType": [
                 "A",
@@ -2594,7 +2594,7 @@
                     "1040"
                 ],
                 "exclude": [],
-                "counts": []
+                "counts": [{"count": 1, "label":  "", "value": "Product"}]
             },
             "awardType": [
                 "A",
@@ -2810,7 +2810,7 @@
                     "310-2012/2012-3200-000"
                 ],
                 "exclude": [],
-                "counts": []
+                "counts": [{"count": 1, "label":  "Access Board (USAB)", "value": "310"}]
             }
         },
         "expected_tools": [
@@ -2833,7 +2833,7 @@
                     "310-2012/2012-3200-000"
                 ],
                 "exclude": [],
-                "counts": []
+                "counts": [{"count": 1, "label":  "Access Board (USAB)", "value": "310"}]
             }
         },
         "expected_tools": [
@@ -2853,10 +2853,10 @@
         "expected_output": {
             "tasCodes": {
                 "require": [
-                    "3200"
+                    "310-3200"
                 ],
                 "exclude": [],
-                "counts": []
+                "counts": [{"count": 15, "label":  "Access Board (USAB)", "value": "310"}]
             }
         },
         "expected_tools": [
@@ -2876,10 +2876,10 @@
         "expected_output": {
             "tasCodes": {
                 "require": [
-                    "3200"
+                    "310-3200"
                 ],
                 "exclude": [],
-                "counts": []
+                "counts": [{"count": 15, "label":  "Access Board (USAB)", "value": "310"}]
             }
         },
         "expected_tools": [
@@ -2899,10 +2899,10 @@
         "expected_output": {
             "tasCodes": {
                 "require": [
-                    "3200"
+                    "310-3200"
                 ],
                 "exclude": [],
-                "counts": []
+                "counts": [{"count": 15, "label":  "Access Board (USAB)", "value": "310"}]
             }
         },
         "expected_tools": [
@@ -2925,7 +2925,7 @@
                     "310-3200"
                 ],
                 "exclude": [],
-                "counts": []
+                "counts": [{"count": 15, "label":  "Access Board (USAB)", "value": "310"}]
             }
         },
         "expected_tools": [
@@ -2948,7 +2948,7 @@
                     "020"
                 ],
                 "exclude": [],
-                "counts": []
+                "counts": [{"count": 501, "label":  "Department of the Treasury (TREAS)", "value": "020"}]
             }
         },
         "expected_tools": [
@@ -2974,7 +2974,7 @@
                     "089-0233"
                 ],
                 "exclude": [],
-                "counts": []
+                "counts": [{"count": 20, "label":  "Department of Energy (DOE)", "value": "089"}]
             }
         },
         "expected_tools": [
@@ -3101,7 +3101,13 @@
                     "U012"
                 ],
                 "exclude": [],
-                "counts": []
+                "counts": [
+                    {"count": 3, "label": "", "value": "R"},
+                    {"count": 1, "label": "", "value": "W"},
+                    {"count": 1, "label": "", "value": "B"},
+                    {"count": 59, "label": "", "value": "D"},
+                    {"count": 1, "label": "", "value": "U"}
+                ]
             },
             "awardType": [
                 "A",
@@ -3169,7 +3175,13 @@
                     "U012"
                 ],
                 "exclude": [],
-                "counts": []
+                "counts": [
+                    {"count": 3, "label": "", "value": "R"},
+                    {"count": 1, "label": "", "value": "W"},
+                    {"count": 1, "label": "", "value": "B"},
+                    {"count": 59, "label": "", "value": "D"},
+                    {"count": 1, "label": "", "value": "U"}
+                ]
             },
             "awardType": [
                 "A",
@@ -3490,7 +3502,15 @@
                     "W038"
                 ],
                 "exclude": [],
-                "counts": []
+                "counts": [
+                    {"count": 1, "label": "", "value": "F"},
+                    {"count": 4, "label": "", "value": "H"},
+                    {"count": 1, "label": "", "value": "J"},
+                    {"count": 1, "label": "", "value": "K"},
+                    {"count": 1, "label": "", "value": "L"},
+                    {"count": 1, "label": "", "value": "N"},
+                    {"count": 1, "label": "", "value": "W"}
+                ]
             }
         },
         "expected_tools": [
@@ -3730,7 +3750,7 @@
                     "AC"
                 ],
                 "exclude": [],
-                "counts": []
+                "counts": [{"count": 56, "label": "", "value": "Research and Development"}]
             },
             "awardType": [
                 "A",
@@ -4239,7 +4259,7 @@
                     "310-2012/2012-3200-000"
                 ],
                 "exclude": [],
-                "counts": []
+                "counts": [{"count": 1, "label": "Access Board (USAB)", "value": "310"}]
             }
         },
         "expected_tools": [
@@ -4264,7 +4284,10 @@
                     "302"
                 ],
                 "exclude": [],
-                "counts": []
+                "counts": [
+                    {"count": 15, "label": "Access Board (USAB)", "value": "310"},
+                    {"count": 9, "label": "Administrative Conference of the U.S. (ACUS)", "value": "302"}
+                ]
             }
         },
         "expected_tools": [
@@ -4288,7 +4311,7 @@
                     "310"
                 ],
                 "exclude": [],
-                "counts": []
+                "counts": [{"count": 15, "label": "Access Board (USAB)", "value": "310"}]
             },
             "locationDomesticForeign": "foreign"
         },
@@ -4475,7 +4498,7 @@
                     "AR1"
                 ],
                 "exclude": [],
-                "counts": []
+                "counts": [{"count": 7, "label": "", "value": "Research and Development"}]
             },
             "awardType": [
                 "A",
@@ -4505,7 +4528,7 @@
                     "9271"
                 ],
                 "exclude": [],
-                "counts": []
+                "counts": [{"count": 1, "label": "Public Administration", "value": "92"}]
             }
         },
         "expected_tools": [
@@ -4842,7 +4865,7 @@
                     "AC"
                 ],
                 "exclude": [],
-                "counts": []
+                "counts": [{"count": 56, "label": "", "value": "Research and Development"}]
             },
             "selectedAwardingAgencies": {
                 "1173_toptier": {

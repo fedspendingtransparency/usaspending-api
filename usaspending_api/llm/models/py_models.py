@@ -7,8 +7,9 @@ from pydantic_core import PydanticCustomError
 
 from usaspending_api.awards.v2.lookups.lookups import all_awards_types_to_category
 from usaspending_api.common.helpers.orm_helpers import award_types_are_valid_groups
-from usaspending_api.llm.tools.helpers.hierarchy_parsers import get_naics_parent, get_psc_parent, get_tas_parent
+from usaspending_api.llm.tools.helpers.hierarchy_parsers import get_naics_parent, get_tas_parent
 from usaspending_api.references.helpers import aget_defc_code_details, get_defc_code_details
+from usaspending_api.references.v2.views.filter_tree.psc_filter_tree import PSC_GROUPS
 
 
 class InferenceConfig(BaseModel):
@@ -162,6 +163,35 @@ class SelectedAgency(BaseModel):
         return self
 
 
+class SelectedCFDA(BaseModel):
+    """Model for a selected CFDA (Assistance Listing) program, keyed by its program number."""
+
+    identifier: str
+    program_number: str
+    program_title: str | None = None
+    popular_name: str | None = None
+
+    @model_validator(mode="after")
+    def identifier_matches_program_number(self) -> "SelectedCFDA":
+        if self.identifier != self.program_number:
+            raise PydanticCustomError(
+                "identifier_mismatch", "'identifier' must equal 'program_number' for a selected CFDA."
+            )
+        return self
+
+
+def _validate_cfda_keys_match_identifier(value: dict[str, SelectedCFDA]) -> dict[str, SelectedCFDA]:
+    """Shared check for Filters/ExecuteFilterInput: selectedCFDA must be keyed by its own identifier."""
+    mismatched = [key for key, cfda in value.items() if key != cfda.identifier]
+    if mismatched:
+        raise PydanticCustomError(
+            "cfda_key_mismatch",
+            "Each selectedCFDA key must equal its entry's 'identifier' (the CFDA program number).",
+            {"mismatched_keys": mismatched},
+        )
+    return value
+
+
 class CodeDisplay(BaseModel):
     """Model containing details for how a collection of codes are displayed"""
 
@@ -221,7 +251,27 @@ class NaicsCodeDisplay(CodeDisplay):
 
 
 class PscCodeDisplay(CodeDisplay):
-    _get_parent = staticmethod(get_psc_parent)
+    """PSC's root is a synthetic Tier1 group label (see PSC_GROUPS), not a code with its own
+    ancestor chain, so rootness is group membership rather than a parent-code lookup."""
+
+    _get_parent = staticmethod(lambda code: None)
+
+    @field_validator("value", mode="after")
+    @classmethod
+    def validate_is_psc_group_label(cls, value: str) -> str:
+        if value not in PSC_GROUPS:
+            raise PydanticCustomError(
+                "invalid_psc_root",
+                f"'value' must be one of the PSC Tier1 group labels: {[str(key) for key in PSC_GROUPS]}",
+            )
+        return value
+
+    @field_validator("label", mode="after")
+    @classmethod
+    def validate_label_is_empty(cls, value: str) -> str:
+        if value != "":
+            raise PydanticCustomError("label_must_be_empty", "'label' must be an empty string for PSC Tier1 groups.")
+        return value
 
 
 class TasCodeDisplay(CodeDisplay):
@@ -242,22 +292,14 @@ def _counts_field(code_display_type: type[CodeDisplay]) -> Annotated:
 class CodeLists(BaseModel):
     """Base Model for code lists
     e.g. naics codes, psc codes, and tas codes
+
+    'require'/'exclude' shape differs by code type (flat codes for NAICS, hierarchical paths for
+    PSC/TAS), so each subclass declares its own typed 'require'/'exclude' and the matching
+    'codes_in_require_exist_in_counts' validator. Only the shape-agnostic checks live here.
     """
 
-    require: Annotated[
-        list[str],
-        Field(
-            default_factory=list,
-            description="List of codes that must be present.",
-            json_schema_extra={"examples": [["336411", "336412"]]},
-        ),
-    ]
-    exclude: Annotated[
-        list[str],
-        Field(
-            default_factory=list, description="List of codes to exclude", json_schema_extra={"examples": [["336413"]]}
-        ),
-    ]
+    require: Annotated[list, Field(default_factory=list, description="List of codes/paths that must be present.")]
+    exclude: Annotated[list, Field(default_factory=list, description="List of codes/paths to exclude.")]
     counts: _counts_field(CodeDisplay)
 
     @model_validator(mode="before")
@@ -297,8 +339,28 @@ class CodeLists(BaseModel):
 
         return code_display_list
 
+
+class NaicsCodeLists(CodeLists):
+    require: Annotated[
+        list[str],
+        Field(
+            default_factory=list,
+            description="List of NAICS codes that must be present.",
+            json_schema_extra={"examples": [["336411", "336412"]]},
+        ),
+    ]
+    exclude: Annotated[
+        list[str],
+        Field(
+            default_factory=list,
+            description="List of NAICS codes to exclude.",
+            json_schema_extra={"examples": [["336413"]]},
+        ),
+    ]
+    counts: _counts_field(NaicsCodeDisplay)
+
     @model_validator(mode="after")
-    def codes_in_require_exist_in_counts(self) -> "CodeLists":
+    def codes_in_require_exist_in_counts(self) -> "NaicsCodeLists":
         counts_pattern = "|".join([re.escape(code_display.value) for code_display in self.counts])
         counts_pattern = f"^(?:{counts_pattern}).*$"
 
@@ -312,16 +374,105 @@ class CodeLists(BaseModel):
         return self
 
 
-class NaicsCodeLists(CodeLists):
-    counts: _counts_field(NaicsCodeDisplay)
-
-
 class PscCodeLists(CodeLists):
+    require: Annotated[
+        list[list[str]],
+        Field(
+            default_factory=list,
+            description=(
+                "List of PSC paths. Each path is [Tier1 group label, ...PSC code segments]. The first "
+                "element must be one of the PSC Tier1 group labels ('Research and Development', "
+                "'Service', 'Product'); any remaining elements are alphanumeric PSC codes."
+            ),
+            json_schema_extra={"examples": [[["Research and Development", "AC"], ["Service", "D"]]]},
+        ),
+    ]
+    exclude: Annotated[
+        list[list[str]],
+        Field(
+            default_factory=list,
+            description="List of PSC paths to exclude, same shape as 'require'.",
+            json_schema_extra={"examples": [[["Service", "D", "D3"]]]},
+        ),
+    ]
     counts: _counts_field(PscCodeDisplay)
+
+    @field_validator("require", "exclude", mode="after")
+    @classmethod
+    def validate_psc_paths(cls, paths: list[list[str]]) -> list[list[str]]:
+        code_pattern = re.compile(r"[A-Z0-9]{1,4}")
+        for path in paths:
+            if not path or path[0] not in PSC_GROUPS:
+                raise PydanticCustomError(
+                    "invalid_psc_root",
+                    f"The first element of each PSC path must be one of: {[str(key) for key in PSC_GROUPS]}.",
+                    {"path": path},
+                )
+            invalid_codes = [code for code in path[1:] if not code_pattern.fullmatch(code)]
+            if invalid_codes:
+                raise PydanticCustomError(
+                    "invalid_psc_code",
+                    "PSC codes must be one to four character uppercased alphanumeric strings.",
+                    {"codes": invalid_codes},
+                )
+        return paths
+
+    @model_validator(mode="after")
+    def codes_in_require_exist_in_counts(self) -> "PscCodeLists":
+        valid_roots = {code_display.value for code_display in self.counts}
+        missing_paths = [path for path in self.require if path[0] not in valid_roots]
+        if missing_paths:
+            raise PydanticCustomError(
+                "missing_codes_in_counts",
+                "'counts' must contain an entry for each PSC Tier1 group represented by the paths in 'require'.",
+                {"missing_paths": missing_paths},
+            )
+        return self
 
 
 class TasCodeLists(CodeLists):
+    require: Annotated[
+        list[list[str]],
+        Field(
+            default_factory=list,
+            description=(
+                "List of hierarchical TAS paths, each 1-3 elements: [agency_code] or "
+                "[agency_code, agency_code-main_account, full_tas_rendering_label]."
+            ),
+            json_schema_extra={"examples": [[["310"], ["535", "535-2724", "535-2020/2021-2724-000"]]]},
+        ),
+    ]
+    exclude: Annotated[
+        list[list[str]],
+        Field(
+            default_factory=list,
+            description="List of hierarchical TAS paths to exclude, same shape as 'require'.",
+            json_schema_extra={"examples": [[["535", "535-2724"]]]},
+        ),
+    ]
     counts: _counts_field(TasCodeDisplay)
+
+    @field_validator("require", "exclude", mode="after")
+    @classmethod
+    def validate_tas_paths(cls, paths: list[list[str]]) -> list[list[str]]:
+        invalid_paths = [path for path in paths if not path or len(path) > 3]
+        if invalid_paths:
+            raise PydanticCustomError(
+                "invalid_tas_path", "Each TAS path must have between 1 and 3 elements.", {"paths": invalid_paths}
+            )
+        return paths
+
+    @model_validator(mode="after")
+    def codes_in_require_exist_in_counts(self) -> "TasCodeLists":
+        valid_roots = {code_display.value for code_display in self.counts}
+        missing_paths = [path for path in self.require if path[0] not in valid_roots]
+        if missing_paths:
+            raise PydanticCustomError(
+                "missing_codes_in_counts",
+                "'counts' must contain an entry for each root node represented by the paths in 'require'.",
+                {"missing_paths": missing_paths},
+            )
+        return self
 
 
 DEFC_GROUPS = ("covid_19", "infrastructure")
@@ -600,7 +751,7 @@ class Filters(BaseModel):
     awardType: list[str] = Field(default_factory=list)
     selectedAwardIDs: list[str] = Field(default_factory=list)
     awardAmounts: AwardAmounts = Field(default_factory=lambda: AwardAmounts({}))
-    selectedCFDA: dict[str, Any] = Field(default_factory=dict)
+    selectedCFDA: dict[str, SelectedCFDA] = Field(default_factory=dict)
     naicsCodes: NaicsCodeLists = Field(default_factory=NaicsCodeLists)
     pscCodes: PscCodeLists = Field(default_factory=PscCodeLists)
     defCode: list[str] = []
@@ -641,6 +792,11 @@ class Filters(BaseModel):
             key = f"{agency_id}_{agency_type}" if agency_id is not None and agency_type else original_key
             rekeyed[key] = agency
         return rekeyed
+
+    @field_validator("selectedCFDA", mode="after")
+    @classmethod
+    def validate_selected_cfda(cls, value: dict[str, SelectedCFDA]) -> dict[str, SelectedCFDA]:
+        return _validate_cfda_keys_match_identifier(value)
 
     @field_validator("timePeriodFY")
     @classmethod
@@ -876,7 +1032,7 @@ class ExecuteFilterInput(BaseModel):
             ]
         },
     )
-    selectedCFDA: dict[str, Any] = Field(
+    selectedCFDA: dict[str, SelectedCFDA] = Field(
         default_factory=dict,
         description="CFDA / Assistance Listing filter keyed by program number. Use the lookup_code tool.",
     )
@@ -964,6 +1120,11 @@ class ExecuteFilterInput(BaseModel):
     filterNaoActiveFromFyOrDateRange: bool = Field(
         default=False, description="When true, derive the new-awards-only window from the selected FY or date range."
     )
+
+    @field_validator("selectedCFDA", mode="after")
+    @classmethod
+    def validate_selected_cfda(cls, value: dict[str, SelectedCFDA]) -> dict[str, SelectedCFDA]:
+        return _validate_cfda_keys_match_identifier(value)
 
 
 class FilterRequest(BaseModel):
