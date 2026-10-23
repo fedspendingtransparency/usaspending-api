@@ -53,3 +53,7 @@ class AwardTypeEraMismatchError(ToolUseRuntimeError):
 
 class AwardNotRecognizedError(ToolUseRuntimeError):
     pass
+
+
+class RecipientNotRecognizedError(ToolUseRuntimeError):
+    pass
