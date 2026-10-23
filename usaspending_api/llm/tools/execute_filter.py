@@ -11,10 +11,18 @@ from usaspending_api.llm.models.py_models import (
     Filters,
 )
 from usaspending_api.llm.tools.exceptions import (
+    AgencyNotRecognizedError,
     AwardAmountNotParseableError,
+    AwardNotRecognizedError,
+    AwardTypeEraMismatchError,
     DefcCodeNotRecognizedError,
+    FilterValidationError,
+    RecipientNotRecognizedError,
     TimePeriodNotParseableError,
 )
+from usaspending_api.llm.tools.lookup_agency import lookup_agency_tool
+from usaspending_api.llm.tools.lookup_award import lookup_award_tool
+from usaspending_api.llm.tools.lookup_recipient import lookup_recipient_tool
 from usaspending_api.references.helpers import create_hash
 from usaspending_api.references.models import FilterHash
 
@@ -24,6 +32,7 @@ _SINGLE_FIELD_ERRORS = {
     "defCodes": DefcCodeNotRecognizedError,
     "awardAmounts": AwardAmountNotParseableError,
     "time_period": TimePeriodNotParseableError,
+    "awardType": AwardTypeEraMismatchError,
 }
 
 
@@ -31,10 +40,80 @@ def _build_user_message(field: str, kwargs: dict) -> str:
     if field == "defCodes":
         def_codes = kwargs.get("defCodes", {})
         codes = [*def_codes.get("require", []), *def_codes.get("exclude", [])]
-        return f"DEFC code not found: {', '.join(codes)}."
-    if field == "awardAmounts":
-        return f"Unable to filter awards based on the criteria {kwargs.get('awardAmounts')}."
-    return "Unable to filter based on the specified time period. Try rephrasing the dates you're looking for."
+        message = f"DEFC code not found: {', '.join(codes)}."
+    elif field == "awardAmounts":
+        message = f"Unable to filter awards based on the criteria {kwargs.get('awardAmounts')}."
+    elif field == "awardType":
+        message = (
+            f"Unable to filter: awardType mixes legacy numeric codes with new 'F'-prefixed codes "
+            f"{kwargs.get('awardType')}. Use only one era's codes for a given award-type group."
+        )
+    else:
+        message = "Unable to filter based on the specified time period. Try rephrasing the dates you're looking for."
+    return message
+
+
+async def _validate_agencies_exist(filters: Filters) -> None:
+    """Confirm every selected agency is resolvable via lookup_agency."""
+    invalid = []
+    for field in ("selectedAwardingAgencies", "selectedFundingAgencies"):
+        for agency in getattr(filters, field).values():
+            query = agency.toptier_agency.toptier_code
+            try:
+                results = await lookup_agency_tool.function(query=query)
+            except AgencyNotRecognizedError:
+                results = {}
+            if f"{agency.id}_{agency.agencyType}" not in results:
+                invalid.append(agency.toptier_agency.name)
+    if invalid:
+        raise AgencyNotRecognizedError(
+            f"Unable to filter. These agencies could not be verified: {', '.join(invalid)}. "
+            "Call lookup_agency for each and choose one of the returned agencies.",
+            model_detail=f"Unresolvable selected agencies: {invalid}",
+        )
+
+
+async def _validate_recipients_exist(filters: Filters) -> None:
+    """Confirm every selected recipient name is resolvable via lookup_recipient."""
+    invalid = []
+    for name in filters.selectedRecipients:
+        result = await lookup_recipient_tool.function(query=name)
+        found = {n.upper() for n in result.get("recipient_names", [])}
+        if name.upper() not in found:
+            invalid.append(name)
+    if invalid:
+        raise RecipientNotRecognizedError(
+            f"Unable to filter. These recipients could not be verified: {', '.join(invalid)}. "
+            "Call lookup_recipient for each and choose one of the returned recipient names.",
+            model_detail=f"Unresolvable selected recipients: {invalid}",
+        )
+
+
+async def _validate_award_ids_exist(filters: Filters) -> None:
+    """Confirm every selected award ID is resolvable via lookup_award."""
+    invalid = []
+    for award_id in filters.selectedAwardIDs:
+        try:
+            await lookup_award_tool.function(query=award_id)
+        except AwardNotRecognizedError:
+            invalid.append(award_id)
+    if invalid:
+        raise AwardNotRecognizedError(
+            f"Unable to filter. These award IDs could not be verified: {', '.join(invalid)}. "
+            "Call lookup_award for each and confirm it exists before retrying.",
+            model_detail=f"Unresolvable selected award IDs: {invalid}",
+        )
+
+
+def _filter_request_from_filters(filters: Filters) -> dict:
+    """Canonicalize an already-validated Filters instance into the persisted filter request shape."""
+    filter_request = FilterRequest(filters=filters).model_dump(exclude_none=True)
+    if "keyword" in filter_request["filters"]:
+        filter_request["filters"]["keyword"] = {v: v for v in filter_request["filters"]["keyword"]}
+    if "selectedAwardIDs" in filter_request["filters"]:
+        filter_request["filters"]["selectedAwardIDs"] = {v: v for v in filter_request["filters"]["selectedAwardIDs"]}
+
+    return filter_request
 
 
 def build_filter_request(filter_input: dict) -> dict:
@@ -45,28 +124,37 @@ def build_filter_request(filter_input: dict) -> dict:
     own error handling while sharing one canonical filter representation.
     """
     filters = Filters(**filter_input)
-    filter_request = FilterRequest(filters=filters).model_dump(exclude_none=True)
-    if "keyword" in filter_request["filters"]:
-        filter_request["filters"]["keyword"] = {v: v for v in filter_request["filters"]["keyword"]}
-    if "selectedAwardIDs" in filter_request["filters"]:
-        filter_request["filters"]["selectedAwardIDs"] = {v: v for v in filter_request["filters"]["selectedAwardIDs"]}
-
-    return filter_request
+    return _filter_request_from_filters(filters)
 
 
 async def execute_filter(**kwargs) -> dict[str, str]:
     logger.info(f"Starting execute_filter with {len(kwargs)} filter parameter(s)", extra={"filter_count": len(kwargs)})
 
     try:
-        filter_request = build_filter_request(kwargs)
+        filters = Filters(**kwargs)
     except ValidationError as exc:
         fields = {error["loc"][0] if error["loc"] else None for error in exc.errors()}
-        if len(fields) == 1 and (field := next(iter(fields))) in _SINGLE_FIELD_ERRORS:
+        if (
+            len(fields) == 1
+            and (field := next(iter(fields))) in _SINGLE_FIELD_ERRORS
+            and (field != "awardType" or "mix legacy numeric codes" in str(exc))
+        ):
             raise _SINGLE_FIELD_ERRORS[field](_build_user_message(field, kwargs), model_detail=str(exc)) from exc
+        if len(fields) > 1:
+            raise FilterValidationError(
+                "The input parameters are invalid. Look at the error message and try again.",
+                model_detail=str(exc),
+            ) from exc
         return {
             "error": str(exc),
             "message": "The input parameters are invalid. Look at the error message and try again.",
         }
+
+    await _validate_agencies_exist(filters)
+    await _validate_recipients_exist(filters)
+    await _validate_award_ids_exist(filters)
+
+    filter_request = _filter_request_from_filters(filters)
 
     logger.debug(f"Filter validation successful: {list(kwargs.keys())}")
 
