@@ -395,20 +395,20 @@
         "query": "How much is being spent on grants for healthcare?",
         "expected_output": {
             "selectedCFDA": {
-                "93.00A": {},
-                "93.078": {},
-                "93.226": {},
-                "93.391": {},
-                "93.428": {},
-                "93.440": {},
-                "93.450": {},
-                "93.457": {},
-                "93.691": {},
-                "93.717": {},
-                "93.720": {},
-                "93.801": {},
-                "93.835": {},
-                "93.968": {}
+                "93.00A": {"identifier": "93.00A", "program_number": "93.00A", "program_title": "Indian Health Service Domestic Violence Forensic Healthcare Services"},
+                "93.078": {"identifier": "93.078", "program_number": "93.078", "program_title": "Strengthening Emergency Care Delivery in the United States Healthcare System through Health Information and Promotion "},
+                "93.226": {"identifier": "93.226", "program_number": "93.226", "program_title": "Research on Healthcare Costs, Quality and Outcomes"},
+                "93.391": {"identifier": "93.391", "program_number": "93.391", "program_title": "Activities to Support State, Tribal, Local and Territorial (STLT) Health Department Response to Public Health or Healthcare Crises"},
+                "93.428": {"identifier": "93.428", "program_number": "93.428", "program_title": "Strengthening Emergency Care Delivery in the United States Healthcare System through Health Information and Promotion"},
+                "93.440": {"identifier": "93.440", "program_number": "93.440", "program_title": "National Project Management of the Healthcare Communities Knowledge Gateway "},
+                "93.450": {"identifier": "93.450", "program_number": "93.450", "program_title": "Ebola Healthcare Preparedness and Response for Select Cities with Enhanced Airport Entrance Screenings from Affected Countries in West Africa"},
+                "93.457": {"identifier": "93.457", "program_number": "93.457", "program_title": "Planning Grant for Healthcare and Public Health Sector Cybersecurity Information Sharing"},
+                "93.691": {"identifier": "93.691", "program_number": "93.691", "program_title": "Integrating the Healthcare Enterprise FHIR Cooperative Agreement Program"},
+                "93.717": {"identifier": "93.717", "program_number": "93.717", "program_title": "ARRA - Preventing Healthcare-Associated Infections"},
+                "93.720": {"identifier": "93.720", "program_number": "93.720", "program_title": "ARRA - Survey and Certification Ambulatory Surgical Center Healthcare-Associated Infection (ASC-HAI) Prevention Initiative"},
+                "93.801": {"identifier": "93.801", "program_number": "93.801", "program_title": "Ebola Healthcare Preparedness and Response for Select Cities with Enhanced Airport Entrance Screenings from Affected Countries in West Africa"},
+                "93.835": {"identifier": "93.835", "program_number": "93.835", "program_title": "Planning Grant for Healthcare and Public Health Sector Cybersecurity Information Sharing"},
+                "93.968": {"identifier": "93.968", "program_number": "93.968", "program_title": "Achieving Healthcare Efficiency through Accountable Design (AHEAD) Model"}
             },
             "awardType": [
                 "02",
@@ -1190,19 +1190,19 @@
                 "2026"
             ],
             "selectedCFDA": {
-                "93.071": {},
-                "93.518": {},
-                "93.626": {},
-                "93.628": {},
-                "93.634": {},
-                "93.773": {},
-                "93.770": {},
-                "93.774": {},
-                "93.777": {},
-                "93.779": {},
-                "93.783": {},
-                "93.829": {},
-                "93.986": {}
+                "93.071": {"identifier": "93.071", "program_number": "93.071", "program_title": "Medicare Enrollment Assistance Program"},
+                "93.518": {"identifier": "93.518", "program_number": "93.518", "program_title": "Affordable Care Act - Medicare Improvements for Patients and Providers"},
+                "93.626": {"identifier": "93.626", "program_number": "93.626", "program_title": "Affordable Care Act State Health Insurance Assistance Program (SHIP) and Aging and Disability Resource Center (ADRC) Options Counseling for Medicare-Medicaid Individuals in States with Approved Financial Alignment Models"},
+                "93.628": {"identifier": "93.628", "program_number": "93.628", "program_title": "Affordable Care Act Implementation Support for State Demonstrations to Integrate Care for Medicare-Medicaid Enrollees "},
+                "93.634": {"identifier": "93.634", "program_number": "93.634", "program_title": "Support for Ombudsman and Beneficiary Counseling Programs for States Participating in Financial Alignment Model Demonstrations for Dually Eligible Individuals"},
+                "93.773": {"identifier": "93.773", "program_number": "93.773", "program_title": "Medicare Hospital Insurance"},
+                "93.770": {"identifier": "93.770", "program_number": "93.770", "program_title": "Medicare Prescription Drug Coverage"},
+                "93.774": {"identifier": "93.774", "program_number": "93.774", "program_title": "Medicare Supplementary Medical Insurance"},
+                "93.777": {"identifier": "93.777", "program_number": "93.777", "program_title": "State Survey and Certification of Health Care Providers and Suppliers (Title XVIII) Medicare"},
+                "93.779": {"identifier": "93.779", "program_number": "93.779", "program_title": "Centers for Medicare and Medicaid Services (CMS) Research, Demonstrations and Evaluations"},
+                "93.783": {"identifier": "93.783", "program_number": "93.783", "program_title": "Medicare Transitional Drug Assistance Program for States"},
+                "93.829": {"identifier": "93.829", "program_number": "93.829", "program_title": "Section 223 Demonstration Programs to Improve Community Mental Health Services"},
+                "93.986": {"identifier": "93.986", "program_number": "93.986", "program_title": "Medicare Access and CHIP Reauthorization Act (MACRA) Funding Opportunity: Measure Development for the Quality Payment Program"}
             }
         },
         "expected_tools": [
@@ -1294,7 +1294,7 @@
                 }
             },
             "selectedCFDA": {
-                "16.110": {}
+                "16.110": {"identifier": "16.110", "program_number": "16.110", "program_title": "Education and Enforcement of the Antidiscrimination Provision of the Immigration and Nationality Act"}
             }
         },
         "expected_tools": [
@@ -1769,7 +1769,7 @@
                 "F002"
             ],
             "selectedCFDA": {
-                "14.257": {}
+                "14.257": {"identifier": "14.257", "program_number": "14.257", "program_title": "Homelessness Prevention and Rapid Re-Housing Program (Recovery Act Funded)"}
             }
         },
         "expected_tools": [
@@ -1797,7 +1797,7 @@
                 "F002"
             ],
             "selectedCFDA": {
-                "14.257": {}
+                "14.257": {"identifier": "14.257", "program_number": "14.257", "program_title": "Homelessness Prevention and Rapid Re-Housing Program (Recovery Act Funded)"}
             }
         },
         "expected_tools": [
@@ -1825,23 +1825,23 @@
                 "F002"
             ],
             "selectedCFDA": {
-                "14.020": {},
-                "14.235": {},
-                "14.257": {},
-                "14.260": {},
-                "14.261": {},
-                "14.262": {},
-                "14.276": {},
-                "14.277": {},
-                "17.805": {},
-                "64.024": {},
-                "84.196": {},
-                "84.383": {},
-                "84.387": {},
-                "93.150": {},
-                "93.224": {},
-                "93.550": {},
-                "93.557": {}
+                "14.020": {"identifier": "14.020", "program_number": "14.020", "program_title": "Youth Homeless System Improvement Grants"},
+                "14.235": {"identifier": "14.235", "program_number": "14.235", "program_title": "Supportive Housing Program"},
+                "14.257": {"identifier": "14.257", "program_number": "14.257", "program_title": "Homelessness Prevention and Rapid Re-Housing Program (Recovery Act Funded)"},
+                "14.260": {"identifier": "14.260", "program_number": "14.260", "program_title": "Veterans Homelessness Prevention Demonstration Program"},
+                "14.261": {"identifier": "14.261", "program_number": "14.261", "program_title": "National Homeless Data Analysis Project (NHDAP)"},
+                "14.262": {"identifier": "14.262", "program_number": "14.262", "program_title": "Homeless Prevention and Rapid Re-Housing Program Technical Assistance"},
+                "14.276": {"identifier": "14.276", "program_number": "14.276", "program_title": "Youth Homelessness Demonstration Program"},
+                "14.277": {"identifier": "14.277", "program_number": "14.277", "program_title": "Youth Homeless System Improvement Grants"},
+                "17.805": {"identifier": "17.805", "program_number": "17.805", "program_title": "Homeless Veterans\u2019 Reintegration Program "},
+                "64.024": {"identifier": "64.024", "program_number": "64.024", "program_title": "VA Homeless Providers Grant and Per Diem Program"},
+                "84.196": {"identifier": "84.196", "program_number": "84.196", "program_title": "Education for Homeless Children and Youth"},
+                "84.383": {"identifier": "84.383", "program_number": "84.383", "program_title": "Homeless Education Disaster Assistance Program"},
+                "84.387": {"identifier": "84.387", "program_number": "84.387", "program_title": "Education for Homeless Children and Youth, Recovery Act"},
+                "93.150": {"identifier": "93.150", "program_number": "93.150", "program_title": "Projects for Assistance in Transition from Homelessness (PATH)"},
+                "93.224": {"identifier": "93.224", "program_number": "93.224", "program_title": "Health Center Program"},
+                "93.550": {"identifier": "93.550", "program_number": "93.550", "program_title": "Transitional Living for Homeless Youth"},
+                "93.557": {"identifier": "93.557", "program_number": "93.557", "program_title": "Education and Prevention Grants to Reduce Sexual Abuse of Runaway, Homeless and Street Youth"}
             }
         },
         "expected_tools": [
@@ -1861,7 +1861,7 @@
         "query": "Find all awards under AL 14.257",
         "expected_output": {
             "selectedCFDA": {
-                "14.257": {}
+                "14.257": {"identifier": "14.257", "program_number": "14.257", "program_title": "Homelessness Prevention and Rapid Re-Housing Program (Recovery Act Funded)"}
             }
         },
         "expected_tools": [
@@ -1881,7 +1881,7 @@
         "query": "Find all awards under ALN 14.257",
         "expected_output": {
             "selectedCFDA": {
-                "14.257": {}
+                "14.257": {"identifier": "14.257", "program_number": "14.257", "program_title": "Homelessness Prevention and Rapid Re-Housing Program (Recovery Act Funded)"}
             }
         },
         "expected_tools": [
@@ -1901,7 +1901,7 @@
         "query": "Find all awards under CFDA 14.257",
         "expected_output": {
             "selectedCFDA": {
-                "14.257": {}
+                "14.257": {"identifier": "14.257", "program_number": "14.257", "program_title": "Homelessness Prevention and Rapid Re-Housing Program (Recovery Act Funded)"}
             }
         },
         "expected_tools": [
@@ -1929,7 +1929,7 @@
                 "F002"
             ],
             "selectedCFDA": {
-                "14": {}
+                "14": {"identifier": "14", "program_number": "14", "program_title": ""}
             }
         },
         "expected_tools": [
@@ -1957,7 +1957,7 @@
                 "F002"
             ],
             "selectedCFDA": {
-                "14": {}
+                "14": {"identifier": "14", "program_number": "14", "program_title": ""}
             },
             "awardAmounts": {
                 "specific": [
@@ -1984,9 +1984,9 @@
         "query": "How much money was given under AL 14, 15, 16 to nonprofits",
         "expected_output": {
             "selectedCFDA": {
-                "14": {},
-                "15": {},
-                "16": {}
+                "14": {"identifier": "14", "program_number": "14", "program_title": ""},
+                "15": {"identifier": "15", "program_number": "15", "program_title": ""},
+                "16": {"identifier": "16", "program_number": "16", "program_title": ""}
             },
             "recipientType": [
                 "nonprofit"
@@ -2148,7 +2148,7 @@
         "query": "Show me awards with AL 12.103",
         "expected_output": {
             "selectedCFDA": {
-                "12.103": {}
+                "12.103": {"identifier": "12.103", "program_number": "12.103", "program_title": "Emergency Operations Flood Response and Post Flood Response"}
             }
         },
         "expected_tools": [
@@ -3610,33 +3610,33 @@
         "query": "List all grants for mental health",
         "expected_output": {
             "selectedCFDA": {
-                "16.033": {},
-                "16.070": {},
-                "16.745": {},
-                "64.019": {},
-                "64.043": {},
-                "64.048": {},
-                "93.104": {},
-                "93.156": {},
-                "93.242": {},
-                "93.243": {},
-                "93.244": {},
-                "93.24C": {},
-                "93.24N": {},
-                "93.24R": {},
-                "93.24S": {},
-                "93.24T": {},
-                "93.24X": {},
-                "93.275": {},
-                "93.281": {},
-                "93.282": {},
-                "93.532": {},
-                "93.534": {},
-                "93.538": {},
-                "93.828": {},
-                "93.829": {},
-                "93.958": {},
-                "93.982": {}
+                "16.033": {"identifier": "16.033", "program_number": "16.033", "program_title": "Collaborative Mental Health and Anti-Recidivism Initiative"},
+                "16.070": {"identifier": "16.070", "program_number": "16.070", "program_title": "Law Enforcement Mental Health and Wellness Act"},
+                "16.745": {"identifier": "16.745", "program_number": "16.745", "program_title": "Criminal and Juvenile Justice and Mental Health Collaboration Program"},
+                "64.019": {"identifier": "64.019", "program_number": "64.019", "program_title": "Veterans Rehabilitation_Alcohol and Drug Dependence"},
+                "64.043": {"identifier": "64.043", "program_number": "64.043", "program_title": "VHA Mental Health Residential"},
+                "64.048": {"identifier": "64.048", "program_number": "64.048", "program_title": "VHA Mental Health clinics"},
+                "93.104": {"identifier": "93.104", "program_number": "93.104", "program_title": "Comprehensive Community Mental Health Services for Children with Serious Emotional Disturbances (SED)"},
+                "93.156": {"identifier": "93.156", "program_number": "93.156", "program_title": "Geriatric Training for Physicians, Dentists and Behavioral/Mental Health Professionals"},
+                "93.242": {"identifier": "93.242", "program_number": "93.242", "program_title": "Mental Health Research Grants"},
+                "93.243": {"identifier": "93.243", "program_number": "93.243", "program_title": "Substance Abuse and Mental Health Services Projects of Regional and National Significance"},
+                "93.244": {"identifier": "93.244", "program_number": "93.244", "program_title": "Mental Health Clinical and AIDS Service-Related Training Grants"},
+                "93.24C": {"identifier": "93.24C", "program_number": "93.24C", "program_title": "Mental Health Research - Research Centers"},
+                "93.24N": {"identifier": "93.24N", "program_number": "93.24N", "program_title": "Mental Health Research - Training, Institutional"},
+                "93.24R": {"identifier": "93.24R", "program_number": "93.24R", "program_title": "Mental Health Research - Research Projects"},
+                "93.24S": {"identifier": "93.24S", "program_number": "93.24S", "program_title": "Mental Health Research - SBIR/STTR"},
+                "93.24T": {"identifier": "93.24T", "program_number": "93.24T", "program_title": "Mental Health Research - Training, Individual"},
+                "93.24X": {"identifier": "93.24X", "program_number": "93.24X", "program_title": "Mental Health Research - Other Research"},
+                "93.275": {"identifier": "93.275", "program_number": "93.275", "program_title": "Substance Abuse and Mental Health Services-Access to Recovery"},
+                "93.281": {"identifier": "93.281", "program_number": "93.281", "program_title": "Mental Health Research Career/Scientist Development Awards"},
+                "93.282": {"identifier": "93.282", "program_number": "93.282", "program_title": "Mental Health National Research Service Awards for Research Training"},
+                "93.532": {"identifier": "93.532", "program_number": "93.532", "program_title": "Center for Mental Health Services Projects of Regional and National Significance"},
+                "93.534": {"identifier": "93.534", "program_number": "93.534", "program_title": "Affordable Care Act Program for Early Detection of Certain Medical Conditions Related to Environmental Health Hazards"},
+                "93.538": {"identifier": "93.538", "program_number": "93.538", "program_title": "Affordable Care Act - National Environmental Public Health Tracking Program-Network Implementation"},
+                "93.828": {"identifier": "93.828", "program_number": "93.828", "program_title": "Pediatric Mental Health Care Access Grants"},
+                "93.829": {"identifier": "93.829", "program_number": "93.829", "program_title": "Section 223 Demonstration Programs to Improve Community Mental Health Services"},
+                "93.958": {"identifier": "93.958", "program_number": "93.958", "program_title": "Block Grants for Community Mental Health Services"},
+                "93.982": {"identifier": "93.982", "program_number": "93.982", "program_title": "Mental Health Disaster Assistance and Emergency Mental Health"}
             },
             "awardType": [
                 "02",
@@ -3666,8 +3666,8 @@
         "query": "List all grants for mental health clinics",
         "expected_output": {
             "selectedCFDA": {
-                "64.048": {},
-                "93.244": {}
+                "64.048": {"identifier": "64.048", "program_number": "64.048", "program_title": "VHA Mental Health clinics"},
+                "93.244": {"identifier": "93.244", "program_number": "93.244", "program_title": "Mental Health Clinical and AIDS Service-Related Training Grants"}
             },
             "awardType": [
                 "02",
@@ -3716,7 +3716,7 @@
         "query": "Find all grants for national defense",
         "expected_output": {
             "selectedCFDA": {
-                "12.006": {}
+                "12.006": {"identifier": "12.006", "program_number": "12.006", "program_title": "National Defense Education Program"}
             },
             "awardType": [
                 "02",
@@ -4196,7 +4196,7 @@
                 "2026"
             ],
             "selectedCFDA": {
-                "16.014": {}
+                "16.014": {"identifier": "16.014", "program_number": "16.014", "program_title": "Engaging Men and Youth in Preventing Domestic Violence, Dating Violence, Sexual Assault, and Stalking"}
             }
         },
         "expected_tools": [
@@ -4216,7 +4216,7 @@
         "query": "All awards for assistance listing 16.014 in Arizona",
         "expected_output": {
             "selectedCFDA": {
-                "16.014": {}
+                "16.014": {"identifier": "16.014", "program_number": "16.014", "program_title": "Engaging Men and Youth in Preventing Domestic Violence, Dating Violence, Sexual Assault, and Stalking"}
             },
             "selectedLocations": {
                 "USA_AZ": {
@@ -4466,7 +4466,7 @@
         "query": "Show me all grants for space technology",
         "expected_output": {
             "selectedCFDA": {
-                "43.012": {}
+                "43.012": {"identifier": "43.012", "program_number": "43.012", "program_title": "Space Technology"}
             },
             "awardType": [
                 "02",
