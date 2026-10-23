@@ -168,7 +168,7 @@ class SelectedCFDA(BaseModel):
 
     identifier: str
     program_number: str
-    program_title: str | None = None
+    program_title: str
     popular_name: str | None = None
 
     @model_validator(mode="after")
