@@ -438,6 +438,20 @@ class AwardAmounts(RootModel[dict[str, list[int | None]]]):
         return self
 
 
+def _award_type_code_era(code: str) -> str | None:
+    """Classify an award-type code as 'old' (legacy numeric) or 'new' ('F'-prefixed).
+
+    Only the assistance-type categories (grants, direct_payments, loans,
+    other_financial_assistance) have both an old and new code for the same type; contracts
+    (A-D) and IDVs (IDV_*) have no such duality and return None.
+    """
+    if code.startswith("F") and code[1:].isdigit():
+        return "new"
+    if code.isdigit() or code == "-1":
+        return "old"
+    return None
+
+
 class Filters(BaseModel):
     """Validation model for all filter criteria and the persisted FilterHash blob."""
 
@@ -525,6 +539,12 @@ class Filters(BaseModel):
             )
         if not award_types_are_valid_groups(value):
             raise ValueError("'award_type_codes' must only contain types from one group.")
+        eras = {era for code in value if (era := _award_type_code_era(code)) is not None}
+        if eras == {"old", "new"}:
+            raise ValueError(
+                f"Award type codes mix legacy numeric codes with new 'F'-prefixed codes: {sorted(value)}. "
+                "Use only one era's codes for a given award-type group."
+            )
         return value
 
     @model_validator(mode="after")
