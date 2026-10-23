@@ -2,6 +2,9 @@
 Tests for graceful failure handling in the evaluation framework.
 """
 
+import threading
+import time
+
 import pytest
 
 from usaspending_api.llm.evals.base import BaseEval
@@ -15,14 +18,19 @@ class MockEval(BaseEval):
     assistant_name = "test_assistant"
     default_dataset_name = "test"
 
-    def __init__(self, fail_on_cases=None, **kwargs):
+    def __init__(self, fail_on_cases=None, delays=None, **kwargs):
         super().__init__(**kwargs)
         self.fail_on_cases = fail_on_cases or set()
+        self.delays = delays or {}
         self.executed_cases = []
+        self._executed_cases_lock = threading.Lock()
 
     def execute(self, case: EvalCase) -> EvalObservation:
         """Simulate execution that fails on specific cases."""
-        self.executed_cases.append(case.name)
+        with self._executed_cases_lock:
+            self.executed_cases.append(case.name)
+        if case.name in self.delays:
+            time.sleep(self.delays[case.name])
         if case.name in self.fail_on_cases:
             raise ExecutionError(f"Simulated execution failure for {case.name}")
         return EvalObservation(
@@ -396,3 +404,99 @@ def test_no_incremental_output_when_not_specified(test_cases, monkeypatch, tmp_p
 
     # No incremental file should be created in tmp_path
     assert not any(tmp_path.iterdir())
+
+
+def test_parallel_run_preserves_dataset_order(test_cases, monkeypatch):
+    """Test that parallel results stay in original dataset order even if cases complete out of order."""
+
+    def mock_load_cases(*args, **kwargs):
+        return test_cases
+
+    def mock_load_all_cases(*args, **kwargs):
+        return test_cases
+
+    monkeypatch.setattr("usaspending_api.llm.evals.base.load_cases", mock_load_cases)
+    monkeypatch.setattr("usaspending_api.llm.evals.base.load_all_cases", mock_load_all_cases)
+
+    # case_1 is the slowest and case_3 the fastest, forcing out-of-order completion.
+    delays = {"case_1": 0.15, "case_2": 0.05, "case_3": 0.0}
+
+    evaluator = MockEval(fail_on_cases=set(), delays=delays, fail_under=0.9, max_workers=3)
+    summary = evaluator.run()
+
+    assert summary.case_count == 3
+    assert summary.passed_count == 3
+    assert [result.case_name for result in summary.results] == ["case_1", "case_2", "case_3"]
+
+
+def test_parallel_run_case_failure_does_not_stop_run(test_cases, monkeypatch):
+    """Test that a single case failure doesn't stop a parallel run."""
+
+    def mock_load_cases(*args, **kwargs):
+        return test_cases
+
+    def mock_load_all_cases(*args, **kwargs):
+        return test_cases
+
+    monkeypatch.setattr("usaspending_api.llm.evals.base.load_cases", mock_load_cases)
+    monkeypatch.setattr("usaspending_api.llm.evals.base.load_all_cases", mock_load_all_cases)
+
+    evaluator = MockEval(fail_on_cases={"case_2"}, fail_under=0.5, max_workers=3)
+    summary = evaluator.run()
+
+    assert summary.case_count == 3
+    assert summary.passed_count == 2
+    assert summary.failed_count == 1
+
+    failed_results = [r for r in summary.results if not r.passed]
+    assert len(failed_results) == 1
+    assert failed_results[0].case_name == "case_2"
+    assert set(evaluator.executed_cases) == {"case_1", "case_2", "case_3"}
+
+
+def test_parallel_run_incremental_output_stays_well_formed(test_cases, monkeypatch, tmp_path):
+    """Test that the incremental output file isn't interleaved/corrupted under parallel execution."""
+
+    def mock_load_cases(*args, **kwargs):
+        return test_cases
+
+    def mock_load_all_cases(*args, **kwargs):
+        return test_cases
+
+    monkeypatch.setattr("usaspending_api.llm.evals.base.load_cases", mock_load_cases)
+    monkeypatch.setattr("usaspending_api.llm.evals.base.load_all_cases", mock_load_all_cases)
+
+    incremental_file = tmp_path / "incremental_results.txt"
+    delays = {"case_1": 0.1, "case_2": 0.05, "case_3": 0.0}
+
+    evaluator = MockEval(
+        fail_on_cases={"case_2"},
+        delays=delays,
+        fail_under=0.5,
+        max_workers=3,
+        incremental_output=incremental_file,
+    )
+    summary = evaluator.run()
+
+    assert summary.case_count == 3
+
+    content = incremental_file.read_text()
+
+    assert "# Incremental evaluation results for test_assistant" in content
+    assert "# Total cases: 3" in content
+
+    # Every case block should be fully intact (header line immediately followed by its own
+    # status line) rather than interleaved with another case's lines.
+    for case_name in ("case_1", "case_2", "case_3"):
+        assert f"Case: {case_name}" in content
+
+    lines = [line for line in content.splitlines() if line.startswith("[") or line.strip().startswith("Status:")]
+    for case_line, status_line in zip(lines[0::2], lines[1::2], strict=True):
+        assert case_line.startswith("[")
+        assert status_line.strip().startswith("Status:")
+
+
+def test_max_workers_below_one_raises_value_error():
+    """Test that max_workers must be at least 1."""
+    with pytest.raises(ValueError, match="max_workers must be at least 1"):
+        MockEval(max_workers=0)

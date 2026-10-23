@@ -1,7 +1,11 @@
 import logging
+import threading
 from abc import ABC, abstractmethod
+from concurrent.futures import Future, ThreadPoolExecutor, as_completed
 from pathlib import Path
 from statistics import fmean
+
+from django.db import connections
 
 from usaspending_api.llm.evals.exceptions import ExecutionError
 from usaspending_api.llm.evals.loader import load_all_cases, load_cases
@@ -24,7 +28,7 @@ class BaseEval(ABC):
     assistant_name: str
     default_dataset_name: str
 
-    def __init__(
+    def __init__(  # noqa: PLR0913
         self,
         *,
         dataset_name: str | None = None,
@@ -33,6 +37,7 @@ class BaseEval(ABC):
         tags: set[str] | None = None,
         fail_under: float | None = None,
         incremental_output: Path | None = None,
+        max_workers: int = 1,
     ) -> None:
         if not self.assistant_name:
             raise ValueError("assistant_name must be defined.")
@@ -40,6 +45,8 @@ class BaseEval(ABC):
             raise ValueError("default_dataset_name must be defined.")
         if fail_under is not None and not 0.0 <= fail_under <= 1.0:
             raise ValueError("fail_under must be between 0.0 and 1.0.")
+        if max_workers < 1:
+            raise ValueError("max_workers must be at least 1.")
 
         self.dataset_name = dataset_name or self.default_dataset_name
         self.selected_case_names = selected_case_names
@@ -47,6 +54,8 @@ class BaseEval(ABC):
         self.tags = tags
         self.fail_under = fail_under
         self.incremental_output = incremental_output
+        self.max_workers = max_workers
+        self._incremental_lock = threading.Lock()
 
     def load_cases(self) -> list[EvalCase]:
         """
@@ -106,7 +115,7 @@ class BaseEval(ABC):
     def _write_incremental_result(self, index: int, total: int, case: EvalCase, result: EvalResult) -> None:
         """Write a single case result to the incremental output file."""
         try:
-            with self.incremental_output.open("a", encoding="utf-8") as f:
+            with self._incremental_lock, self.incremental_output.open("a", encoding="utf-8") as f:
                 f.write(f"[{index}/{total}] Case: {case.name}\n")
                 f.write(f"  Status: {'PASS' if result.passed else ('ERROR' if result.error else 'FAIL')}\n")
                 f.write(f"  Score: {result.score:.4f}\n")
@@ -127,6 +136,62 @@ class BaseEval(ABC):
         except Exception as exc:
             logger.warning(f"Failed to write incremental result for case '{case.name}': {exc}")
 
+    def _record_result(self, i: int, total: int, case: EvalCase, result: EvalResult) -> None:
+        """Log a case's outcome and write it to the incremental output file, if configured."""
+        status = "PASS" if result.passed else ("ERROR" if result.error else "FAIL")
+        logger.info(f"[{i}/{total}] Case '{case.name}': {status} (score: {result.score:.2f})")
+
+        if result.error:
+            logger.error(f"  Error: {result.error}")
+        elif not result.passed:
+            if result.tool_call_match and not result.tool_call_match.passed:
+                logger.warning(f"  Tool calls: {result.tool_call_match.message}")
+            if result.output_match and not result.output_match.passed:
+                logger.warning(f"  Output: {result.output_match.message}")
+
+        if self.incremental_output:
+            self._write_incremental_result(i, total, case, result)
+
+    def _execute_case_in_pool(self, case: EvalCase) -> EvalResult:
+        """Run one case on a thread-pool worker, releasing its Django DB connection afterward."""
+        try:
+            return self._execute_case_safely(case)
+        finally:
+            connections.close_all()
+
+    def _run_sequential(self, cases: list[EvalCase]) -> list[EvalResult]:
+        """Execute cases one by one, in order, logging progress as each one completes."""
+        results = []
+        for i, case in enumerate(cases, start=1):
+            logger.info(f"[{i}/{len(cases)}] Running case: {case.name}")
+            result = self._execute_case_safely(case)
+            self._record_result(i, len(cases), case, result)
+            results.append(result)
+        return results
+
+    def _run_parallel(self, cases: list[EvalCase]) -> list[EvalResult]:
+        """
+        Execute cases concurrently on a bounded thread pool.
+
+        Results are always returned in original dataset order, independent of completion
+        order, so downstream reporting is deterministic regardless of concurrency.
+        """
+        results: list[EvalResult | None] = [None] * len(cases)
+
+        with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
+            future_to_index: dict[Future, int] = {
+                executor.submit(self._execute_case_in_pool, case): i for i, case in enumerate(cases)
+            }
+
+            for future in as_completed(future_to_index):
+                index = future_to_index[future]
+                case = cases[index]
+                result = future.result()
+                results[index] = result
+                self._record_result(index + 1, len(cases), case, result)
+
+        return results
+
     def run(self) -> EvalSummary:
         """
         Executes selected cases while retaining excluded cases for reporting.
@@ -138,6 +203,9 @@ class BaseEval(ABC):
         error messages, allowing the run to continue and preserve all results.
 
         Progress is logged incrementally so results are not lost if the run fails.
+
+        When `max_workers > 1`, cases execute concurrently via a thread pool, but `results`
+        is always returned in original dataset order, independent of completion order.
         """
         all_cases = load_all_cases(self.dataset_name)
         cases = self.load_cases()
@@ -156,29 +224,10 @@ class BaseEval(ABC):
                 f.write(f"# Dataset: {self.dataset_name}\n")
                 f.write(f"# Total cases: {len(cases)}\n\n")
 
-        # Execute cases one by one with progress logging
-        results = []
-        for i, case in enumerate(cases, start=1):
-            logger.info(f"[{i}/{len(cases)}] Running case: {case.name}")
-            result = self._execute_case_safely(case)
-
-            # Log immediate result
-            status = "PASS" if result.passed else ("ERROR" if result.error else "FAIL")
-            logger.info(f"[{i}/{len(cases)}] Case '{case.name}': {status} (score: {result.score:.2f})")
-
-            if result.error:
-                logger.error(f"  Error: {result.error}")
-            elif not result.passed:
-                if result.tool_call_match and not result.tool_call_match.passed:
-                    logger.warning(f"  Tool calls: {result.tool_call_match.message}")
-                if result.output_match and not result.output_match.passed:
-                    logger.warning(f"  Output: {result.output_match.message}")
-
-            results.append(result)
-
-            # Write incremental result to file
-            if self.incremental_output:
-                self._write_incremental_result(i, len(cases), case, result)
+        if self.max_workers > 1:
+            results = self._run_parallel(cases)
+        else:
+            results = self._run_sequential(cases)
 
         results = tuple(results)
         run_case_names = {case.name for case in cases}

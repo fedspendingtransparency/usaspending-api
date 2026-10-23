@@ -393,6 +393,23 @@ This is useful for:
 - Gradual quality improvement campaigns (start at 0.8, increase to 0.9, then 0.95)
 - Preventing regressions when deploying new models or prompts
 
+## Running Cases Concurrently
+
+By default, cases run one at a time. Use `--max-workers` to run multiple cases concurrently and
+reduce wall-clock time for large datasets:
+
+```sh
+python manage.py run_llm_eval \
+  --assistant filter_search \
+  --max-workers 4
+```
+
+Results are always reported in the original dataset order, regardless of completion order.
+
+Raise `--max-workers` cautiously: each case makes real AWS Bedrock calls, and Bedrock enforces
+per-model rate limits. Setting this too high risks `ThrottlingException`s, which will surface as
+failed cases rather than a cleanly throttled run.
+
 ## Assistant Metadata
 
 For executed cases, the Evaluation sheet includes configuration metadata captured from the active Assistant record:
