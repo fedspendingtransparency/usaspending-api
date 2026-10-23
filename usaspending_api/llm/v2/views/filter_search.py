@@ -95,7 +95,11 @@ async def filter_search(request: HttpRequest, payload: FilterSearchInput) -> Str
         except Exception as e:
             logger.error(f"Error during filter search: {e}", exc_info=True)
             yield _ndjson(
-                FilterSearchEvent(search_id=str(session.id), type="search_error", message="An error occurred.")
+                FilterSearchEvent(
+                    search_id=str(session.id),
+                    type="search_error",
+                    message="We are unable to provide an answer to your question at this time.",
+                )
             )
         finally:
             session.ended_at = timezone.now()

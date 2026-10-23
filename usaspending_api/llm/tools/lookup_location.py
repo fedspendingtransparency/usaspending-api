@@ -6,6 +6,7 @@ from opensearchpy.helpers.query import Q
 
 from usaspending_api.common.elasticsearch.search_wrappers import AsyncLocationSearch
 from usaspending_api.llm.models.py_models import AITool, AIToolDescription
+from usaspending_api.llm.tools.exceptions import LocationNotRecognizedError
 from usaspending_api.references.models import PopCongressionalDistrict, RefCountryCode
 
 logger = logging.getLogger(__name__)
@@ -22,7 +23,7 @@ class LocationLookupTool:
         "state": "State",
         "city": "City",
         "county": "County",
-        "zip_code": "Zip code",
+        "zip_code": "ZIP Code",
         "current_cd": "Current congressional district",
         "original_cd": "Original congressional district",
     }
@@ -61,17 +62,6 @@ class LocationLookupTool:
         return self._country_code_cache
 
     async def lookup_location(self, query: str, location_type: str | None = None, top_k: int = 15) -> dict[str, Any]:
-        """
-        Search for locations using fuzzy matching.
-
-        Args:
-            query: Location search term (name, code, zip, or district)
-            location_type: Optional filter by location type
-            top_k: Number of results to return (max 100)
-
-        Returns:
-            Dictionary with results or error information
-        """
         # Validation
         error_response = self._validate_inputs(query, location_type)
         if error_response:
@@ -106,8 +96,7 @@ class LocationLookupTool:
         country_codes = await self._get_country_codes()
         results = self._transform_results(response, state_abbreviations, country_codes)
 
-        # Log zero results as a warning for quality monitoring.
-        if len(results) == 0:
+        if not results:
             logger.warning(
                 f"Zero results returned for location lookup: query='{query}', location_type={location_type}",
                 extra={
@@ -117,6 +106,7 @@ class LocationLookupTool:
                     "zero_results": True,
                 },
             )
+            raise LocationNotRecognizedError(f"Unable to filter. Location not recognized: {query}")
 
         logger.info(
             f"Location lookup completed: query='{query}', results_count={len(results)}",
@@ -336,12 +326,31 @@ class LocationLookupTool:
 
         standalone = standalone_map.get(location_type, full_location)
         entity = self.ENTITY_DISPLAY_MAP.get(location_type, "Location")
+        title = self._build_title(data, location_type, standalone)
 
         return {
             "entity": entity,
             "standalone": standalone,
-            "title": full_location,
+            "title": title,
         }
+
+    @staticmethod
+    def _build_title(data: dict[str, Any], location_type: str, standalone: str) -> str:
+        """
+        Build the title display value that is used in the filter UI.
+
+        Title is just the standalone name for every type except city and county, which
+        append state (or country, for a foreign city) for disambiguation.
+        """
+        state_name = data.get("state_name")
+
+        if location_type == "city":
+            qualifier = state_name or data.get("country_name", "")
+            return f"{standalone}, {qualifier}" if qualifier else standalone
+        if location_type == "county":
+            return f"{standalone}, {state_name}" if state_name else standalone
+
+        return standalone
 
     @staticmethod
     def _get_state_abbr(state_name: str, state_abbreviations: dict[str, str]) -> str:
