@@ -11,6 +11,7 @@ from usaspending_api.llm.evals.assistants.filter_search import (
 )
 from usaspending_api.llm.evals.exceptions import ExecutionError
 from usaspending_api.llm.evals.models import EvalCase, EvalObservation, ToolCall
+from usaspending_api.llm.models.db_models import Message, Session, ToolUse
 
 
 def make_case(
@@ -229,6 +230,35 @@ async def test_get_final_filter_output_rejects_missing_successful_completion(mon
 
     with pytest.raises(ExecutionError, match="without a successful execute_filter call"):
         await get_final_filter_output(Mock())
+
+
+@pytest.mark.django_db
+async def test_get_final_filter_output_excludes_calls_whose_result_has_an_error_key():
+    """
+    Regression test: `result__contains="error"` is a Postgres JSONB containment check against the
+    scalar string "error", which never matches a dict that merely has an "error" key -- it was a
+    no-op, so a session that only ever produced failed execute_filter calls would incorrectly have
+    its last (failed) attempt re-validated and reported as "has invalid execute_filter input" instead
+    of the correct "completed without a successful execute_filter call". This must run against a real
+    queryset (not a Mock) since the bug is in how Django compiles the lookup to SQL.
+    """
+    session = await Session.objects.acreate()
+    message = await Message.objects.acreate(session=session, role="assistant", message="Using tool", order=0)
+    await ToolUse.objects.acreate(
+        message=message,
+        name="execute_filter",
+        tool_input={"not_a_real_field": True},
+        result={"error": "The input parameters are invalid."},
+    )
+    await ToolUse.objects.acreate(
+        message=message,
+        name="execute_filter",
+        tool_input={"not_a_real_field": True},
+        result={"error": "The input parameters are invalid."},
+    )
+
+    with pytest.raises(ExecutionError, match="without a successful execute_filter call"):
+        await get_final_filter_output(session)
 
 
 async def _async_iter(items):

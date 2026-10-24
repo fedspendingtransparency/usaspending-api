@@ -8,7 +8,7 @@ from model_bakery import baker
 from usaspending_api.llm.assistants.filter_search import FilterSearchAssistant
 from usaspending_api.llm.models.db_models import AIModel, Assistant, Session
 from usaspending_api.llm.models.py_models import AITool, clear_defc_rows_cache
-from usaspending_api.llm.tools.exceptions import DefcCodeNotRecognizedError
+from usaspending_api.llm.tools.exceptions import DefcCodeNotRecognizedError, ToolUseRuntimeError
 from usaspending_api.llm.tools.execute_filter import execute_filter_tool
 
 
@@ -518,8 +518,8 @@ class TestFilterSearchAssistant:
         self, mock_tool_use_create, assistant, mock_search_tool
     ):
         """A ToolUseRuntimeError's user_message goes to the tool_error event shown to the user;
-        model_detail (the richer pydantic guidance) goes to the toolResult content fed back to the
-        model so it can self-correct."""
+        model_detail (the richer pydantic guidance), plus a trailing retry instruction, goes to the
+        toolResult content fed back to the model so it can self-correct instead of giving up."""
         mock_tool_use = Mock()
         mock_tool_use.id = "tool-use-456"
         mock_tool_use.asave = AsyncMock()
@@ -548,4 +548,123 @@ class TestFilterSearchAssistant:
 
         tool_result_message = assistant.messages[-1]
         tool_result_content = tool_result_message["content"][0]["toolResult"]["content"][0]["json"]
-        assert tool_result_content["error"] == "Value error, Invalid DEFC code(s): ['BAD']."
+        assert tool_result_content["error"].startswith("Value error, Invalid DEFC code(s): ['BAD'].")
+        # The failing tool was execute_filter itself, so the appended instruction tells the model to
+        # retry execute_filter directly rather than the lookup-tool-specific "drop and continue" hint.
+        assert "call execute_filter again" in tool_result_content["error"]
+
+    @patch("usaspending_api.llm.models.db_models.ToolUse.objects.acreate", new_callable=AsyncMock)
+    async def test_handle_tool_use_appends_lookup_tool_retry_hint_for_non_completion_tools(
+        self, mock_tool_use_create, assistant, mock_tool
+    ):
+        """When the failing tool is NOT execute_filter, the appended instruction tells the model to
+        drop the unresolved value and still proceed to execute_filter -- not to retry that lookup
+        tool forever -- matching the "give up after one unhappy call" failure mode seen in evals."""
+        mock_tool_use = Mock()
+        mock_tool_use.id = "tool-use-789"
+        mock_tool_use.asave = AsyncMock()
+        mock_tool_use_create.return_value = mock_tool_use
+
+        mock_tool.function.side_effect = ToolUseRuntimeError(
+            "Unable to filter. We couldn't find an agency with the name: bogus.",
+            model_detail="No agency matched the query 'bogus'.",
+        )
+
+        tool_requests = [{"toolUse": {"toolUseId": "tool-789", "name": "test_tool", "input": {"query": "bogus"}}}]
+        mock_message = Mock()
+
+        _ = [event async for event in assistant.handle_tool_use(tool_requests, mock_message)]
+
+        tool_result_message = assistant.messages[-1]
+        tool_result_content = tool_result_message["content"][0]["toolResult"]["content"][0]["json"]
+        assert "drop this value and proceed to execute_filter" in tool_result_content["error"]
+
+
+class TestSanitizeToolUseInput:
+    """`_sanitize_tool_use_input` rewrites empty-string dict keys the model occasionally emits,
+    since Bedrock's Converse API rejects such keys and would otherwise permanently block the
+    conversation (see docstring on `_rekey_empty_string_key`)."""
+
+    @staticmethod
+    def _build_content(field: str, value: dict) -> list[dict]:
+        return [{"toolUse": {"name": "execute_filter", "input": {field: value}}}]
+
+    def test_rekeys_empty_string_agency_key_from_id_and_agency_type(self):
+        content = self._build_content(
+            "selectedAwardingAgencies", {"": {"id": 801, "agencyType": "toptier", "toptier_flag": True}}
+        )
+
+        FilterSearchAssistant._sanitize_tool_use_input(content)
+
+        agencies = content[0]["toolUse"]["input"]["selectedAwardingAgencies"]
+        assert agencies == {"801_toptier": {"id": 801, "agencyType": "toptier", "toptier_flag": True}}
+
+    def test_rekeys_empty_string_location_key_from_identifier(self):
+        content = self._build_content("selectedLocations", {"": {"identifier": "USA_TX"}})
+
+        FilterSearchAssistant._sanitize_tool_use_input(content)
+
+        locations = content[0]["toolUse"]["input"]["selectedLocations"]
+        assert locations == {"USA_TX": {"identifier": "USA_TX"}}
+
+    def test_rekeys_empty_string_award_amounts_key_to_specific(self):
+        """An empty-string awardAmounts key is always an unlabeled custom [min, max] range -- that's
+        exactly what the 'specific' bucket means, so it can be rekeyed unconditionally (unlike agency
+        and location entries, whose derived key depends on the entry's own fields)."""
+        content = self._build_content("awardAmounts", {"": [1000000, None]})
+
+        FilterSearchAssistant._sanitize_tool_use_input(content)
+
+        amounts = content[0]["toolUse"]["input"]["awardAmounts"]
+        assert amounts == {"specific": [1000000, None]}
+
+    def test_leaves_award_amounts_untouched_when_no_empty_key(self):
+        content = self._build_content("awardAmounts", {"range-0": [None, 1000]})
+
+        FilterSearchAssistant._sanitize_tool_use_input(content)
+
+        amounts = content[0]["toolUse"]["input"]["awardAmounts"]
+        assert amounts == {"range-0": [None, 1000]}
+
+    def test_falls_back_to_unknown_key_when_agency_entry_lacks_id_or_agency_type(self):
+        content = self._build_content("selectedAwardingAgencies", {"": {"toptier_flag": True}})
+
+        FilterSearchAssistant._sanitize_tool_use_input(content)
+
+        agencies = content[0]["toolUse"]["input"]["selectedAwardingAgencies"]
+        assert list(agencies.keys()) != [""]
+        assert list(agencies.keys())[0].startswith("unknown_")
+
+    def test_rekeys_empty_string_recipient_location_key_from_identifier(self):
+        content = self._build_content("selectedRecipientLocations", {"": {"identifier": "USA_TX"}})
+
+        FilterSearchAssistant._sanitize_tool_use_input(content)
+
+        locations = content[0]["toolUse"]["input"]["selectedRecipientLocations"]
+        assert locations == {"USA_TX": {"identifier": "USA_TX"}}
+
+    def test_rekeys_empty_string_cfda_key_when_entry_is_a_bare_code_string(self):
+        """Reproduces the exact corruption seen in production: the model put the CFDA program
+        number directly as the value under an empty-string key, instead of as the key itself."""
+        content = self._build_content("selectedCFDA", {"": "16.014"})
+
+        FilterSearchAssistant._sanitize_tool_use_input(content)
+
+        cfda = content[0]["toolUse"]["input"]["selectedCFDA"]
+        assert cfda == {"16.014": "16.014"}
+
+    def test_rekeys_empty_string_cfda_key_from_code_field_when_entry_is_a_dict(self):
+        content = self._build_content("selectedCFDA", {"": {"code": "16.014", "description": "..."}})
+
+        FilterSearchAssistant._sanitize_tool_use_input(content)
+
+        cfda = content[0]["toolUse"]["input"]["selectedCFDA"]
+        assert cfda == {"16.014": {"code": "16.014", "description": "..."}}
+
+    def test_rekeys_empty_string_treasury_account_key_when_entry_is_a_bare_code_string(self):
+        content = self._build_content("treasuryAccounts", {"": "012-2020/2021-0123-000"})
+
+        FilterSearchAssistant._sanitize_tool_use_input(content)
+
+        tas = content[0]["toolUse"]["input"]["treasuryAccounts"]
+        assert tas == {"012-2020/2021-0123-000": "012-2020/2021-0123-000"}

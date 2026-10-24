@@ -441,8 +441,12 @@ class TestErrorHandling:
     ):
         mock_embedding_generator.agenerate_embedding.return_value = None
 
-        with pytest.raises(exception_class):
+        with pytest.raises(exception_class) as exc_info:
             await tool.lookup_codes("nothing matches this", code_type)
+
+        # model_detail must suggest concrete alternatives rather than leaving the model with
+        # nothing but the bare "not found" message to retry against.
+        assert "shorter or more general query" in exc_info.value.model_detail
 
 
 class TestAIToolWiring:

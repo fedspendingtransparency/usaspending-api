@@ -340,6 +340,24 @@ class TestMatviewRowToEntry:
         assert entry["agencyType"] == "subtier"
         assert entry["subtier_agency"] == {"abbreviation": "NS", "name": "NASA Subtier"}
 
+    async def test_subtier_row_with_null_abbreviation_falls_back_to_name(self, tool):
+        # Some real subtier agencies (e.g. DOD's "Business Transformation Agency") have no
+        # abbreviation in the data. SelectedAgency.subtier_agency.abbreviation is required, so
+        # passing None through would make the field permanently unrecoverable by retry once the
+        # model selects one of these agencies.
+        row = await _make_matview_row(
+            "080",
+            "National Aeronautics and Space Administration",
+            "NASA",
+            subtier_name="NASA Subtier",
+            subtier_abbreviation=None,
+            toptier_flag=False,
+        )
+
+        entry = AgencyLookupTool._matview_row_to_entry(row)
+
+        assert entry["subtier_agency"] == {"abbreviation": "NASA Subtier", "name": "NASA Subtier"}
+
 
 class TestAgencyRowToEntry:
     async def test_maps_toptier_and_subtier_agency(self, tool):
@@ -360,6 +378,15 @@ class TestAgencyRowToEntry:
         }
         assert entry["subtier_agency"] == {"abbreviation": "NS", "name": "NASA Subtier"}
 
+    async def test_subtier_row_with_null_abbreviation_falls_back_to_name(self, tool):
+        top = await _make_toptier_agency("080", "National Aeronautics and Space Administration", "NASA")
+        sub = await _make_subtier_agency("NASA Subtier", None)
+        agency = await _make_agency(top, subtier_agency=sub, toptier_flag=False)
+
+        entry = AgencyLookupTool._agency_row_to_entry(agency)
+
+        assert entry["subtier_agency"] == {"abbreviation": "NASA Subtier", "name": "NASA Subtier"}
+
     async def test_toptier_agency_omits_subtier_agency(self, tool):
         top = await _make_toptier_agency("080", "National Aeronautics and Space Administration", "NASA")
         agency = await _make_agency(top, subtier_agency=None, toptier_flag=True)
@@ -375,8 +402,13 @@ class TestLookupAgenciesNoMatches:
         dims = getattr(ToptierAgency, "embedding_dimensions", 256)
         mock_embedding_generator.agenerate_embedding.return_value = _unit_vector(dims, 0)
 
-        with pytest.raises(AgencyNotRecognizedError, match="zzz-not-a-real-agency"):
+        with pytest.raises(AgencyNotRecognizedError, match="zzz-not-a-real-agency") as exc_info:
             await tool.lookup_agencies("zzz-not-a-real-agency")
+
+        # model_detail must suggest concrete alternatives (full name, abbreviation, toptier code)
+        # rather than leaving the model nothing to try besides repeating the same query.
+        assert "abbreviation" in exc_info.value.model_detail
+        assert "toptier code" in exc_info.value.model_detail
 
 
 class TestLookupAgencyToolRegistration:
