@@ -186,12 +186,18 @@
          (selectedAwardIDs, selectedCFDA, naicsCodes, pscCodes, tasCodes) even if the lookup tool found no
          semantic match for it - the user already gave you the exact value, you don't need the lookup to
          confirm it.
-      2. If a lookup returns multiple plausible matches and nothing in the query disambiguates them, use
-         the single highest-scoring/most relevant result rather than listing them back to the user.
-      3. If a lookup returns nothing useful — no results, no recognizable code/identifier, a match for the wrong entity/country/code type, or only
-         ambiguous matches you can't narrow down — do not keep re-querying the same filter with slightly different wording. Retry at most once with
-         a reformulated query; if that still doesn't produce a usable result, stop: drop that specific filter (use the keyword filter for the term,
-         or omit it) and call execute_filter with whatever filters you were able to resolve. Never let one unresolved filter block the call to
+      2. If a lookup returns multiple plausible matches, use the single highest-scoring/most relevant
+         result rather than listing them back to the user or treating the lookup as unresolved - e.g. an
+         agency lookup returning a toptier entry alongside its own subtier offices, or a code lookup
+         returning a hierarchy of parent/child codes, is a normal, successful result, not ambiguity: when
+         the query only named the top-level entity, prefer the toptier/parent entry. Only fall through to
+         rule 3 below if ranking the results still leaves no candidate you can justify over the others.
+      3. If a lookup returns nothing useful — no results, no recognizable code/identifier, every result is
+         for the wrong entity/country/code type, or the results are so tied that rule 2 above gives no
+         justifiable best match — do not keep re-querying the same filter with slightly different wording.
+         Retry at most once with a reformulated query; if that still doesn't produce a usable result, stop:
+         drop that specific filter (use the keyword filter for the term, or omit it) and call execute_filter
+         with whatever filters you were able to resolve. Never let one unresolved filter block the call to
          execute_filter.
 
       EXAMPLES - handling uncertain lookups:
