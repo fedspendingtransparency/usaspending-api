@@ -16,7 +16,20 @@
   fields:
     name: filter-search
     ai_model: 4  # nova micro model
-    system_prompt: 4  # filter-preference-v4 prompt - fixes agency/time-period hallucination
+    system_prompt: 4  # filter-preference-v4-micro
+    inference_config:
+      temperature: 0.0
+      topP: 1.0
+      maxTokens: 10000
+      stopSequences: []
+    is_active: true
+    description: "Assistant using filter-preference-v4 to address agency filter and time period hallucinations."
+- model: llm.assistant
+  pk: 3
+  fields:
+    name: filter-search
+    ai_model: 5  # nova pro model
+    system_prompt: 5  # filter-preference-v4-pro
     inference_config:
       temperature: 0.0
       topP: 1.0
