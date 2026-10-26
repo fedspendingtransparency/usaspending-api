@@ -90,8 +90,21 @@ services:
         read_only: false
     depends_on:
       - usaspending-db
-    # For an interactive shell, override this command with: docker compose run --rm usaspending-manage python3 -u manage.py shell
     entrypoint: ["uv", "run", "manage.py"]
+    environment:
+      <<: *application-vars
+
+  usaspending-adhoc:
+    profiles:
+      - adhoc  # must pass --profile manage to docker compose for this to come up, or use docker compose run
+    image: usaspending-development  # when an image by this name is not found in the local repo, and it is forced to build, it will use this as the tag
+    build: .
+    container_name: usaspending-adhoc
+    volumes:
+      - type: bind
+        source: .
+        target: /usaspending-api
+        read_only: false
     environment:
       <<: *application-vars
 
@@ -119,7 +132,6 @@ services:
       - usaspending-s3
       - usaspending-db
       - usaspending-es
-    entrypoint: []  # override entrypoint
     environment:
       <<: *spark-submit-vars
       # Location in host machine where broker src code root can be found
@@ -140,7 +152,6 @@ services:
         source: .
         target: /usaspending-api
         read_only: false
-    entrypoint: []  # override entrypoint
     command:
       - sh
       - -c
@@ -182,7 +193,6 @@ services:
         condition: service_healthy
       usaspending-style-checks:
         condition: service_completed_successfully
-    entrypoint: []  # override entrypoint
     command:
       - sh
       - -c
@@ -387,7 +397,6 @@ services:
     container_name: spark-master
     environment:
       <<: *spark-submit-vars
-    entrypoint: []  # override the entrypoint
     command: >
       /bin/sh -c "
         $${SPARK_HOME}/bin/spark-class org.apache.spark.deploy.master.Master \
@@ -420,7 +429,6 @@ services:
       - spark-master
     environment:
       <<: *spark-submit-vars
-    entrypoint: []  # override the entrypoint
     command: /bin/sh -c "$${SPARK_HOME}/bin/spark-class org.apache.spark.deploy.worker.Worker --webui-port $${SPARK_WORKER_WEBUI_PORT} spark://$${SPARK_MASTER_HOST}:$${SPARK_MASTER_PORT}"
     ports:
       - ${SPARK_WORKER_WEBUI_PORT}:4041
@@ -446,7 +454,6 @@ services:
     container_name: spark-history-server
     environment:
       SPARK_HISTORY_SERVER_PORT: ${SPARK_HISTORY_SERVER_PORT}
-    entrypoint: []  # override the entrypoint
     command: /usr/bin/sh -c "$${SPARK_HOME}/bin/spark-class org.apache.spark.deploy.history.HistoryServer"
     ports:
       - ${SPARK_HISTORY_SERVER_PORT}:18080
