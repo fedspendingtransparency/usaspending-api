@@ -5,7 +5,14 @@ from typing import Any
 from opensearchpy.helpers.query import Q
 
 from usaspending_api.common.elasticsearch.search_wrappers import AsyncLocationSearch
-from usaspending_api.llm.models.py_models import AITool, AIToolDescription, Filters, LocationDisplay, LocationFilter, SelectedLocation
+from usaspending_api.llm.models.py_models import (
+    AITool,
+    AIToolDescription,
+    Filters,
+    LocationDisplay,
+    LocationFilter,
+    SelectedLocation,
+)
 from usaspending_api.llm.tools.exceptions import LocationNotRecognizedError
 from usaspending_api.references.models import PopCongressionalDistrict, RefCountryCode
 
@@ -61,7 +68,9 @@ class LocationLookupTool:
                     self._country_code_cache[country_name.lower()] = country_code
         return self._country_code_cache
 
-    async def lookup_location(self, query: str, location_type: str | None = None, top_k: int = 15) -> Filters | dict[str, Any]:
+    async def lookup_location(
+        self, query: str, location_type: str | None = None, top_k: int = 15
+    ) -> Filters | dict[str, Any]:
         # Validation
         error_response = self._validate_inputs(query, location_type)
         if error_response:
@@ -304,7 +313,6 @@ class LocationLookupTool:
                 cd_parts = data[cd_type].split("-")
                 if len(cd_parts) == 2:
                     filter_obj.__setattr__(filter_key, cd_parts[1])
-        
 
         return filter_obj
 
@@ -325,7 +333,7 @@ class LocationLookupTool:
         entity = self.ENTITY_DISPLAY_MAP.get(location_type, "Location")
         title = self._build_title(data, location_type, standalone)
 
-        return LocationDisplay(entity=entity, standalone=standalone,title=title)
+        return LocationDisplay(entity=entity, standalone=standalone, title=title)
 
     @staticmethod
     def _build_title(data: dict[str, Any], location_type: str, standalone: str) -> str:

@@ -132,6 +132,14 @@ class SubtierAgency(BaseModel):
     abbreviation: str
     name: str
 
+    @field_validator("abbreviation", mode="before")
+    @classmethod
+    def default_missing_abbreviation(cls, value: str | None) -> str:
+        """Some subtier agencies have no abbreviation in the DB (lookup_agencies returns None
+        for them). The frontend reads this field unconditionally, so it must always be a
+        string -- fall back to "" rather than rejecting the input."""
+        return value or ""
+
 
 class SelectedAgency(BaseModel):
     """Model for a selected agency"""

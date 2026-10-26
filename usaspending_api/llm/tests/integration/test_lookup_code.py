@@ -200,15 +200,6 @@ class TestPrefixMatch:
         mock_embedding_generator.agenerate_embedding.assert_not_called()
         mock_expand_query.assert_not_called()
 
-    # async def test_prefix_match_score_below_exact(self, tool, mock_embedding_generator, mock_expand_query):
-    #     await _make_naics("541330", "Construction of buildings")
-
-    #     config = CODE_TYPE_CONFIGS["naics"]
-    #     result = await tool._handle_hybrid_search("5413", config, "naics", {}, 20, None)
-
-    #     node = result["hierarchy"]["541330"]
-    #     assert node["score"] == 0.95
-
 
 class TestHybridSearch:
     async def test_falls_through_to_embedding_search(

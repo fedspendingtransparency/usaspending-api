@@ -3,7 +3,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from usaspending_api.llm.models.py_models import Filters, SelectedLocation
+from usaspending_api.llm.models.py_models import Filters
 from usaspending_api.llm.tools.exceptions import LocationNotRecognizedError
 from usaspending_api.llm.tools.lookup_location import LocationLookupTool, lookup_location_tool
 
@@ -132,7 +132,6 @@ class TestLocationTypes:
 
         resultFilter = await location_tool.lookup_location("Texas")
         result = resultFilter.selectedLocations
-
 
         assert len(result) == 1
         location_obj = result["USA_TX"]
