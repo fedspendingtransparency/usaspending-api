@@ -115,7 +115,7 @@ class RecipientLookupTool:
             # unambiguous hit: return only the matched identifier the caller searched by.
             matched_identifier = self._matched_identifier(hit_dict, query_upper)
             if matched_identifier:
-                return {"recipient_names": [matched_identifier]}
+                return Filters(selectedRecipients=[matched_identifier])
 
             recipient_name = hit_dict.get("recipient_name")
 

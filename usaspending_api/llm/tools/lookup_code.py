@@ -150,10 +150,10 @@ class CodeLookupTool:
         self,
         query: str,
         code_type: Literal["naics", "psc", "cfda", "tas"],
-        inclusion: Literal["require", "exclude"],
+        inclusion: Literal["require", "exclude"] = "require",
         top_k: int = 20,
         query_fanout: int | None = 3,
-    ) -> dict[str, Any]:
+    ) -> Filters | dict[str, Any]:
         """
         Hybrid search for various code types combining text matching and vector similarity.
         """
@@ -171,15 +171,25 @@ class CodeLookupTool:
         config = CODE_TYPE_CONFIGS[code_type]
         budget_bureau_names = {}
 
-        results = await self._handle_exact_search(query, config, code_type, budget_bureau_names, top_k, inclusion)
-        if results is None:
-            results = await self._handle_hybrid_search(
-                query, config, code_type, budget_bureau_names, top_k, inclusion, query_fanout
-            )
+        codes = await self._handle_exact_search(query, config, code_type, budget_bureau_names, top_k)
+        if codes is None:
+            codes = await self._handle_hybrid_search(query, config, code_type, budget_bureau_names, top_k, query_fanout)
 
-        if results["total_codes"] == 0:
+        final_codes = list(self._flatten_codes(codes["hierarchy"]))
+        if len(final_codes) == 0:
             error_class, label = CODE_NOT_RECOGNIZED_ERRORS[code_type]
             raise error_class(f"{label}: {query}")
+
+        results = Filters()
+        if code_type == "cfda":
+            cfda_codes = {}
+            for code in final_codes:
+                cfda_codes[code] = {}
+            results.selectedCFDA = cfda_codes
+        else:
+            code_lists = CodeLists()
+            code_lists.__setattr__(inclusion, final_codes)
+            results.__setattr__(f"{code_type}Codes", code_lists)
 
         return results
 
@@ -190,7 +200,6 @@ class CodeLookupTool:
         code_type: Literal["naics", "psc", "cfda", "tas"],
         budget_bureau_names: dict[str, str],
         top_k: int,
-        inclusion: Literal["require", "exclude"],
     ) -> dict[str, Any] | None:
         exact_qs, prefix_qs = self._query_exact_and_prefix_matches(config, query)
 
@@ -203,7 +212,7 @@ class CodeLookupTool:
                 prefix_qs, config, code_type, score=0.95, budget_bureau_names=budget_bureau_names
             )
             all_results = prefix_results | exact_results
-            return await self._finalize_results(all_results, config, code_type, budget_bureau_names, top_k, inclusion)
+            return await self._finalize_results(all_results, config, code_type, budget_bureau_names, top_k)
         else:
             return None
 
@@ -214,7 +223,6 @@ class CodeLookupTool:
         code_type: Literal["naics", "psc", "cfda", "tas"],
         budget_bureau_names: dict[str, str],
         top_k: int,
-        inclusion: Literal["require", "exclude"],
         query_fanout: int | None = 3,
     ) -> dict[str, Any]:
         TEXT_WEIGHT: float = 0.5
@@ -281,7 +289,7 @@ class CodeLookupTool:
                             budget_bureau_names[f"{aid}-{main}"] = result.budget_bureau_name
                     all_results[code_value] = entry
 
-        return await self._finalize_results(all_results, config, code_type, budget_bureau_names, top_k, inclusion)
+        return await self._finalize_results(all_results, config, code_type, budget_bureau_names, top_k)
 
     @staticmethod
     def _query_exact_and_prefix_matches(config: CodeTypeConfig, query: str) -> tuple[QuerySet, QuerySet]:
@@ -344,7 +352,6 @@ class CodeLookupTool:
         code_type: str,
         budget_bureau_names: dict,
         top_k: int,
-        inclusion: str,
     ) -> dict[str, Any]:
         top_codes = [
             result.code for result in sorted(all_results.values(), key=lambda x: x.score, reverse=True)[:top_k]
@@ -382,19 +389,10 @@ class CodeLookupTool:
             sorted(hierarchy.items(), key=lambda x: self._get_best_score_in_tree(x[1]), reverse=True)
         )
 
-        final_codes = self._flatten_codes(sorted_hierarchy)
-        results = Filters()
-        if code_type == "cfda":
-            cfda_codes = {}
-            for code in final_codes:
-                cfda_codes[code] = {}
-            results.selectedCFDA = cfda_codes
-        else:
-            code_lists = CodeLists()
-            code_lists.__setattr__(inclusion, final_codes)
-            results.__setattr__(f"{code_type}Codes", code_lists)
-
-        return results
+        return {
+            "hierarchy": sorted_hierarchy,
+            "total_codes": sum(self._count_codes_in_tree(node) for node in sorted_hierarchy.values()),
+        }
 
     @staticmethod
     async def _add_tas_ancestors(
@@ -459,9 +457,8 @@ class CodeLookupTool:
     def _flatten_codes(self, hierarchy: dict) -> set[str]:
         codes = set()
         for code, node in hierarchy.items():
-            if code not in codes:
-                codes.add(code)
-                codes.update(self._flatten_codes(node.get("children", {})))
+            codes.add(code)
+            codes.update(self._flatten_codes(node.get("children", {})))
         return codes
 
 
@@ -521,11 +518,12 @@ lookup_code_tool = AITool(
                 "inclusion": {
                     "type": "string",
                     "enum": ["require", "exclude"],
-                    "description": "Indication of whether the generated codes should be required or blocked from filtered results" 
+                    "description": "Optional. Whether the generated codes should be required or blocked from results",
+                    "default": "require",
                 },
                 "top_k": {"type": "integer", "description": "Number of results to return (default: 20)", "default": 20},
             },
-            "required": ["query", "code_type", "inclusion"],
+            "required": ["query", "code_type"],
         },
     ),
 )
