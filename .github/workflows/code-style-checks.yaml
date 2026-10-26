@@ -84,4 +84,4 @@ jobs:
         env:
           # dredd-hooks (unmaintained since 2018) imports the `imp` module, removed in Python 3.12; patches/imp.py shims it
           PYTHONPATH: patches
-        run: docker compose run --rm usaspending-adhoc dredd > dredd-results.txt && echo '! grep -E "^[warn:|error:]" dredd-results.txt' | bash
+        run: docker compose run --rm -e PYTHONPATH=${PYTHONPATH} usaspending-adhoc dredd > dredd-results.txt && echo '! grep -E "^[warn:|error:]" dredd-results.txt' | bash

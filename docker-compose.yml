@@ -81,7 +81,9 @@ services:
     profiles:
       - manage  # must pass --profile manage to docker compose for this to come up, or use docker compose run
     image: usaspending-development  # when an image by this name is not found in the local repo, and it is forced to build, it will use this as the tag
-    build: .
+    build:
+      context: .
+      dockerfile: development.Dockerfile
     container_name: usaspending-manage
     volumes:
       - type: bind
@@ -98,7 +100,9 @@ services:
     profiles:
       - adhoc  # must pass --profile manage to docker compose for this to come up, or use docker compose run
     image: usaspending-development  # when an image by this name is not found in the local repo, and it is forced to build, it will use this as the tag
-    build: .
+    build:
+      context: .
+      dockerfile: development.Dockerfile
     container_name: usaspending-adhoc
     volumes:
       - type: bind
