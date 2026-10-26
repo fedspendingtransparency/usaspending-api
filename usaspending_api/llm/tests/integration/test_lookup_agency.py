@@ -6,6 +6,7 @@ import pytest
 from asgiref.sync import sync_to_async
 from model_bakery import baker
 
+from usaspending_api.llm.tools.exceptions import AgencyNotRecognizedError
 from usaspending_api.llm.tools.lookup_agency import AgencyLookupTool, lookup_agency_tool
 from usaspending_api.references.models.agency import Agency
 from usaspending_api.references.models.subtier_agency import SubtierAgency
@@ -367,6 +368,15 @@ class TestAgencyRowToEntry:
 
         assert entry["agencyType"] == "toptier"
         assert "subtier_agency" not in entry
+
+
+class TestLookupAgenciesNoMatches:
+    async def test_no_exact_prefix_or_hybrid_matches_raises(self, tool, mock_embedding_generator):
+        dims = getattr(ToptierAgency, "embedding_dimensions", 256)
+        mock_embedding_generator.agenerate_embedding.return_value = _unit_vector(dims, 0)
+
+        with pytest.raises(AgencyNotRecognizedError, match="zzz-not-a-real-agency"):
+            await tool.lookup_agencies("zzz-not-a-real-agency")
 
 
 class TestLookupAgencyToolRegistration:

@@ -8,6 +8,7 @@ from model_bakery import baker
 from usaspending_api.llm.assistants.filter_search import FilterSearchAssistant
 from usaspending_api.llm.models.db_models import AIModel, Assistant, Session
 from usaspending_api.llm.models.py_models import AITool, clear_defc_rows_cache
+from usaspending_api.llm.tools.exceptions import DefcCodeNotRecognizedError
 from usaspending_api.llm.tools.execute_filter import execute_filter_tool
 
 
@@ -137,7 +138,8 @@ class TestFilterSearchAssistant:
 
     @patch("usaspending_api.llm.models.db_models.Message.objects.acreate", new_callable=AsyncMock)
     async def test_search_simple_response(self, mock_message_create, assistant):
-        """Test search with a simple text response (no tool use)."""
+        """A simple text response (no tool use) never calls execute_filter, so the search
+        is considered incomplete and raises -- this assistant's only valid outcome is a filter."""
 
         def create_message(**kwargs):
             mock_message = Mock()
@@ -158,7 +160,10 @@ class TestFilterSearchAssistant:
             "stopReason": "end_turn",
         }
 
-        results = [event async for event in assistant.search("test query")]
+        results = []
+        with pytest.raises(RuntimeError, match="ended without completing"):
+            async for event in assistant.search("test query"):
+                results.append(event)
 
         assert len(results) == 1
         assert results[0]["type"] == "search_start"
@@ -194,7 +199,8 @@ class TestFilterSearchAssistant:
             "stopReason": "end_turn",
         }
 
-        _ = [event async for event in assistant.search("test query")]
+        with pytest.raises(RuntimeError, match="ended without completing"):
+            _ = [event async for event in assistant.search("test query")]
 
         assistant_message_call = mock_message_create.call_args_list[1]
         assert assistant_message_call.kwargs["message"] == "Here's your answer"
@@ -368,7 +374,8 @@ class TestFilterSearchAssistant:
             "usaspending_api.llm.models.db_models.ToolUse.objects.acreate", new_callable=AsyncMock
         ) as mock_tool_use_create:
             mock_tool_use_create.return_value.asave = AsyncMock()
-            _ = [event async for event in assistant.search("test query")]
+            with pytest.raises(RuntimeError, match="ended without completing"):
+                _ = [event async for event in assistant.search("test query")]
 
         assert assistant.tool_iterations == assistant.MAX_TOOL_ITERATIONS
         assert assistant.client.converse.call_count == assistant.MAX_TOOL_ITERATIONS + 1
@@ -442,7 +449,8 @@ class TestFilterSearchAssistant:
             "stopReason": "end_turn",
         }
 
-        _ = [event async for event in assistant.search("test query")]
+        with pytest.raises(RuntimeError, match="ended without completing"):
+            _ = [event async for event in assistant.search("test query")]
 
         calls = mock_message_create.call_args_list
         assert calls[0][1]["order"] == 0  # User message
@@ -510,7 +518,47 @@ class TestFilterSearchAssistant:
 
             assistant.client.converse.return_value = response
 
-            results = [event async for event in assistant.search("test query")]
+            results = []
+            with pytest.raises(RuntimeError, match="ended without completing"):
+                async for event in assistant.search("test query"):
+                    results.append(event)
 
         # Should not yield search_complete when there's an error
         assert not any(r.get("type") == "search_complete" for r in results)
+
+    @patch("usaspending_api.llm.models.db_models.ToolUse.objects.acreate", new_callable=AsyncMock)
+    async def test_handle_tool_use_splits_user_and_model_messages(
+        self, mock_tool_use_create, assistant, mock_search_tool
+    ):
+        """A ToolUseRuntimeError's user_message goes to the tool_error event shown to the user;
+        model_detail (the richer pydantic guidance) goes to the toolResult content fed back to the
+        model so it can self-correct."""
+        mock_tool_use = Mock()
+        mock_tool_use.id = "tool-use-456"
+        mock_tool_use.asave = AsyncMock()
+        mock_tool_use_create.return_value = mock_tool_use
+
+        mock_search_tool.function.side_effect = DefcCodeNotRecognizedError(
+            "DEFC code not found: BAD.", model_detail="Value error, Invalid DEFC code(s): ['BAD']."
+        )
+
+        tool_requests = [
+            {
+                "toolUse": {
+                    "toolUseId": "tool-456",
+                    "name": "execute_filter",
+                    "input": {"defCodes": {"require": ["BAD"]}},
+                }
+            }
+        ]
+        mock_message = Mock()
+
+        events = [event async for event in assistant.handle_tool_use(tool_requests, mock_message)]
+
+        tool_error_events = [e for e in events if e["type"] == "tool_error"]
+        assert len(tool_error_events) == 1
+        assert tool_error_events[0]["message"] == "DEFC code not found: BAD."
+
+        tool_result_message = assistant.messages[-1]
+        tool_result_content = tool_result_message["content"][0]["toolResult"]["content"][0]["json"]
+        assert tool_result_content["error"] == "Value error, Invalid DEFC code(s): ['BAD']."

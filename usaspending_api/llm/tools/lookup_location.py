@@ -6,6 +6,7 @@ from opensearchpy.helpers.query import Q
 
 from usaspending_api.common.elasticsearch.search_wrappers import AsyncLocationSearch
 from usaspending_api.llm.models.py_models import AITool, AIToolDescription
+from usaspending_api.llm.tools.exceptions import LocationNotRecognizedError
 from usaspending_api.references.models import PopCongressionalDistrict, RefCountryCode
 
 logger = logging.getLogger(__name__)
@@ -61,17 +62,6 @@ class LocationLookupTool:
         return self._country_code_cache
 
     async def lookup_location(self, query: str, location_type: str | None = None, top_k: int = 15) -> dict[str, Any]:
-        """
-        Search for locations using fuzzy matching.
-
-        Args:
-            query: Location search term (name, code, zip, or district)
-            location_type: Optional filter by location type
-            top_k: Number of results to return (max 100)
-
-        Returns:
-            Dictionary with results or error information
-        """
         # Validation
         error_response = self._validate_inputs(query, location_type)
         if error_response:
@@ -106,8 +96,7 @@ class LocationLookupTool:
         country_codes = await self._get_country_codes()
         results = self._transform_results(response, state_abbreviations, country_codes)
 
-        # Log zero results as a warning for quality monitoring.
-        if len(results) == 0:
+        if not results:
             logger.warning(
                 f"Zero results returned for location lookup: query='{query}', location_type={location_type}",
                 extra={
@@ -117,6 +106,7 @@ class LocationLookupTool:
                     "zero_results": True,
                 },
             )
+            raise LocationNotRecognizedError(f"Unable to filter. Location not recognized: {query}")
 
         logger.info(
             f"Location lookup completed: query='{query}', results_count={len(results)}",

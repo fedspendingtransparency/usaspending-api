@@ -1,4 +1,5 @@
 import re
+from datetime import date
 from typing import Annotated, Any, Callable, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, RootModel, field_validator, model_validator
@@ -104,6 +105,16 @@ class TimePeriod(BaseModel):
             json_schema_extra={"pattern": "^\\d{4}-\\d{2}-\\d{2}$", "examples": ["2023-12-31", "2024-12-31"]},
         ),
     ]
+
+    @field_validator("start_date", "end_date")
+    @classmethod
+    def validate_date_format(cls, value: str) -> str:
+        """Dates must be parseable in YYYY-MM-DD format."""
+        try:
+            date.fromisoformat(value)
+        except ValueError as exc:
+            raise ValueError(f"'{value}' is not a valid date; dates must be in YYYY-MM-DD format.") from exc
+        return value
 
 
 class ToptierAgency(BaseModel):
