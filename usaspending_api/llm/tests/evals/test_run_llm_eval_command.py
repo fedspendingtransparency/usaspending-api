@@ -102,6 +102,21 @@ def test_run_llm_eval_command_can_filter_by_tag(tmp_path, monkeypatch):
         )
 
 
+def test_run_llm_eval_command_runs_with_max_workers(tmp_path, monkeypatch):
+    """Test that the command runs successfully with --max-workers set."""
+    write_dataset(tmp_path)
+    monkeypatch.setattr(filter_search, "run_eval_case", fake_eval_observation)
+
+    with override_settings(LLM_EVAL_DATASET_DIRECTORY=str(tmp_path)):
+        call_command(
+            "run_llm_eval",
+            assistant="filter_search",
+            case_names=["1", "2"],
+            fail_under=1.0,
+            max_workers=2,
+        )
+
+
 def test_run_llm_eval_command_completes_when_score_is_below_threshold(tmp_path, monkeypatch):
     """Test that the command completes successfully even when score is below threshold."""
     write_dataset(tmp_path)
