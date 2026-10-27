@@ -2,6 +2,11 @@ name: Build USA Spending Docker Image for Test
 
 on:
   workflow_call:
+  # Runs against the default branch (master) on a schedule to keep the GHA build-cache warm,
+  # since PR branches without their own cache fall back to master's. Also guards against the
+  # 7-day idle-eviction GitHub applies to unused cache entries.
+  schedule:
+    - cron: '0 6 * * 1'
 
 jobs:
   Run:
@@ -30,8 +35,12 @@ jobs:
             PROJECT_LOG_DIR=${{ env.PROJECT_LOG_DIR }}
             SPARK_LOGGING_LEVEL=${{ env.SPARK_LOGGING_LEVEL }}
           outputs: type=docker,dest=/tmp/usaspending-development.tar
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
+      # Scheduled runs exist only to refresh the cache on master; nothing consumes their artifact.
       - name: Upload Artifact
+        if: github.event_name != 'schedule'
         uses: actions/upload-artifact@v4
         with:
           name: usaspending-development-image
