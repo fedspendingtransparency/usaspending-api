@@ -2,8 +2,15 @@ import json
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from asgiref.sync import sync_to_async
+from model_bakery import baker
 
-from usaspending_api.llm.models.py_models import ExecuteFilterInput, Filters
+from usaspending_api.llm.models.py_models import ExecuteFilterInput, Filters, aget_defc_rows, clear_defc_rows_cache
+from usaspending_api.llm.tools.exceptions import (
+    AwardAmountNotParseableError,
+    DefcCodeNotRecognizedError,
+    TimePeriodNotParseableError,
+)
 from usaspending_api.llm.tools.execute_filter import execute_filter, execute_filter_tool
 from usaspending_api.references.models import FilterHash
 
@@ -75,7 +82,7 @@ class TestInputValidation:
 
     async def test_validation_error_message_includes_details(self):
         """Test that validation errors include helpful details."""
-        result = await execute_filter(time_period="invalid")
+        result = await execute_filter(awardType="invalid")
 
         assert "error" in result
         assert isinstance(result["error"], str)
@@ -293,7 +300,7 @@ class TestErrorHandling:
 
     async def test_validation_error_returns_error_dict(self):
         """Test that validation errors return proper error dict."""
-        result = await execute_filter(time_period="invalid_format")
+        result = await execute_filter(awardType="invalid_format")
 
         assert "error" in result
         assert "message" in result
@@ -331,6 +338,74 @@ class TestErrorHandling:
         # Should not attempt to access database
         assert not mock_filter_hash.objects.aget.called
         assert not mock_filter_hash.called
+
+
+class TestValidationErrorTranslation:
+    """Single-category pydantic validation failures (DEFC, award amount, time period) are raised
+    as specific exceptions instead of being swallowed into a generic error dict, so the assistant
+    can show a clean user-facing message while still receiving the full pydantic detail for
+    self-correction. Anything spanning more than one category, or an unrecognized field, keeps the
+    original generic-error-dict behavior."""
+
+    @pytest.fixture(autouse=True)
+    async def seed_defc_codes(self):
+        clear_defc_rows_cache()
+        await sync_to_async(baker.make)(
+            "references.DisasterEmergencyFundCode",
+            code="L",
+            public_law="PUBLIC LAW FOR CODE L",
+            title="TITLE FOR CODE L",
+            group_name="covid_19",
+        )
+        # Pre-warm the module-level cache via the async-safe entry point -- the pydantic
+        # validator in DEFCodeLists only has a synchronous entry point, which would raise
+        # SynchronousOnlyOperation if it had to hit the DB for the first time from here.
+        await aget_defc_rows()
+        yield
+        clear_defc_rows_cache()
+
+    async def test_defc_only_failure_raises_specific_error(self):
+        with pytest.raises(DefcCodeNotRecognizedError) as exc_info:
+            await execute_filter(defCodes={"require": ["NOT_REAL"]})
+
+        assert exc_info.value.user_message == "DEFC code not found: NOT_REAL."
+        assert "Invalid DEFC code(s)" in exc_info.value.model_detail
+
+    async def test_award_amount_business_rule_failure_raises_specific_error(self):
+        with pytest.raises(AwardAmountNotParseableError) as exc_info:
+            await execute_filter(awardAmounts={"specific": [1, 2], "range-1": [1000000, 25000000]})
+
+        assert "Unable to filter awards based on the criteria" in exc_info.value.user_message
+        assert "must be the only key" in exc_info.value.model_detail
+
+    async def test_award_amount_type_coercion_failure_raises_specific_error(self):
+        """A non-numeric bound fails pydantic's own int coercion, bypassing the custom validator --
+        it must still map to the same user-facing error."""
+        with pytest.raises(AwardAmountNotParseableError):
+            await execute_filter(awardAmounts={"specific": ["not-a-number", None]})
+
+    async def test_time_period_only_failure_raises_specific_error(self):
+        with pytest.raises(TimePeriodNotParseableError) as exc_info:
+            await execute_filter(
+                timePeriodType="dr", time_period=[{"start_date": "invalid-date", "end_date": "2023-12-31"}]
+            )
+
+        assert exc_info.value.user_message == (
+            "Unable to filter based on the specified time period. Try rephrasing the dates you're looking for."
+        )
+        assert "not a valid date" in exc_info.value.model_detail
+
+    async def test_mixed_category_failure_falls_back_to_error_dict(self):
+        """Errors spanning more than one recognized category keep the original behavior: a
+        returned error dict, not a raised exception."""
+        result = await execute_filter(
+            defCodes={"require": ["NOT_REAL"]},
+            timePeriodType="dr",
+            time_period=[{"start_date": "invalid-date", "end_date": "2023-12-31"}],
+        )
+
+        assert "error" in result
+        assert "message" in result
 
 
 class TestAIToolImplementation:
@@ -428,7 +503,8 @@ class TestIntegrationWithFiltersModel:
             if "codes" in field_name:
                 test_data[field_name] = ["TEST"]
             elif "period" in field_name:
-                test_data[field_name] = [{"start_date": "2023-01-01"}]
+                test_data["timePeriodType"] = "dr"
+                test_data[field_name] = [{"start_date": "2023-01-01", "end_date": "2023-12-31"}]
             elif field_name == "keyword":
                 test_data[field_name] = ["test"]
 
@@ -437,12 +513,11 @@ class TestIntegrationWithFiltersModel:
         assert "hash" in result or "error" in result
 
     async def test_filters_model_validation_applied(self):
-        """Test that Filters model validation is applied."""
-        # Invalid date format should fail validation
-        result = await execute_filter(time_period=[{"start_date": "invalid-date"}])
-
-        # Should return validation error
-        assert "error" in result
+        """An unparseable date raises the specific time-period error instead of validating."""
+        with pytest.raises(TimePeriodNotParseableError):
+            await execute_filter(
+                timePeriodType="dr", time_period=[{"start_date": "invalid-date", "end_date": "2023-12-31"}]
+            )
 
     async def test_complex_filters_combination(self, mock_filter_hash):
         """Test complex combination of multiple filters."""
@@ -627,11 +702,9 @@ class TestRealWorldScenarios:
         assert "hash" in result
 
     async def test_award_amounts_invalid_returns_error(self):
-        """Combining 'specific' with a range bucket is rejected before any DB access."""
-        result = await execute_filter(awardAmounts={"specific": [1, 2], "range-1": [1000000, 25000000]})
-
-        assert "error" in result
-        assert "message" in result
+        """Combining 'specific' with a range bucket raises the specific award-amount error before any DB access."""
+        with pytest.raises(AwardAmountNotParseableError):
+            await execute_filter(awardAmounts={"specific": [1, 2], "range-1": [1000000, 25000000]})
 
     async def test_filter_reuse_returns_same_hash(self, mock_filter_hash):
         """Test that reusing same filters returns same hash."""
