@@ -15,6 +15,8 @@ from opensearchpy.connection import create_ssl_context
 from opensearchpy.helpers.response import Response
 from opensearchpy.helpers.search import Search as SearchBase
 
+from usaspending_api.common.exceptions import ElasticsearchQueryComplexityException
+
 logger = logging.getLogger("console")
 
 
@@ -41,12 +43,12 @@ class Search(SearchBase):
     _index_name = None
 
     def __init__(self, **kwargs) -> None:
-        self.client: OpenSearch = self._create_es_client()
+        self.client: OpenSearch | None = self._create_es_client()
         kwargs.update({"index": self._index_name, "using": self.client})
         super().__init__(**kwargs)
 
     @staticmethod
-    def _create_es_client() -> OpenSearch:
+    def _create_es_client() -> OpenSearch | None:
         if settings.ES_HOSTNAME is None or settings.ES_HOSTNAME == "":
             logger.error("env var 'ES_HOSTNAME' needs to be set for Elasticsearch connection")
         es_config = {"hosts": [settings.ES_HOSTNAME], "timeout": settings.ES_TIMEOUT}
@@ -67,6 +69,11 @@ class Search(SearchBase):
             return OpenSearch(**es_config)
         except Exception as e:
             logger.error("Error creating the elasticsearch client: {}".format(e))
+
+    @staticmethod
+    def _is_too_many_clauses_error(error: TransportError) -> bool:
+        error_message = " ".join(str(part) for part in (error.error, error.info) if part is not None).lower()
+        return any(word in error_message for word in ("too_many_clauses", "too many nested clauses", "maxclausecount"))
 
     def _execute(self, timeout: str) -> Response:
         return self.params(timeout=timeout).execute()
@@ -103,6 +110,8 @@ class Search(SearchBase):
             raise
         except TransportError as e:
             logger.error(error_template.format(type="Transport", e=str(e)))
+            if self._is_too_many_clauses_error(e):
+                raise ElasticsearchQueryComplexityException() from e
             raise
         except Exception as e:
             logger.error(error_template.format(type="Generic", e=str(e)))
@@ -166,16 +175,21 @@ class AsyncSearch(SearchBase):
     _index_name = None
 
     def __init__(self, **kwargs) -> None:
-        self.client: AsyncOpenSearch = kwargs.pop("using", None) or self._create_es_client()
+        self.client: AsyncOpenSearch | None = kwargs.pop("using", None) or self._create_es_client()
         kwargs.update({"index": self._index_name, "using": self.client})
         super().__init__(**kwargs)
 
     @staticmethod
-    def _create_es_client() -> AsyncOpenSearch:
+    def _create_es_client() -> AsyncOpenSearch | None:
         try:
             return AsyncOpenSearch(**_build_es_config())
         except Exception as e:
             logger.error("Error creating the async elasticsearch client: {}".format(e))
+
+    @staticmethod
+    def _is_too_many_clauses_error(error: TransportError) -> bool:
+        error_message = " ".join(str(part) for part in (error.error, error.info) if part is not None).lower()
+        return any(word in error_message for word in ("too_many_clauses", "too many nested clauses", "maxclausecount"))
 
     async def _execute(self, timeout: str) -> Response:
         response = await self.client.search(index=self._index, body=self.to_dict(), timeout=timeout, **self._params)
@@ -216,6 +230,8 @@ class AsyncSearch(SearchBase):
             raise
         except TransportError as e:
             logger.error(error_template.format(type="Transport", e=str(e)))
+            if self._is_too_many_clauses_error(e):
+                raise ElasticsearchQueryComplexityException() from e
             raise
         except Exception as e:
             logger.error(error_template.format(type="Generic", e=str(e)))
