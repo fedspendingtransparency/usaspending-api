@@ -20,6 +20,7 @@ from django.db.models import QuerySet
 from django.db.models.expressions import Ref
 from opentelemetry import trace
 from opentelemetry.trace import SpanKind
+import re
 
 # execute_psql/split_and_zip_data_files are run via multiprocessing.get_context("spawn").Process, which
 # re-imports this module in a fresh interpreter with no prior Django configuration. Ensure Django is set
@@ -106,14 +107,14 @@ def _log_download_start(download_job: DownloadJob, file_name: str, request_type:
                 "job_type": str(JOB_TYPE),
                 "message": "Creating data archive files from the download job object",
                 "download_job_id": str(download_job.download_job_id),
-                "download_job_status": str(download_job.job_status.name),
+                "download_job_status": filter_sensitive_log_fields(str(download_job.job_status.name)),
                 "download_file_name": str(download_job.file_name),
                 "download_file_size": download_job.file_size if download_job.file_size is not None else 0,
                 "number_of_rows": download_job.number_of_rows if download_job.number_of_rows is not None else 0,
                 "number_of_columns": download_job.number_of_columns
                 if download_job.number_of_columns is not None
                 else 0,
-                "error_message": download_job.error_message if download_job.error_message else "",
+                "error_message": (filter_sensitive_log_fields(download_job.error_message)) if download_job.error_message else "",
                 "monthly_download": str(download_job.monthly_download),
                 "json_request": str(download_job.json_request) if download_job.json_request else "",
                 "file_name": str(file_name),
@@ -213,7 +214,7 @@ def _handle_invalid_parameter_exception(download_job: DownloadJob, e: InvalidPar
                 "service": "bulk-download",
                 "span_type": "Internal",
                 "message": exc_msg,
-                "error": str(e),
+                "error": filter_sensitive_log_fields(str(e)),
             }
         )
     fail_download(download_job, e, exc_msg)
@@ -232,7 +233,7 @@ def _handle_general_exception(download_job: DownloadJob, e: Exception) -> None:
                 "service": "bulk-download",
                 "span_type": "Internal",
                 "message": exc_msg,
-                "error": str(e),
+                "error": filter_sensitive_log_fields(str(e)),
             }
         )
     fail_download(download_job, e, exc_msg)
@@ -309,7 +310,7 @@ def _upload_to_s3(download_job: DownloadJob, file_name: str) -> None:
                         "service": "bulk-download",
                         "span_type": "Internal",
                         "message": exc_msg,
-                        "error": str(e),
+                        "error": filter_sensitive_log_fields(str(e)),
                     }
                 )
             fail_download(download_job, e, exc_msg)
@@ -985,12 +986,12 @@ def execute_psql(temp_sql_file_path: str, source_path: str, download_job: Downlo
                 download_job=download_job,
             )
         except subprocess.CalledProcessError as e:
-            write_to_log(message=f"PSQL Error: {e.output.decode()}", is_error=True, download_job=download_job)
+            write_to_log(message=f"PSQL Error: {filter_sensitive_log_fields(str(e.output.decode()))}", is_error=True, download_job=download_job)
             raise e
         except Exception as e:
             if not settings.IS_LOCAL:
                 e.cmd = "[redacted psql command]"
-            write_to_log(message=e, is_error=True, download_job=download_job)
+            write_to_log(message= filter_sensitive_log_fields(e), is_error=True, download_job=download_job)
             sql = subprocess.check_output(["cat", temp_sql_file_path]).decode()
             write_to_log(message=f"Faulty SQL: {sql}", is_error=True, download_job=download_job)
             raise e
@@ -1010,7 +1011,8 @@ def strip_file_extension(file_name: str) -> str:
 def fail_download(download_job: DownloadJob, exception: Exception, message: str) -> None:
     write_to_log(message=message, is_error=True, download_job=download_job)
     stack_trace = "".join(traceback.format_exception(type(exception), value=exception, tb=exception.__traceback__))
-    download_job.error_message = f"{message}:\n{stack_trace}"
+    stack_trace_filtered = filter_sensitive_log_fields(stack_trace)
+    download_job.error_message = f"{message}:\n{stack_trace_filtered}"
     download_job.job_status_id = JOB_STATUS_DICT["failed"]
     download_job.save()
 
@@ -1063,3 +1065,17 @@ def create_empty_data_file(  # noqa: PLR0913
     )
     Path(source_path).touch()
     append_files_to_zip_file([source_path], zip_file_path)
+
+def filter_sensitive_log_fields(message: str) -> str:
+    """Filter  log messages to remove internal information like connection strings"""
+    #Match exact strings for DB and Broker DB
+    dburl = settings.DOWNLOAD_DATABASE_URL
+    brokerdburl = settings.BROKER_DB
+    #Match general postgres connection string using regex
+    postgres_connection_string_pattern = r"(?i)postgres(?:ql)?://[^\s'\"<>]+"
+
+    #Substitute string with *'s
+    replacestring = "***************"
+
+    return re.sub(postgres_connection_string_pattern,replace, re.sub(brokerdburl,replace,(re.sub(dburl, replace, message))))
+
