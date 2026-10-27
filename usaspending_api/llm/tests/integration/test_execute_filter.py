@@ -5,7 +5,13 @@ import pytest
 from asgiref.sync import sync_to_async
 from model_bakery import baker
 
-from usaspending_api.llm.models.py_models import ExecuteFilterInput, Filters, aget_defc_rows, clear_defc_rows_cache
+from usaspending_api.llm.models.py_models import (
+    ExecuteFilterInput,
+    FilterResponse,
+    Filters,
+    aget_defc_rows,
+    clear_defc_rows_cache,
+)
 from usaspending_api.llm.tools.exceptions import (
     AwardAmountNotParseableError,
     DefcCodeNotRecognizedError,
@@ -62,7 +68,7 @@ class TestInputValidation:
         """Test that valid filters are accepted."""
         result = await execute_filter(**sample_filters)
 
-        assert "hash" in result
+        assert isinstance(result, FilterResponse)
         assert "error" not in result
 
     async def test_invalid_filters_return_error(self):
@@ -77,7 +83,7 @@ class TestInputValidation:
         """Test that empty filters are valid."""
         result = await execute_filter()
 
-        assert "hash" in result
+        assert isinstance(result, FilterResponse)
         assert "error" not in result
 
     async def test_validation_error_message_includes_details(self):
@@ -99,7 +105,7 @@ class TestInputValidation:
         """Test that exactly 50 selected recipients is accepted."""
         result = await execute_filter(selectedRecipients=[f"RECIPIENT_{i}" for i in range(50)])
 
-        assert "hash" in result
+        assert isinstance(result, FilterResponse)
         assert "error" not in result
 
     async def test_selected_recipients_over_max_length_returns_error(self):
@@ -122,7 +128,7 @@ class TestFilterProcessing:
 
         result = await execute_filter(**sample_filters)
 
-        assert "hash" in result
+        assert isinstance(result, FilterResponse)
         assert mock_filter_hash.called
         assert mock_instance.asave.called
         call_args = mock_filter_hash.call_args[1]
@@ -204,7 +210,7 @@ class TestFilterProcessing:
         )
 
         # Verify hash was created (keys were sorted)
-        assert "hash" in result
+        assert isinstance(result, FilterResponse)
 
 
 class TestHashCreationAndStorage:
@@ -223,7 +229,7 @@ class TestHashCreationAndStorage:
         # Verify create_hash was called
         assert mock_create_hash.called
         # Verify hash is returned
-        assert result["hash"] == "test_hash_123"
+        assert result.hash == "test_hash_123"
 
     async def test_existing_hash_not_recreated(self, mock_filter_hash):
         """Test that existing hash is returned without creating new entry."""
@@ -234,7 +240,7 @@ class TestHashCreationAndStorage:
         result = await execute_filter(awardType=["A"])
 
         # Should return existing hash
-        assert "hash" in result
+        assert isinstance(result, FilterResponse)
         # Should not create new FilterHash
         assert not mock_filter_hash.called
 
@@ -251,7 +257,7 @@ class TestHashCreationAndStorage:
         # Verify save was called
         assert mock_instance.asave.called
         # Verify hash is returned
-        assert "hash" in result
+        assert isinstance(result, FilterResponse)
 
     async def test_hash_includes_filter_json(self, mock_filter_hash):
         """Test that saved hash includes filter JSON."""
@@ -280,7 +286,7 @@ class TestHashCreationAndStorage:
         result2 = await execute_filter(**filters)
 
         # Both should produce the same hash
-        assert result1["hash"] == result2["hash"]
+        assert result1.hash == result2.hash
 
     async def test_different_filters_produce_different_hashes(self, mock_filter_hash):
         """Test that different filters produce different hashes."""
@@ -292,7 +298,7 @@ class TestHashCreationAndStorage:
         result2 = await execute_filter(awardType=["B"])
 
         # Should produce different hashes
-        assert result1["hash"] != result2["hash"]
+        assert result1.hash != result2.hash
 
 
 class TestErrorHandling:
@@ -484,7 +490,7 @@ class TestAIToolImplementation:
 
         result = await execute_filter_tool.function(awardType=["A"])
 
-        assert "hash" in result
+        assert isinstance(result, FilterResponse)
 
 
 class TestIntegrationWithFiltersModel:
@@ -510,7 +516,7 @@ class TestIntegrationWithFiltersModel:
 
         # Should not raise validation error
         result = await execute_filter(**test_data)
-        assert "hash" in result or "error" in result
+        assert isinstance(result, FilterResponse) or "error" in result
 
     async def test_filters_model_validation_applied(self):
         """An unparseable date raises the specific time-period error instead of validating."""
@@ -545,7 +551,7 @@ class TestIntegrationWithFiltersModel:
             keyword=["fire", "prevention"],
         )
 
-        assert "hash" in result
+        assert isinstance(result, FilterResponse)
 
 
 class TestEdgeCases:
@@ -563,7 +569,7 @@ class TestEdgeCases:
 
         result = await execute_filter(keyword=large_keywords)
 
-        assert "hash" in result
+        assert isinstance(result, FilterResponse)
 
     async def test_unicode_in_filters(self, mock_filter_hash):
         """Test handling of unicode characters in filters."""
@@ -573,7 +579,7 @@ class TestEdgeCases:
 
         result = await execute_filter(keyword=["test™", "café", "日本"])
 
-        assert "hash" in result
+        assert isinstance(result, FilterResponse)
 
     async def test_special_characters_in_keyword(self, mock_filter_hash):
         """Test handling of special characters in keyword field."""
@@ -583,7 +589,7 @@ class TestEdgeCases:
 
         result = await execute_filter(keyword=["test & co.", "50% off", "$1,000"])
 
-        assert "hash" in result
+        assert isinstance(result, FilterResponse)
 
     async def test_nested_filter_structures(self, mock_filter_hash):
         """Test handling of deeply nested filter structures."""
@@ -607,7 +613,7 @@ class TestEdgeCases:
             },
         )
 
-        assert "hash" in result
+        assert isinstance(result, FilterResponse)
 
     async def test_empty_list_filters(self, mock_filter_hash):
         """Test handling of empty list filters."""
@@ -617,7 +623,7 @@ class TestEdgeCases:
 
         result = await execute_filter(awardType=[], keyword=[])
 
-        assert "hash" in result
+        assert isinstance(result, FilterResponse)
 
 
 class TestRealWorldScenarios:
@@ -649,7 +655,7 @@ class TestRealWorldScenarios:
             keyword=["forestry", "prevention"],
         )
 
-        assert "hash" in result
+        assert isinstance(result, FilterResponse)
 
     async def test_recipient_focused_search(self, mock_filter_hash):
         """Test recipient-focused search filters."""
@@ -659,7 +665,7 @@ class TestRealWorldScenarios:
 
         result = await execute_filter(selectedRecipients=["ACME Corporation"], recipientType=["business"])
 
-        assert "hash" in result
+        assert isinstance(result, FilterResponse)
 
     async def test_location_based_search(self, mock_filter_hash):
         """Test location-based search filters."""
@@ -677,7 +683,7 @@ class TestRealWorldScenarios:
             }
         )
 
-        assert "hash" in result
+        assert isinstance(result, FilterResponse)
 
     async def test_award_amounts_range_filter(self, mock_filter_hash):
         """A valid award-amount range blob is accepted and hashed."""
@@ -687,7 +693,7 @@ class TestRealWorldScenarios:
 
         result = await execute_filter(awardAmounts={"range-1": [1000000, 25000000]})
 
-        assert "hash" in result
+        assert isinstance(result, FilterResponse)
         saved_filter = mock_filter_hash.call_args[1]["filter"]
         assert saved_filter["filters"]["awardAmounts"] == {"range-1": [1000000, 25000000]}
 
@@ -699,7 +705,7 @@ class TestRealWorldScenarios:
 
         result = await execute_filter(awardAmounts={"specific": [5000000, None]})
 
-        assert "hash" in result
+        assert isinstance(result, FilterResponse)
 
     async def test_award_amounts_invalid_returns_error(self):
         """Combining 'specific' with a range bucket raises the specific award-amount error before any DB access."""
@@ -719,9 +725,9 @@ class TestRealWorldScenarios:
         # Second call finds existing hash
         mock_filter_hash.objects.aget.side_effect = None
         existing = MagicMock()
-        existing.hash = result1["hash"]
+        existing.hash = result1.hash
         mock_filter_hash.objects.aget.return_value = existing
 
         result2 = await execute_filter(**filters)
 
-        assert result1["hash"] == result2["hash"]
+        assert result1.hash == result2.hash
