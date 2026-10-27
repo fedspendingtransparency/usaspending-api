@@ -60,7 +60,8 @@ async def _validate_agencies_exist(filters: Filters) -> None:
         for agency in getattr(filters, field).values():
             query = agency.toptier_agency.toptier_code
             try:
-                results = await lookup_agency_tool.function(query=query)
+                lookup_result = await lookup_agency_tool.function(query=query)
+                results = lookup_result["results"]
             except AgencyNotRecognizedError:
                 results = {}
             if f"{agency.id}_{agency.agencyType}" not in results:
@@ -90,18 +91,29 @@ async def _validate_recipients_exist(filters: Filters) -> None:
 
 
 async def _validate_award_ids_exist(filters: Filters) -> None:
-    """Confirm every selected award ID is resolvable via lookup_award."""
+    """Confirm every selected award ID is resolvable via lookup_award, and replace each with the
+    PIID/FAIN/URI the search award ID filter actually matches (a generated_unique_award_id matches nothing)."""
     invalid = []
+    canonical = []
     for award_id in filters.selectedAwardIDs:
         try:
-            await lookup_award_tool.function(query=award_id)
+            lookup = await lookup_award_tool.function(query=award_id)
         except AwardNotRecognizedError:
             invalid.append(award_id)
+            continue
+        resolved = lookup.get("award_id") or award_id
+        if resolved not in canonical:
+            canonical.append(resolved)
+    filters.selectedAwardIDs = canonical
     if invalid:
         raise AwardNotRecognizedError(
             f"Unable to filter. These award IDs could not be verified: {', '.join(invalid)}. "
             "Call lookup_award for each and confirm it exists before retrying.",
-            model_detail=f"Unresolvable selected award IDs: {invalid}",
+            model_detail=(
+                f"Unresolvable selected award IDs: {invalid}. These may be recipient identifiers (UEI, DUNS) "
+                "or names rather than award IDs -- call lookup_recipient with each and, if it matches, use "
+                "selectedRecipients instead of selectedAwardIDs."
+            ),
         )
 
 

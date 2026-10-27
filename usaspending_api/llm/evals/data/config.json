@@ -59,12 +59,13 @@
     },
     {
         "id": 3,
-        "query": "Show me all transactions for award PIID N0001917C0001",
+        "query": "Show me all transactions for award PIID W56HZV07C0096",
         "expected_output": {
-            "selectedAwardIDs": ["N0001917C0001"]
+            "selectedAwardIDs": ["W56HZV07C0096"]
 
         },
         "expected_tools": [
+            "lookup_award",
             "execute_filter"
         ],
         "tags": [
@@ -76,13 +77,14 @@
     },
     {
         "id": 4,
-        "query": "How much funding did award DENA0003525 get?",
+        "query": "How much funding did award DEAC1204SN39427 get?",
         "expected_output": {
             "selectedAwardIDs": [
-                "DENA0003525"
+                "DEAC1204SN39427"
             ]
         },
         "expected_tools": [
+            "lookup_award",
             "execute_filter"
         ],
         "tags": [
@@ -94,9 +96,9 @@
     },
     {
         "id": 5,
-        "query": "Who is the recipient for contract number DENA0003525?",
+        "query": "Who is the recipient for contract number DEAC1204SN39427?",
         "expected_output": {
-            "selectedAwardIDs": ["DENA0003525"],
+            "selectedAwardIDs": ["DEAC1204SN39427"],
             "awardType": [
                 "A",
                 "B",
@@ -105,6 +107,7 @@
             ]
         },
         "expected_tools": [
+            "lookup_award",
             "execute_filter"
         ],
         "tags": [
@@ -116,11 +119,12 @@
     },
     {
         "id": 6,
-        "query": "Show me the award details for order number N0002417C2117",
+        "query": "Show me the award details for order number HQ003423F0326",
         "expected_output": {
-            "selectedAwardIDs": ["N0002417C2117"]
+            "selectedAwardIDs": ["HQ003423F0326"]
         },
         "expected_tools": [
+            "lookup_award",
             "execute_filter"
         ],
         "tags": [
@@ -132,20 +136,17 @@
     },
     {
         "id": 7,
-        "query": "How much did grant 55IH0402810 receive in the last year?",
+        "query": "How much did grant F24AF01032 receive in the last year?",
         "expected_output": {
-            "selectedAwardIDs": ["55IH0402810"],
+            "selectedAwardIDs": ["F24AF01032"],
             "awardType": [
-                "02",
-                "03",
-                "04",
-                "05",
                 "F001",
                 "F002"
             ],
-            "timePeriodFY": ["2025"]
+            "timePeriodFY": ["2026"]
         },
         "expected_tools": [
+            "lookup_award",
             "execute_filter"
         ],
         "tags": [
@@ -158,11 +159,12 @@
     },
     {
         "id": 8,
-        "query": "List all records under award B-18-DP-72-0002",
+        "query": "List all records under award D24AC00380",
         "expected_output": {
-            "selectedAwardIDs": ["B-18-DP-72-0002"]
+            "selectedAwardIDs": ["D24AC00380"]
         },
         "expected_tools": [
+            "lookup_award",
             "execute_filter"
         ],
         "tags": [
@@ -174,16 +176,17 @@
     },
     {
         "id": 9,
-        "query": "Find transactions for 80NSSC24K1441 awarded to Lockheed Martin",
+        "query": "Find transactions for SPE7M118F42Z8 awarded to Lockheed Martin",
         "expected_output": {
             "selectedAwardIDs": [
-                "80NSSC24K1441"
+                "SPE7M118F42Z8"
             ],
             "selectedRecipients": [
                 "LOCKHEED MARTIN CORPORATION"
             ]
         },
         "expected_tools": [
+            "lookup_award",
             "lookup_recipient",
             "execute_filter"
         ],
@@ -411,10 +414,6 @@
                 "93.968": {}
             },
             "awardType": [
-                "02",
-                "03",
-                "04",
-                "05",
                 "F001",
                 "F002"
             ]
@@ -436,8 +435,6 @@
         "query": "List all loans given by DOJ between FY2023 and FY2025",
         "expected_output": {
             "awardType": [
-                "07",
-                "08",
                 "F003",
                 "F004"
             ],
@@ -947,8 +944,6 @@
         "query": "What payments were made to nonprofits?",
         "expected_output": {
             "awardType": [
-                "06",
-                "10",
                 "F006",
                 "F007"
             ],
@@ -977,8 +972,6 @@
                 "2026"
             ],
             "awardType": [
-                "07",
-                "08",
                 "F003",
                 "F004"
             ],
@@ -1276,7 +1269,6 @@
         "query": "List all cooperative agreements given for immigration services in California",
         "expected_output": {
             "awardType": [
-                "05",
                 "F002"
             ],
             "selectedLocations": {
@@ -1602,7 +1594,7 @@
     },
     {
         "id": 62,
-        "query": "How many micro purchases were done for award ABC?",
+        "query": "How many micro purchases were done for award FA825212C0002?",
         "expected_output": {
             "awardAmounts": {
                 "specific": [
@@ -1611,10 +1603,11 @@
                 ]
             },
             "selectedAwardIDs": [
-                "ABC"
+                "FA825212C0002"
             ]
         },
         "expected_tools": [
+            "lookup_award",
             "execute_filter"
         ],
         "tags": [
@@ -1665,10 +1658,6 @@
                 "2026"
             ],
             "awardType": [
-                "02",
-                "03",
-                "04",
-                "05",
                 "F001",
                 "F002"
             ],
@@ -1761,10 +1750,6 @@
         "query": "Grants for assistance listing 14.257",
         "expected_output": {
             "awardType": [
-                "02",
-                "03",
-                "04",
-                "05",
                 "F001",
                 "F002"
             ],
@@ -1789,10 +1774,6 @@
         "query": "Grants for assistance listing Homelessness Prevention and Rapid Re-Housing Program",
         "expected_output": {
             "awardType": [
-                "02",
-                "03",
-                "04",
-                "05",
                 "F001",
                 "F002"
             ],
@@ -1817,10 +1798,6 @@
         "query": "Grants for assistance listings regarding homelessness",
         "expected_output": {
             "awardType": [
-                "02",
-                "03",
-                "04",
-                "05",
                 "F001",
                 "F002"
             ],
@@ -1921,10 +1898,6 @@
         "query": "How many grants under AL 14",
         "expected_output": {
             "awardType": [
-                "02",
-                "03",
-                "04",
-                "05",
                 "F001",
                 "F002"
             ],
@@ -1949,10 +1922,6 @@
         "query": "How many grants under AL 14 were given over 1k",
         "expected_output": {
             "awardType": [
-                "02",
-                "03",
-                "04",
-                "05",
                 "F001",
                 "F002"
             ],
@@ -3619,10 +3588,6 @@
                 "93.982": {}
             },
             "awardType": [
-                "02",
-                "03",
-                "04",
-                "05",
                 "F001",
                 "F002"
             ]
@@ -3650,10 +3615,6 @@
                 "93.244": {}
             },
             "awardType": [
-                "02",
-                "03",
-                "04",
-                "05",
                 "F001",
                 "F002"
             ]
@@ -3699,10 +3660,6 @@
                 "12.006": {}
             },
             "awardType": [
-                "02",
-                "03",
-                "04",
-                "05",
                 "F001",
                 "F002"
             ]
@@ -3900,14 +3857,15 @@
     },
     {
         "id": 143,
-        "query": "Spending for awards N0001923C0003 and N0001925C0070",
+        "query": "Spending for awards W9124R18C0001 and F3365703C2011",
         "expected_output": {
             "selectedAwardIDs": [
-                "N0001923C0003",
-                "N0001925C0070"
+                "W9124R18C0001",
+                "F3365703C2011"
             ]
         },
         "expected_tools": [
+            "lookup_award",
             "execute_filter"
         ],
         "tags": [
@@ -3920,16 +3878,17 @@
     },
     {
         "id": 144,
-        "query": "Spending for awards N0001923C0003, N0001925C0070, N0001925C0070, HC102820F0032, W56KGU24F0010",
+        "query": "Spending for awards W9124R18C0001, F3365703C2011, F3365703C2011, VA79117E0369, W52P1J11C0038",
         "expected_output": {
             "selectedAwardIDs": [
-                "N0001923C0003",
-                "N0001925C0070",
-                "HC102820F0032",
-                "W56KGU24F0010"
+                "W9124R18C0001",
+                "F3365703C2011",
+                "VA79117E0369",
+                "W52P1J11C0038"
             ]
         },
         "expected_tools": [
+            "lookup_award",
             "execute_filter"
         ],
         "tags": [
@@ -4128,10 +4087,6 @@
                 ]
             },
             "awardType": [
-                "02",
-                "03",
-                "04",
-                "05",
                 "F001",
                 "F002"
             ],
@@ -4446,10 +4401,6 @@
                 "43.012": {}
             },
             "awardType": [
-                "02",
-                "03",
-                "04",
-                "05",
                 "F001",
                 "F002"
             ]
@@ -4657,10 +4608,6 @@
         "query": "Show me federal grants to businesses",
         "expected_output": {
             "awardType": [
-                "02",
-                "03",
-                "04",
-                "05",
                 "F001",
                 "F002"
             ],
@@ -4781,10 +4728,6 @@
                 "individuals"
             ],
             "awardType": [
-                "02",
-                "03",
-                "04",
-                "05",
                 "F001",
                 "F002"
             ]

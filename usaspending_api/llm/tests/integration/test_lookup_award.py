@@ -75,6 +75,25 @@ class TestLookupAward:
 
         assert result["result"]["uri"] == "URI987654"
 
+    async def test_returns_display_award_id_when_matched_by_generated_id(self, tool):
+        await _make_award_search(
+            generated_unique_award_id="CONT_AWD_W56HZV07C0096_9700_-NONE-_-NONE-",
+            piid="W56HZV07C0096",
+            display_award_id="W56HZV07C0096",
+        )
+
+        result = await tool.lookup_award("CONT_AWD_W56HZV07C0096_9700_-NONE-_-NONE-")
+
+        assert result["award_id"] == "W56HZV07C0096"
+        assert "W56HZV07C0096" in result["instructions"]
+
+    async def test_award_id_falls_back_to_fain_without_display_award_id(self, tool):
+        await _make_award_search(fain="F24AF01032", display_award_id=None)
+
+        result = await tool.lookup_award("F24AF01032")
+
+        assert result["award_id"] == "F24AF01032"
+
     async def test_query_is_stripped_before_matching(self, tool):
         await _make_award_search(piid="W91CRB18D0001")
 
@@ -90,6 +109,13 @@ class TestLookupAward:
     async def test_no_match_raises_award_not_recognized_error(self, tool):
         with pytest.raises(AwardNotRecognizedError, match="NOT_A_REAL_AWARD_ID"):
             await tool.lookup_award("NOT_A_REAL_AWARD_ID")
+
+    async def test_no_match_error_points_to_lookup_recipient(self, tool):
+        with pytest.raises(AwardNotRecognizedError) as exc_info:
+            await tool.lookup_award("HR1JA12FSM63")
+
+        assert "lookup_recipient" in exc_info.value.model_detail
+        assert "lookup_recipient" not in exc_info.value.user_message
 
 
 class TestLookupAwardToolRegistration:

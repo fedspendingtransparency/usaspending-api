@@ -29,7 +29,7 @@ def mock_existence_lookups():
     Tests exercising validation failures override these within their own nested `patch(...)`."""
 
     async def agency_lookup(query, **kwargs):
-        return {"1_toptier": {"id": 1, "agencyType": "toptier"}}
+        return {"results": {"1_toptier": {"id": 1, "agencyType": "toptier"}}, "instructions": None}
 
     async def recipient_lookup(query, **kwargs):
         return {"recipient_names": [query]}
@@ -487,7 +487,7 @@ class TestAgencyExistenceValidation:
         with patch(
             "usaspending_api.llm.tools.execute_filter.lookup_agency_tool.function",
             new_callable=AsyncMock,
-            return_value={},
+            return_value={"results": {}, "instructions": None},
         ):
             with pytest.raises(AgencyNotRecognizedError) as exc_info:
                 await execute_filter(**sample_filters)
@@ -568,6 +568,22 @@ class TestAwardIdExistenceValidation:
 
         assert "hash" in result
 
+    async def test_generated_award_id_is_replaced_with_display_award_id(self, mock_filter_hash):
+        """The award ID search filter only matches PIID/FAIN/URI, so a generated_unique_award_id the model
+        passes must be persisted as the award's display ID."""
+        mock_filter_hash.objects.aget.side_effect = FilterHash.DoesNotExist
+        mock_filter_hash.return_value = _new_mock_instance()
+
+        with patch(
+            "usaspending_api.llm.tools.execute_filter.lookup_award_tool.function",
+            new_callable=AsyncMock,
+            return_value={"award_id": "W56HZV07C0096", "result": {}},
+        ):
+            await execute_filter(selectedAwardIDs=["CONT_AWD_W56HZV07C0096_9700_-NONE-_-NONE-", "W56HZV07C0096"])
+
+        saved_filter = mock_filter_hash.call_args.kwargs["filter"]
+        assert saved_filter["filters"]["selectedAwardIDs"] == {"W56HZV07C0096": "W56HZV07C0096"}
+
     async def test_unresolvable_award_id_raises(self):
         with patch(
             "usaspending_api.llm.tools.execute_filter.lookup_award_tool.function",
@@ -579,6 +595,8 @@ class TestAwardIdExistenceValidation:
 
         assert "FAKE_AWARD_ID" in exc_info.value.user_message
         assert "Unresolvable selected award IDs" in exc_info.value.model_detail
+        assert "lookup_recipient" in exc_info.value.model_detail
+        assert "lookup_recipient" not in exc_info.value.user_message
 
 
 class TestAIToolImplementation:
