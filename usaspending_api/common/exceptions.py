@@ -1,5 +1,5 @@
-from rest_framework.exceptions import APIException
 from rest_framework import status
+from rest_framework.exceptions import APIException
 
 
 class NoDataFoundException(APIException):
@@ -71,3 +71,16 @@ class EndpointTimeoutException(APIException):
     status_code = status.HTTP_504_GATEWAY_TIMEOUT
     default_detail = "Endpoint has timed out"
     default_code = "timeout"
+
+
+class ElasticsearchQueryComplexityException(APIException):
+    """Exception for when a generated Elasticsearch/OpenSearch query is too complex
+        (e.g. exceeds Lucene's maxClauseCount) for the search cluster to execute.
+    """
+
+    status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
+    default_detail = (
+        "The combination of filters selected is too complex for the search index to process. "
+        "Try narrowing your search by selecting fewer filters or fewer values per filter."
+    )
+    default_code = "query_too_complex"
