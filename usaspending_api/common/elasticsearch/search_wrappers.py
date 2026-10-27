@@ -72,8 +72,11 @@ class Search(SearchBase):
 
     @staticmethod
     def _is_too_many_clauses_error(error: TransportError) -> bool:
-        error_message = " ".join(str(part) for part in (error.error, error.info) if part is not None).lower()
-        return any(word in error_message for word in ("too_many_clauses", "too many nested clauses", "maxclausecount"))
+        info = error.info if isinstance(error.info, dict) else {}
+        caused_by = info.get("error", {}).get("caused_by") or {}
+        return caused_by.get("type") in ("too_many_clauses", "too_many_nested_clauses") or (
+            "maxClauseCount" in (caused_by.get("reason") or "")
+        )
 
     def _execute(self, timeout: str) -> Response:
         return self.params(timeout=timeout).execute()
@@ -188,8 +191,11 @@ class AsyncSearch(SearchBase):
 
     @staticmethod
     def _is_too_many_clauses_error(error: TransportError) -> bool:
-        error_message = " ".join(str(part) for part in (error.error, error.info) if part is not None).lower()
-        return any(word in error_message for word in ("too_many_clauses", "too many nested clauses", "maxclausecount"))
+        info = error.info if isinstance(error.info, dict) else {}
+        caused_by = info.get("error", {}).get("caused_by") or {}
+        return caused_by.get("type") in ("too_many_clauses", "too_many_nested_clauses") or (
+            "maxClauseCount" in (caused_by.get("reason") or "")
+        )
 
     async def _execute(self, timeout: str) -> Response:
         response = await self.client.search(index=self._index, body=self.to_dict(), timeout=timeout, **self._params)

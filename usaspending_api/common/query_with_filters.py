@@ -278,6 +278,9 @@ class _AwardTypeCodes(_Filter):
 
     @classmethod
     def generate_elasticsearch_query(cls, filter_values: List[str], query_type: QueryType, **options) -> ES_Q:
+        if not filter_values:
+            return ES_Q("match_all")
+
         type_ = "prime_award_type" if query_type == QueryType.SUBAWARDS else "type"
         return ES_Q("terms", **{type_: filter_values})
 
@@ -289,6 +292,9 @@ class _SubawardsPrimeSubAwardTypes(_Filter):
 
     @classmethod
     def generate_elasticsearch_query(cls, filter_values: List[str], query_type: QueryType, **options) -> ES_Q:
+        if not filter_values:
+            return ES_Q("match_all")
+
         award_types = filter_values.get("elasticsearch_sub_awards")
         return ES_Q("terms", prime_award_group=award_types)
 
@@ -684,6 +690,9 @@ class _ContractPricingTypeCodes(_Filter):
 
     @classmethod
     def generate_elasticsearch_query(cls, filter_values: List[str], query_type: QueryType, **options) -> ES_Q:
+        if not filter_values:
+            return ES_Q("match_all")
+
         return ES_Q("terms", type_of_contract_pricing__keyword=filter_values)
 
 
@@ -692,6 +701,9 @@ class _SetAsideTypeCodes(_Filter):
 
     @classmethod
     def generate_elasticsearch_query(cls, filter_values: List[str], query_type: QueryType, **options) -> ES_Q:
+        if not filter_values:
+            return ES_Q("match_all")
+
         return ES_Q("terms", type_set_aside__keyword=filter_values)
 
 
@@ -700,6 +712,9 @@ class _ExtentCompetedTypeCodes(_Filter):
 
     @classmethod
     def generate_elasticsearch_query(cls, filter_values: List[str], query_type: QueryType, **options) -> ES_Q:
+        if not filter_values:
+            return ES_Q("match_all")
+
         return ES_Q("terms", extent_competed__keyword=filter_values)
 
 
