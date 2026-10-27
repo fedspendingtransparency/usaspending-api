@@ -4,7 +4,11 @@ from typing import Annotated, Any, Callable, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, RootModel, field_validator, model_validator
 
-from usaspending_api.awards.v2.lookups.lookups import all_awards_types_to_category
+from usaspending_api.awards.v2.lookups.lookups import (
+    all_awards_types_to_category,
+    new_to_old_award_type_mapping,
+    old_to_new_award_type_mapping,
+)
 from usaspending_api.common.helpers.orm_helpers import award_types_are_valid_groups
 from usaspending_api.references.helpers import aget_defc_code_details, get_defc_code_details
 
@@ -446,20 +450,6 @@ class AwardAmounts(RootModel[dict[str, list[int | None]]]):
         return self
 
 
-def _award_type_code_era(code: str) -> str | None:
-    """Classify an award-type code as 'old' (legacy numeric) or 'new' ('F'-prefixed).
-
-    Only the assistance-type categories (grants, direct_payments, loans,
-    other_financial_assistance) have both an old and new code for the same type; contracts
-    (A-D) and IDVs (IDV_*) have no such duality and return None.
-    """
-    if code.startswith("F") and code[1:].isdigit():
-        return "new"
-    if code.isdigit() or code == "-1":
-        return "old"
-    return None
-
-
 class Filters(BaseModel):
     """Validation model for all filter criteria and the persisted FilterHash blob."""
 
@@ -540,20 +530,23 @@ class Filters(BaseModel):
         """Validate award-type codes: each must be a known code, and all must share one award group."""
         if not value:
             return value
-        unknown = [code for code in value if code not in all_awards_types_to_category]
+        unique_values = set(value)
+        unknown = [code for code in unique_values if code not in all_awards_types_to_category]
         if unknown:
             raise ValueError(
                 f"Invalid award type code(s): {unknown}. See the awardType field description for valid codes."
             )
         if not award_types_are_valid_groups(value):
             raise ValueError("'award_type_codes' must only contain types from one group.")
-        eras = {era for code in value if (era := _award_type_code_era(code)) is not None}
-        if eras == {"old", "new"}:
-            raise ValueError(
-                f"Award type codes mix legacy numeric codes with new 'F'-prefixed codes: {sorted(value)}. "
-                "Use only one era's codes for a given award-type group."
-            )
-        return value
+
+        values_to_add = set()
+        for code in unique_values:
+            # Historic awards weren't updated so we need to make sure that a search for some Award type yields both the
+            # old and new type code
+            values_to_add.add(old_to_new_award_type_mapping.get(code, code))
+            values_to_add.update(set(new_to_old_award_type_mapping.get(code, {code})))
+
+        return sorted(unique_values | values_to_add)
 
     @model_validator(mode="after")
     def validate_time_period_consistency(self) -> "Filters":

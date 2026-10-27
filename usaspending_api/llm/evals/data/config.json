@@ -140,6 +140,8 @@
         "expected_output": {
             "selectedAwardIDs": ["F24AF01032"],
             "awardType": [
+                "04",
+                "05",
                 "F001",
                 "F002"
             ],
@@ -414,6 +416,8 @@
                 "93.968": {}
             },
             "awardType": [
+                "04",
+                "05",
                 "F001",
                 "F002"
             ]
@@ -435,6 +439,8 @@
         "query": "List all loans given by DOJ between FY2023 and FY2025",
         "expected_output": {
             "awardType": [
+                "07",
+                "08",
                 "F003",
                 "F004"
             ],
@@ -944,6 +950,8 @@
         "query": "What payments were made to nonprofits?",
         "expected_output": {
             "awardType": [
+                "06",
+                "10",
                 "F006",
                 "F007"
             ],
@@ -972,6 +980,8 @@
                 "2026"
             ],
             "awardType": [
+                "07",
+                "08",
                 "F003",
                 "F004"
             ],
@@ -1269,6 +1279,7 @@
         "query": "List all cooperative agreements given for immigration services in California",
         "expected_output": {
             "awardType": [
+                "05",
                 "F002"
             ],
             "selectedLocations": {
@@ -1658,6 +1669,8 @@
                 "2026"
             ],
             "awardType": [
+                "04",
+                "05",
                 "F001",
                 "F002"
             ],
@@ -1750,6 +1763,8 @@
         "query": "Grants for assistance listing 14.257",
         "expected_output": {
             "awardType": [
+                "04",
+                "05",
                 "F001",
                 "F002"
             ],
@@ -1774,6 +1789,8 @@
         "query": "Grants for assistance listing Homelessness Prevention and Rapid Re-Housing Program",
         "expected_output": {
             "awardType": [
+                "04",
+                "05",
                 "F001",
                 "F002"
             ],
@@ -1798,6 +1815,8 @@
         "query": "Grants for assistance listings regarding homelessness",
         "expected_output": {
             "awardType": [
+                "04",
+                "05",
                 "F001",
                 "F002"
             ],
@@ -1898,6 +1917,8 @@
         "query": "How many grants under AL 14",
         "expected_output": {
             "awardType": [
+                "04",
+                "05",
                 "F001",
                 "F002"
             ],
@@ -1922,6 +1943,8 @@
         "query": "How many grants under AL 14 were given over 1k",
         "expected_output": {
             "awardType": [
+                "04",
+                "05",
                 "F001",
                 "F002"
             ],
@@ -3588,6 +3611,8 @@
                 "93.982": {}
             },
             "awardType": [
+                "04",
+                "05",
                 "F001",
                 "F002"
             ]
@@ -3615,6 +3640,8 @@
                 "93.244": {}
             },
             "awardType": [
+                "04",
+                "05",
                 "F001",
                 "F002"
             ]
@@ -3660,6 +3687,8 @@
                 "12.006": {}
             },
             "awardType": [
+                "04",
+                "05",
                 "F001",
                 "F002"
             ]
@@ -4087,6 +4116,8 @@
                 ]
             },
             "awardType": [
+                "04",
+                "05",
                 "F001",
                 "F002"
             ],
@@ -4401,6 +4432,8 @@
                 "43.012": {}
             },
             "awardType": [
+                "04",
+                "05",
                 "F001",
                 "F002"
             ]
@@ -4608,6 +4641,8 @@
         "query": "Show me federal grants to businesses",
         "expected_output": {
             "awardType": [
+                "04",
+                "05",
                 "F001",
                 "F002"
             ],
@@ -4728,6 +4763,8 @@
                 "individuals"
             ],
             "awardType": [
+                "04",
+                "05",
                 "F001",
                 "F002"
             ]
