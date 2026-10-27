@@ -129,8 +129,16 @@ class ToptierAgency(BaseModel):
 class SubtierAgency(BaseModel):
     """Model for subtier agency information"""
 
-    abbreviation: str
+    abbreviation: str = ""
     name: str
+
+    @field_validator("abbreviation", mode="before")
+    @classmethod
+    def default_missing_abbreviation(cls, value: str | None) -> str:
+        """Some subtier agencies have no abbreviation in the DB (lookup_agencies returns None
+        for them). The frontend reads this field unconditionally, so it must always be a
+        string -- fall back to "" rather than rejecting the input."""
+        return value or ""
 
 
 class SelectedAgency(BaseModel):
@@ -721,13 +729,13 @@ class ExecuteFilterInput(BaseModel):
             "the recipient filter AND this filter). Use exactly one of these code groups, matching the query:\n"
             "  contracts:       ['A', 'B', 'C', 'D']\n"
             "  IDVs:            ['IDV_A', 'IDV_B', 'IDV_B_A', 'IDV_B_B', 'IDV_B_C', 'IDV_C', 'IDV_D', 'IDV_E']\n"
-            "  grants:          ['02', '03', '04', '05', 'F001', 'F002']\n"
-            "  loans:           ['07', '08', 'F003', 'F004']\n"
-            "  direct payments: ['06', '10', 'F006', 'F007']\n"
-            "  other:           ['09', '11', '-1', 'F005', 'F008', 'F009', 'F010']\n"
+            "  grants:          ['F001', 'F002']\n"
+            "  loans:           ['F003', 'F004']\n"
+            "  direct payments: ['F006', 'F007']\n"
+            "  other:           ['F005', 'F008', 'F009', 'F010']\n"
             "A value may only contain codes from a SINGLE group."
         ),
-        json_schema_extra={"examples": [["A", "B", "C", "D"], ["02", "03", "04", "05"], ["07", "08"]]},
+        json_schema_extra={"examples": [["A", "B", "C", "D"], ["F001", "F002"], ["F003", "F004"]]},
     )
     selectedAwardIDs: list[str] = Field(
         default_factory=list,
