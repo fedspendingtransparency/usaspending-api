@@ -21,15 +21,11 @@ def _transport_error(status: int, error_type: str, reason: str) -> TransportErro
 @pytest.mark.parametrize(
     "error, expected",
     [
-        # Matched by caused_by.type
-        (_transport_error(400, "too_many_clauses", "anything"), True),
-        (_transport_error(400, "too_many_nested_clauses", "anything"), True),
-        # Matched by the Lucene message text when the type isn't one we recognise
+        (_transport_error(400, "too_many_clauses", "abc"), True),
+        (_transport_error(400, "too_many_nested_clauses", "abc"), True),
         (_transport_error(400, "runtime_exception", "maxClauseCount is set to 1024"), True),
-        # Unrelated errors must NOT be reclassified as complexity errors
         (_transport_error(400, "parsing_exception", "unknown query [foo]"), False),
-        (_transport_error(500, "illegal_state_exception", "boom"), False),
-        # Shapes with no body / no caused_by must not raise inside the handler
+        (_transport_error(500, "illegal_state_exception", "abc"), False),
         (TransportError(503, "service unavailable", None), False),
         (TransportError(500, "no caused_by", {"error": {"type": "x"}}), False),
         (TransportError("N/A", "connection error", Exception("socket closed")), False),
