@@ -345,6 +345,107 @@ class TestFinalizeResultsHierarchy:
         result = await tool._finalize_results({}, config, "naics", {}, top_k=20)
         assert result == {"hierarchy": {}, "total_codes": 0}
 
+    async def test_non_psc_code_type_does_not_apply_tier1_grouping(self, tool, monkeypatch):
+        """The synthetic Tier1 grouping step is PSC-only; other code types keep their real root
+        codes as top-level hierarchy keys."""
+        config = CODE_TYPE_CONFIGS["naics"]
+        monkeypatch.setattr(config, "get_parent_code", lambda code: None)
+        monkeypatch.setattr(config, "get_all_ancestors", lambda code: [])
+
+        all_results = {"33": CodeResult(code="33", description="Manufacturing", score=0.5)}
+        result = await tool._finalize_results(all_results, config, "naics", {}, top_k=20)
+
+        assert set(result["hierarchy"].keys()) == {"33"}
+
+
+class TestGroupPscRootsByTier1:
+    """Tests for CodeLookupTool._group_psc_roots_by_tier1, the PSC-only post-processing step that
+    wraps each real PSC root ('A', 'D', '10', ...) under its synthetic Tier1 PSC_GROUPS label
+    (Research and Development / Service / Product), matching the grouping the real PSC filter tree
+    API uses (PSCFilterTree.toptier_search).
+    """
+
+    @staticmethod
+    def _root_node(code, score=0.5, children=None, leaf_node_count=1):
+        return {
+            "code": code,
+            "description": f"description for {code}",
+            "score": score,
+            "is_root": True,
+            "is_leaf": not children,
+            "children": children or {},
+            "leaf_node_count": leaf_node_count,
+        }
+
+    def test_groups_roots_under_their_tier1_labels(self):
+        hierarchy = {
+            "A": self._root_node("A"),
+            "D": self._root_node("D"),
+            "10": self._root_node("10"),
+        }
+
+        grouped = CodeLookupTool._group_psc_roots_by_tier1(hierarchy)
+
+        assert set(grouped.keys()) == {"Research and Development", "Service", "Product"}
+
+    def test_research_and_development_merges_root_children_without_nesting_the_root_itself(self):
+        """'A' is the only PSC code whose root value is itself a valid description in the PSC
+        table, so its children are merged straight into the Tier1 bucket instead of nesting 'A'
+        as an intermediate child node, unlike the Service/Product groups."""
+        hierarchy = {"A": self._root_node("A", children={"AC": self._root_node("AC", children=None)})}
+
+        grouped = CodeLookupTool._group_psc_roots_by_tier1(hierarchy)
+
+        rd_bucket = grouped["Research and Development"]
+        assert "A" not in rd_bucket["children"]
+        assert "AC" in rd_bucket["children"]
+
+    def test_service_and_product_roots_are_nested_as_children_and_marked_non_root(self):
+        hierarchy = {"D": self._root_node("D"), "10": self._root_node("10")}
+
+        grouped = CodeLookupTool._group_psc_roots_by_tier1(hierarchy)
+
+        assert grouped["Service"]["children"]["D"]["is_root"] is False
+        assert grouped["Product"]["children"]["10"]["is_root"] is False
+
+    def test_leaf_node_count_summed_across_roots_in_same_group(self):
+        hierarchy = {
+            "D": self._root_node("D", leaf_node_count=3),
+            "F": self._root_node("F", leaf_node_count=4),
+        }
+
+        grouped = CodeLookupTool._group_psc_roots_by_tier1(hierarchy)
+
+        assert grouped["Service"]["leaf_node_count"] == 7
+
+    def test_leaf_node_count_not_summed_across_different_groups(self):
+        hierarchy = {
+            "D": self._root_node("D", leaf_node_count=3),
+            "10": self._root_node("10", leaf_node_count=4),
+        }
+
+        grouped = CodeLookupTool._group_psc_roots_by_tier1(hierarchy)
+
+        assert grouped["Service"]["leaf_node_count"] == 3
+        assert grouped["Product"]["leaf_node_count"] == 4
+
+    def test_bucket_score_is_the_best_score_among_its_roots(self):
+        hierarchy = {
+            "D": self._root_node("D", score=0.2),
+            "F": self._root_node("F", score=0.8),
+        }
+
+        grouped = CodeLookupTool._group_psc_roots_by_tier1(hierarchy)
+
+        assert grouped["Service"]["score"] == 0.8
+
+    def test_bucket_description_is_empty_string(self):
+        hierarchy = {"D": self._root_node("D")}
+
+        grouped = CodeLookupTool._group_psc_roots_by_tier1(hierarchy)
+
+        assert grouped["Service"]["description"] == ""
+
 
 class TestSearchResultNode:
     def test_to_dict_shape_and_child_sorting(self):
@@ -365,7 +466,7 @@ class TestSearchResultNode:
         node = SearchResultNode(code="54", description="Root", score=0.1, all_results=all_results, config=config)
         d = node.to_dict()
 
-        assert set(d.keys()) == {"code", "description", "score", "children"}
+        assert set(d.keys()) == {"code", "description", "score", "children", "is_root", "is_leaf"}
         assert list(d["children"].keys()) == ["5413", "5411"]  # sorted by score desc
 
     def test_no_children_when_config_has_no_parent_fn(self):
