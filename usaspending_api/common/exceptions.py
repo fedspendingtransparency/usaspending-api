@@ -75,7 +75,7 @@ class EndpointTimeoutException(APIException):
 
 class ElasticsearchQueryComplexityException(APIException):
     """Exception for when a generated Elasticsearch/OpenSearch query is too complex
-        (e.g. exceeds Lucene's maxClauseCount) for the search cluster to execute.
+    (e.g. exceeds Lucene's maxClauseCount) for the search cluster to execute.
     """
 
     status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
