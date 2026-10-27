@@ -173,7 +173,15 @@ class CodeLookupTool:
 
         if results["total_codes"] == 0:
             error_class, label = CODE_NOT_RECOGNIZED_ERRORS[code_type]
-            raise error_class(f"{label}: {query}")
+            raise error_class(
+                f"{label}: {query}",
+                model_detail=(
+                    f"{label}: '{query}'. No {code_type.upper()} code matched that query. Try a shorter or "
+                    "more general query (e.g. a top-level category, a partial code, or a single keyword "
+                    "instead of a full phrase), or try a different code_type if the query may describe a "
+                    "different kind of code. If no reasonable match exists, omit this filter."
+                ),
+            )
 
         return results
 

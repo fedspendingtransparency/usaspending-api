@@ -9,6 +9,7 @@ from usaspending_api.llm.models.py_models import ExecuteFilterInput, Filters, ag
 from usaspending_api.llm.tools.exceptions import (
     AwardAmountNotParseableError,
     DefcCodeNotRecognizedError,
+    InvalidFilterFieldError,
     TimePeriodNotParseableError,
 )
 from usaspending_api.llm.tools.execute_filter import execute_filter, execute_filter_tool
@@ -81,12 +82,10 @@ class TestInputValidation:
         assert "error" not in result
 
     async def test_validation_error_message_includes_details(self):
-        """Test that validation errors include helpful details."""
-        result = await execute_filter(awardType="invalid")
-
-        assert "error" in result
-        assert isinstance(result["error"], str)
-        assert len(result["error"]) > 0
+        """An awardType-only validation failure is raised as InvalidFilterFieldError (see
+        TestValidationErrorTranslation), not returned as a generic error dict."""
+        with pytest.raises(InvalidFilterFieldError):
+            await execute_filter(awardType="invalid")
 
     async def test_partial_valid_filters(self):
         """Test filters with only some valid fields."""
@@ -299,8 +298,9 @@ class TestErrorHandling:
     """Test error handling scenarios."""
 
     async def test_validation_error_returns_error_dict(self):
-        """Test that validation errors return proper error dict."""
-        result = await execute_filter(awardType="invalid_format")
+        """A validation error spanning an unrecognized field (not one of the single-field
+        exception types) still returns a generic error dict."""
+        result = await execute_filter(invalid_field="invalid_format")
 
         assert "error" in result
         assert "message" in result
@@ -341,11 +341,12 @@ class TestErrorHandling:
 
 
 class TestValidationErrorTranslation:
-    """Single-category pydantic validation failures (DEFC, award amount, time period) are raised
-    as specific exceptions instead of being swallowed into a generic error dict, so the assistant
-    can show a clean user-facing message while still receiving the full pydantic detail for
-    self-correction. Anything spanning more than one category, or an unrecognized field, keeps the
-    original generic-error-dict behavior."""
+    """Single-field pydantic validation failures (DEFC, award amount, time period, award type,
+    agency objects) are raised as specific exceptions instead of being swallowed into a generic
+    error dict, so the assistant can show a clean user-facing message while still receiving
+    concrete "what to try next" guidance in model_detail for self-correction. Anything spanning
+    more than one field, or a field with no dedicated exception mapping, keeps the generic
+    error-dict behavior -- which is itself now enriched with the same kind of retry guidance."""
 
     @pytest.fixture(autouse=True)
     async def seed_defc_codes(self):
@@ -394,10 +395,35 @@ class TestValidationErrorTranslation:
             "Unable to filter based on the specified time period. Try rephrasing the dates you're looking for."
         )
         assert "not a valid date" in exc_info.value.model_detail
+        assert "timePeriodFY" in exc_info.value.model_detail
+
+    async def test_award_type_failure_raises_specific_error_with_distinguishing_guidance(self):
+        """awardType failures (e.g. feeding a PSC/NAICS code into awardType) must be raised with
+        model_detail explaining that awardType is a fixed, unrelated enum -- this is the exact
+        confusion observed in eval runs where the model retried awardType with lookup_codes results."""
+        with pytest.raises(InvalidFilterFieldError) as exc_info:
+            await execute_filter(awardType=["NOT_A_REAL_CODE"])
+
+        assert "Invalid award type code(s)" in exc_info.value.model_detail
+        assert "unrelated to PSC, NAICS, CFDA, or TAS codes" in exc_info.value.model_detail
+
+    async def test_malformed_agency_object_raises_specific_error_with_reconstruction_warning(self):
+        """A hand-constructed/partial agency entry (missing required nested fields) must be raised
+        with model_detail warning against hand-building agency objects -- the exact failure
+        observed in eval runs where the model retried execute_filter 15 times with the same
+        incomplete selectedAwardingAgencies entry instead of calling lookup_agencies again."""
+        with pytest.raises(InvalidFilterFieldError) as exc_info:
+            await execute_filter(
+                selectedAwardingAgencies={"1_toptier": {"id": 1, "agencyType": "toptier", "toptier_flag": True}}
+            )
+
+        assert "lookup_agencies" in exc_info.value.model_detail
+        assert "hand-construct" in exc_info.value.model_detail
 
     async def test_mixed_category_failure_falls_back_to_error_dict(self):
         """Errors spanning more than one recognized category keep the original behavior: a
-        returned error dict, not a raised exception."""
+        returned error dict, not a raised exception. The dict's message is now enriched with the
+        same kind of retry guidance so the model isn't left with zero direction either way."""
         result = await execute_filter(
             defCodes={"require": ["NOT_REAL"]},
             timePeriodType="dr",
@@ -406,6 +432,7 @@ class TestValidationErrorTranslation:
 
         assert "error" in result
         assert "message" in result
+        assert "call execute_filter again" in result["message"]
 
 
 class TestAIToolImplementation:

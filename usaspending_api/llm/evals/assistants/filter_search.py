@@ -69,7 +69,7 @@ def get_final_filter_output(session: Session) -> dict[str, Any]:
     """
     execute_filter = (
         ToolUse.objects.filter(message__session=session, name=FilterSearchAssistant.COMPLETION_TOOL_NAME)
-        .exclude(result__contains="error")
+        .exclude(result__has_key="error")
         .order_by(
             "message__order",
             "created_at",

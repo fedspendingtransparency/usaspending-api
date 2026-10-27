@@ -10,7 +10,11 @@ from django.db.models import Sum
 from usaspending_api.common.helpers.aws_helpers import async_aws_client
 from usaspending_api.llm.models.db_models import Assistant, Message, Session, ToolUse
 from usaspending_api.llm.models.py_models import AITool, abuild_defc_description
-from usaspending_api.llm.tools.exceptions import ToolUseRuntimeError
+from usaspending_api.llm.tools.exceptions import (
+    RETRY_HINT_COMPLETION_TOOL,
+    RETRY_HINT_OTHER_TOOL,
+    ToolUseRuntimeError,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -61,7 +65,10 @@ class FilterSearchAssistant:
 
         rekeyed = dict(value)
         entry = rekeyed.pop("")
-        new_key = derive_key(entry) if isinstance(entry, dict) else None
+        try:
+            new_key = derive_key(entry)
+        except (AttributeError, TypeError):
+            new_key = None
         rekeyed[new_key or f"unknown_{uuid.uuid4().hex}"] = entry
         return rekeyed
 
@@ -69,7 +76,8 @@ class FilterSearchAssistant:
     def _sanitize_tool_use_input(cls, content: list[dict]) -> None:
         """Fix empty-string dict keys in `toolUse.input` blocks, in place.
 
-        This insures that the selected agency and selected location filters have the correct keys
+        This insures that the agency, location, code (CFDA/TAS), and award amount filters have the
+        correct keys.
         """
         for block in content:
             tool_use = block.get("toolUse")
@@ -88,9 +96,24 @@ class FilterSearchAssistant:
                         ),
                     )
 
-            if "selectedLocations" in tool_input:
-                tool_input["selectedLocations"] = cls._rekey_empty_string_key(
-                    tool_input["selectedLocations"], lambda location: location.get("identifier")
+            for field in ("selectedLocations", "selectedRecipientLocations"):
+                if field in tool_input:
+                    tool_input[field] = cls._rekey_empty_string_key(
+                        tool_input[field], lambda location: location.get("identifier")
+                    )
+
+            for field in ("selectedCFDA", "treasuryAccounts"):
+                if field in tool_input:
+                    tool_input[field] = cls._rekey_empty_string_key(
+                        tool_input[field],
+                        lambda entry: entry.get("code") if isinstance(entry, dict) else entry,
+                    )
+
+            if "awardAmounts" in tool_input:
+                # An empty-string key here is always a custom [min, max] range the model forgot to
+                # label -- that's exactly what the "specific" bucket means, so there's no ambiguity.
+                tool_input["awardAmounts"] = cls._rekey_empty_string_key(
+                    tool_input["awardAmounts"], lambda _entry: "specific"
                 )
 
     async def _create_message_from_response(self, response: dict) -> Message:
@@ -136,7 +159,12 @@ class FilterSearchAssistant:
             f"year it ends in, so Fiscal Year {current_fy} runs 10/01/{current_fy - 1} - 09/30/{current_fy}). "
             f"Use {current_fy} directly as 'this fiscal year' and {current_fy - 1} as 'last fiscal "
             f"year' - do not recompute the fiscal year from the date yourself. When populating "
-            f"timePeriodFY, use the bare four-digit year (e.g. '{current_fy}'), never the 'FY' prefix."
+            f"timePeriodFY, use the bare four-digit year (e.g. '{current_fy}'), never the 'FY' prefix. "
+            f"This date/fiscal-year information is provided ONLY so you can resolve a relative or "
+            f"explicit time reference the user actually made (e.g. 'this year', 'last FY', '{current_fy}'). "
+            f"If the query names no time period, quarter, or year at all, ignore this information entirely "
+            f"and leave both timePeriodFY and time_period empty - never populate either field with "
+            f"{current_fy} or any other year just because this context is available."
         )
 
     @cached_property
@@ -334,7 +362,12 @@ class FilterSearchAssistant:
                 is_known_error = isinstance(e, ToolUseRuntimeError)
                 error_message = e.user_message if is_known_error else "Tool execution failed."
                 model_detail = e.model_detail if is_known_error else str(e)
-                error_result = {"error": model_detail}
+                retry_hint = (
+                    RETRY_HINT_COMPLETION_TOOL
+                    if tool.description.name == self.COMPLETION_TOOL_NAME
+                    else RETRY_HINT_OTHER_TOOL
+                )
+                error_result = {"error": f"{model_detail} {retry_hint}"}
                 t.result = error_result
                 await t.asave()
 

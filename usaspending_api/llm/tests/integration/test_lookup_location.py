@@ -402,8 +402,13 @@ class TestErrorHandling:
         """Test handling when no results found."""
         mock_search.handle_execute.return_value.hits = []
 
-        with pytest.raises(LocationNotRecognizedError, match="NOTAREALPLACE123"):
+        with pytest.raises(LocationNotRecognizedError, match="NOTAREALPLACE123") as exc_info:
             await location_tool.lookup_location("NOTAREALPLACE123")
+
+        # model_detail must give the model concrete alternatives to try instead of just
+        # repeating the same unresolved query (the "give up after one unhappy call" eval failure).
+        assert "state abbreviation" in exc_info.value.model_detail
+        assert "location_type" in exc_info.value.model_detail
 
 
 class TestIntegrationWithFilters:

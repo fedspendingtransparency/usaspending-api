@@ -707,7 +707,13 @@ class ExecuteFilterInput(BaseModel):
             "  other:           ['09', '11', '-1', 'F005', 'F008', 'F009', 'F010']\n"
             "A value may only contain codes from a SINGLE group."
         ),
-        json_schema_extra={"examples": [["A", "B", "C", "D"], ["02", "03", "04", "05"], ["07", "08"]]},
+        json_schema_extra={
+            "examples": [
+                ["A", "B", "C", "D"],
+                ["02", "03", "04", "05", "F001", "F002"],
+                ["07", "08", "F003", "F004"],
+            ]
+        },
     )
     selectedAwardIDs: list[str] = Field(
         default_factory=list,

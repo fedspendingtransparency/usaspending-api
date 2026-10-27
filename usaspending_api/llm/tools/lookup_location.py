@@ -106,7 +106,15 @@ class LocationLookupTool:
                     "zero_results": True,
                 },
             )
-            raise LocationNotRecognizedError(f"Unable to filter. Location not recognized: {query}")
+            raise LocationNotRecognizedError(
+                f"Unable to filter. Location not recognized: {query}",
+                model_detail=(
+                    f"No location matched the query '{query}'. Try a standard form: a 2-letter state "
+                    "abbreviation, a full city name, a 5-digit ZIP code, or 'STATE-DD' congressional "
+                    "district format (e.g. 'TX', 'Chicago', '64198', 'MO-04'). Setting location_type can "
+                    "also help disambiguate an ambiguous name. If no match exists, omit this location."
+                ),
+            )
 
         logger.info(
             f"Location lookup completed: query='{query}', results_count={len(results)}",

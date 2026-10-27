@@ -45,7 +45,14 @@ class AgencyLookupTool:
             entries = [self._agency_row_to_entry(row) async for row in hybrid_matches[:top_k]]
 
         if not entries:
-            raise AgencyNotRecognizedError(f"Unable to filter. We couldn't find an agency with the name: {query}")
+            raise AgencyNotRecognizedError(
+                f"Unable to filter. We couldn't find an agency with the name: {query}",
+                model_detail=(
+                    f"No agency matched the query '{query}'. Try the agency's full official name, its "
+                    "common abbreviation (e.g. 'NASA', 'DOD'), or its 3-digit toptier code instead of a "
+                    "partial or colloquial name. If no match exists, omit this agency filter."
+                ),
+            )
 
         return {f"{entry['id']}_{entry['agencyType']}": entry for entry in entries}
 
@@ -108,7 +115,10 @@ class AgencyLookupTool:
             },
         }
         if agency_type == "subtier":
-            entry["subtier_agency"] = {"abbreviation": row.subtier_abbreviation, "name": row.subtier_name}
+            entry["subtier_agency"] = {
+                "abbreviation": row.subtier_abbreviation or row.subtier_name,
+                "name": row.subtier_name,
+            }
         return entry
 
     @staticmethod
@@ -127,7 +137,7 @@ class AgencyLookupTool:
         }
         if agency_type == "subtier" and row.subtier_agency:
             entry["subtier_agency"] = {
-                "abbreviation": row.subtier_agency.abbreviation,
+                "abbreviation": row.subtier_agency.abbreviation or row.subtier_agency.name,
                 "name": row.subtier_agency.name,
             }
         return entry
