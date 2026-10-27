@@ -5,6 +5,7 @@ from typing import Any, Callable, Literal
 from django.contrib.postgres.search import TrigramSimilarity
 from django.db.models import F, FloatField, Model, QuerySet, Value, Window
 from django.db.models.functions import Greatest, RowNumber
+from django.utils.functional import cached_property
 from pgvector.django import CosineDistance
 
 from usaspending_api.accounts.models.treasury_appropriation_account import TreasuryAppropriationAccount
@@ -23,6 +24,7 @@ from usaspending_api.references.models import ToptierAgency
 from usaspending_api.references.models.cfda import Cfda
 from usaspending_api.references.models.naics import NAICS
 from usaspending_api.references.models.psc import PSC
+from usaspending_api.references.v2.views.filter_tree.psc_filter_tree import PSC_GROUPS, PscGroupLabels
 
 logger = logging.getLogger(__name__)
 
@@ -99,12 +101,15 @@ class SearchResultNode:
         score: float,
         all_results: dict[str, CodeResult],
         config: CodeTypeConfig,
+        is_root: bool = True,
     ):
         self.code = code
         self.description = description
         self.score = score
         self.children: list[SearchResultNode] = []
         self.config = config
+
+        self._is_root = is_root
 
         # Build children
         self._populate_children(all_results)
@@ -120,6 +125,7 @@ class SearchResultNode:
                     score=child_data.score,
                     all_results=all_results,
                     config=self.config,
+                    is_root=False,
                 )
                 self.children.append(child_node)
 
@@ -137,10 +143,33 @@ class SearchResultNode:
             "code": self.code,
             "description": self.description,
             "score": self.score,
+            "is_root": self.is_root,
+            "is_leaf": self.is_leaf,
             "children": {
                 child.code: child.to_dict() for child in sorted(self.children, key=lambda x: x.score, reverse=True)
             },
         }
+
+    @property
+    def is_leaf(self) -> bool:
+        return len(self.children) == 0
+
+    @property
+    def is_root(self) -> bool:
+        return self._is_root
+
+    @cached_property
+    def leaf_node_count(self) -> int:
+        def _node_count(node: SearchResultNode, counter: int = 0) -> int:
+            if len(node.children) > 0:
+                for child_node in node.children:
+                    counter = _node_count(child_node, counter)
+            else:
+                return counter + 1
+
+            return counter
+
+        return _node_count(self)
 
 
 class CodeLookupTool:
@@ -367,8 +396,11 @@ class CodeLookupTool:
                 score=root_data.score,
                 all_results=all_results,
                 config=config,
+                is_root=True,
             )
-            hierarchy[root_code] = root_node.to_dict()
+            hierarchy[root_code] = {**root_node.to_dict(), "leaf_node_count": root_node.leaf_node_count}
+        if code_type == "psc":
+            hierarchy = self._group_psc_roots_by_tier1(hierarchy)
         sorted_hierarchy = dict(
             sorted(hierarchy.items(), key=lambda x: self._get_best_score_in_tree(x[1]), reverse=True)
         )
@@ -376,6 +408,43 @@ class CodeLookupTool:
             "hierarchy": sorted_hierarchy,
             "total_codes": sum(self._count_codes_in_tree(node) for node in sorted_hierarchy.values()),
         }
+
+    @staticmethod
+    def _group_psc_roots_by_tier1(hierarchy: dict) -> dict:
+        """Wrap each PSC root ('A', 'D', '10', ...) under its synthetic Tier1 PSC_GROUPS label,
+        matching the grouping the real PSC filter tree API uses (PSCFilterTree.toptier_search)."""
+        rd_terms = PSC_GROUPS[PscGroupLabels.RESEARCH_AND_DEVELOPMENT].terms
+        grouped: dict[str, dict] = {}
+        for root_code, root_data in hierarchy.items():
+            if root_code[0].isdigit():
+                label = str(PscGroupLabels.PRODUCT)
+            elif root_code[0] in rd_terms:
+                label = str(PscGroupLabels.RESEARCH_AND_DEVELOPMENT)
+            else:
+                label = str(PscGroupLabels.SERVICE)
+
+            bucket = grouped.setdefault(
+                label,
+                {
+                    "code": label,
+                    "description": "",
+                    "score": 0.0,
+                    "is_root": True,
+                    "is_leaf": False,
+                    "children": {},
+                    "leaf_node_count": 0,
+                },
+            )
+            if label == PscGroupLabels.RESEARCH_AND_DEVELOPMENT:
+                # RnD is the only PSC where the root value is a valid description in our PSC table (where code = A).
+                # Due to this we replace the label for RnD PSC on the root instead of creating a new root
+                bucket["children"] = {**bucket["children"], **root_data["children"]}
+            else:
+                root_data["is_root"] = False
+                bucket["children"][root_code] = root_data
+            bucket["score"] = max(bucket["score"], root_data.get("score", 0.0))
+            bucket["leaf_node_count"] += root_data.pop("leaf_node_count", 0)
+        return grouped
 
     @staticmethod
     async def _add_tas_ancestors(
@@ -463,9 +532,49 @@ lookup_code_tool = AITool(
                from generated text embeddings. The query may also be automatically expanded into
                related variations to broaden semantic recall.
 
-            Results are returned as a hierarchy: parent/ancestor codes are automatically
-            included and nested above their matching descendants, even if the ancestor itself
-            didn't match the query directly.
+            A hierarchical tree is a data structure that starts with a "root" node and references other
+            nodes in the tier below as "children". There is only one root and all children are capable
+            of having children of their own. Nodes that don't contain any children are considered "leafs".
+            Results are returned as a dictionary containing a total number of codes across all trees and
+            a tree where the first value is the root's code which
+            points to details about the root. Then children of the root, and then their children, are
+            found in each step through the tree. Root nodes are automatically included and nested
+            above their matching children, even if the root itself didn't match the query directly.
+
+            Sample Hierarchical Tree:
+            - 33 | Manufacturing (root) | Leaf Count: 4
+                - 3315 | Foundries
+                    - 331511 | Iron Foundries (leaf)
+                    - 331512 | Steel Investment Foundries (leaf)
+                - 3321 | Forging and Stamping
+                    - 332111 | Iron and Steel Forging (leaf)
+                    - 332112 | Nonferrous Forging (leaf)
+
+            Building on the sample above, it is possible for two independent queries to return trees with
+            the same root. This leaf count should be combined across all of the identical roots based on
+            the "value". Meaning, in the updated sample below a search for "1131", "3315", and "3321" would
+            yield those three codes and a leaf count of 1 for "11" and 4 for "33".
+
+            PSC results carry one extra top tier that NAICS/TAS/CFDA do not have: every root returned for
+            code_type='psc' is nested under one of three synthetic Tier1 group labels - "Research and
+            Development", "Service", or "Product" - with an empty string description. That Tier1 label,
+            not the letter/digit code beneath it, is the true root for PSC: use it (not its child code)
+            as the root value when building the pscCodes filter's "require" paths and "counts" entries.
+
+            Sample Hierarchical Trees with Matching Roots:
+            - 11 | Agriculture, Forestry, Fishing and Hunting (root) | Leaf Count: 1
+                - 1131 | Timber Tract Operations
+                    - 113110 | Timber Tract Operations
+
+            - 33 | Manufacturing (root) | Leaf Count: 2
+                - 3315 | Foundries
+                    - 331511 | Iron Foundries (leaf)
+                    - 331512 | Steel Investment Foundries (leaf)
+
+            - 33 | Manufacturing (root) | Leaf Count: 2
+                - 3321 | Forging and Stamping
+                    - 332111 | Iron and Steel Forging (leaf)
+                    - 332112 | Nonferrous Forging (leaf)
 
             Examples:
             - lookup_codes('541330', 'naics') -> Exact match, returns the specific NAICS code
