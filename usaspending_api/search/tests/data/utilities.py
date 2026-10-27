@@ -4,6 +4,7 @@ from django.conf import settings
 
 
 def setup_elasticsearch_test(monkeypatch, index_fixture, **options):
+    async_search_wrapper = None
     if index_fixture.index_type == "award":
         search_wrapper = "AwardSearch"
         query_alias = settings.ES_AWARDS_QUERY_ALIAS_PREFIX
@@ -15,9 +16,11 @@ def setup_elasticsearch_test(monkeypatch, index_fixture, **options):
         query_alias = settings.ES_TRANSACTIONS_QUERY_ALIAS_PREFIX
     elif index_fixture.index_type == "recipient":
         search_wrapper = "RecipientSearch"
+        async_search_wrapper = "AsyncRecipientSearch"
         query_alias = settings.ES_RECIPIENTS_QUERY_ALIAS_PREFIX
     elif index_fixture.index_type == "location":
         search_wrapper = "LocationSearch"
+        async_search_wrapper = "AsyncLocationSearch"
         query_alias = settings.ES_LOCATIONS_QUERY_ALIAS_PREFIX
     else:
         raise Exception("Invalid index type")
@@ -25,4 +28,8 @@ def setup_elasticsearch_test(monkeypatch, index_fixture, **options):
     monkeypatch.setattr(
         f"usaspending_api.common.elasticsearch.search_wrappers.{search_wrapper}._index_name", query_alias
     )
+    if async_search_wrapper:
+        monkeypatch.setattr(
+            f"usaspending_api.common.elasticsearch.search_wrappers.{async_search_wrapper}._index_name", query_alias
+        )
     index_fixture.update_index(**options)
