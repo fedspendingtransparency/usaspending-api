@@ -75,7 +75,7 @@ class Search(SearchBase):
         info = error.info if isinstance(error.info, dict) else {}
         caused_by = info.get("error", {}).get("caused_by") or {}
         return caused_by.get("type") in ("too_many_clauses", "too_many_nested_clauses") or (
-            "maxClauseCount" in (caused_by.get("reason") or "")
+            "maxClauseCount" in caused_by.get("reason", "")
         )
 
     def _execute(self, timeout: str) -> Response:
@@ -194,7 +194,7 @@ class AsyncSearch(SearchBase):
         info = error.info if isinstance(error.info, dict) else {}
         caused_by = info.get("error", {}).get("caused_by") or {}
         return caused_by.get("type") in ("too_many_clauses", "too_many_nested_clauses") or (
-            "maxClauseCount" in (caused_by.get("reason") or "")
+            "maxClauseCount" in caused_by.get("reason", "")
         )
 
     async def _execute(self, timeout: str) -> Response:
