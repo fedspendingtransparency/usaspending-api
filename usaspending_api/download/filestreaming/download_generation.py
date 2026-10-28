@@ -1068,14 +1068,14 @@ def create_empty_data_file(  # noqa: PLR0913
 
 def filter_sensitive_log_fields(message: str) -> str:
     """Filter  log messages to remove internal information like connection strings"""
-    #Match exact strings for DB and Broker DB
+    # Match exact strings for DB and Broker DB
     dburl = settings.DOWNLOAD_DATABASE_URL
     brokerdburl = settings.BROKER_DB
-    #Match general postgres connection string using regex
+    # Match general postgres connection string using regex
     postgres_connection_string_pattern = r"(?i)postgres(?:ql)?://[^\s'\"<>]+"
 
-    #Substitute string with *'s
-    replacestring = "***************"
+    # Substitute string with *'s
+    replacestring = "*" * 15
 
-    return re.sub(postgres_connection_string_pattern,replace, re.sub(brokerdburl,replace,(re.sub(dburl, replace, message))))
+    return re.sub( postgres_connection_string_pattern , replacestring, re.sub( brokerdburl , replacestring , (re.sub( dburl , replacestring , message))))
 
