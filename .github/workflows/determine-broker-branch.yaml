@@ -20,4 +20,5 @@ jobs:
         id: determine-broker-branch
         run: |
           # Choose a branch that matches the target, otherwise, default to qat
-          echo "branch=${{ contains(fromJSON('["qat", "staging", "master"]'), github.base_ref) && github.base_ref || 'qat' }}" >> "$GITHUB_OUTPUT"
+          # echo "branch=${{ contains(fromJSON('["qat", "staging", "master"]'), github.base_ref) && github.base_ref || 'qat' }}" >> "$GITHUB_OUTPUT"
+          echo "branch=qat" >> "$GITHUB_OUPUT"
