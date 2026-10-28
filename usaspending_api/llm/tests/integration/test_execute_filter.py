@@ -10,7 +10,6 @@ from usaspending_api.llm.tools.exceptions import (
     AgencyNotRecognizedError,
     AwardAmountNotParseableError,
     AwardNotRecognizedError,
-    AwardTypeEraMismatchError,
     DefcCodeNotRecognizedError,
     FilterValidationError,
     RecipientNotRecognizedError,
@@ -440,34 +439,35 @@ class TestValidationErrorTranslation:
         assert "NOT_REAL" in exc_info.value.model_detail
 
 
-class TestAwardTypeEraMismatch:
-    """A mixed old/new awardType selection is a single-field pydantic failure, translated the same
-    way as the DEFC/award-amount/time-period cases in TestValidationErrorTranslation."""
+class TestAwardTypeNames:
+    """The LLM selects award types by frontend name; execute_filter persists the resolved codes."""
 
-    async def test_mixed_era_award_types_raises_specific_error(self):
-        with pytest.raises(AwardTypeEraMismatchError) as exc_info:
-            await execute_filter(awardType=["02", "F001"])
-
-        assert "awardType" in exc_info.value.user_message
-        assert "mix legacy numeric codes" in exc_info.value.model_detail
-
-    async def test_old_era_only_award_types_accepted(self, mock_filter_hash):
+    async def test_award_type_names_are_persisted_as_codes(self, mock_filter_hash):
         mock_filter_hash.objects.aget.side_effect = FilterHash.DoesNotExist
-        mock_instance = _new_mock_instance()
-        mock_filter_hash.return_value = mock_instance
+        mock_filter_hash.return_value = _new_mock_instance()
 
-        result = await execute_filter(awardType=["02", "03"])
+        result = await execute_filter(awardType=["Grants", "Direct Loans"])
 
         assert "hash" in result
+        saved_filter = mock_filter_hash.call_args.kwargs["filter"]
+        assert saved_filter["filters"]["awardType"] == ["02", "03", "04", "07", "F001", "F003"]
 
-    async def test_new_era_only_award_types_accepted(self, mock_filter_hash):
+    async def test_legacy_and_current_codes_are_still_accepted(self, mock_filter_hash):
         mock_filter_hash.objects.aget.side_effect = FilterHash.DoesNotExist
-        mock_instance = _new_mock_instance()
-        mock_filter_hash.return_value = mock_instance
+        mock_filter_hash.return_value = _new_mock_instance()
 
-        result = await execute_filter(awardType=["F001", "F002"])
+        result = await execute_filter(awardType=["02", "F002"])
 
         assert "hash" in result
+        saved_filter = mock_filter_hash.call_args.kwargs["filter"]
+        assert saved_filter["filters"]["awardType"] == ["02", "03", "04", "05", "F001", "F002"]
+
+    async def test_unknown_award_type_name_returns_guidance(self):
+        result = await execute_filter(awardType=["Fellowships"])
+
+        assert "error" in result
+        assert "Unknown awardType value(s): ['Fellowships']" in result["error"]
+        assert "omit awardType" in result["error"]
 
 
 class TestAgencyExistenceValidation:

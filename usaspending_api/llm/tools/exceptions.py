@@ -47,10 +47,6 @@ class TimePeriodNotParseableError(ToolUseRuntimeError):
     pass
 
 
-class AwardTypeEraMismatchError(ToolUseRuntimeError):
-    pass
-
-
 class AwardNotRecognizedError(ToolUseRuntimeError):
     pass
 

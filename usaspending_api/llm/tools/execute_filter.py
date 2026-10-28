@@ -14,7 +14,6 @@ from usaspending_api.llm.tools.exceptions import (
     AgencyNotRecognizedError,
     AwardAmountNotParseableError,
     AwardNotRecognizedError,
-    AwardTypeEraMismatchError,
     DefcCodeNotRecognizedError,
     FilterValidationError,
     RecipientNotRecognizedError,
@@ -32,7 +31,6 @@ _SINGLE_FIELD_ERRORS = {
     "defCodes": DefcCodeNotRecognizedError,
     "awardAmounts": AwardAmountNotParseableError,
     "time_period": TimePeriodNotParseableError,
-    "awardType": AwardTypeEraMismatchError,
 }
 
 
@@ -43,11 +41,6 @@ def _build_user_message(field: str, kwargs: dict) -> str:
         message = f"DEFC code not found: {', '.join(codes)}."
     elif field == "awardAmounts":
         message = f"Unable to filter awards based on the criteria {kwargs.get('awardAmounts')}."
-    elif field == "awardType":
-        message = (
-            f"Unable to filter: awardType mixes legacy numeric codes with new 'F'-prefixed codes "
-            f"{kwargs.get('awardType')}. Use only one era's codes for a given award-type group."
-        )
     else:
         message = "Unable to filter based on the specified time period. Try rephrasing the dates you're looking for."
     return message
@@ -146,11 +139,7 @@ async def execute_filter(**kwargs) -> dict[str, str]:
         filters = Filters(**kwargs)
     except ValidationError as exc:
         fields = {error["loc"][0] if error["loc"] else None for error in exc.errors()}
-        if (
-            len(fields) == 1
-            and (field := next(iter(fields))) in _SINGLE_FIELD_ERRORS
-            and (field != "awardType" or "mix legacy numeric codes" in str(exc))
-        ):
+        if len(fields) == 1 and (field := next(iter(fields))) in _SINGLE_FIELD_ERRORS:
             raise _SINGLE_FIELD_ERRORS[field](_build_user_message(field, kwargs), model_detail=str(exc)) from exc
         if len(fields) > 1:
             raise FilterValidationError(
