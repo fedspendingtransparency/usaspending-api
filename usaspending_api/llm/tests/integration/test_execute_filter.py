@@ -7,14 +7,41 @@ from model_bakery import baker
 
 from usaspending_api.llm.models.py_models import ExecuteFilterInput, Filters, aget_defc_rows, clear_defc_rows_cache
 from usaspending_api.llm.tools.exceptions import (
+    AgencyNotRecognizedError,
     AwardAmountNotParseableError,
+    AwardNotRecognizedError,
     DefcCodeNotRecognizedError,
+    FilterValidationError,
+    RecipientNotRecognizedError,
     TimePeriodNotParseableError,
 )
 from usaspending_api.llm.tools.execute_filter import execute_filter, execute_filter_tool
 from usaspending_api.references.models import FilterHash
 
 pytestmark = pytest.mark.django_db(transaction=True)
+
+
+@pytest.fixture(autouse=True)
+def mock_existence_lookups():
+    """Default lookup-tool mocks so pre-existing tests (not specifically exercising the new
+    existence-validation paths) continue to pass without hitting real DB/OpenSearch backends.
+    Tests exercising validation failures override these within their own nested `patch(...)`."""
+
+    async def agency_lookup(query, **kwargs):
+        return {"results": {"1_toptier": {"id": 1, "agencyType": "toptier"}}, "instructions": None}
+
+    async def recipient_lookup(query, **kwargs):
+        return {"recipient_names": [query]}
+
+    async def award_lookup(query, **kwargs):
+        return {"result": {"generated_unique_award_id": query}}
+
+    with (
+        patch("usaspending_api.llm.tools.execute_filter.lookup_agency_tool.function", side_effect=agency_lookup),
+        patch("usaspending_api.llm.tools.execute_filter.lookup_recipient_tool.function", side_effect=recipient_lookup),
+        patch("usaspending_api.llm.tools.execute_filter.lookup_award_tool.function", side_effect=award_lookup),
+    ):
+        yield
 
 
 @pytest.fixture
@@ -344,8 +371,10 @@ class TestValidationErrorTranslation:
     """Single-category pydantic validation failures (DEFC, award amount, time period) are raised
     as specific exceptions instead of being swallowed into a generic error dict, so the assistant
     can show a clean user-facing message while still receiving the full pydantic detail for
-    self-correction. Anything spanning more than one category, or an unrecognized field, keeps the
-    original generic-error-dict behavior."""
+    self-correction. Failures spanning more than one category are raised as a generic
+    FilterValidationError for the same reason -- a returned error dict never reaches the frontend
+    as a visible error, even though it looks like one to the model. An unrecognized field by
+    itself keeps the original generic-error-dict behavior."""
 
     @pytest.fixture(autouse=True)
     async def seed_defc_codes(self):
@@ -395,17 +424,179 @@ class TestValidationErrorTranslation:
         )
         assert "not a valid date" in exc_info.value.model_detail
 
-    async def test_mixed_category_failure_falls_back_to_error_dict(self):
-        """Errors spanning more than one recognized category keep the original behavior: a
-        returned error dict, not a raised exception."""
-        result = await execute_filter(
-            defCodes={"require": ["NOT_REAL"]},
-            timePeriodType="dr",
-            time_period=[{"start_date": "invalid-date", "end_date": "2023-12-31"}],
-        )
+    async def test_mixed_category_failure_raises_generic_validation_error(self):
+        """Errors spanning more than one recognized category are raised, not returned as a dict,
+        so the assistant emits a visible tool_error event to the frontend instead of the tool call
+        looking like a success."""
+        with pytest.raises(FilterValidationError) as exc_info:
+            await execute_filter(
+                defCodes={"require": ["NOT_REAL"]},
+                timePeriodType="dr",
+                time_period=[{"start_date": "invalid-date", "end_date": "2023-12-31"}],
+            )
+
+        assert "invalid" in exc_info.value.user_message.lower()
+        assert "NOT_REAL" in exc_info.value.model_detail
+
+
+class TestAwardTypeNames:
+    """The LLM selects award types by frontend name; execute_filter persists the resolved codes."""
+
+    async def test_award_type_names_are_persisted_as_codes(self, mock_filter_hash):
+        mock_filter_hash.objects.aget.side_effect = FilterHash.DoesNotExist
+        mock_filter_hash.return_value = _new_mock_instance()
+
+        result = await execute_filter(awardType=["Grants", "Direct Loans"])
+
+        assert "hash" in result
+        saved_filter = mock_filter_hash.call_args.kwargs["filter"]
+        assert saved_filter["filters"]["awardType"] == ["02", "03", "04", "07", "F001", "F003"]
+
+    async def test_legacy_and_current_codes_are_still_accepted(self, mock_filter_hash):
+        mock_filter_hash.objects.aget.side_effect = FilterHash.DoesNotExist
+        mock_filter_hash.return_value = _new_mock_instance()
+
+        result = await execute_filter(awardType=["02", "F002"])
+
+        assert "hash" in result
+        saved_filter = mock_filter_hash.call_args.kwargs["filter"]
+        assert saved_filter["filters"]["awardType"] == ["02", "03", "04", "05", "F001", "F002"]
+
+    async def test_unknown_award_type_name_returns_guidance(self):
+        result = await execute_filter(awardType=["Fellowships"])
 
         assert "error" in result
-        assert "message" in result
+        assert "Unknown awardType value(s): ['Fellowships']" in result["error"]
+        assert "omit awardType" in result["error"]
+
+
+class TestAgencyExistenceValidation:
+    """selectedAwardingAgencies/selectedFundingAgencies entries are confirmed via lookup_agency_tool
+    before a filter is hashed."""
+
+    async def test_valid_agency_passes(self, sample_filters, mock_filter_hash):
+        mock_filter_hash.objects.aget.side_effect = FilterHash.DoesNotExist
+        mock_instance = _new_mock_instance()
+        mock_filter_hash.return_value = mock_instance
+
+        result = await execute_filter(**sample_filters)
+
+        assert "hash" in result
+
+    async def test_unresolvable_agency_raises(self, sample_filters):
+        with patch(
+            "usaspending_api.llm.tools.execute_filter.lookup_agency_tool.function",
+            new_callable=AsyncMock,
+            return_value={"results": {}, "instructions": None},
+        ):
+            with pytest.raises(AgencyNotRecognizedError) as exc_info:
+                await execute_filter(**sample_filters)
+
+        assert "Department of Agriculture" in exc_info.value.user_message
+        assert "Unresolvable selected agencies" in exc_info.value.model_detail
+
+    async def test_agency_lookup_zero_results_is_treated_as_unresolvable(self, sample_filters):
+        """lookup_agency_tool raises AgencyNotRecognizedError on zero matches; that must be caught
+        and translated into the same unresolvable-agency error, not propagated raw."""
+        with patch(
+            "usaspending_api.llm.tools.execute_filter.lookup_agency_tool.function",
+            new_callable=AsyncMock,
+            side_effect=AgencyNotRecognizedError("Unable to filter. We couldn't find an agency with the name: 001"),
+        ):
+            with pytest.raises(AgencyNotRecognizedError) as exc_info:
+                await execute_filter(**sample_filters)
+
+        assert "Unresolvable selected agencies" in exc_info.value.model_detail
+
+
+class TestRecipientExistenceValidation:
+    """selectedRecipients entries are confirmed via lookup_recipient_tool before a filter is hashed."""
+
+    async def test_valid_recipient_passes(self, mock_filter_hash):
+        mock_filter_hash.objects.aget.side_effect = FilterHash.DoesNotExist
+        mock_instance = _new_mock_instance()
+        mock_filter_hash.return_value = mock_instance
+
+        with patch(
+            "usaspending_api.llm.tools.execute_filter.lookup_recipient_tool.function",
+            new_callable=AsyncMock,
+            return_value={"recipient_names": ["ACME CORPORATION"]},
+        ):
+            result = await execute_filter(selectedRecipients=["ACME Corporation"])
+
+        assert "hash" in result
+
+    async def test_unresolvable_recipient_raises(self):
+        with patch(
+            "usaspending_api.llm.tools.execute_filter.lookup_recipient_tool.function",
+            new_callable=AsyncMock,
+            return_value={"recipient_names": []},
+        ):
+            with pytest.raises(RecipientNotRecognizedError) as exc_info:
+                await execute_filter(selectedRecipients=["Totally Fake Recipient"])
+
+        assert "Totally Fake Recipient" in exc_info.value.user_message
+        assert "Unresolvable selected recipients" in exc_info.value.model_detail
+
+    async def test_multiple_unresolvable_recipients_are_all_listed(self):
+        with patch(
+            "usaspending_api.llm.tools.execute_filter.lookup_recipient_tool.function",
+            new_callable=AsyncMock,
+            return_value={"recipient_names": []},
+        ):
+            with pytest.raises(RecipientNotRecognizedError) as exc_info:
+                await execute_filter(selectedRecipients=["Fake One", "Fake Two"])
+
+        assert "Fake One" in exc_info.value.user_message
+        assert "Fake Two" in exc_info.value.user_message
+
+
+class TestAwardIdExistenceValidation:
+    """selectedAwardIDs entries are confirmed via the new lookup_award_tool before a filter is hashed."""
+
+    async def test_valid_award_id_passes(self, mock_filter_hash):
+        mock_filter_hash.objects.aget.side_effect = FilterHash.DoesNotExist
+        mock_instance = _new_mock_instance()
+        mock_filter_hash.return_value = mock_instance
+
+        with patch(
+            "usaspending_api.llm.tools.execute_filter.lookup_award_tool.function",
+            new_callable=AsyncMock,
+            return_value={"result": {"generated_unique_award_id": "CONT_AWD_123"}},
+        ):
+            result = await execute_filter(selectedAwardIDs=["CONT_AWD_123"])
+
+        assert "hash" in result
+
+    async def test_generated_award_id_is_replaced_with_display_award_id(self, mock_filter_hash):
+        """The award ID search filter only matches PIID/FAIN/URI, so a generated_unique_award_id the model
+        passes must be persisted as the award's display ID."""
+        mock_filter_hash.objects.aget.side_effect = FilterHash.DoesNotExist
+        mock_filter_hash.return_value = _new_mock_instance()
+
+        with patch(
+            "usaspending_api.llm.tools.execute_filter.lookup_award_tool.function",
+            new_callable=AsyncMock,
+            return_value={"award_id": "W56HZV07C0096", "result": {}},
+        ):
+            await execute_filter(selectedAwardIDs=["CONT_AWD_W56HZV07C0096_9700_-NONE-_-NONE-", "W56HZV07C0096"])
+
+        saved_filter = mock_filter_hash.call_args.kwargs["filter"]
+        assert saved_filter["filters"]["selectedAwardIDs"] == {"W56HZV07C0096": "W56HZV07C0096"}
+
+    async def test_unresolvable_award_id_raises(self):
+        with patch(
+            "usaspending_api.llm.tools.execute_filter.lookup_award_tool.function",
+            new_callable=AsyncMock,
+            side_effect=AwardNotRecognizedError("Unable to filter. We couldn't find an award with the ID: x"),
+        ):
+            with pytest.raises(AwardNotRecognizedError) as exc_info:
+                await execute_filter(selectedAwardIDs=["FAKE_AWARD_ID"])
+
+        assert "FAKE_AWARD_ID" in exc_info.value.user_message
+        assert "Unresolvable selected award IDs" in exc_info.value.model_detail
+        assert "lookup_recipient" in exc_info.value.model_detail
+        assert "lookup_recipient" not in exc_info.value.user_message
 
 
 class TestAIToolImplementation:
