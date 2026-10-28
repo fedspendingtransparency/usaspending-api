@@ -1,5 +1,5 @@
 import pytest
-from opensearchpy import NotFoundError, TransportError
+from opensearchpy import TransportError
 
 from usaspending_api.common.elasticsearch.search_wrappers import Search, TransactionSearch
 from usaspending_api.common.exceptions import ElasticsearchQueryComplexityException
