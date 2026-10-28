@@ -6,9 +6,14 @@ from pydantic import ValidationError
 
 from usaspending_api.llm.models.py_models import (
     AwardAmounts,
+    ExecuteFilterInput,
     Filters,
     InferenceConfig,
+    NaicsCodeLists,
+    PscCodeLists,
     SelectedAgency,
+    SelectedCFDA,
+    TasCodeLists,
     clear_defc_rows_cache,
 )
 
@@ -1049,3 +1054,305 @@ class TestRecipientFieldsCombinations:
         assert "recipientDomesticForeign" in schema["properties"]
         assert "enum" in schema["properties"]["recipientDomesticForeign"]
         assert set(schema["properties"]["recipientDomesticForeign"]["enum"]) == {"all", "foreign"}
+
+
+class TestPscCodeLists:
+    """Tests for the Tier1-group-aware require/exclude/counts validation on PscCodeLists (Filters.pscCodes).
+
+    PSC's hierarchy root is one of three synthetic Tier1 group labels (Research and Development,
+    Service, Product) rather than a code with its own ancestor chain, so require/exclude are nested
+    [Tier1 label, ...PSC code segments] paths instead of flat codes.
+    """
+
+    def test_default_empty(self):
+        filters = Filters()
+
+        assert filters.pscCodes.require == []
+        assert filters.pscCodes.exclude == []
+        assert filters.pscCodes.counts == []
+
+    def test_accepts_nested_tier1_path(self):
+        filters = Filters(
+            pscCodes={
+                "require": [["Research and Development", "AC"]],
+                "counts": [{"value": "Research and Development", "label": "", "count": 5}],
+            }
+        )
+
+        assert filters.pscCodes.require == [["Research and Development", "AC"]]
+
+    def test_accepts_paths_under_different_tier1_groups(self):
+        filters = Filters(
+            pscCodes={
+                "require": [["Research and Development", "AC"], ["Service", "D"]],
+                "counts": [
+                    {"value": "Research and Development", "label": "", "count": 5},
+                    {"value": "Service", "label": "", "count": 10},
+                ],
+            }
+        )
+
+        assert filters.pscCodes.require == [["Research and Development", "AC"], ["Service", "D"]]
+
+    @pytest.mark.parametrize("tier1_label", ["Research and Development", "Service", "Product"])
+    def test_accepts_each_tier1_group_as_a_bare_root(self, tier1_label):
+        filters = Filters(
+            pscCodes={"require": [[tier1_label]], "counts": [{"value": tier1_label, "label": "", "count": 1}]}
+        )
+
+        assert filters.pscCodes.require == [[tier1_label]]
+
+    def test_require_rejects_root_not_a_tier1_label(self):
+        with pytest.raises(ValidationError) as exc_info:
+            Filters(pscCodes={"require": [["AC"]], "counts": [{"value": "Service", "label": "", "count": 1}]})
+
+        assert "must be one of" in str(exc_info.value)
+
+    def test_require_rejects_empty_path(self):
+        with pytest.raises(ValidationError) as exc_info:
+            Filters(pscCodes={"require": [[]], "counts": [{"value": "Service", "label": "", "count": 1}]})
+
+        assert "must be one of" in str(exc_info.value)
+
+    def test_require_rejects_malformed_code_segment(self):
+        with pytest.raises(ValidationError) as exc_info:
+            Filters(
+                pscCodes={
+                    "require": [["Service", "too-long-code"]],
+                    "counts": [{"value": "Service", "label": "", "count": 1}],
+                }
+            )
+
+        assert "one to four character" in str(exc_info.value)
+
+    def test_exclude_uses_same_path_validation_as_require(self):
+        with pytest.raises(ValidationError) as exc_info:
+            Filters(pscCodes={"exclude": [["not-a-group"]]})
+
+        assert "must be one of" in str(exc_info.value)
+
+    def test_counts_value_must_be_a_tier1_label(self):
+        with pytest.raises(ValidationError) as exc_info:
+            Filters(pscCodes={"require": [["Service", "D"]], "counts": [{"value": "D", "label": "", "count": 1}]})
+
+        assert "must be one of the PSC Tier1 group labels" in str(exc_info.value)
+
+    def test_counts_label_must_be_empty(self):
+        with pytest.raises(ValidationError) as exc_info:
+            Filters(
+                pscCodes={
+                    "require": [["Service", "D"]],
+                    "counts": [{"value": "Service", "label": "Service description", "count": 1}],
+                }
+            )
+
+        assert "must be an empty string" in str(exc_info.value)
+
+    def test_counts_rejects_zero_count(self):
+        with pytest.raises(ValidationError) as exc_info:
+            Filters(pscCodes={"require": [["Service", "D"]], "counts": [{"value": "Service", "label": "", "count": 0}]})
+
+        assert "count' must be greater than 0" in str(exc_info.value)
+
+    def test_counts_rejects_duplicate_tier1_labels(self):
+        with pytest.raises(ValidationError) as exc_info:
+            Filters(
+                pscCodes={
+                    "require": [["Service", "D"]],
+                    "counts": [
+                        {"value": "Service", "label": "", "count": 1},
+                        {"value": "Service", "label": "", "count": 2},
+                    ],
+                }
+            )
+
+        assert "combined under a new entry" in str(exc_info.value)
+
+    def test_codes_in_require_must_have_a_matching_counts_entry(self):
+        with pytest.raises(ValidationError) as exc_info:
+            Filters(
+                pscCodes={
+                    "require": [["Research and Development", "AC"], ["Service", "D"]],
+                    "counts": [{"value": "Research and Development", "label": "", "count": 5}],
+                }
+            )
+
+        assert "must contain an entry for each PSC Tier1 group" in str(exc_info.value)
+
+    def test_counts_required_when_require_present(self):
+        with pytest.raises(ValidationError) as exc_info:
+            Filters(pscCodes={"require": [["Service", "D"]]})
+
+        assert "There must be a unique entry in 'counts'" in str(exc_info.value)
+
+    def test_psc_code_lists_model_can_be_used_directly(self):
+        model = PscCodeLists(require=[["Service", "D"]], counts=[{"value": "Service", "label": "", "count": 1}])
+
+        assert model.require == [["Service", "D"]]
+
+
+class TestTasCodeLists:
+    """Tests for the hierarchical AID / AID-MAIN / full-label path validation on TasCodeLists (Filters.tasCodes)."""
+
+    def test_default_empty(self):
+        filters = Filters()
+
+        assert filters.tasCodes.require == []
+        assert filters.tasCodes.exclude == []
+
+    def test_accepts_single_element_agency_path(self):
+        filters = Filters(tasCodes={"require": [["310"]], "counts": [{"value": "310", "label": "Agency", "count": 3}]})
+
+        assert filters.tasCodes.require == [["310"]]
+
+    def test_accepts_two_element_aid_main_path(self):
+        filters = Filters(
+            tasCodes={
+                "require": [["535", "535-2724"]],
+                "counts": [{"value": "535", "label": "Agency", "count": 2}],
+            }
+        )
+
+        assert filters.tasCodes.require == [["535", "535-2724"]]
+
+    def test_accepts_three_element_full_label_path(self):
+        filters = Filters(
+            tasCodes={
+                "require": [["535", "535-2724", "535-2020/2021-2724-000"]],
+                "counts": [{"value": "535", "label": "Agency", "count": 1}],
+            }
+        )
+
+        assert filters.tasCodes.require == [["535", "535-2724", "535-2020/2021-2724-000"]]
+
+    def test_require_rejects_path_over_three_elements(self):
+        with pytest.raises(ValidationError) as exc_info:
+            Filters(
+                tasCodes={
+                    "require": [["535", "535-2724", "535-2020/2021-2724-000", "extra"]],
+                    "counts": [{"value": "535", "label": "Agency", "count": 1}],
+                }
+            )
+
+        assert "between 1 and 3 elements" in str(exc_info.value)
+
+    def test_require_rejects_empty_path(self):
+        with pytest.raises(ValidationError) as exc_info:
+            Filters(tasCodes={"require": [[]], "counts": [{"value": "535", "label": "Agency", "count": 1}]})
+
+        assert "between 1 and 3 elements" in str(exc_info.value)
+
+    def test_exclude_uses_same_path_validation_as_require(self):
+        with pytest.raises(ValidationError) as exc_info:
+            Filters(tasCodes={"exclude": [["a", "b", "c", "d"]]})
+
+        assert "between 1 and 3 elements" in str(exc_info.value)
+
+    def test_codes_in_require_must_have_a_matching_counts_entry(self):
+        with pytest.raises(ValidationError) as exc_info:
+            Filters(
+                tasCodes={
+                    "require": [["310"], ["535"]],
+                    "counts": [{"value": "310", "label": "Agency A", "count": 3}],
+                }
+            )
+
+        assert "must contain an entry for each root node" in str(exc_info.value)
+
+    def test_counts_required_when_require_present(self):
+        with pytest.raises(ValidationError) as exc_info:
+            Filters(tasCodes={"require": [["310"]]})
+
+        assert "There must be a unique entry in 'counts'" in str(exc_info.value)
+
+    def test_tas_code_lists_model_can_be_used_directly(self):
+        model = TasCodeLists(require=[["310"]], counts=[{"value": "310", "label": "Agency", "count": 1}])
+
+        assert model.require == [["310"]]
+
+
+class TestNaicsCodeListsRegression:
+    """Regression guard for NaicsCodeLists: splitting CodeLists into per-code-type require/exclude
+    shapes (nested paths for PSC/TAS) must not change NAICS, which stays a flat list of code strings.
+    """
+
+    def test_accepts_multiple_codes_rolled_up_under_a_shared_root(self):
+        model = NaicsCodeLists(
+            require=["336411", "336412"], counts=[{"value": "33", "label": "Manufacturing", "count": 2}]
+        )
+
+        assert model.require == ["336411", "336412"]
+
+    def test_rejects_nested_path_shape(self):
+        """A PSC/TAS-style nested path must not silently work its way into NAICS's flat require list."""
+        with pytest.raises(ValidationError) as exc_info:
+            NaicsCodeLists(require=[["336411"]], counts=[{"value": "33", "label": "Manufacturing", "count": 1}])
+
+        assert "require" in str(exc_info.value)
+
+    def test_require_code_must_have_a_matching_root_in_counts(self):
+        with pytest.raises(ValidationError) as exc_info:
+            NaicsCodeLists(require=["336411"], counts=[{"value": "44", "label": "Retail Trade", "count": 1}])
+
+        assert "must contain a code from each root node" in str(exc_info.value)
+
+
+class TestSelectedCFDA:
+    """Tests for the SelectedCFDA model and its wiring into Filters/ExecuteFilterInput.selectedCFDA
+    (keyed by CFDA program number, mirroring the SelectedAgency re-keying pattern)."""
+
+    def test_accepts_valid_entry(self):
+        cfda = SelectedCFDA(identifier="10.557", program_number="10.557", program_title="WIC")
+
+        assert cfda.program_title == "WIC"
+        assert cfda.popular_name is None
+
+    def test_accepts_optional_popular_name(self):
+        cfda = SelectedCFDA(identifier="10.557", program_number="10.557", program_title="WIC", popular_name="WIC")
+
+        assert cfda.popular_name == "WIC"
+
+    def test_identifier_must_match_program_number(self):
+        with pytest.raises(ValidationError) as exc_info:
+            SelectedCFDA(identifier="10.557", program_number="10.999", program_title="WIC")
+
+        assert "identifier' must equal 'program_number'" in str(exc_info.value)
+
+    def test_dict_key_must_equal_identifier(self):
+        with pytest.raises(ValidationError) as exc_info:
+            Filters(
+                selectedCFDA={"10.999": {"identifier": "10.557", "program_number": "10.557", "program_title": "WIC"}}
+            )
+
+        assert "must equal its entry's 'identifier'" in str(exc_info.value)
+
+    def test_dict_key_matching_identifier_is_accepted(self):
+        filters = Filters(
+            selectedCFDA={"10.557": {"identifier": "10.557", "program_number": "10.557", "program_title": "WIC"}}
+        )
+
+        assert set(filters.selectedCFDA.keys()) == {"10.557"}
+
+    def test_multiple_entries_each_correctly_keyed(self):
+        filters = Filters(
+            selectedCFDA={
+                "10.557": {"identifier": "10.557", "program_number": "10.557", "program_title": "WIC"},
+                "93.558": {"identifier": "93.558", "program_number": "93.558", "program_title": "TANF"},
+            }
+        )
+
+        assert set(filters.selectedCFDA.keys()) == {"10.557", "93.558"}
+
+    def test_empty_dict_is_valid(self):
+        filters = Filters(selectedCFDA={})
+
+        assert filters.selectedCFDA == {}
+
+    def test_execute_filter_input_also_validates_key_identifier_match(self):
+        """ExecuteFilterInput has its own copy of the selectedCFDA validator; both models must agree."""
+        with pytest.raises(ValidationError) as exc_info:
+            ExecuteFilterInput(
+                selectedCFDA={"10.999": {"identifier": "10.557", "program_number": "10.557", "program_title": "WIC"}}
+            )
+
+        assert "must equal its entry's 'identifier'" in str(exc_info.value)
