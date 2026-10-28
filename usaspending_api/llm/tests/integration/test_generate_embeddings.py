@@ -99,7 +99,7 @@ class TestGenerateEmbeddingsBasicFunctionality:
         mock_generator.generate_embedding.return_value = [0.1] * 256
         mock_generator_class.return_value = mock_generator
 
-        PSC.objects.create(code="1234", description="Test", length=4)
+        PSC.objects.create(code="1234", description="Test", length=4).save(auto_generate_embedding=True)
 
         out = StringIO()
         call_command("generate_embeddings", "psc", stdout=out)
@@ -128,7 +128,7 @@ class TestGenerateEmbeddingsOptions:
         mock_generator.generate_embedding.side_effect = [[0.1] * 256, [0.2] * 256]
         mock_generator_class.return_value = mock_generator
 
-        PSC.objects.create(code="1234", description="Test", length=4)
+        PSC.objects.create(code="1234", description="Test", length=4).save(auto_generate_embedding=True)
 
         out = StringIO()
         if force_flag:
