@@ -11,7 +11,7 @@ from pgvector.django import CosineDistance
 from usaspending_api.accounts.models.treasury_appropriation_account import TreasuryAppropriationAccount
 from usaspending_api.llm.embeddings.embedding_generator import EmbeddingGenerator
 from usaspending_api.llm.models.db_models import AIModel
-from usaspending_api.llm.models.py_models import AITool, AIToolDescription
+from usaspending_api.llm.models.py_models import AITool, AIToolDescription, CodeLists, Filters
 from usaspending_api.llm.tools.exceptions import (
     AssistanceListingNotRecognizedError,
     NaicsCodeNotRecognizedError,
@@ -179,9 +179,10 @@ class CodeLookupTool:
         self,
         query: str,
         code_type: Literal["naics", "psc", "cfda", "tas"],
+        inclusion: Literal["require", "exclude"] = "require",
         top_k: int = 20,
         query_fanout: int | None = 3,
-    ) -> dict[str, Any]:
+    ) -> Filters | dict[str, Any]:
         """
         Hybrid search for various code types combining text matching and vector similarity.
         """
@@ -190,19 +191,34 @@ class CodeLookupTool:
                 "error": f"Unsupported code type: {code_type}. Supported types: {list(CODE_TYPE_CONFIGS.keys())}",
                 "results": [],
             }
+        elif inclusion not in ["require", "exclude"]:
+            return {
+                "error": f"Unsupported code inclusion mode: {inclusion}. Supported types: [require, exclude]",
+                "results": [],
+            }
 
         config = CODE_TYPE_CONFIGS[code_type]
         budget_bureau_names = {}
 
-        results = await self._handle_exact_search(query, config, code_type, budget_bureau_names, top_k)
-        if results is None:
-            results = await self._handle_hybrid_search(
-                query, config, code_type, budget_bureau_names, top_k, query_fanout
-            )
+        codes = await self._handle_exact_search(query, config, code_type, budget_bureau_names, top_k)
+        if codes is None:
+            codes = await self._handle_hybrid_search(query, config, code_type, budget_bureau_names, top_k, query_fanout)
 
-        if results["total_codes"] == 0:
+        final_codes = list(self._flatten_codes(codes["hierarchy"]))
+        if len(final_codes) == 0:
             error_class, label = CODE_NOT_RECOGNIZED_ERRORS[code_type]
             raise error_class(f"{label}: {query}")
+
+        results = Filters()
+        if code_type == "cfda":
+            cfda_codes = {}
+            for code in final_codes:
+                cfda_codes[code] = {}
+            results.selectedCFDA = cfda_codes
+        else:
+            code_lists = CodeLists()
+            code_lists.__setattr__(inclusion, final_codes)
+            results.__setattr__(f"{code_type}Codes", code_lists)
 
         return results
 
@@ -404,6 +420,7 @@ class CodeLookupTool:
         sorted_hierarchy = dict(
             sorted(hierarchy.items(), key=lambda x: self._get_best_score_in_tree(x[1]), reverse=True)
         )
+
         return {
             "hierarchy": sorted_hierarchy,
             "total_codes": sum(self._count_codes_in_tree(node) for node in sorted_hierarchy.values()),
@@ -506,6 +523,13 @@ class CodeLookupTool:
                 count += self._count_codes_in_tree(child)
         return count
 
+    def _flatten_codes(self, hierarchy: dict) -> set[str]:
+        codes = set()
+        for code, node in hierarchy.items():
+            codes.add(code)
+            codes.update(self._flatten_codes(node.get("children", {})))
+        return codes
+
 
 lookup_code_tool = AITool(
     function=CodeLookupTool().lookup_codes,
@@ -599,6 +623,12 @@ lookup_code_tool = AITool(
                     "type": "string",
                     "enum": ["naics", "psc", "cfda", "tas"],
                     "description": "Type of code to search for",
+                },
+                "inclusion": {
+                    "type": "string",
+                    "enum": ["require", "exclude"],
+                    "description": "Optional. Whether the generated codes should be required or blocked from results",
+                    "default": "require",
                 },
                 "top_k": {"type": "integer", "description": "Number of results to return (default: 20)", "default": 20},
             },
