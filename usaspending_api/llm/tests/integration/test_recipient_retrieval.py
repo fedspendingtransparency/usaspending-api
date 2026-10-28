@@ -3,7 +3,7 @@
 import pytest
 
 from usaspending_api.common.elasticsearch.search_wrappers import AsyncRecipientSearch
-from usaspending_api.llm.models.py_models import Filters
+from usaspending_api.llm.models.py_models import AIToolResult
 from usaspending_api.llm.tests.helper import (
     build_fuzzy_recipient_query,
     fuzzy_search_recipients,
@@ -197,17 +197,17 @@ class TestRetrieveRecipientNamesIntegration:
         """Test that function returns a dictionary for a list of strings"""
         result = await retrieve_recipient_names("ACME")
 
-        assert isinstance(result, Filters)
+        assert isinstance(result.results["selectedRecipients"], list)
         # All items should be strings
-        for item in result.selectedRecipients:
+        for item in result.results["selectedRecipients"]:
             assert isinstance(item, str)
 
     async def test_handles_no_matches(self, setup_test_recipients):
         """Test behavior when no matches are found"""
         result = await retrieve_recipient_names("NONEXISTENT_XYZ_12345")
 
-        assert isinstance(result, Filters)
-        assert result.selectedRecipients == []
+        assert isinstance(result.results["selectedRecipients"], list)
+        assert result.results["selectedRecipients"] == []
 
     async def test_respects_limit_parameter(self, setup_test_recipients):
         """Test that limit parameter controls number of results"""
@@ -215,10 +215,10 @@ class TestRetrieveRecipientNamesIntegration:
         result_2 = await retrieve_recipient_names("CORP", limit=2)
 
         # Results should respect the limit
-        assert isinstance(result_1, Filters)
-        assert len(result_1.selectedRecipients) == 1
-        assert isinstance(result_2, Filters)
-        assert len(result_2.selectedRecipients) == 2
+        assert isinstance(result_1, AIToolResult)
+        assert len(result_1.results["selectedRecipients"]) == 1
+        assert isinstance(result_2, AIToolResult)
+        assert len(result_2.results["selectedRecipients"]) == 2
 
     async def test_extracts_recipient_identifiers(self, setup_test_recipients):
         """Test that recipient names, UEIs, and DUNS are extracted"""
@@ -226,9 +226,9 @@ class TestRetrieveRecipientNamesIntegration:
 
         if result:
             # Should contain recipient identifiers (names, UEIs, DUNS)
-            assert len(result.selectedRecipients) > 0
+            assert len(result.results["selectedRecipients"]) > 0
             # All should be strings
-            assert all(isinstance(item, str) for item in result.selectedRecipients)
+            assert all(isinstance(item, str) for item in result.results["selectedRecipients"])
 
     async def test_case_insensitive_search(self, setup_test_recipients):
         """Test that search is case-insensitive"""
@@ -236,14 +236,14 @@ class TestRetrieveRecipientNamesIntegration:
         result_upper = await retrieve_recipient_names("ACME CORP")
 
         # Should return same results
-        assert len(result_lower.selectedRecipients) == len(result_upper.selectedRecipients)
+        assert len(result_lower.results["selectedRecipients"]) == len(result_upper.results["selectedRecipients"])
 
     async def test_handles_special_characters(self, setup_test_recipients):
         """Test that special characters are handled properly"""
         # Should not raise exception
         result = await retrieve_recipient_names("ACME & Co. (2024)")
 
-        assert isinstance(result, Filters)
+        assert isinstance(result.results["selectedRecipients"], list)
 
     async def test_no_duplicate_names(self, setup_test_recipients):
         """Test that result contains no duplicates"""
@@ -251,7 +251,7 @@ class TestRetrieveRecipientNamesIntegration:
 
         if result:
             # Should have no duplicates
-            assert len(result.selectedRecipients) == len(set(result.selectedRecipients))
+            assert len(result.results["selectedRecipients"]) == len(set(result.results["selectedRecipients"]))
 
     async def test_returns_multiple_identifiers_per_recipient(self, setup_test_recipients):
         """Test that multiple identifiers (name, UEI, DUNS) are returned for each recipient"""
@@ -260,27 +260,27 @@ class TestRetrieveRecipientNamesIntegration:
         if result:
             # Should include multiple identifiers for the recipient
             # (name, UEI, DUNS at minimum)
-            assert len(result.selectedRecipients) >= 1
+            assert len(result.results["selectedRecipients"]) >= 1
 
     async def test_handles_partial_matches(self, setup_test_recipients):
         """Test that partial text matches work"""
         result = await retrieve_recipient_names("ACM")
 
         # Should find results containing "ACM" (like ACME)
-        assert isinstance(result, Filters)
+        assert isinstance(result.results["selectedRecipients"], list)
 
     async def test_handles_whitespace_in_query(self, setup_test_recipients):
         """Test that whitespace in query is handled correctly"""
         result = await retrieve_recipient_names("  ACME  ")
 
-        assert isinstance(result, Filters)
+        assert isinstance(result.results["selectedRecipients"], list)
 
     async def test_performance_with_large_limit(self, setup_test_recipients):
         """Test that function handles large limits without errors"""
         # Should not timeout or error with large limit
         result = await retrieve_recipient_names("CORP", limit=100)
 
-        assert isinstance(result, Filters)
+        assert isinstance(result.results["selectedRecipients"], list)
 
 
 @pytest.mark.django_db
@@ -298,11 +298,11 @@ class TestRecipientRetrievalEndToEnd:
 
         # Both should return results (or both empty)
         assert isinstance(search_results, list)
-        assert isinstance(names, Filters)
+        assert isinstance(names, AIToolResult)
 
         # If search results exist, names should also exist
         if search_results:
-            assert len(names.selectedRecipients) > 0
+            assert len(names.results["selectedRecipients"]) > 0
 
     async def test_retrieve_names_includes_fuzzy_search_data(self, setup_test_recipients):
         """Test that retrieve_recipient_names includes data from fuzzy search"""
@@ -318,7 +318,7 @@ class TestRecipientRetrievalEndToEnd:
             if first_result.get("recipient_name"):
                 # At least one identifier should be in the names list
                 assert any(
-                    identifier in names.selectedRecipients
+                    identifier in names.results["selectedRecipients"]
                     for identifier in [
                         first_result.get("recipient_name"),
                         first_result.get("uei"),
@@ -337,11 +337,11 @@ class TestRecipientRetrievalEndToEnd:
 
         # Both should return data (or both empty)
         assert isinstance(fuzzy_results, list)
-        assert isinstance(names, Filters)
+        assert isinstance(names, AIToolResult)
 
         # If fuzzy search has results, names should too
         if fuzzy_results:
-            assert len(names.selectedRecipients) > 0
+            assert len(names.results["selectedRecipients"]) > 0
 
     async def test_build_query_to_fuzzy_search_workflow(self, setup_test_recipients):
         """Test workflow from building query to executing search"""
@@ -362,7 +362,7 @@ class TestRecipientRetrievalEndToEnd:
         for query in queries:
             # Should not timeout or error
             result = await retrieve_recipient_names(query, limit=10)
-            assert isinstance(result, Filters)
+            assert isinstance(result.results["selectedRecipients"], list)
 
     async def test_empty_results_handled_consistently(self, setup_test_recipients):
         """Test that empty results are handled consistently across functions"""
@@ -373,7 +373,7 @@ class TestRecipientRetrievalEndToEnd:
         names = await retrieve_recipient_names(nonexistent)
 
         assert fuzzy_results == []
-        assert names.selectedRecipients == []
+        assert names.results["selectedRecipients"] == []
 
     async def test_special_characters_handled_consistently(self, setup_test_recipients):
         """Test that special characters are handled consistently"""
@@ -384,4 +384,4 @@ class TestRecipientRetrievalEndToEnd:
         names = await retrieve_recipient_names(special_query)
 
         assert isinstance(fuzzy_results, list)
-        assert isinstance(names, Filters)
+        assert isinstance(names, AIToolResult)

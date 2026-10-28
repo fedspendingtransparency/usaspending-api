@@ -6,8 +6,8 @@ from asgiref.sync import sync_to_async
 from model_bakery import baker
 
 from usaspending_api.llm.models.py_models import (
+    AIToolResult,
     ExecuteFilterInput,
-    FilterResponse,
     Filters,
     aget_defc_rows,
     clear_defc_rows_cache,
@@ -68,52 +68,52 @@ class TestInputValidation:
         """Test that valid filters are accepted."""
         result = await execute_filter(**sample_filters)
 
-        assert isinstance(result, FilterResponse)
+        assert isinstance(result, AIToolResult)
         assert "error" not in result
 
     async def test_invalid_filters_return_error(self):
         """Test that invalid filters return validation error."""
         result = await execute_filter(invalid_field="invalid_value")
 
-        assert "error" in result
-        assert "message" in result
-        assert "invalid" in result["message"].lower()
+        assert "error" in result.results
+        assert "message" in result.results
+        assert "invalid" in result.results["message"].lower()
 
     async def test_empty_filters_accepted(self):
         """Test that empty filters are valid."""
         result = await execute_filter()
 
-        assert isinstance(result, FilterResponse)
+        assert isinstance(result, AIToolResult)
         assert "error" not in result
 
     async def test_validation_error_message_includes_details(self):
         """Test that validation errors include helpful details."""
         result = await execute_filter(awardType="invalid")
 
-        assert "error" in result
-        assert isinstance(result["error"], str)
-        assert len(result["error"]) > 0
+        assert "error" in result.results
+        assert isinstance(result.results["error"], str)
+        assert len(result.results["error"]) > 0
 
     async def test_partial_valid_filters(self):
         """Test filters with only some valid fields."""
         result = await execute_filter(awardType=["A", "B"], invalid_field="should_be_ignored")
 
         # Should fail validation due to invalid field
-        assert "error" in result
+        assert "error" in result.results
 
     async def test_selected_recipients_at_max_length_accepted(self):
         """Test that exactly 50 selected recipients is accepted."""
         result = await execute_filter(selectedRecipients=[f"RECIPIENT_{i}" for i in range(50)])
 
-        assert isinstance(result, FilterResponse)
+        assert isinstance(result, AIToolResult)
         assert "error" not in result
 
     async def test_selected_recipients_over_max_length_returns_error(self):
         """Test that more than 50 selected recipients is rejected to avoid oversized OpenSearch queries."""
         result = await execute_filter(selectedRecipients=[f"RECIPIENT_{i}" for i in range(51)])
 
-        assert "error" in result
-        assert "message" in result
+        assert "error" in result.results
+        assert "message" in result.results
 
 
 class TestFilterProcessing:
@@ -128,7 +128,7 @@ class TestFilterProcessing:
 
         result = await execute_filter(**sample_filters)
 
-        assert isinstance(result, FilterResponse)
+        assert isinstance(result, AIToolResult)
         assert mock_filter_hash.called
         assert mock_instance.asave.called
         call_args = mock_filter_hash.call_args[1]
@@ -210,7 +210,7 @@ class TestFilterProcessing:
         )
 
         # Verify hash was created (keys were sorted)
-        assert isinstance(result, FilterResponse)
+        assert isinstance(result, AIToolResult)
 
 
 class TestHashCreationAndStorage:
@@ -229,7 +229,7 @@ class TestHashCreationAndStorage:
         # Verify create_hash was called
         assert mock_create_hash.called
         # Verify hash is returned
-        assert result.hash == "test_hash_123"
+        assert result.results["hash"] == "test_hash_123"
 
     async def test_existing_hash_not_recreated(self, mock_filter_hash):
         """Test that existing hash is returned without creating new entry."""
@@ -240,7 +240,7 @@ class TestHashCreationAndStorage:
         result = await execute_filter(awardType=["A"])
 
         # Should return existing hash
-        assert isinstance(result, FilterResponse)
+        assert isinstance(result, AIToolResult)
         # Should not create new FilterHash
         assert not mock_filter_hash.called
 
@@ -257,7 +257,7 @@ class TestHashCreationAndStorage:
         # Verify save was called
         assert mock_instance.asave.called
         # Verify hash is returned
-        assert isinstance(result, FilterResponse)
+        assert isinstance(result, AIToolResult)
 
     async def test_hash_includes_filter_json(self, mock_filter_hash):
         """Test that saved hash includes filter JSON."""
@@ -286,7 +286,7 @@ class TestHashCreationAndStorage:
         result2 = await execute_filter(**filters)
 
         # Both should produce the same hash
-        assert result1.hash == result2.hash
+        assert result1.results["hash"] == result2.results["hash"]
 
     async def test_different_filters_produce_different_hashes(self, mock_filter_hash):
         """Test that different filters produce different hashes."""
@@ -298,7 +298,7 @@ class TestHashCreationAndStorage:
         result2 = await execute_filter(awardType=["B"])
 
         # Should produce different hashes
-        assert result1.hash != result2.hash
+        assert result1.results["hash"] != result2.results["hash"]
 
 
 class TestErrorHandling:
@@ -308,10 +308,10 @@ class TestErrorHandling:
         """Test that validation errors return proper error dict."""
         result = await execute_filter(awardType="invalid_format")
 
-        assert "error" in result
-        assert "message" in result
-        assert isinstance(result["error"], str)
-        assert isinstance(result["message"], str)
+        assert "error" in result.results
+        assert "message" in result.results
+        assert isinstance(result.results["error"], str)
+        assert isinstance(result.results["message"], str)
 
     async def test_database_save_error_returns_error_dict(self, mock_filter_hash):
         """Test that database save errors return proper error dict."""
@@ -322,9 +322,9 @@ class TestErrorHandling:
 
         result = await execute_filter(awardType=["A"])
 
-        assert "error" in result
-        assert "message" in result
-        assert "error saving" in result["message"].lower()
+        assert "error" in result.results
+        assert "message" in result.results
+        assert "error saving" in result.results["message"].lower()
 
     async def test_error_message_includes_exception_details(self, mock_filter_hash):
         """Test that error messages include exception details."""
@@ -335,7 +335,7 @@ class TestErrorHandling:
 
         result = await execute_filter(awardType=["A"])
 
-        assert "Specific database error" in result["error"]
+        assert "Specific database error" in result.results["error"]
 
     async def test_validation_error_does_not_save_to_database(self, mock_filter_hash):
         """Test that validation errors don't attempt database save."""
@@ -410,8 +410,8 @@ class TestValidationErrorTranslation:
             time_period=[{"start_date": "invalid-date", "end_date": "2023-12-31"}],
         )
 
-        assert "error" in result
-        assert "message" in result
+        assert "error" in result.results
+        assert "message" in result.results
 
 
 class TestAIToolImplementation:
@@ -490,7 +490,7 @@ class TestAIToolImplementation:
 
         result = await execute_filter_tool.function(awardType=["A"])
 
-        assert isinstance(result, FilterResponse)
+        assert isinstance(result, AIToolResult)
 
 
 class TestIntegrationWithFiltersModel:
@@ -516,7 +516,7 @@ class TestIntegrationWithFiltersModel:
 
         # Should not raise validation error
         result = await execute_filter(**test_data)
-        assert isinstance(result, FilterResponse) or "error" in result
+        assert isinstance(result, AIToolResult) or "error" in result.results
 
     async def test_filters_model_validation_applied(self):
         """An unparseable date raises the specific time-period error instead of validating."""
@@ -551,7 +551,7 @@ class TestIntegrationWithFiltersModel:
             keyword=["fire", "prevention"],
         )
 
-        assert isinstance(result, FilterResponse)
+        assert isinstance(result, AIToolResult)
 
 
 class TestEdgeCases:
@@ -569,7 +569,7 @@ class TestEdgeCases:
 
         result = await execute_filter(keyword=large_keywords)
 
-        assert isinstance(result, FilterResponse)
+        assert isinstance(result, AIToolResult)
 
     async def test_unicode_in_filters(self, mock_filter_hash):
         """Test handling of unicode characters in filters."""
@@ -579,7 +579,7 @@ class TestEdgeCases:
 
         result = await execute_filter(keyword=["test™", "café", "日本"])
 
-        assert isinstance(result, FilterResponse)
+        assert isinstance(result, AIToolResult)
 
     async def test_special_characters_in_keyword(self, mock_filter_hash):
         """Test handling of special characters in keyword field."""
@@ -589,7 +589,7 @@ class TestEdgeCases:
 
         result = await execute_filter(keyword=["test & co.", "50% off", "$1,000"])
 
-        assert isinstance(result, FilterResponse)
+        assert isinstance(result, AIToolResult)
 
     async def test_nested_filter_structures(self, mock_filter_hash):
         """Test handling of deeply nested filter structures."""
@@ -613,7 +613,7 @@ class TestEdgeCases:
             },
         )
 
-        assert isinstance(result, FilterResponse)
+        assert isinstance(result, AIToolResult)
 
     async def test_empty_list_filters(self, mock_filter_hash):
         """Test handling of empty list filters."""
@@ -623,7 +623,7 @@ class TestEdgeCases:
 
         result = await execute_filter(awardType=[], keyword=[])
 
-        assert isinstance(result, FilterResponse)
+        assert isinstance(result, AIToolResult)
 
 
 class TestRealWorldScenarios:
@@ -655,7 +655,7 @@ class TestRealWorldScenarios:
             keyword=["forestry", "prevention"],
         )
 
-        assert isinstance(result, FilterResponse)
+        assert isinstance(result, AIToolResult)
 
     async def test_recipient_focused_search(self, mock_filter_hash):
         """Test recipient-focused search filters."""
@@ -665,7 +665,7 @@ class TestRealWorldScenarios:
 
         result = await execute_filter(selectedRecipients=["ACME Corporation"], recipientType=["business"])
 
-        assert isinstance(result, FilterResponse)
+        assert isinstance(result, AIToolResult)
 
     async def test_location_based_search(self, mock_filter_hash):
         """Test location-based search filters."""
@@ -683,7 +683,7 @@ class TestRealWorldScenarios:
             }
         )
 
-        assert isinstance(result, FilterResponse)
+        assert isinstance(result, AIToolResult)
 
     async def test_award_amounts_range_filter(self, mock_filter_hash):
         """A valid award-amount range blob is accepted and hashed."""
@@ -693,7 +693,7 @@ class TestRealWorldScenarios:
 
         result = await execute_filter(awardAmounts={"range-1": [1000000, 25000000]})
 
-        assert isinstance(result, FilterResponse)
+        assert isinstance(result, AIToolResult)
         saved_filter = mock_filter_hash.call_args[1]["filter"]
         assert saved_filter["filters"]["awardAmounts"] == {"range-1": [1000000, 25000000]}
 
@@ -705,7 +705,7 @@ class TestRealWorldScenarios:
 
         result = await execute_filter(awardAmounts={"specific": [5000000, None]})
 
-        assert isinstance(result, FilterResponse)
+        assert isinstance(result, AIToolResult)
 
     async def test_award_amounts_invalid_returns_error(self):
         """Combining 'specific' with a range bucket raises the specific award-amount error before any DB access."""
@@ -725,9 +725,9 @@ class TestRealWorldScenarios:
         # Second call finds existing hash
         mock_filter_hash.objects.aget.side_effect = None
         existing = MagicMock()
-        existing.hash = result1.hash
+        existing.results["hash"] = result1.results["hash"]
         mock_filter_hash.objects.aget.return_value = existing
 
         result2 = await execute_filter(**filters)
 
-        assert result1.hash == result2.hash
+        assert result1.results["hash"] == result2.results["hash"]
