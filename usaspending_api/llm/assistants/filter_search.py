@@ -6,7 +6,6 @@ from functools import cached_property
 from typing import Any, AsyncGenerator, Callable
 
 from django.db.models import Sum
-from pydantic import BaseModel
 
 from usaspending_api.common.helpers.aws_helpers import async_aws_client
 from usaspending_api.llm.models.db_models import Assistant, Message, Session, ToolUse
@@ -297,10 +296,7 @@ class FilterSearchAssistant:
             try:
                 tool_output = await tool.function(**tool_use["input"])
                 execution_time_ms = (time.time() - tool_start_time) * 1000
-                if isinstance(tool_output, BaseModel):
-                    result = tool_output.model_dump()
-                else:
-                    result = tool_output
+                result = tool_output.results
                 t.result = result
                 await t.asave()
 

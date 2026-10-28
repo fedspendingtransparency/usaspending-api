@@ -8,7 +8,7 @@ from usaspending_api.common.elasticsearch.search_wrappers import AsyncLocationSe
 from usaspending_api.llm.models.py_models import (
     AITool,
     AIToolDescription,
-    Filters,
+    AIToolResult,
     LocationDisplay,
     LocationFilter,
     SelectedLocation,
@@ -68,9 +68,7 @@ class LocationLookupTool:
                     self._country_code_cache[country_name.lower()] = country_code
         return self._country_code_cache
 
-    async def lookup_location(
-        self, query: str, location_type: str | None = None, top_k: int = 15
-    ) -> Filters | dict[str, Any]:
+    async def lookup_location(self, query: str, location_type: str | None = None, top_k: int = 15) -> AIToolResult:
         # Validation
         error_response = self._validate_inputs(query, location_type)
         if error_response:
@@ -95,7 +93,7 @@ class LocationLookupTool:
             )
         except Exception as e:
             logger.error(f"OpenSearch query failed for query='{query}': {str(e)}", exc_info=True)
-            return {"error": f"OpenSearch query failed: {str(e)}", "results": {}}
+            return AIToolResult(results={"error": f"OpenSearch query failed: {str(e)}", "results": {}})
         finally:
             if search.client is not None:
                 await search.client.close()
@@ -123,7 +121,7 @@ class LocationLookupTool:
         )
 
         # return {"results": results, "count": len(results), "query": query, "location_type": location_type}
-        return Filters(selectedLocations=results)
+        return AIToolResult(results=results)
 
     def _validate_inputs(self, query: str, location_type: str | None) -> dict[str, Any] | None:
         """Validate input parameters and return error dict if invalid, None otherwise."""
@@ -167,7 +165,7 @@ class LocationLookupTool:
 
     def _transform_results(
         self, response: Any, state_abbreviations: dict[str, str], country_codes: dict[str, str]
-    ) -> dict[str, SelectedLocation]:
+    ) -> dict[str, dict]:
         """Transform OpenSearch hits to SelectedLocation format."""
         results = {}
         seen_identifiers = set()
@@ -193,7 +191,7 @@ class LocationLookupTool:
                 seen_identifiers.add(identifier)
 
                 # Return in the format expected by selectedLocations
-                results[identifier] = location_obj
+                results[identifier] = location_obj.model_dump()
 
             except Exception as e:
                 logger.warning(

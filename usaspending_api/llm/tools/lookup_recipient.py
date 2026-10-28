@@ -4,7 +4,7 @@ from typing import Any
 from opensearchpy.helpers.query import Q as ES_Q
 
 from usaspending_api.common.elasticsearch.search_wrappers import AsyncRecipientSearch
-from usaspending_api.llm.models.py_models import AITool, AIToolDescription, Filters
+from usaspending_api.llm.models.py_models import AITool, AIToolDescription, AIToolResult, Filters
 from usaspending_api.search.v2.es_sanitization import es_sanitize
 
 logger = logging.getLogger(__name__)
@@ -25,12 +25,12 @@ class RecipientLookupTool:
         self,
         query: str,
         top_k: int = 10,
-    ) -> Filters | dict[str, list[str]]:
+    ) -> AIToolResult:
         """
         Search for recipients by name, uei, duns, and return recipient names.
         """
         if not query or not query.strip():
-            return {"errors": ["Query cannot be empty."]}
+            return AIToolResult(results={"error": "Query cannot be empty."})
 
         top_k = max(1, min(top_k, 100))
         query_upper = es_sanitize(query).strip().upper()
@@ -50,7 +50,7 @@ class RecipientLookupTool:
             )
         except Exception as exception:
             logger.error(f"OpenSearch query failed for query='{query}': {str(exception)}", exc_info=True)
-            return {"errors": [str(exception)]}
+            return AIToolResult(results={"error": str(exception)})
         finally:
             if search.client is not None:
                 await search.client.close()
@@ -73,7 +73,7 @@ class RecipientLookupTool:
             f"Recipient lookup completed: query='{query}', recipient_names_count={recipient_count}",
             extra={"query": query, "recipient_names_count": recipient_count},
         )
-        return result
+        return AIToolResult(results={"selectedRecipients": result.selectedRecipients})
 
     def _build_search(self, query_upper: str, top_k: int) -> AsyncRecipientSearch:
         should_queries = []

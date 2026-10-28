@@ -10,7 +10,7 @@ from usaspending_api.llm.models.db_models import AIModel
 from usaspending_api.llm.models.py_models import (
     AITool,
     AIToolDescription,
-    Filters,
+    AIToolResult,
     SelectedAgency,
     SubtierAgency,
     ToptierAgency,
@@ -18,8 +18,6 @@ from usaspending_api.llm.models.py_models import (
 from usaspending_api.llm.tools.exceptions import AgencyNotRecognizedError
 from usaspending_api.references.models.agency import Agency
 from usaspending_api.search.models.mv_agency_autocomplete import AgencyAutocompleteMatview
-
-AGENCY_TYPE_MAP = {"awarding": "selectedAwardingAgencies", "funding": "selectedFundingAgencies"}
 
 
 @dataclass
@@ -40,13 +38,7 @@ class AgencyLookupTool:
     HYBRID_VECTOR_WEIGHT = 0.5
     VECTOR_DISTANCE_THRESHOLD = 0.75
 
-    async def lookup_agencies(self, query: str, top_k: int = 10, agency_type: str = "awarding") -> Filters:
-        agency_field = ""
-        if agency_type not in AGENCY_TYPE_MAP:
-            raise AgencyNotRecognizedError("Unable to filter. The agency_type field was not 'awarding' or 'funding'")
-        else:
-            agency_field = AGENCY_TYPE_MAP[agency_type]
-
+    async def lookup_agencies(self, query: str, top_k: int = 10, agency_type: str = "awarding") -> AIToolResult:
         normalized = query.strip()
         matches = await self._query_exact_and_prefix_matches(normalized)
 
@@ -62,8 +54,7 @@ class AgencyLookupTool:
         if not entries:
             raise AgencyNotRecognizedError(f"Unable to filter. We couldn't find an agency with the name: {query}")
 
-        results = Filters()
-        results.__setattr__(agency_field, {f"{entry.id}_{entry.agencyType}": entry for entry in entries})
+        results = AIToolResult(results={f"{entry.id}_{entry.agencyType}": entry.model_dump() for entry in entries})
 
         return results
 

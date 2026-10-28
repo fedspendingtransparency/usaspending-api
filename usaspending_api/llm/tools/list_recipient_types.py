@@ -1,4 +1,4 @@
-from usaspending_api.llm.models.py_models import AITool, AIToolDescription
+from usaspending_api.llm.models.py_models import AITool, AIToolDescription, AIToolResult
 
 RECIPIENT_TYPES: dict[str, list[dict[str, str]]] = {
     "General business": [
@@ -100,7 +100,7 @@ RECIPIENT_TYPES: dict[str, list[dict[str, str]]] = {
 
 
 async def list_recipient_types() -> dict[str, list[dict[str, str]]]:
-    return RECIPIENT_TYPES
+    return AIToolResult(results=RECIPIENT_TYPES)
 
 
 list_recipient_types_tool = AITool(

@@ -6,9 +6,9 @@ from pydantic import ValidationError
 from usaspending_api.llm.models.py_models import (
     AITool,
     AIToolDescription,
+    AIToolResult,
     ExecuteFilterInput,
     FilterRequest,
-    FilterResponse,
     Filters,
 )
 from usaspending_api.llm.tools.exceptions import (
@@ -55,7 +55,7 @@ def build_filter_request(filter_input: dict) -> dict:
     return filter_request
 
 
-async def execute_filter(**kwargs) -> FilterResponse | dict[str, str]:
+async def execute_filter(**kwargs) -> AIToolResult:
     logger.info(f"Starting execute_filter with {len(kwargs)} filter parameter(s)", extra={"filter_count": len(kwargs)})
 
     try:
@@ -64,10 +64,12 @@ async def execute_filter(**kwargs) -> FilterResponse | dict[str, str]:
         fields = {error["loc"][0] if error["loc"] else None for error in exc.errors()}
         if len(fields) == 1 and (field := next(iter(fields))) in _SINGLE_FIELD_ERRORS:
             raise _SINGLE_FIELD_ERRORS[field](_build_user_message(field, kwargs), model_detail=str(exc)) from exc
-        return {
-            "error": str(exc),
-            "message": "The input parameters are invalid. Look at the error message and try again.",
-        }
+        return AIToolResult(
+            results={
+                "error": str(exc),
+                "message": "The input parameters are invalid. Look at the error message and try again.",
+            }
+        )
 
     logger.debug(f"Filter validation successful: {list(kwargs.keys())}")
 
@@ -85,13 +87,15 @@ async def execute_filter(**kwargs) -> FilterResponse | dict[str, str]:
             await fh.asave()
             logger.info(f"Successfully saved new filter hash: {hash_key}", extra={"hash": hash_key})
         except Exception as e:
-            return {
-                "error": str(e),
-                "message": "There was an error saving the filter hash.  Look at the error message and try again.",
-            }
+            return AIToolResult(
+                results={
+                    "error": str(e),
+                    "message": "There was an error saving the filter hash.  Look at the error message and try again.",
+                }
+            )
 
     logger.info(f"Execute filter completed successfully: hash={hash_key}", extra={"hash": hash_key})
-    return FilterResponse(hash=hash_key)
+    return AIToolResult(results={"hash": hash_key})
 
 
 execute_filter_tool = AITool(

@@ -48,6 +48,11 @@ class AITool(BaseModel):
     logging: Callable = lambda tool_use: print(f"Tool: {tool_use.name} with {tool_use.input}")
 
 
+class AIToolResult(BaseModel):
+    instructions: str = Field(default="", description="Instructions for llm in event of certain tool return cases")
+    results: dict = Field(default_factor=dict, description="Tool output to be incorporated into resulting filter")
+
+
 class LocationFilter(BaseModel):
     country: str = "USA"
     state: str | None = Field(default=None, description="Two-letter state code (e.g., 'MO', 'TX', 'CA')")
