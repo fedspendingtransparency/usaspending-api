@@ -706,8 +706,7 @@ class TestAwardType:
             ("All Award Types", []),
             (
                 "Financial Assistance",
-                ["-1", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11"]
-                + ["F001", "F002", "F003", "F004", "F005", "F006", "F007", "F008", "F009", "F010"],
+                ["02", "03", "04", "05", "06", "07", "08", "10", "F001", "F002", "F003", "F004", "F006", "F007"],
             ),
             ("Contracts", ["A", "B", "C", "D"]),
             ("Contract IDVs", ["IDV_A", "IDV_B", "IDV_B_A", "IDV_B_B", "IDV_B_C", "IDV_C", "IDV_D", "IDV_E"]),
@@ -758,14 +757,15 @@ class TestAwardType:
     def test_all_award_types_overrides_other_selections(self):
         assert Filters(awardType=["Contracts", "All Award Types"]).awardType == []
 
-    def test_financial_assistance_excludes_contracts_and_idvs(self):
+    def test_financial_assistance_excludes_contracts_idvs_and_other(self):
         codes = Filters(awardType=["Financial Assistance"]).awardType
 
         assert not {"A", "B", "C", "D"} & set(codes)
         assert not any(code.startswith("IDV_") for code in codes)
+        assert not {"-1", "09", "11", "F005", "F008", "F009", "F010"} & set(codes)
 
-    def test_financial_assistance_plus_contracts_and_idvs_means_no_filter(self):
-        assert Filters(awardType=["Financial Assistance", "Contracts", "Contract IDVs"]).awardType == []
+    def test_financial_assistance_plus_remaining_groups_means_no_filter(self):
+        assert Filters(awardType=["Financial Assistance", "Contracts", "Contract IDVs", "Other"]).awardType == []
 
     def test_selecting_every_group_means_no_award_type_filter(self):
         every_group = [
