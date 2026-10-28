@@ -398,7 +398,7 @@ class Command(BaseCommand):
             cursor.execute(f"ALTER SEQUENCE IF EXISTS {seq_name} RESTART WITH {new_seq_val}")
         return last_value
 
-    def _write_with_sql_bulk_copy_csv(  # noqa: PLR0913
+    def _write_with_sql_bulk_copy_csv(  # noqa: PLR0913 PLR0915
         self,
         spark: SparkSession,
         df: DataFrame,
@@ -504,33 +504,73 @@ class Command(BaseCommand):
             f"get listing of contents of Bucket={spark_s3_bucket_name} with Prefix={csv_path}"
         )
 
-        gzipped_csv_files = [f.key for f in s3_bucket.objects.filter(Prefix=csv_path) if f.key.endswith(".csv.gz")]
+        # Capture each file's size alongside its key so batches can be balanced by total bytes (see below).
+        gzipped_csv_files_with_size = [
+            (f.key, f.size) for f in s3_bucket.objects.filter(Prefix=csv_path) if f.key.endswith(".csv.gz")
+        ]
+        gzipped_csv_files = [key for key, _ in gzipped_csv_files_with_size]
         file_count = len(gzipped_csv_files)
         logger.info(f"LOAD: Finished dumping {file_count} CSV files in {s3_bucket_with_csv_path}")
 
         logger.info(f"LOAD: Starting SQL bulk COPY of {file_count} CSV files to Postgres {temp_table} table")
 
         db_dsn = get_database_dsn_string()
-        with psycopg.connect(db_dsn) as connection:
-            with connection.cursor() as cursor:
-                cursor.execute("SHOW max_parallel_workers")
-                max_parallel_workers = int(cursor.fetchone()[0])
-                # Use the CONFIG.SPARK_CSV_WRITE_TO_PG_PARALLEL_WORKER_MULTIPLIER and
-                # CONFIG.SPARK_CSV_WRITE_TO_PG_MIN_PARTITIONS config vars to derive the number of partitions to
-                # split/group batches of CSV files into, which need to be written via COPY to PG. This multiplier
-                # will be multiplied against the max_parallel_workers value of the target database. It can be a
-                # fraction less than 1.0. The final value will be the greater of that or
-                # SPARK_CSV_WRITE_TO_PG_MIN_PARTITIONS
-                partitions = max(
-                    ceil(max_parallel_workers * CONFIG.SPARK_CSV_WRITE_TO_PG_PARALLEL_WORKER_MULTIPLIER),
-                    CONFIG.SPARK_CSV_WRITE_TO_PG_MIN_PARTITIONS,
-                )
 
-        # Repartition based on DB's configured max_parallel_workers so that there will only be this many concurrent
-        # connections writing to Postgres at once, to not overtax it nor oversaturate the number of allowed connections
-        # Observations have shown that in production infrastructure, more concurrent connections just lead to I/O
-        # throttling
-        rdd = spark.sparkContext.parallelize(gzipped_csv_files, partitions)
+        # Determine COPY concurrency: how many COPY streams (== RDD partitions == concurrent DB connections) run at
+        # once. This is deliberately DECOUPLED from the DB's max_parallel_workers, which governs parallel *query*
+        # workers and has no bearing on how many concurrent COPY streams the writer can ingest. Observed RDS metrics
+        # during a full load showed the writer at ~20% CPU and flat (~160us) write latency with 16 streams, i.e. it
+        # was starved for work, so concurrency should be sized to what the writer can absorb, not to
+        # max_parallel_workers.
+        #
+        # Prefer the explicit CONFIG.SPARK_CSV_WRITE_TO_PG_CONCURRENCY. Only when it is left unset (0) do we fall back
+        # to the legacy max_parallel_workers-derived value for backwards compatibility.
+        concurrency = CONFIG.SPARK_CSV_WRITE_TO_PG_CONCURRENCY
+        if concurrency <= 0:
+            with psycopg.connect(db_dsn) as connection:
+                with connection.cursor() as cursor:
+                    cursor.execute("SHOW max_parallel_workers")
+                    max_parallel_workers = int(cursor.fetchone()[0])
+            concurrency = max(
+                ceil(max_parallel_workers * CONFIG.SPARK_CSV_WRITE_TO_PG_PARALLEL_WORKER_MULTIPLIER),
+                CONFIG.SPARK_CSV_WRITE_TO_PG_MIN_PARTITIONS,
+            )
+        # Never create more concurrent streams than there are files to COPY.
+        concurrency = max(1, min(concurrency, file_count))
+
+        # Decouple batch GRANULARITY from concurrency. Instead of one giant batch per concurrent stream (which leaves
+        # the DB idle while a few oversized tail batches drain -- observed as throughput declining over the back half
+        # of the run), split the files into many more, smaller byte-balanced batches:
+        #     num_batches = concurrency * SPARK_CSV_WRITE_TO_PG_BATCH_OVERSUBSCRIBE_FACTOR
+        # These batches are parallelized across ``concurrency`` RDD partitions. Spark's FIFO scheduler then hands a
+        # fresh small batch to whichever executor finishes first, keeping all ``concurrency`` streams busy right up to
+        # the end of the load so the writer stays fully fed.
+        oversubscribe = max(1, CONFIG.SPARK_CSV_WRITE_TO_PG_BATCH_OVERSUBSCRIBE_FACTOR)
+        num_batches = max(1, min(concurrency * oversubscribe, file_count))
+
+        logger.info(
+            f"LOAD: COPY concurrency={concurrency}, splitting {file_count} CSV files into {num_batches} "
+            f"byte-balanced batches across {concurrency} partitions"
+        )
+
+        # Balance files across batches by total bytes rather than letting parallelize() slice a flat file list
+        # contiguously. Delta-produced CSV files vary in size, so a size-blind slice yields skewed batches where
+        # one COPY batch does far more work than others (observed as a 32min-to-3h task-duration spread). A greedy
+        # longest-processing-time bin-packing assigns the largest files first to the currently-emptiest batch,
+        # keeping per-batch byte totals roughly even.
+        #
+        # Each balanced batch is one RDD element (numSlices == concurrency, so each partition holds roughly
+        # ``oversubscribe`` batches). parallelize() distributes these list-of-keys elements across partitions; the
+        # mapped function flattens whatever batches land on its partition, preserving the primitive-only argument
+        # contract required for cloudpickle (see WARNING below).
+        balanced_batches: List[List[str]] = [[] for _ in range(num_batches)]
+        batch_sizes = [0] * num_batches
+        for key, size in sorted(gzipped_csv_files_with_size, key=lambda kv: kv[1], reverse=True):
+            target = min(range(num_batches), key=lambda idx: batch_sizes[idx])
+            balanced_batches[target].append(key)
+            batch_sizes[target] += size
+
+        rdd = spark.sparkContext.parallelize(balanced_batches, concurrency)
 
         # WARNING: rdd.map needs to use cloudpickle to pickle the mapped function, its arguments, and in-turn any
         # imported dependencies from either of those two as well as from the module from which the function is
@@ -539,10 +579,10 @@ class Command(BaseCommand):
         # One way to help is to resolve all arguments to primitive types (int, string) that can be passed
         # to the mapped function
         rdd.mapPartitionsWithIndex(
-            lambda partition_idx, s3_obj_keys: copy_csvs_from_s3_to_pg(
+            lambda partition_idx, batch_iter: copy_csvs_from_s3_to_pg(
                 batch_num=partition_idx,
                 s3_bucket_name=s3_bucket_name,
-                s3_obj_keys=s3_obj_keys,
+                s3_obj_keys=[key for batch in batch_iter for key in batch],
                 db_dsn=db_dsn,
                 target_pg_table=temp_table,
                 ordered_col_names=ordered_col_names,
