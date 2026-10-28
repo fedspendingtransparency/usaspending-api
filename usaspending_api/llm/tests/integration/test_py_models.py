@@ -5,6 +5,7 @@ from model_bakery import baker
 from pydantic import ValidationError
 
 from usaspending_api.llm.models.py_models import (
+    AWARD_TYPE_LABELS,
     AwardAmounts,
     ExecuteFilterInput,
     Filters,
@@ -688,7 +689,7 @@ class TestTimePeriodFY:
 
 
 class TestAwardType:
-    """Tests for the awardType single-group validation on the Filters model"""
+    """awardType is selected by frontend name and persisted as legacy-expanded codes on the Filters model."""
 
     def test_award_type_default_empty_list(self):
         filters = Filters()
@@ -696,64 +697,119 @@ class TestAwardType:
         assert filters.awardType == []
         assert isinstance(filters.awardType, list)
 
-    def test_award_type_accepts_all_contracts(self):
-        types = ["A", "B", "C", "D"]
-        filters = Filters(awardType=types)
-
-        assert filters.awardType == types
-
-    def test_award_type_accepts_all_grants(self):
-        types = ["02", "03", "04", "05"]
-        filters = Filters(awardType=types)
-
-        assert filters.awardType == types
-
-    def test_award_type_accepts_loans(self):
-        filters = Filters(awardType=["07", "08"])
-
-        assert filters.awardType == ["07", "08"]
-
-    def test_award_type_accepts_idvs(self):
-        types = ["IDV_A", "IDV_B_A", "IDV_C"]
-        filters = Filters(awardType=types)
-
-        assert filters.awardType == types
-
-    def test_award_type_accepts_single_code(self):
-        filters = Filters(awardType=["D"])
-
-        assert filters.awardType == ["D"]
-
-    def test_award_type_rejects_mixed_groups(self):
-        """Contracts (A) and grants (02) cannot be combined."""
-        with pytest.raises(ValidationError) as exc_info:
-            Filters(awardType=["A", "02"])
-
-        assert "must only contain types from one group" in str(exc_info.value)
-
-    def test_award_type_rejects_contract_mixed_with_loan(self):
-        with pytest.raises(ValidationError) as exc_info:
-            Filters(awardType=["D", "07"])
-
-        assert "must only contain types from one group" in str(exc_info.value)
-
-    def test_award_type_rejects_unknown_code(self):
-        with pytest.raises(ValidationError) as exc_info:
-            Filters(awardType=["NOT_A_REAL_CODE"])
-
-        assert "Invalid award type code" in str(exc_info.value)
-
-    def test_award_type_unknown_code_reported_even_within_one_group(self):
-        """A bogus code mixed with valid same-group codes still trips the 'invalid code' message."""
-        with pytest.raises(ValidationError) as exc_info:
-            Filters(awardType=["A", "B", "NOPE"])
-
-        assert "Invalid award type code" in str(exc_info.value)
-
     def test_award_type_empty_list_is_valid(self):
-        filters = Filters(awardType=[])
+        assert Filters(awardType=[]).awardType == []
 
-        assert filters.awardType == []
+    @pytest.mark.parametrize(
+        "label, expected",
+        [
+            ("All Award Types", []),
+            (
+                "Financial Assistance",
+                ["-1", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11"]
+                + ["F001", "F002", "F003", "F004", "F005", "F006", "F007", "F008", "F009", "F010"],
+            ),
+            ("Contracts", ["A", "B", "C", "D"]),
+            ("Contract IDVs", ["IDV_A", "IDV_B", "IDV_B_A", "IDV_B_B", "IDV_B_C", "IDV_C", "IDV_D", "IDV_E"]),
+            ("Grants", ["02", "03", "04", "F001"]),
+            ("Cooperative Agreement", ["05", "F002"]),
+            ("Direct Payments", ["06", "10", "F006", "F007"]),
+            ("Loans", ["07", "08", "F003", "F004"]),
+            ("Other", ["-1", "09", "11", "F005", "F008", "F009", "F010"]),
+            ("Blanket Purchase Agreements (BPA) Calls", ["A"]),
+            ("Purchase Orders (PO)", ["B"]),
+            ("Delivery Orders (DO)", ["C"]),
+            ("Definitive Contracts", ["D"]),
+            ("Government-Wide Acquisition Contract (GWAC)", ["IDV_A"]),
+            ("Indefinite Delivery / Requirements Contract", ["IDV_B_A"]),
+            ("Indefinite Delivery / Indefinite Quantity (IDIQ) Contract", ["IDV_B_B"]),
+            ("Indefinite Delivery / Definite Quantity Contract", ["IDV_B_C"]),
+            ("Federal Supply Schedule (FSS)", ["IDV_C"]),
+            ("Basic Ordering Agreement (BOA)", ["IDV_D"]),
+            ("Blanket Purchase Agreements (BPA)", ["IDV_E"]),
+            ("Direct Payment with Unrestricted Use", ["10", "F007"]),
+            ("Direct Payment for Specified Use", ["06", "F006"]),
+            ("Direct Loans", ["07", "F003"]),
+            ("Loan Guarantees", ["08", "F004"]),
+            ("Indemnity/Insurance (non-loan)", ["09", "F005"]),
+            ("Asset Forfeiture/Equitable Sharing", ["F008"]),
+            ("Sale, Exchange, or Donation of Property and Goods", ["F009"]),
+            ("Other Financial Assistance", ["11", "F010"]),
+            ("Not Specified", ["-1"]),
+        ],
+    )
+    def test_award_type_label_resolves_to_codes(self, label, expected):
+        assert Filters(awardType=[label]).awardType == expected
+
+    def test_every_label_is_covered_by_a_test(self):
+        """Fails when a label is added to AWARD_TYPE_LABELS without a resolution test above."""
+        assert len(AWARD_TYPE_LABELS) == 29
+
+    def test_label_matching_ignores_case_and_extra_whitespace(self):
+        assert Filters(awardType=["  direct   LOANS "]).awardType == ["07", "F003"]
+
+    def test_multiple_groups_can_be_combined(self):
+        assert Filters(awardType=["Contracts", "Loans"]).awardType == ["07", "08", "A", "B", "C", "D", "F003", "F004"]
+
+    def test_grants_does_not_include_cooperative_agreements(self):
+        assert "05" not in Filters(awardType=["Grants"]).awardType
+        assert "F002" not in Filters(awardType=["Grants"]).awardType
+
+    def test_all_award_types_overrides_other_selections(self):
+        assert Filters(awardType=["Contracts", "All Award Types"]).awardType == []
+
+    def test_financial_assistance_excludes_contracts_and_idvs(self):
+        codes = Filters(awardType=["Financial Assistance"]).awardType
+
+        assert not {"A", "B", "C", "D"} & set(codes)
+        assert not any(code.startswith("IDV_") for code in codes)
+
+    def test_financial_assistance_plus_contracts_and_idvs_means_no_filter(self):
+        assert Filters(awardType=["Financial Assistance", "Contracts", "Contract IDVs"]).awardType == []
+
+    def test_selecting_every_group_means_no_award_type_filter(self):
+        every_group = [
+            "Contracts",
+            "Contract IDVs",
+            "Grants",
+            "Cooperative Agreement",
+            "Direct Payments",
+            "Loans",
+            "Other",
+        ]
+
+        assert Filters(awardType=every_group).awardType == []
+
+    def test_selecting_all_but_one_group_keeps_the_filter(self):
+        """Grants and Cooperative Agreement share a backend category, so leaving one out must not collapse."""
+        filters = Filters(awardType=["Contracts", "Contract IDVs", "Grants", "Direct Payments", "Loans", "Other"])
+
+        assert filters.awardType != []
+        assert "F002" not in filters.awardType
+
+    def test_legacy_codes_resolve_like_current_codes(self):
+        assert Filters(awardType=["07"]).awardType == Filters(awardType=["F003"]).awardType == ["07", "F003"]
+
+    def test_raw_contract_codes_pass_through(self):
+        assert Filters(awardType=["A", "B"]).awardType == ["A", "B"]
+
+    def test_names_and_codes_can_be_mixed(self):
+        assert Filters(awardType=["Grants", "F002"]).awardType == ["02", "03", "04", "05", "F001", "F002"]
+
+    def test_unknown_award_type_rejected_with_guidance(self):
+        with pytest.raises(ValidationError) as exc_info:
+            Filters(awardType=["Contracts", "NOT_A_REAL_TYPE"])
+
+        message = str(exc_info.value)
+        assert "Unknown awardType value(s): ['NOT_A_REAL_TYPE']" in message
+        assert "omit awardType" in message
+
+    def test_execute_filter_schema_offers_only_names(self):
+        schema = ExecuteFilterInput.model_json_schema()
+        options = schema["properties"]["awardType"]["items"]["enum"]
+
+        assert options == list(AWARD_TYPE_LABELS)
+        assert "F001" not in options and "A" not in options
 
 
 @pytest.mark.django_db

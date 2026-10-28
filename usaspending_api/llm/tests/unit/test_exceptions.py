@@ -2,7 +2,6 @@ import pytest
 
 from usaspending_api.llm.tools.exceptions import (
     AwardNotRecognizedError,
-    AwardTypeEraMismatchError,
     RecipientNotRecognizedError,
     ToolUseRuntimeError,
 )
@@ -25,12 +24,10 @@ class TestToolUseRuntimeError:
 
 
 class TestNewValidationExceptions:
-    """AwardTypeEraMismatchError, RecipientNotRecognizedError, and AwardNotRecognizedError are
-    plain ToolUseRuntimeError subclasses; they rely entirely on the base class behavior."""
+    """RecipientNotRecognizedError and AwardNotRecognizedError are plain ToolUseRuntimeError subclasses;
+    they rely entirely on the base class behavior."""
 
-    @pytest.mark.parametrize(
-        "error_class", [AwardTypeEraMismatchError, RecipientNotRecognizedError, AwardNotRecognizedError]
-    )
+    @pytest.mark.parametrize("error_class", [RecipientNotRecognizedError, AwardNotRecognizedError])
     def test_is_a_tool_use_runtime_error(self, error_class):
         error = error_class("User-facing message.", model_detail="Model detail.")
 
