@@ -73,12 +73,12 @@ class AgencyLookupTool:
         if not entries:
             user_message = f"Unable to filter. We couldn't find an agency with the name: {query}"
             raise AgencyNotRecognizedError(user_message, model_detail=f"{user_message}. {self.NO_MATCH_INSTRUCTIONS}")
-        
+
         results = AIToolResult(
             results={f"{entry.id}_{entry.agencyType}": entry.model_dump() for entry in entries},
-            instructions=self.SEMANTIC_ONLY_INSTRUCTIONS if semantic_only else None
+            instructions=self.SEMANTIC_ONLY_INSTRUCTIONS if semantic_only else None,
         )
-        
+
         return results
 
     @staticmethod
