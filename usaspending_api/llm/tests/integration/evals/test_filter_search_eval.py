@@ -41,6 +41,7 @@ def make_case(
 def test_filter_search_eval_uses_the_same_tools_as_the_endpoint():
     assert [tool.description.name for tool in filter_search.filter_search_tools] == [
         "lookup_agencies",
+        "lookup_award",
         "lookup_codes",
         "lookup_location",
         "lookup_recipient",
@@ -155,10 +156,7 @@ async def test_get_tool_calls_reads_tool_use_records_in_execution_order(monkeypa
     )
 
 
-async def test_get_final_filter_output_uses_successful_execute_filter_call(monkeypatch):
-    """
-    The adapter uses execute_filter's ToolUse.tool_input, not the returned hash, as the observable final filter payload.
-    """
+def _mock_successful_execute_filter(monkeypatch, persisted_filter):
     successful_use = Mock(
         name="successful_use",
         tool_input={
@@ -187,6 +185,30 @@ async def test_get_final_filter_output_uses_successful_execute_filter_call(monke
         "objects",
         manager,
     )
+
+    filter_hash_manager = Mock()
+    filter_hash_manager.filter.return_value.first.return_value = (
+        Mock(filter=persisted_filter) if persisted_filter is not None else None
+    )
+    monkeypatch.setattr(filter_search.FilterHash, "objects", filter_hash_manager)
+    return filter_hash_manager
+
+
+async def test_get_final_filter_output_prefers_persisted_filter_hash(monkeypatch):
+    """The persisted FilterHash (including server-side canonicalization) is what gets evaluated."""
+    filter_hash_manager = _mock_successful_execute_filter(
+        monkeypatch, {"filters": {"selectedAwardIDs": {"W56HZV07C0096": "W56HZV07C0096"}}, "version": "2020-06-01"}
+    )
+
+    output = await get_final_filter_output(Mock())
+
+    assert output == {"selectedAwardIDs": {"W56HZV07C0096": "W56HZV07C0096"}}
+    filter_hash_manager.filter.assert_called_once_with(hash="abc123")
+
+
+async def test_get_final_filter_output_falls_back_to_tool_input(monkeypatch):
+    """Without a persisted FilterHash, the adapter rebuilds the canonical filter from execute_filter's tool_input."""
+    _mock_successful_execute_filter(monkeypatch, None)
     monkeypatch.setattr(
         filter_search,
         "build_filter_request",
