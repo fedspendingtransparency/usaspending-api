@@ -34,13 +34,13 @@ def mock_existence_lookups():
     Tests exercising validation failures override these within their own nested `patch(...)`."""
 
     async def agency_lookup(query, **kwargs):
-        return {"results": {"1_toptier": {"id": 1, "agencyType": "toptier"}}, "instructions": None}
+        return AIToolResult(results={"1_toptier": {"id": 1, "agencyType": "toptier"}}, instructions=None)
 
     async def recipient_lookup(query, **kwargs):
-        return {"recipient_names": [query]}
+        return AIToolResult(results={"selectedRecipients": [query]})
 
     async def award_lookup(query, **kwargs):
-        return {"result": {"generated_unique_award_id": query}}
+        return AIToolResult(results={"award_id": query}, instructions=None)
 
     with (
         patch("usaspending_api.llm.tools.execute_filter.lookup_agency_tool.function", side_effect=agency_lookup),
@@ -493,7 +493,7 @@ class TestAgencyExistenceValidation:
         with patch(
             "usaspending_api.llm.tools.execute_filter.lookup_agency_tool.function",
             new_callable=AsyncMock,
-            return_value={"results": {}, "instructions": None},
+            return_value=AIToolResult(results={}, instructions=None),
         ):
             with pytest.raises(AgencyNotRecognizedError) as exc_info:
                 await execute_filter(**sample_filters)
@@ -526,7 +526,7 @@ class TestRecipientExistenceValidation:
         with patch(
             "usaspending_api.llm.tools.execute_filter.lookup_recipient_tool.function",
             new_callable=AsyncMock,
-            return_value={"recipient_names": ["ACME CORPORATION"]},
+            return_value=AIToolResult(results={"selectedRecipients": ["ACME CORPORATION"]}),
         ):
             result = await execute_filter(selectedRecipients=["ACME Corporation"])
 
@@ -536,7 +536,7 @@ class TestRecipientExistenceValidation:
         with patch(
             "usaspending_api.llm.tools.execute_filter.lookup_recipient_tool.function",
             new_callable=AsyncMock,
-            return_value={"recipient_names": []},
+            return_value=AIToolResult(results={"selectedRecipients": []}),
         ):
             with pytest.raises(RecipientNotRecognizedError) as exc_info:
                 await execute_filter(selectedRecipients=["Totally Fake Recipient"])
@@ -548,7 +548,7 @@ class TestRecipientExistenceValidation:
         with patch(
             "usaspending_api.llm.tools.execute_filter.lookup_recipient_tool.function",
             new_callable=AsyncMock,
-            return_value={"recipient_names": []},
+            return_value=AIToolResult(results={"selectedRecipients": []}),
         ):
             with pytest.raises(RecipientNotRecognizedError) as exc_info:
                 await execute_filter(selectedRecipients=["Fake One", "Fake Two"])
@@ -568,7 +568,7 @@ class TestAwardIdExistenceValidation:
         with patch(
             "usaspending_api.llm.tools.execute_filter.lookup_award_tool.function",
             new_callable=AsyncMock,
-            return_value={"result": {"generated_unique_award_id": "CONT_AWD_123"}},
+            return_value=AIToolResult(results={"award": {"generated_unique_award_id": "CONT_AWD_123"}}),
         ):
             result = await execute_filter(selectedAwardIDs=["CONT_AWD_123"])
 
@@ -583,7 +583,7 @@ class TestAwardIdExistenceValidation:
         with patch(
             "usaspending_api.llm.tools.execute_filter.lookup_award_tool.function",
             new_callable=AsyncMock,
-            return_value={"award_id": "W56HZV07C0096", "result": {}},
+            return_value=AIToolResult(results={"award_id": "W56HZV07C0096", "award": {}}),
         ):
             await execute_filter(selectedAwardIDs=["CONT_AWD_W56HZV07C0096_9700_-NONE-_-NONE-", "W56HZV07C0096"])
 

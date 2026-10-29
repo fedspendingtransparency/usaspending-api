@@ -3,7 +3,7 @@ from typing import Any
 
 from django.db.models import Q
 
-from usaspending_api.llm.models.py_models import AITool, AIToolDescription
+from usaspending_api.llm.models.py_models import AITool, AIToolDescription, AIToolResult
 from usaspending_api.llm.tools.exceptions import AwardNotRecognizedError
 from usaspending_api.search.models.award_search import AwardSearch
 
@@ -24,10 +24,10 @@ class AwardLookupTool:
         "selectedRecipients instead of selectedAwardIDs."
     )
 
-    async def lookup_award(self, query: str) -> dict[str, Any]:
+    async def lookup_award(self, query: str) -> AIToolResult:
         normalized = query.strip()
         if not normalized:
-            return {"error": "Query cannot be empty", "results": {}}
+            return AIToolResult(results={"error": "Query cannot be empty", "results": {}})
 
         logger.info(f"Starting award lookup: query='{query}'", extra={"query": query})
 
@@ -47,12 +47,14 @@ class AwardLookupTool:
 
         award_id = display_award_id(award)
         logger.info(f"Award lookup completed: query='{query}'", extra={"query": query})
-        return {
-            "award_id": award_id,
-            "result": award,
-            "instructions": f"Use exactly '{award_id}' in selectedAwardIDs. Do NOT use generated_unique_award_id "
+        return AIToolResult(
+            results={
+                "award_id": award_id,
+                "award": award,
+            },
+            instructions=f"Use exactly '{award_id}' in selectedAwardIDs. Do NOT use generated_unique_award_id "
             "(CONT_AWD_.../ASST_...) values there -- the award ID filter only matches PIID/FAIN/URI.",
-        }
+        )
 
 
 def display_award_id(award: dict[str, Any]) -> str:

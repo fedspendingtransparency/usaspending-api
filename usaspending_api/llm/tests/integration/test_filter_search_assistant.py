@@ -7,7 +7,7 @@ from model_bakery import baker
 
 from usaspending_api.llm.assistants.filter_search import FilterSearchAssistant
 from usaspending_api.llm.models.db_models import AIModel, Assistant, Session
-from usaspending_api.llm.models.py_models import AITool, clear_defc_rows_cache
+from usaspending_api.llm.models.py_models import AITool, AIToolResult, clear_defc_rows_cache
 from usaspending_api.llm.tools.exceptions import DefcCodeNotRecognizedError
 from usaspending_api.llm.tools.execute_filter import execute_filter_tool
 
@@ -53,7 +53,7 @@ def mock_tool():
             "input_schema": {"type": "object", "properties": {}},
         }
     )
-    tool.function = AsyncMock(return_value={"result": "success"})
+    tool.function = AsyncMock(return_value=AIToolResult(results={"result": "success"}))
     tool.logging = Mock(return_value="Executing test_tool")
     return tool
 
@@ -70,7 +70,7 @@ def mock_search_tool():
             "input_schema": {"type": "object", "properties": {}},
         }
     )
-    tool.function = AsyncMock(return_value={"hash": "abc123", "results": []})
+    tool.function = AsyncMock(return_value=AIToolResult(results={"hash": "abc123"}))
     tool.logging = Mock(return_value="Searching federal contracts")
     return tool
 

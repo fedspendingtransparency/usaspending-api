@@ -55,7 +55,7 @@ async def _validate_agencies_exist(filters: Filters) -> None:
             query = agency.toptier_agency.toptier_code
             try:
                 lookup_result = await lookup_agency_tool.function(query=query)
-                results = lookup_result["results"]
+                results = lookup_result.results
             except AgencyNotRecognizedError:
                 results = {}
             if f"{agency.id}_{agency.agencyType}" not in results:
@@ -73,7 +73,7 @@ async def _validate_recipients_exist(filters: Filters) -> None:
     invalid = []
     for name in filters.selectedRecipients:
         result = await lookup_recipient_tool.function(query=name)
-        found = {n.upper() for n in result.get("recipient_names", [])}
+        found = {n.upper() for n in result.results.get("selectedRecipients", [])}
         if name.upper() not in found:
             invalid.append(name)
     if invalid:
@@ -95,7 +95,7 @@ async def _validate_award_ids_exist(filters: Filters) -> None:
         except AwardNotRecognizedError:
             invalid.append(award_id)
             continue
-        resolved = lookup.get("award_id") or award_id
+        resolved = lookup.results.get("award_id") or award_id
         if resolved not in canonical:
             canonical.append(resolved)
     filters.selectedAwardIDs = canonical

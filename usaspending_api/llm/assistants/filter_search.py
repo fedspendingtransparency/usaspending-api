@@ -327,7 +327,7 @@ class FilterSearchAssistant:
                     yield {
                         "search_id": str(self.session.id),
                         "type": "search_complete",
-                        "result": result["hash"],
+                        "result": result["results"]["hash"],
                         "message": "Search complete.",
                     }
             except Exception as e:
