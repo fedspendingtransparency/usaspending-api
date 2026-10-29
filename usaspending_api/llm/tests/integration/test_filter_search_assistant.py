@@ -549,3 +549,23 @@ class TestFilterSearchAssistant:
         tool_result_message = assistant.messages[-1]
         tool_result_content = tool_result_message["content"][0]["toolResult"]["content"][0]["json"]
         assert tool_result_content["error"] == "Value error, Invalid DEFC code(s): ['BAD']."
+
+    @patch("usaspending_api.llm.models.db_models.ToolUse.objects.acreate", new_callable=AsyncMock)
+    async def test_completion_failure_records_exactly_one_tool_result(
+        self, mock_tool_use_create, assistant, mock_search_tool
+    ):
+        """If building the search_complete event fails (e.g. execute_filter returned no hash), the tool must
+        still get exactly one toolResult -- Bedrock rejects the next Converse call on duplicate toolUseIds."""
+        mock_tool_use = Mock()
+        mock_tool_use.id = "tool-use-789"
+        mock_tool_use.asave = AsyncMock()
+        mock_tool_use_create.return_value = mock_tool_use
+        mock_search_tool.function.return_value = AIToolResult(results={})
+
+        tool_requests = [{"toolUse": {"toolUseId": "tool-789", "name": "execute_filter", "input": {}}}]
+        events = [event async for event in assistant.handle_tool_use(tool_requests, Mock())]
+
+        tool_results = [block["toolResult"] for block in assistant.messages[-1]["content"]]
+        assert [r["toolUseId"] for r in tool_results] == ["tool-789"]
+        assert "error" in tool_results[0]["content"][0]["json"]
+        assert not any(e["type"] == "search_complete" for e in events)

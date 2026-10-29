@@ -307,12 +307,21 @@ class FilterSearchAssistant:
                         "tool_name": tool.description.name,
                         "execution_time_ms": execution_time_ms,
                         "session_id": str(self.session.id),
-                        "has_error": "error" in result,
+                        "has_error": "error" in result.get("results", {}),
                         "tool_use_id": t.id,
                         "tool_input": t.tool_input,
                         "tool_result": t.result,
                     },
                 )
+
+                completion_event = None
+                if tool.description.name == self.COMPLETION_TOOL_NAME:
+                    completion_event = {
+                        "search_id": str(self.session.id),
+                        "type": "search_complete",
+                        "result": result["results"]["hash"],
+                        "message": "Search complete.",
+                    }
 
                 yield {
                     "search_id": str(self.session.id),
@@ -323,13 +332,8 @@ class FilterSearchAssistant:
                 tool_result = {"toolUseId": tool_use["toolUseId"], "content": [{"json": result}]}
                 tool_result_message["content"].append({"toolResult": tool_result})
 
-                if tool.description.name == self.COMPLETION_TOOL_NAME and "error" not in result:
-                    yield {
-                        "search_id": str(self.session.id),
-                        "type": "search_complete",
-                        "result": result["results"]["hash"],
-                        "message": "Search complete.",
-                    }
+                if completion_event:
+                    yield completion_event
             except Exception as e:
                 execution_time_ms = (time.time() - tool_start_time) * 1000
                 is_known_error = isinstance(e, ToolUseRuntimeError)

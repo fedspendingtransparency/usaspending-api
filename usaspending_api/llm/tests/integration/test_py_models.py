@@ -335,6 +335,18 @@ class TestSelectedAgencySubtierDefaulting:
         assert agency.subtier_agency.abbreviation == "DOD"
         assert agency.subtier_agency.name == "Department of Defense"
 
+    def test_toptier_agency_without_abbreviation_defaults_to_empty_string(self):
+        """Some toptier agencies have a NULL abbreviation in the DB; lookup_agencies must not crash on them."""
+        agency = SelectedAgency(
+            id=1173,
+            agencyType="toptier",
+            toptier_flag=True,
+            toptier_agency={**self.TOPTIER_AGENCY, "abbreviation": None},
+        )
+
+        assert agency.toptier_agency.abbreviation == ""
+        assert agency.subtier_agency.abbreviation == ""
+
     def test_subtier_selection_keeps_its_own_subtier_agency(self):
         agency = SelectedAgency(
             id=42,
@@ -686,6 +698,31 @@ class TestTimePeriodFY:
             Filters(timePeriodFY=["this year"])
 
         assert "Invalid fiscal year(s)" in str(exc_info.value)
+
+    @pytest.mark.parametrize("raw", ["&quot;2025&quot;", '"2025"', "'2025'", " 2025 ", "&#39;2025&#39;"])
+    def test_time_period_fy_strips_quotes_and_html_entities(self, raw):
+        """The LLM can't see that it is HTML-escaping quotes around years; clean that up instead of erroring."""
+        assert Filters(timePeriodFY=[raw]).timePeriodFY == ["2025"]
+
+
+class TestSetAside:
+    def test_valid_codes_accepted(self):
+        assert Filters(setAside=["BI", "IEE", "ISBEE"]).setAside == ["BI", "IEE", "ISBEE"]
+
+    def test_invalid_code_error_names_the_valid_codes(self):
+        with pytest.raises(ValidationError) as exc_info:
+            Filters(setAside=["NOT_A_CODE"])
+
+        message = str(exc_info.value)
+        assert "Invalid setAside code(s): ['NOT_A_CODE']" in message
+        assert "BI = Buy Indian" in message
+        assert "ISBEE = Indian Small Business Economic Enterprise" in message
+
+    def test_recipient_type_value_points_to_recipient_type(self):
+        with pytest.raises(ValidationError) as exc_info:
+            Filters(setAside=["native_american_owned_business"])
+
+        assert "are recipientType values, not set-aside codes" in str(exc_info.value)
 
 
 class TestAwardType:
