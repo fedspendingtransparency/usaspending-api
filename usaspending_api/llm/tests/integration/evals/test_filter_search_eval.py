@@ -1,4 +1,4 @@
-from unittest.mock import Mock
+from unittest.mock import AsyncMock, Mock
 
 import pytest
 
@@ -41,6 +41,7 @@ def make_case(
 def test_filter_search_eval_uses_the_same_tools_as_the_endpoint():
     assert [tool.description.name for tool in filter_search.filter_search_tools] == [
         "lookup_agencies",
+        "lookup_award",
         "lookup_codes",
         "lookup_location",
         "lookup_recipient",
@@ -109,7 +110,7 @@ def test_filter_search_eval_returns_partial_score_when_filters_are_wrong():
     assert result.output_match.score == 2 / 3
 
 
-def test_get_tool_calls_reads_tool_use_records_in_execution_order(monkeypatch):
+async def test_get_tool_calls_reads_tool_use_records_in_execution_order(monkeypatch):
     """Tool calls are extracted from the same ToolUse rows written by FilterSearchAssistant.handle_tool_use()."""
     first_tool_use = Mock()
     first_tool_use.name = "lookup_recipient"
@@ -138,7 +139,7 @@ def test_get_tool_calls_reads_tool_use_records_in_execution_order(monkeypatch):
     )
 
     session = Mock()
-    calls = get_tool_calls(session)
+    calls = await get_tool_calls(session)
 
     assert calls == (
         ToolCall(name="lookup_recipient"),
@@ -155,10 +156,7 @@ def test_get_tool_calls_reads_tool_use_records_in_execution_order(monkeypatch):
     )
 
 
-def test_get_final_filter_output_uses_successful_execute_filter_call(monkeypatch):
-    """
-    The adapter uses execute_filter's ToolUse.tool_input, not the returned hash, as the observable final filter payload.
-    """
+def _mock_successful_execute_filter(monkeypatch, persisted_filter):
     successful_use = Mock(
         name="successful_use",
         tool_input={
@@ -187,6 +185,30 @@ def test_get_final_filter_output_uses_successful_execute_filter_call(monkeypatch
         "objects",
         manager,
     )
+
+    filter_hash_manager = Mock()
+    filter_hash_manager.filter.return_value.first.return_value = (
+        Mock(filter=persisted_filter) if persisted_filter is not None else None
+    )
+    monkeypatch.setattr(filter_search.FilterHash, "objects", filter_hash_manager)
+    return filter_hash_manager
+
+
+async def test_get_final_filter_output_prefers_persisted_filter_hash(monkeypatch):
+    """The persisted FilterHash (including server-side canonicalization) is what gets evaluated."""
+    filter_hash_manager = _mock_successful_execute_filter(
+        monkeypatch, {"filters": {"selectedAwardIDs": {"W56HZV07C0096": "W56HZV07C0096"}}, "version": "2020-06-01"}
+    )
+
+    output = await get_final_filter_output(Mock())
+
+    assert output == {"selectedAwardIDs": {"W56HZV07C0096": "W56HZV07C0096"}}
+    filter_hash_manager.filter.assert_called_once_with(hash="abc123")
+
+
+async def test_get_final_filter_output_falls_back_to_tool_input(monkeypatch):
+    """Without a persisted FilterHash, the adapter rebuilds the canonical filter from execute_filter's tool_input."""
+    _mock_successful_execute_filter(monkeypatch, None)
     monkeypatch.setattr(
         filter_search,
         "build_filter_request",
@@ -196,7 +218,7 @@ def test_get_final_filter_output_uses_successful_execute_filter_call(monkeypatch
         },
     )
 
-    output = get_final_filter_output(Mock())
+    output = await get_final_filter_output(Mock())
 
     assert output == {
         "timePeriodType": "fy",
@@ -205,7 +227,7 @@ def test_get_final_filter_output_uses_successful_execute_filter_call(monkeypatch
     }
 
 
-def test_get_final_filter_output_rejects_missing_successful_completion(monkeypatch):
+async def test_get_final_filter_output_rejects_missing_successful_completion(monkeypatch):
     """An execution without a successful execute_filter call cannot produce a valid final filter observation."""
     # Mock the full Django ORM chain: filter().exclude().order_by().last()
     # When no successful execute_filter exists, last() returns None
@@ -228,10 +250,16 @@ def test_get_final_filter_output_rejects_missing_successful_completion(monkeypat
     )
 
     with pytest.raises(ExecutionError, match="without a successful execute_filter call"):
-        get_final_filter_output(Mock())
+        await get_final_filter_output(Mock())
 
 
-def test_run_eval_case_executes_assistant_and_returns_observation(monkeypatch):
+async def _async_iter(items):
+    """Build an async generator from a plain list, mirroring assistant.search()'s AsyncGenerator return type."""
+    for item in items:
+        yield item
+
+
+async def test_run_eval_case_executes_assistant_and_returns_observation(monkeypatch):
     """
     The concrete adapter:
     - obtains the active assistant;
@@ -247,9 +275,9 @@ def test_run_eval_case_executes_assistant_and_returns_observation(monkeypatch):
 
     session = Mock()
     session.id = 123
+    session.asave = AsyncMock()
 
-    assistant_instance = Mock()
-    assistant_instance.search.return_value = [
+    search_events = [
         {
             "search_id": "123",
             "type": "search_start",
@@ -261,38 +289,36 @@ def test_run_eval_case_executes_assistant_and_returns_observation(monkeypatch):
             "result": "abc123",
         },
     ]
+    assistant_instance = Mock()
+    assistant_instance.search = Mock(side_effect=lambda query: _async_iter(search_events))
 
-    monkeypatch.setattr(
-        filter_search,
-        "get_active_filter_search_assistant",
-        lambda: assistant_config,
-    )
-    monkeypatch.setattr(
-        filter_search,
-        "create_eval_session",
-        lambda value: session,
-    )
+    async def fake_get_active_filter_search_assistant():
+        return assistant_config
+
+    async def fake_create_eval_session(value):
+        return session
+
+    async def fake_get_tool_calls(value):
+        return (
+            ToolCall(name="lookup_recipient"),
+            ToolCall(name="execute_filter"),
+        )
+
+    async def fake_get_final_filter_output(value):
+        return {
+            "timePeriodType": "fy",
+            "timePeriodFY": ["2025"],
+        }
+
+    monkeypatch.setattr(filter_search, "get_active_filter_search_assistant", fake_get_active_filter_search_assistant)
+    monkeypatch.setattr(filter_search, "create_eval_session", fake_create_eval_session)
     monkeypatch.setattr(
         filter_search,
         "FilterSearchAssistant",
         Mock(return_value=assistant_instance),
     )
-    monkeypatch.setattr(
-        filter_search,
-        "get_tool_calls",
-        lambda value: (
-            ToolCall(name="lookup_recipient"),
-            ToolCall(name="execute_filter"),
-        ),
-    )
-    monkeypatch.setattr(
-        filter_search,
-        "get_final_filter_output",
-        lambda value: {
-            "timePeriodType": "fy",
-            "timePeriodFY": ["2025"],
-        },
-    )
+    monkeypatch.setattr(filter_search, "get_tool_calls", fake_get_tool_calls)
+    monkeypatch.setattr(filter_search, "get_final_filter_output", fake_get_final_filter_output)
 
     case = EvalCase(
         name="1",
@@ -309,10 +335,10 @@ def test_run_eval_case_executes_assistant_and_returns_observation(monkeypatch):
         },
     )
 
-    observation = run_eval_case(case)
+    observation = await run_eval_case(case)
 
     assistant_instance.search.assert_called_once_with("How much did Clark Construction receive in contracts for FY25?")
-    session.save.assert_called_once_with(update_fields=["ended_at"])
+    session.asave.assert_awaited_once_with(update_fields=["ended_at"])
     assert observation.output == {
         "timePeriodType": "fy",
         "timePeriodFY": ["2025"],
@@ -328,53 +354,48 @@ def test_run_eval_case_executes_assistant_and_returns_observation(monkeypatch):
     # Additional metadata fields are present but not checked here
 
 
-def test_run_eval_case_rejects_search_error(monkeypatch):
+async def test_run_eval_case_rejects_search_error(monkeypatch):
     """An endpoint-equivalent search_error event fails when no execute_filter is found."""
     assistant_config = Mock()
     session = Mock()
-    assistant_instance = Mock()
-    assistant_instance.search.return_value = [
+    session.asave = AsyncMock()
+
+    search_events = [
         {
             "type": "search_error",
             "message": "Bedrock failed",
         },
     ]
+    assistant_instance = Mock()
+    assistant_instance.search = Mock(side_effect=lambda query: _async_iter(search_events))
 
-    monkeypatch.setattr(
-        filter_search,
-        "get_active_filter_search_assistant",
-        lambda: assistant_config,
-    )
-    monkeypatch.setattr(
-        filter_search,
-        "create_eval_session",
-        lambda value: session,
-    )
+    async def fake_get_active_filter_search_assistant():
+        return assistant_config
+
+    async def fake_create_eval_session(value):
+        return session
+
+    async def fake_get_tool_calls(value):
+        return ()
+
+    # Mock get_final_filter_output to raise the expected error
+    async def mock_get_final_filter_output(session):
+        raise ExecutionError(f"Session '{session.id}' completed without a successful execute_filter call.")
+
+    monkeypatch.setattr(filter_search, "get_active_filter_search_assistant", fake_get_active_filter_search_assistant)
+    monkeypatch.setattr(filter_search, "create_eval_session", fake_create_eval_session)
     monkeypatch.setattr(
         filter_search,
         "FilterSearchAssistant",
         Mock(return_value=assistant_instance),
     )
-    monkeypatch.setattr(
-        filter_search,
-        "get_tool_calls",
-        lambda value: (),
-    )
-
-    # Mock get_final_filter_output to raise the expected error
-    def mock_get_final_filter_output(session):
-        raise ExecutionError(f"Session '{session.id}' completed without a successful execute_filter call.")
-
-    monkeypatch.setattr(
-        filter_search,
-        "get_final_filter_output",
-        mock_get_final_filter_output,
-    )
+    monkeypatch.setattr(filter_search, "get_tool_calls", fake_get_tool_calls)
+    monkeypatch.setattr(filter_search, "get_final_filter_output", mock_get_final_filter_output)
 
     case = make_case()
 
     # Execution fails when get_final_filter_output finds no successful execute_filter
     with pytest.raises(ExecutionError, match="without a successful execute_filter call"):
-        run_eval_case(case)
+        await run_eval_case(case)
 
-    session.save.assert_called_once_with(update_fields=["ended_at"])
+    session.asave.assert_awaited_once_with(update_fields=["ended_at"])

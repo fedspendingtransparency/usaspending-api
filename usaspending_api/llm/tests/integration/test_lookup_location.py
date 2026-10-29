@@ -4,6 +4,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 
 from usaspending_api.llm.models.py_models import Filters, SelectedLocation
+from usaspending_api.llm.tools.exceptions import LocationNotRecognizedError
 from usaspending_api.llm.tools.lookup_location import LocationLookupTool, lookup_location_tool
 
 pytestmark = pytest.mark.django_db(transaction=True)
@@ -76,6 +77,8 @@ def mock_search():
         mock_search.__getitem__.return_value = mock_search
         mock_search.source.return_value = mock_search
         mock_search.handle_execute = AsyncMock()
+        mock_search.client = MagicMock()
+        mock_search.client.close = AsyncMock()
         yield mock_search
 
 
@@ -108,11 +111,13 @@ class TestInputValidation:
         mock_search.handle_execute.return_value.hits = []
 
         # Test minimum
-        await location_tool.lookup_location("test", top_k=-5)
+        with pytest.raises(LocationNotRecognizedError):
+            await location_tool.lookup_location("test", top_k=-5)
         assert mock_search.__getitem__.call_args[0][0].stop == 1
 
         # Test maximum
-        await location_tool.lookup_location("test", top_k=200)
+        with pytest.raises(LocationNotRecognizedError):
+            await location_tool.lookup_location("test", top_k=200)
         assert mock_search.__getitem__.call_args[0][0].stop == 100
 
 
@@ -134,6 +139,7 @@ class TestLocationTypes:
         assert location_obj["filter"]["state"] == "TX"
         assert location_obj["display"]["entity"] == "State"
         assert location_obj["display"]["standalone"] == "TEXAS"
+        assert location_obj["display"]["title"] == "TEXAS"
 
     async def test_city_lookup(self, location_tool, mock_search):
         """AC: City name and code lookup."""
@@ -152,6 +158,23 @@ class TestLocationTypes:
         assert location_obj["filter"]["city"] == "CHICAGO"
         assert location_obj["filter"]["state"] == "IL"
         assert location_obj["display"]["entity"] == "City"
+        assert location_obj["display"]["title"] == "CHICAGO, ILLINOIS"
+
+    async def test_foreign_city_lookup(self, location_tool, mock_search):
+        """AC: Foreign city title keeps the country since there's no state to disambiguate it with."""
+        mock_search.handle_execute.return_value.hits = [
+            create_mock_hit(
+                "PARIS, FRANCE",
+                "city",
+                json.dumps({"city_name": "PARIS", "state_name": None, "country_name": "FRANCE"}),
+            )
+        ]
+
+        result = await location_tool.lookup_location("Paris")
+
+        location_obj = next(iter(result["results"].values()))
+        assert location_obj["display"]["standalone"] == "PARIS"
+        assert location_obj["display"]["title"] == "PARIS, FRANCE"
 
     async def test_county_lookup(self, location_tool, mock_search):
         """AC: County name and code lookup."""
@@ -176,11 +199,16 @@ class TestLocationTypes:
         assert location_obj["identifier"] == "USA_MO_095"
         assert location_obj["filter"]["county"] == "095"
         assert location_obj["display"]["entity"] == "County"
+        assert location_obj["display"]["title"] == "JACKSON, MISSOURI"
 
     async def test_zip_code_lookup(self, location_tool, mock_search):
         """AC: ZIP code lookup."""
         mock_search.handle_execute.return_value.hits = [
-            create_mock_hit("64198", "zip_code", json.dumps({"zip_code": "64198", "country_name": "UNITED STATES"}))
+            create_mock_hit(
+                "64198, MISSOURI",
+                "zip_code",
+                json.dumps({"zip_code": "64198", "state_name": "MISSOURI", "country_name": "UNITED STATES"}),
+            )
         ]
 
         result = await location_tool.lookup_location("64198")
@@ -188,7 +216,8 @@ class TestLocationTypes:
         location_obj = result["results"]["USA_64198"]
         assert location_obj["identifier"] == "USA_64198"
         assert location_obj["filter"]["zip"] == "64198"
-        assert location_obj["display"]["entity"] == "Zip code"
+        assert location_obj["display"]["entity"] == "ZIP Code"
+        assert location_obj["display"]["title"] == "64198"
 
     async def test_congressional_district_current(self, location_tool, mock_search):
         """AC: Congressional district lookup (current)."""
@@ -205,6 +234,7 @@ class TestLocationTypes:
         assert location_obj["identifier"] == "USA_MO_04"
         assert location_obj["filter"]["district_current"] == "04"
         assert location_obj["display"]["entity"] == "Current congressional district"
+        assert location_obj["display"]["title"] == "MO-04"
 
     async def test_congressional_district_original(self, location_tool, mock_search):
         """AC: Congressional district lookup (original)."""
@@ -220,6 +250,7 @@ class TestLocationTypes:
 
         location_obj = result["results"]["USA_NY_12"]
         assert location_obj["filter"]["district_original"] == "12"
+        assert location_obj["display"]["title"] == "NY-12"
 
     async def test_country_lookup(self, location_tool, mock_search):
         """AC: Country name and code lookup."""
@@ -233,6 +264,7 @@ class TestLocationTypes:
         assert location_obj["identifier"] == "DEU"
         assert location_obj["filter"]["country"] == "DEU"
         assert location_obj["display"]["entity"] == "Country"
+        assert location_obj["display"]["title"] == "GERMANY"
 
 
 class TestFuzzyMatching:
@@ -287,7 +319,8 @@ class TestQueryBehavior:
         """AC: Tool queries OpenSearch index only once."""
         mock_search.handle_execute.return_value.hits = []
 
-        await location_tool.lookup_location("Texas")
+        with pytest.raises(LocationNotRecognizedError):
+            await location_tool.lookup_location("Texas")
 
         # handle_execute should be called exactly once
         assert mock_search.handle_execute.call_count == 1
@@ -296,7 +329,8 @@ class TestQueryBehavior:
         """Test that location_type filter is applied when provided."""
         mock_search.handle_execute.return_value.hits = []
 
-        await location_tool.lookup_location("Test", location_type="state")
+        with pytest.raises(LocationNotRecognizedError):
+            await location_tool.lookup_location("Test", location_type="state")
 
         # Verify filter was called with location_type
         mock_search.filter.assert_called_once_with("term", location_type="state")
@@ -305,7 +339,8 @@ class TestQueryBehavior:
         """Test that no type filter is applied when location_type is None."""
         mock_search.handle_execute.return_value.hits = []
 
-        await location_tool.lookup_location("Test", location_type=None)
+        with pytest.raises(LocationNotRecognizedError):
+            await location_tool.lookup_location("Test", location_type=None)
 
         # Filter should not be called
         mock_search.filter.assert_not_called()
@@ -367,11 +402,8 @@ class TestErrorHandling:
         """Test handling when no results found."""
         mock_search.handle_execute.return_value.hits = []
 
-        result = await location_tool.lookup_location("NOTAREALPLACE123")
-
-        assert result["count"] == 0
-        assert result["results"] == {}
-        assert "error" not in result
+        with pytest.raises(LocationNotRecognizedError, match="NOTAREALPLACE123"):
+            await location_tool.lookup_location("NOTAREALPLACE123")
 
 
 class TestIntegrationWithFilters:
@@ -812,7 +844,8 @@ class TestSingleQueryRequirement:
         """AC: Single query should use multiple matching strategies (exact, fuzzy, wildcard)."""
         mock_search.handle_execute.return_value.hits = []
 
-        await location_tool.lookup_location("Texas")
+        with pytest.raises(LocationNotRecognizedError):
+            await location_tool.lookup_location("Texas")
 
         # handle_execute should be called exactly once
         assert mock_search.handle_execute.call_count == 1

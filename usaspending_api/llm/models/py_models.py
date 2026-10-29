@@ -1,10 +1,18 @@
-from typing import Annotated, Any, Callable, Literal
+import re
+from datetime import date
+from typing import Annotated, Any, Callable, ClassVar, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, RootModel, field_validator, model_validator
+from pydantic_core import PydanticCustomError
 
-from usaspending_api.awards.v2.lookups.lookups import all_awards_types_to_category
-from usaspending_api.common.helpers.orm_helpers import award_types_are_valid_groups
+from usaspending_api.awards.v2.lookups.lookups import (
+    all_awards_types_to_category,
+    new_to_old_award_type_mapping,
+    old_to_new_award_type_mapping,
+)
+from usaspending_api.llm.tools.helpers.hierarchy_parsers import get_naics_parent, get_tas_parent
 from usaspending_api.references.helpers import aget_defc_code_details, get_defc_code_details
+from usaspending_api.references.v2.views.filter_tree.psc_filter_tree import PSC_GROUPS
 
 
 class InferenceConfig(BaseModel):
@@ -65,10 +73,12 @@ class LocationDisplay(BaseModel):
         "City",
         "Current congressional district",
         "Original congressional district",
-        "Zip code",
+        "ZIP Code",
     ] = Field(description="The type of geographic entity")
     standalone: str = Field(description="Short location name for filter chips (e.g., 'Texas', 'Chicago', '64198')")
-    title: str = Field(description="Full location name. Cities include state (e.g., 'KANSAS CITY, MISSOURI')")
+    title: str = Field(
+        description="Display name for the location filter UI. Cities include state (e.g., 'KANSAS CITY, MISSOURI')"
+    )
 
 
 class SelectedLocation(BaseModel):
@@ -102,6 +112,16 @@ class TimePeriod(BaseModel):
         ),
     ]
 
+    @field_validator("start_date", "end_date")
+    @classmethod
+    def validate_date_format(cls, value: str) -> str:
+        """Dates must be parseable in YYYY-MM-DD format."""
+        try:
+            date.fromisoformat(value)
+        except ValueError as exc:
+            raise ValueError(f"'{value}' is not a valid date; dates must be in YYYY-MM-DD format.") from exc
+        return value
+
 
 class ToptierAgency(BaseModel):
     """Model for toptier agency information"""
@@ -115,8 +135,16 @@ class ToptierAgency(BaseModel):
 class SubtierAgency(BaseModel):
     """Model for subtier agency information"""
 
-    abbreviation: str
+    abbreviation: str = ""
     name: str
+
+    @field_validator("abbreviation", mode="before")
+    @classmethod
+    def default_missing_abbreviation(cls, value: str | None) -> str:
+        """Some subtier agencies have no abbreviation in the DB (lookup_agencies returns None
+        for them). The frontend reads this field unconditionally, so it must always be a
+        string -- fall back to "" rather than rejecting the input."""
+        return value or ""
 
 
 class SelectedAgency(BaseModel):
@@ -128,27 +156,334 @@ class SelectedAgency(BaseModel):
     subtier_agency: SubtierAgency | None = None
     agencyType: Literal["toptier", "subtier"] = "toptier"
 
+    @model_validator(mode="after")
+    def default_subtier_agency(self) -> "SelectedAgency":
+        """Ensure subtier_agency is always populated
+
+        If a subtier agency is not provided use the toptier agency's own name/abbreviation into
+        subtier_agency rather than leaving it None -- which, combined with `exclude_none=True`
+        on serialization, drops the key entirely and causes as error. A subtier selection, on
+        the other hand, must supply its own subtier_agency; it can't be defaulted.
+        """
+        if self.subtier_agency is None:
+            if self.agencyType == "subtier":
+                raise ValueError("subtier_agency is required when agencyType='subtier'.")
+            self.subtier_agency = SubtierAgency(
+                abbreviation=self.toptier_agency.abbreviation, name=self.toptier_agency.name
+            )
+        return self
+
+
+class SelectedCFDA(BaseModel):
+    """Model for a selected CFDA (Assistance Listing) program, keyed by its program number."""
+
+    identifier: str
+    program_number: str
+    program_title: str
+    popular_name: str | None = None
+
+    @model_validator(mode="after")
+    def identifier_matches_program_number(self) -> "SelectedCFDA":
+        if self.identifier != self.program_number:
+            raise PydanticCustomError(
+                "identifier_mismatch", "'identifier' must equal 'program_number' for a selected CFDA."
+            )
+        return self
+
+
+def _validate_cfda_keys_match_identifier(value: dict[str, SelectedCFDA]) -> dict[str, SelectedCFDA]:
+    """Shared check for Filters/ExecuteFilterInput: selectedCFDA must be keyed by its own identifier."""
+    mismatched = [key for key, cfda in value.items() if key != cfda.identifier]
+    if mismatched:
+        raise PydanticCustomError(
+            "cfda_key_mismatch",
+            "Each selectedCFDA key must equal its entry's 'identifier' (the CFDA program number).",
+            {"mismatched_keys": mismatched},
+        )
+    return value
+
+
+class CodeDisplay(BaseModel):
+    """Model containing details for how a collection of codes are displayed"""
+
+    _get_parent: ClassVar[Callable[[str], str | None]]
+
+    count: Annotated[
+        int,
+        Field(
+            description="The number of leaf nodes under the root node represented by codes in 'require'",
+            json_schema_extra={"examples": 279},
+        ),
+    ]
+    label: Annotated[
+        str,
+        Field(
+            description="The name or description on the root node represented by codes in 'require'",
+            json_schema_extra={"examples": "Manufacturing"},
+        ),
+    ]
+    value: Annotated[
+        str,
+        Field(
+            description="The code on the root node represented by codes in 'require'",
+            json_schema_extra={"examples": "33"},
+        ),
+    ]
+
+    @model_validator(mode="after")
+    def validate_code_and_label_are_different(self) -> "CodeDisplay":
+        if self.value == self.label:
+            raise PydanticCustomError(
+                "incorrect_label",
+                "The label cannot be the same as the value. It must be the description of the code",
+            )
+        return self
+
+    @field_validator("value", mode="after")
+    @classmethod
+    def validate_is_root_code(cls, value: str) -> str:
+        if cls._get_parent(value):
+            raise PydanticCustomError(
+                "root_code_required",
+                "The code in 'value' must be a root node in its hierarchical tree",
+            )
+        return value
+
+    @field_validator("count", mode="after")
+    @classmethod
+    def validate_non_zero_count(cls, value: int) -> int:
+        if value == 0:
+            raise PydanticCustomError("non_zero_count_required", "'count' must be greater than 0")
+        return value
+
+
+class NaicsCodeDisplay(CodeDisplay):
+    _get_parent = staticmethod(get_naics_parent)
+
+
+class PscCodeDisplay(CodeDisplay):
+    """PSC's root is a synthetic Tier1 group label (see PSC_GROUPS), not a code with its own
+    ancestor chain, so rootness is group membership rather than a parent-code lookup."""
+
+    _get_parent = staticmethod(lambda code: None)
+
+    @field_validator("value", mode="after")
+    @classmethod
+    def validate_is_psc_group_label(cls, value: str) -> str:
+        if value not in PSC_GROUPS:
+            raise PydanticCustomError(
+                "invalid_psc_root",
+                f"'value' must be one of the PSC Tier1 group labels: {[str(key) for key in PSC_GROUPS]}",
+            )
+        return value
+
+    @field_validator("label", mode="after")
+    @classmethod
+    def validate_label_is_empty(cls, value: str) -> str:
+        if value != "":
+            raise PydanticCustomError("label_must_be_empty", "'label' must be an empty string for PSC Tier1 groups.")
+        return value
+
+
+class TasCodeDisplay(CodeDisplay):
+    _get_parent = staticmethod(get_tas_parent)
+
+
+def _counts_field(code_display_type: type[CodeDisplay]) -> Annotated:
+    """Build the 'counts' field annotation, parameterized by the CodeDisplay subtype each CodeLists uses."""
+    return Annotated[
+        list[code_display_type],
+        Field(
+            description="List of details about the root nodes represented by the codes in 'require'.",
+            json_schema_extra={"examples": [{"count": 279, "label": "Manufacturing", "value": "33"}]},
+        ),
+    ]
+
 
 class CodeLists(BaseModel):
     """Base Model for code lists
     e.g. naics codes, psc codes, and tas codes
+
+    'require'/'exclude' shape differs by code type (flat codes for NAICS, hierarchical paths for
+    PSC/TAS), so each subclass declares its own typed 'require'/'exclude' and the matching
+    'codes_in_require_exist_in_counts' validator. Only the shape-agnostic checks live here.
     """
 
+    require: Annotated[list, Field(default_factory=list, description="List of codes/paths that must be present.")]
+    exclude: Annotated[list, Field(default_factory=list, description="List of codes/paths to exclude.")]
+    counts: _counts_field(CodeDisplay)
+
+    @model_validator(mode="before")
+    @classmethod
+    def require_counts_when_other_values_present(cls, data: Any) -> Any:
+        """Handle setting a default inside the validator as this is a conditionally required field"""
+        if isinstance(data, dict):
+            data["counts"] = data.get("counts", [])
+
+            if not data.get("counts") and data.get("require"):
+                msg = (
+                    "There must be a unique entry in 'counts' that contains the code, name, and count of the leaf "
+                    "nodes for each root node from the trees represented by the codes in 'require'. If two or more "
+                    "codes in 'require' share a root node then the leaf count from each tree should be combined as "
+                    "one total count. Don't change or remove a code from 'require'."
+                )
+                raise (PydanticCustomError("counts_required", msg))
+
+        return data
+
+    @field_validator("counts", mode="after")
+    @classmethod
+    def counts_contains_only_unique_nonzero_root_nodes(cls, code_display_list: list[CodeDisplay]) -> list[CodeDisplay]:
+        unique_code_values = {}
+        for code_display in code_display_list:
+            if code_display.value in unique_code_values:
+                unique_code_values[code_display.value] += 1
+            else:
+                unique_code_values[code_display.value] = 0
+
+        if len(code_display_list) != len(unique_code_values):
+            raise PydanticCustomError(
+                "duplicate_codes_in_counts",
+                "Their counts should be combined under a new entry that represents the root node.",
+                {"duplicate_codes": [code for code in unique_code_values if unique_code_values[code] > 1]},
+            )
+
+        return code_display_list
+
+
+class NaicsCodeLists(CodeLists):
     require: Annotated[
         list[str],
         Field(
             default_factory=list,
-            description="List of codes that must be present.",
+            description="List of NAICS codes that must be present.",
             json_schema_extra={"examples": [["336411", "336412"]]},
         ),
     ]
     exclude: Annotated[
         list[str],
         Field(
-            default_factory=list, description="List of codes to exclude", json_schema_extra={"examples": [["336413"]]}
+            default_factory=list,
+            description="List of NAICS codes to exclude.",
+            json_schema_extra={"examples": [["336413"]]},
         ),
     ]
-    counts: list = Field(default_factory=list)
+    counts: _counts_field(NaicsCodeDisplay)
+
+    @model_validator(mode="after")
+    def codes_in_require_exist_in_counts(self) -> "NaicsCodeLists":
+        counts_pattern = "|".join([re.escape(code_display.value) for code_display in self.counts])
+        counts_pattern = f"^(?:{counts_pattern}).*$"
+
+        missing_codes = [code for code in self.require if re.fullmatch(counts_pattern, code) is None]
+        if missing_codes:
+            raise PydanticCustomError(
+                "missing_codes_in_counts",
+                "'counts' must contain a code from each root node represented by the codes in 'require'.",
+                {"missing_codes": missing_codes},
+            )
+        return self
+
+
+class PscCodeLists(CodeLists):
+    require: Annotated[
+        list[list[str]],
+        Field(
+            default_factory=list,
+            description=(
+                "List of PSC paths. Each path is [Tier1 group label, ...PSC code segments]. The first "
+                "element must be one of the PSC Tier1 group labels ('Research and Development', "
+                "'Service', 'Product'); any remaining elements are alphanumeric PSC codes."
+            ),
+            json_schema_extra={"examples": [[["Research and Development", "AC"], ["Service", "D"]]]},
+        ),
+    ]
+    exclude: Annotated[
+        list[list[str]],
+        Field(
+            default_factory=list,
+            description="List of PSC paths to exclude, same shape as 'require'.",
+            json_schema_extra={"examples": [[["Service", "D", "D3"]]]},
+        ),
+    ]
+    counts: _counts_field(PscCodeDisplay)
+
+    @field_validator("require", "exclude", mode="after")
+    @classmethod
+    def validate_psc_paths(cls, paths: list[list[str]]) -> list[list[str]]:
+        code_pattern = re.compile(r"[A-Z0-9]{1,4}")
+        for path in paths:
+            if not path or path[0] not in PSC_GROUPS:
+                raise PydanticCustomError(
+                    "invalid_psc_root",
+                    f"The first element of each PSC path must be one of: {[str(key) for key in PSC_GROUPS]}.",
+                    {"path": path},
+                )
+            invalid_codes = [code for code in path[1:] if not code_pattern.fullmatch(code)]
+            if invalid_codes:
+                raise PydanticCustomError(
+                    "invalid_psc_code",
+                    "PSC codes must be one to four character uppercased alphanumeric strings.",
+                    {"codes": invalid_codes},
+                )
+        return paths
+
+    @model_validator(mode="after")
+    def codes_in_require_exist_in_counts(self) -> "PscCodeLists":
+        valid_roots = {code_display.value for code_display in self.counts}
+        missing_paths = [path for path in self.require if path[0] not in valid_roots]
+        if missing_paths:
+            raise PydanticCustomError(
+                "missing_codes_in_counts",
+                "'counts' must contain an entry for each PSC Tier1 group represented by the paths in 'require'.",
+                {"missing_paths": missing_paths},
+            )
+        return self
+
+
+class TasCodeLists(CodeLists):
+    require: Annotated[
+        list[list[str]],
+        Field(
+            default_factory=list,
+            description=(
+                "List of hierarchical TAS paths, each 1-3 elements: [agency_code] or "
+                "[agency_code, agency_code-main_account, full_tas_rendering_label]."
+            ),
+            json_schema_extra={"examples": [[["310"], ["535", "535-2724", "535-2020/2021-2724-000"]]]},
+        ),
+    ]
+    exclude: Annotated[
+        list[list[str]],
+        Field(
+            default_factory=list,
+            description="List of hierarchical TAS paths to exclude, same shape as 'require'.",
+            json_schema_extra={"examples": [[["535", "535-2724"]]]},
+        ),
+    ]
+    counts: _counts_field(TasCodeDisplay)
+
+    @field_validator("require", "exclude", mode="after")
+    @classmethod
+    def validate_tas_paths(cls, paths: list[list[str]]) -> list[list[str]]:
+        invalid_paths = [path for path in paths if not path or len(path) > 3]
+        if invalid_paths:
+            raise PydanticCustomError(
+                "invalid_tas_path", "Each TAS path must have between 1 and 3 elements.", {"paths": invalid_paths}
+            )
+        return paths
+
+    @model_validator(mode="after")
+    def codes_in_require_exist_in_counts(self) -> "TasCodeLists":
+        valid_roots = {code_display.value for code_display in self.counts}
+        missing_paths = [path for path in self.require if path[0] not in valid_roots]
+        if missing_paths:
+            raise PydanticCustomError(
+                "missing_codes_in_counts",
+                "'counts' must contain an entry for each root node represented by the paths in 'require'.",
+                {"missing_paths": missing_paths},
+            )
+        return self
 
 
 DEFC_GROUPS = ("covid_19", "infrastructure")
@@ -407,6 +742,93 @@ class AwardAmounts(RootModel[dict[str, list[int | None]]]):
         return self
 
 
+def _with_legacy_codes(codes: Any) -> list[str]:
+    """Expand award-type codes so historic awards (which kept their legacy numeric codes) still match:
+    every code is normalized to its current code, then all legacy codes for that current code are added."""
+    expanded = set()
+    for code in codes:
+        current = old_to_new_award_type_mapping.get(code, code)
+        expanded.add(current)
+        expanded.update(new_to_old_award_type_mapping.get(current, []))
+    return sorted(expanded)
+
+
+# Award-type names as shown in the Advanced Search frontend's award type filter.
+AWARD_TYPE_GROUP_LABELS: dict[str, list[str]] = {
+    "Contracts": ["A", "B", "C", "D"],
+    "Contract IDVs": ["IDV_A", "IDV_B", "IDV_B_A", "IDV_B_B", "IDV_B_C", "IDV_C", "IDV_D", "IDV_E"],
+    "Grants": ["02", "03", "04", "F001"],
+    "Cooperative Agreement": ["05", "F002"],
+    "Direct Payments": ["06", "10", "F006", "F007"],
+    "Loans": ["07", "08", "F003", "F004"],
+    "Other": ["-1", "09", "11", "F005", "F008", "F009", "F010"],
+}
+ALL_AWARD_TYPE_CODES = frozenset(code for codes in AWARD_TYPE_GROUP_LABELS.values() for code in codes)
+AWARD_TYPE_LABELS: dict[str, list[str]] = {
+    # Not frontend checkboxes: shortcuts for selections the LLM otherwise spells out group by group.
+    # "All Award Types" selects every code, which resolve_award_types collapses to no awardType filter.
+    "All Award Types": sorted(ALL_AWARD_TYPE_CODES),
+    "Financial Assistance": sorted(
+        code
+        for group in ("Grants", "Cooperative Agreement", "Direct Payments", "Loans")
+        for code in AWARD_TYPE_GROUP_LABELS[group]
+    ),
+    **AWARD_TYPE_GROUP_LABELS,
+    # Contracts
+    "Blanket Purchase Agreements (BPA) Calls": ["A"],
+    "Purchase Orders (PO)": ["B"],
+    "Delivery Orders (DO)": ["C"],
+    "Definitive Contracts": ["D"],
+    # Contract IDVs
+    "Government-Wide Acquisition Contract (GWAC)": ["IDV_A"],
+    "Indefinite Delivery / Requirements Contract": ["IDV_B_A"],
+    "Indefinite Delivery / Indefinite Quantity (IDIQ) Contract": ["IDV_B_B"],
+    "Indefinite Delivery / Definite Quantity Contract": ["IDV_B_C"],
+    "Federal Supply Schedule (FSS)": ["IDV_C"],
+    "Basic Ordering Agreement (BOA)": ["IDV_D"],
+    "Blanket Purchase Agreements (BPA)": ["IDV_E"],
+    # Direct Payments
+    "Direct Payment with Unrestricted Use": _with_legacy_codes(["F007"]),
+    "Direct Payment for Specified Use": _with_legacy_codes(["F006"]),
+    # Loans
+    "Direct Loans": _with_legacy_codes(["F003"]),
+    "Loan Guarantees": _with_legacy_codes(["F004"]),
+    # Other
+    "Indemnity/Insurance (non-loan)": _with_legacy_codes(["F005"]),
+    "Asset Forfeiture/Equitable Sharing": _with_legacy_codes(["F008"]),
+    "Sale, Exchange, or Donation of Property and Goods": _with_legacy_codes(["F009"]),
+    "Other Financial Assistance": _with_legacy_codes(["F010"]),
+    "Not Specified": ["-1"],
+}
+AwardTypeLabel = Literal[tuple(AWARD_TYPE_LABELS)]
+_AWARD_TYPE_LABELS_BY_KEY = {" ".join(label.lower().split()): codes for label, codes in AWARD_TYPE_LABELS.items()}
+
+
+def resolve_award_types(values: list[Any]) -> list[str]:
+    """Resolve award-type names (or raw codes) to the sorted, legacy-expanded codes they select.
+
+    Selecting every award group is the same as not filtering by award type, so it resolves to [].
+    """
+    codes: set[str] = set()
+    unknown = []
+    for value in values:
+        key = " ".join(value.lower().split()) if isinstance(value, str) else None
+        if key in _AWARD_TYPE_LABELS_BY_KEY:
+            codes.update(_AWARD_TYPE_LABELS_BY_KEY[key])
+        elif value in all_awards_types_to_category:
+            codes.update(_with_legacy_codes([value]))
+        else:
+            unknown.append(value)
+    if unknown:
+        raise ValueError(
+            f"Unknown awardType value(s): {unknown}. Use the award type names listed in the awardType "
+            "description (e.g. 'Contracts', 'Grants', 'Direct Loans'), or omit awardType to include all award types."
+        )
+    if codes >= ALL_AWARD_TYPE_CODES:
+        return []
+    return sorted(codes)
+
+
 class Filters(BaseModel):
     """Validation model for all filter criteria and the persisted FilterHash blob."""
 
@@ -427,15 +849,16 @@ class Filters(BaseModel):
     awardType: list[str] = Field(default_factory=list)
     selectedAwardIDs: list[str] = Field(default_factory=list)
     awardAmounts: AwardAmounts = Field(default_factory=lambda: AwardAmounts({}))
-    selectedCFDA: dict[str, Any] = Field(default_factory=dict)
-    naicsCodes: CodeLists = Field(default_factory=CodeLists)
-    pscCodes: CodeLists = Field(default_factory=CodeLists)
+    selectedCFDA: dict[str, SelectedCFDA] = Field(default_factory=dict)
+    naicsCodes: NaicsCodeLists = Field(default_factory=NaicsCodeLists)
+    pscCodes: PscCodeLists = Field(default_factory=PscCodeLists)
+    defCode: list[str] = []
     defCodes: DEFCodeLists = Field(default_factory=DEFCodeLists)
     pricingType: list[str] = Field(default_factory=list)
     setAside: list[SetAsideCode] = Field(default_factory=list)
     extentCompeted: list[ExtentCompetedCode] = Field(default_factory=list)
     treasuryAccounts: dict[str, Any] = Field(default_factory=dict)
-    tasCodes: CodeLists = Field(default_factory=CodeLists)
+    tasCodes: TasCodeLists = Field(default_factory=TasCodeLists)
     awardDescription: str = ""
     filterNewAwardsOnlySelected: bool = False
     filterNewAwardsOnlyActive: bool = False
@@ -468,20 +891,31 @@ class Filters(BaseModel):
             rekeyed[key] = agency
         return rekeyed
 
-    @field_validator("awardType")
+    @field_validator("selectedCFDA", mode="after")
     @classmethod
-    def validate_award_type(cls, value: list[str]) -> list[str]:
-        """Validate award-type codes: each must be a known code, and all must share one award group."""
-        if not value:
-            return value
-        unknown = [code for code in value if code not in all_awards_types_to_category]
-        if unknown:
+    def validate_selected_cfda(cls, value: dict[str, SelectedCFDA]) -> dict[str, SelectedCFDA]:
+        return _validate_cfda_keys_match_identifier(value)
+
+    @field_validator("timePeriodFY")
+    @classmethod
+    def validate_time_period_fy(cls, value: list[str]) -> list[str]:
+        """Fiscal years must be bare four-digit strings (e.g. '2026'), not 'FY2026'."""
+        invalid = [year for year in value if not re.fullmatch(r"\d{4}", year)]
+        if invalid:
             raise ValueError(
-                f"Invalid award type code(s): {unknown}. See the awardType field description for valid codes."
+                f"Invalid fiscal year(s) in timePeriodFY: {invalid}. Fiscal years must be four-digit strings "
+                "(e.g. '2026'), without a 'FY' prefix."
             )
-        if not award_types_are_valid_groups(value):
-            raise ValueError("'award_type_codes' must only contain types from one group.")
         return value
+
+    @field_validator("awardType", mode="before")
+    @classmethod
+    def resolve_award_type(cls, value: Any) -> Any:
+        """The LLM selects award types by frontend name (see AWARD_TYPE_LABELS); persist them as codes. Raw codes
+        are still accepted so code-based callers and previously persisted filters keep working."""
+        if not isinstance(value, list) or not value:
+            return value
+        return resolve_award_types(value)
 
     @model_validator(mode="after")
     def validate_time_period_consistency(self) -> "Filters":
@@ -648,22 +1082,37 @@ class ExecuteFilterInput(BaseModel):
         default_factory=dict,
         description="Recipient locations keyed by identifier. Use the lookup_location tool to build these.",
     )
-    awardType: list[str] = Field(
+    awardType: list[AwardTypeLabel] = Field(
         default_factory=list,
         description=(
-            "Award-type code filter. If the query mentions an award vehicle (contract, grant, loan, IDV, direct "
-            "payment, financial assistance, or a related word/concept), you MUST set this filter - even when the "
-            "query's main subject is a recipient, agency, or location (e.g. 'contracts for Boeing' requires BOTH "
-            "the recipient filter AND this filter). Use exactly one of these code groups, matching the query:\n"
-            "  contracts:       ['A', 'B', 'C', 'D']\n"
-            "  IDVs:            ['IDV_A', 'IDV_B', 'IDV_B_A', 'IDV_B_B', 'IDV_B_C', 'IDV_C', 'IDV_D', 'IDV_E']\n"
-            "  grants:          ['02', '03', '04', '05', 'F001', 'F002']\n"
-            "  loans:           ['07', '08', 'F003', 'F004']\n"
-            "  direct payments: ['06', '10', 'F006', 'F007']\n"
-            "  other:           ['09', '11', '-1', 'F005', 'F008', 'F009', 'F010']\n"
-            "A value may only contain codes from a SINGLE group."
+            "Award type filter, using the award type names below. Set it when the query names a specific award "
+            "vehicle (contracts, IDVs, grants, cooperative agreements, loans, direct payments, insurance, etc.) \n"
+            "Shortcuts:\n"
+            "  'All Award Types': every award type (the same as leaving awardType empty).\n"
+            "  'Financial Assistance': every non-contract type (Grants, Cooperative Agreement, Direct Payments, "
+            "Loans, Other). Use it for 'financial assistance' or 'assistance awards'.\n"
+            "Use a group name to select every type in that group, or individual names for specific types:\n"
+            "  'Contracts': 'Blanket Purchase Agreements (BPA) Calls', 'Purchase Orders (PO)', "
+            "'Delivery Orders (DO)', 'Definitive Contracts'\n"
+            "  'Contract IDVs': 'Government-Wide Acquisition Contract (GWAC)', "
+            "'Indefinite Delivery / Requirements Contract', "
+            "'Indefinite Delivery / Indefinite Quantity (IDIQ) Contract', "
+            "'Indefinite Delivery / Definite Quantity Contract', 'Federal Supply Schedule (FSS)', "
+            "'Basic Ordering Agreement (BOA)', 'Blanket Purchase Agreements (BPA)'\n"
+            "  'Grants' (no sub-types)\n"
+            "  'Cooperative Agreement' (no sub-types)\n"
+            "  'Direct Payments': 'Direct Payment with Unrestricted Use', 'Direct Payment for Specified Use'\n"
+            "  'Loans': 'Direct Loans', 'Loan Guarantees'\n"
+            "  'Other': 'Indemnity/Insurance (non-loan)', 'Asset Forfeiture/Equitable Sharing', "
+            "'Sale, Exchange, or Donation of Property and Goods', 'Other Financial Assistance', 'Not Specified'\n"
+            "'Grants' does not include cooperative agreements; only add 'Cooperative Agreement' when the query asks "
+            "for cooperative agreements. 'Blanket Purchase Agreements (BPA) Calls' is a contract type; "
+            "'Blanket Purchase Agreements (BPA)' is an IDV type. Combine names from different groups when the query "
+            "names several vehicles (e.g. 'grants and loans' -> ['Grants', 'Loans'])."
         ),
-        json_schema_extra={"examples": [["A", "B", "C", "D"], ["02", "03", "04", "05"], ["07", "08"]]},
+        json_schema_extra={
+            "examples": [["Contracts"], ["Grants", "Loans"], ["Direct Loans"], ["Financial Assistance"]]
+        },
     )
     selectedAwardIDs: list[str] = Field(
         default_factory=list,
@@ -690,12 +1139,12 @@ class ExecuteFilterInput(BaseModel):
             ]
         },
     )
-    selectedCFDA: dict[str, Any] = Field(
+    selectedCFDA: dict[str, SelectedCFDA] = Field(
         default_factory=dict,
         description="CFDA / Assistance Listing filter keyed by program number. Use the lookup_code tool.",
     )
-    naicsCodes: CodeLists = Field(default_factory=CodeLists)
-    pscCodes: CodeLists = Field(default_factory=CodeLists)
+    naicsCodes: NaicsCodeLists = Field(default_factory=NaicsCodeLists)
+    pscCodes: PscCodeLists = Field(default_factory=PscCodeLists)
     defCodes: DEFCodeListsWithoutEnum = Field(
         default_factory=DEFCodeListsWithoutEnum,
         description=(
@@ -762,7 +1211,7 @@ class ExecuteFilterInput(BaseModel):
     treasuryAccounts: dict[str, Any] = Field(
         default_factory=dict, description="Treasury Account Symbol (TAS) filter keyed by identifier."
     )
-    tasCodes: CodeLists = Field(default_factory=CodeLists)
+    tasCodes: TasCodeLists = Field(default_factory=TasCodeLists)
     awardDescription: str = Field(
         default="",
         description=(
@@ -778,6 +1227,11 @@ class ExecuteFilterInput(BaseModel):
     filterNaoActiveFromFyOrDateRange: bool = Field(
         default=False, description="When true, derive the new-awards-only window from the selected FY or date range."
     )
+
+    @field_validator("selectedCFDA", mode="after")
+    @classmethod
+    def validate_selected_cfda(cls, value: dict[str, SelectedCFDA]) -> dict[str, SelectedCFDA]:
+        return _validate_cfda_keys_match_identifier(value)
 
 
 class FilterRequest(BaseModel):

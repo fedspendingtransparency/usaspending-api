@@ -10,6 +10,7 @@ from django.db.models import Sum
 from usaspending_api.common.helpers.aws_helpers import async_aws_client
 from usaspending_api.llm.models.db_models import Assistant, Message, Session, ToolUse
 from usaspending_api.llm.models.py_models import AITool, abuild_defc_description
+from usaspending_api.llm.tools.exceptions import ToolUseRuntimeError
 
 logger = logging.getLogger(__name__)
 
@@ -97,7 +98,7 @@ class FilterSearchAssistant:
         output_message = response["output"]["message"]
 
         # Safely extract text content.
-        message_text = self._extract_text_from_content(output_message)
+        message_text = self._extract_text_from_content(output_message["content"])
 
         message = await Message.objects.acreate(
             session=self.session,
@@ -131,10 +132,11 @@ class FilterSearchAssistant:
         current_fy = today.year + 1 if today.month >= 10 else today.year
         return (
             f"\nThe current date is {today.strftime('%m/%d/%Y')}. The current federal fiscal year is "
-            f"FY{current_fy} (the federal fiscal year runs Oct 1 - Sep 30 and is named for the calendar "
-            f"year it ends in, so FY{current_fy} runs 10/01/{current_fy - 1} - 09/30/{current_fy}). "
-            f"Use FY{current_fy} directly as 'this fiscal year' and FY{current_fy - 1} as 'last fiscal "
-            f"year' - do not recompute the fiscal year from the date yourself."
+            f"{current_fy} (the federal fiscal year runs Oct 1 - Sep 30 and is named for the calendar "
+            f"year it ends in, so Fiscal Year {current_fy} runs 10/01/{current_fy - 1} - 09/30/{current_fy}). "
+            f"Use {current_fy} directly as 'this fiscal year' and {current_fy - 1} as 'last fiscal "
+            f"year' - do not recompute the fiscal year from the date yourself. When populating "
+            f"timePeriodFY, use the bare four-digit year (e.g. '{current_fy}'), never the 'FY' prefix."
         )
 
     @cached_property
@@ -250,17 +252,6 @@ class FilterSearchAssistant:
                     },
                 )
 
-        # Communicate if tool iteration limit reached.
-        if self.tool_iterations >= self.MAX_TOOL_ITERATIONS and not search_complete:
-            yield {
-                "search_id": str(self.session.id),
-                "type": "search_error",
-                "message": f"Maximum tool iterations ({self.MAX_TOOL_ITERATIONS}) reached without completing search.",
-            }
-        elif self.tool_iterations < self.MAX_TOOL_ITERATIONS and not search_complete:
-            logger.info("Search not complete. Restarting search")
-            self.search("Search is not complete.  You must call execute_filter to complete the search.")
-
         # Calculate total token usage for this search.
         totals = await self.session.messages.aaggregate(
             input_tokens=Sum("input_tokens"), output_tokens=Sum("output_tokens")
@@ -268,6 +259,9 @@ class FilterSearchAssistant:
         total_input_tokens = totals["input_tokens"] or 0
         total_output_tokens = totals["output_tokens"] or 0
         total_tokens = total_input_tokens + total_output_tokens
+
+        if not search_complete:
+            raise RuntimeError(f"Filter search session {self.session.id} ended without completing")
 
         # Log each search.
         logger.info(
@@ -295,7 +289,7 @@ class FilterSearchAssistant:
                 "search_id": str(self.session.id),
                 "type": "tool_start",
                 "tool_use_id": str(t.id),
-                "message": tool.logging(tool_use["input"]) + "\n",
+                "message": tool.logging(tool_use["input"]),
             }
 
             tool_start_time = time.time()
@@ -327,13 +321,25 @@ class FilterSearchAssistant:
                 }
                 tool_result = {"toolUseId": tool_use["toolUseId"], "content": [{"json": result}]}
                 tool_result_message["content"].append({"toolResult": tool_result})
+
+                if tool.description.name == self.COMPLETION_TOOL_NAME and "error" not in result:
+                    yield {
+                        "search_id": str(self.session.id),
+                        "type": "search_complete",
+                        "result": result["hash"],
+                        "message": "Search complete.",
+                    }
             except Exception as e:
                 execution_time_ms = (time.time() - tool_start_time) * 1000
-                error_result = {"error": str(e)}
+                is_known_error = isinstance(e, ToolUseRuntimeError)
+                error_message = e.user_message if is_known_error else "Tool execution failed."
+                model_detail = e.model_detail if is_known_error else str(e)
+                error_result = {"error": model_detail}
                 t.result = error_result
                 await t.asave()
 
-                logger.error(
+                log = logger.warning if is_known_error else logger.error
+                log(
                     f"Filter search tool execution failed: tool={tool.description.name}, "
                     f"execution_time_ms={execution_time_ms:.3f}, error={str(e)}",
                     extra={
@@ -345,20 +351,15 @@ class FilterSearchAssistant:
                         "tool_input": t.tool_input,
                         "tool_result": t.result,
                     },
-                    exc_info=True,
+                    exc_info=not is_known_error,
                 )
 
                 yield {
                     "search_id": str(self.session.id),
                     "type": "tool_error",
                     "tool_use_id": str(t.id),
-                    "message": "Tool execution failed.",
+                    "message": error_message,
                 }
-            if tool.description.name == self.COMPLETION_TOOL_NAME and "error" not in result:
-                yield {
-                    "search_id": str(self.session.id),
-                    "type": "search_complete",
-                    "result": result["hash"],
-                    "message": "Search complete.",
-                }
+                tool_result = {"toolUseId": tool_use["toolUseId"], "content": [{"json": error_result}]}
+                tool_result_message["content"].append({"toolResult": tool_result})
         self.messages.append(tool_result_message)

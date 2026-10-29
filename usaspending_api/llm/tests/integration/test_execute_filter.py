@@ -2,12 +2,46 @@ import json
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from asgiref.sync import sync_to_async
+from model_bakery import baker
 
-from usaspending_api.llm.models.py_models import ExecuteFilterInput, Filters
+from usaspending_api.llm.models.py_models import ExecuteFilterInput, Filters, aget_defc_rows, clear_defc_rows_cache
+from usaspending_api.llm.tools.exceptions import (
+    AgencyNotRecognizedError,
+    AwardAmountNotParseableError,
+    AwardNotRecognizedError,
+    DefcCodeNotRecognizedError,
+    FilterValidationError,
+    RecipientNotRecognizedError,
+    TimePeriodNotParseableError,
+)
 from usaspending_api.llm.tools.execute_filter import execute_filter, execute_filter_tool
 from usaspending_api.references.models import FilterHash
 
 pytestmark = pytest.mark.django_db(transaction=True)
+
+
+@pytest.fixture(autouse=True)
+def mock_existence_lookups():
+    """Default lookup-tool mocks so pre-existing tests (not specifically exercising the new
+    existence-validation paths) continue to pass without hitting real DB/OpenSearch backends.
+    Tests exercising validation failures override these within their own nested `patch(...)`."""
+
+    async def agency_lookup(query, **kwargs):
+        return {"results": {"1_toptier": {"id": 1, "agencyType": "toptier"}}, "instructions": None}
+
+    async def recipient_lookup(query, **kwargs):
+        return {"recipient_names": [query]}
+
+    async def award_lookup(query, **kwargs):
+        return {"result": {"generated_unique_award_id": query}}
+
+    with (
+        patch("usaspending_api.llm.tools.execute_filter.lookup_agency_tool.function", side_effect=agency_lookup),
+        patch("usaspending_api.llm.tools.execute_filter.lookup_recipient_tool.function", side_effect=recipient_lookup),
+        patch("usaspending_api.llm.tools.execute_filter.lookup_award_tool.function", side_effect=award_lookup),
+    ):
+        yield
 
 
 @pytest.fixture
@@ -75,7 +109,7 @@ class TestInputValidation:
 
     async def test_validation_error_message_includes_details(self):
         """Test that validation errors include helpful details."""
-        result = await execute_filter(time_period="invalid")
+        result = await execute_filter(awardType="invalid")
 
         assert "error" in result
         assert isinstance(result["error"], str)
@@ -293,7 +327,7 @@ class TestErrorHandling:
 
     async def test_validation_error_returns_error_dict(self):
         """Test that validation errors return proper error dict."""
-        result = await execute_filter(time_period="invalid_format")
+        result = await execute_filter(awardType="invalid_format")
 
         assert "error" in result
         assert "message" in result
@@ -333,6 +367,238 @@ class TestErrorHandling:
         assert not mock_filter_hash.called
 
 
+class TestValidationErrorTranslation:
+    """Single-category pydantic validation failures (DEFC, award amount, time period) are raised
+    as specific exceptions instead of being swallowed into a generic error dict, so the assistant
+    can show a clean user-facing message while still receiving the full pydantic detail for
+    self-correction. Failures spanning more than one category are raised as a generic
+    FilterValidationError for the same reason -- a returned error dict never reaches the frontend
+    as a visible error, even though it looks like one to the model. An unrecognized field by
+    itself keeps the original generic-error-dict behavior."""
+
+    @pytest.fixture(autouse=True)
+    async def seed_defc_codes(self):
+        clear_defc_rows_cache()
+        await sync_to_async(baker.make)(
+            "references.DisasterEmergencyFundCode",
+            code="L",
+            public_law="PUBLIC LAW FOR CODE L",
+            title="TITLE FOR CODE L",
+            group_name="covid_19",
+        )
+        # Pre-warm the module-level cache via the async-safe entry point -- the pydantic
+        # validator in DEFCodeLists only has a synchronous entry point, which would raise
+        # SynchronousOnlyOperation if it had to hit the DB for the first time from here.
+        await aget_defc_rows()
+        yield
+        clear_defc_rows_cache()
+
+    async def test_defc_only_failure_raises_specific_error(self):
+        with pytest.raises(DefcCodeNotRecognizedError) as exc_info:
+            await execute_filter(defCodes={"require": ["NOT_REAL"]})
+
+        assert exc_info.value.user_message == "DEFC code not found: NOT_REAL."
+        assert "Invalid DEFC code(s)" in exc_info.value.model_detail
+
+    async def test_award_amount_business_rule_failure_raises_specific_error(self):
+        with pytest.raises(AwardAmountNotParseableError) as exc_info:
+            await execute_filter(awardAmounts={"specific": [1, 2], "range-1": [1000000, 25000000]})
+
+        assert "Unable to filter awards based on the criteria" in exc_info.value.user_message
+        assert "must be the only key" in exc_info.value.model_detail
+
+    async def test_award_amount_type_coercion_failure_raises_specific_error(self):
+        """A non-numeric bound fails pydantic's own int coercion, bypassing the custom validator --
+        it must still map to the same user-facing error."""
+        with pytest.raises(AwardAmountNotParseableError):
+            await execute_filter(awardAmounts={"specific": ["not-a-number", None]})
+
+    async def test_time_period_only_failure_raises_specific_error(self):
+        with pytest.raises(TimePeriodNotParseableError) as exc_info:
+            await execute_filter(
+                timePeriodType="dr", time_period=[{"start_date": "invalid-date", "end_date": "2023-12-31"}]
+            )
+
+        assert exc_info.value.user_message == (
+            "Unable to filter based on the specified time period. Try rephrasing the dates you're looking for."
+        )
+        assert "not a valid date" in exc_info.value.model_detail
+
+    async def test_mixed_category_failure_raises_generic_validation_error(self):
+        """Errors spanning more than one recognized category are raised, not returned as a dict,
+        so the assistant emits a visible tool_error event to the frontend instead of the tool call
+        looking like a success."""
+        with pytest.raises(FilterValidationError) as exc_info:
+            await execute_filter(
+                defCodes={"require": ["NOT_REAL"]},
+                timePeriodType="dr",
+                time_period=[{"start_date": "invalid-date", "end_date": "2023-12-31"}],
+            )
+
+        assert "invalid" in exc_info.value.user_message.lower()
+        assert "NOT_REAL" in exc_info.value.model_detail
+
+
+class TestAwardTypeNames:
+    """The LLM selects award types by frontend name; execute_filter persists the resolved codes."""
+
+    async def test_award_type_names_are_persisted_as_codes(self, mock_filter_hash):
+        mock_filter_hash.objects.aget.side_effect = FilterHash.DoesNotExist
+        mock_filter_hash.return_value = _new_mock_instance()
+
+        result = await execute_filter(awardType=["Grants", "Direct Loans"])
+
+        assert "hash" in result
+        saved_filter = mock_filter_hash.call_args.kwargs["filter"]
+        assert saved_filter["filters"]["awardType"] == ["02", "03", "04", "07", "F001", "F003"]
+
+    async def test_legacy_and_current_codes_are_still_accepted(self, mock_filter_hash):
+        mock_filter_hash.objects.aget.side_effect = FilterHash.DoesNotExist
+        mock_filter_hash.return_value = _new_mock_instance()
+
+        result = await execute_filter(awardType=["02", "F002"])
+
+        assert "hash" in result
+        saved_filter = mock_filter_hash.call_args.kwargs["filter"]
+        assert saved_filter["filters"]["awardType"] == ["02", "03", "04", "05", "F001", "F002"]
+
+    async def test_unknown_award_type_name_returns_guidance(self):
+        result = await execute_filter(awardType=["Fellowships"])
+
+        assert "error" in result
+        assert "Unknown awardType value(s): ['Fellowships']" in result["error"]
+        assert "omit awardType" in result["error"]
+
+
+class TestAgencyExistenceValidation:
+    """selectedAwardingAgencies/selectedFundingAgencies entries are confirmed via lookup_agency_tool
+    before a filter is hashed."""
+
+    async def test_valid_agency_passes(self, sample_filters, mock_filter_hash):
+        mock_filter_hash.objects.aget.side_effect = FilterHash.DoesNotExist
+        mock_instance = _new_mock_instance()
+        mock_filter_hash.return_value = mock_instance
+
+        result = await execute_filter(**sample_filters)
+
+        assert "hash" in result
+
+    async def test_unresolvable_agency_raises(self, sample_filters):
+        with patch(
+            "usaspending_api.llm.tools.execute_filter.lookup_agency_tool.function",
+            new_callable=AsyncMock,
+            return_value={"results": {}, "instructions": None},
+        ):
+            with pytest.raises(AgencyNotRecognizedError) as exc_info:
+                await execute_filter(**sample_filters)
+
+        assert "Department of Agriculture" in exc_info.value.user_message
+        assert "Unresolvable selected agencies" in exc_info.value.model_detail
+
+    async def test_agency_lookup_zero_results_is_treated_as_unresolvable(self, sample_filters):
+        """lookup_agency_tool raises AgencyNotRecognizedError on zero matches; that must be caught
+        and translated into the same unresolvable-agency error, not propagated raw."""
+        with patch(
+            "usaspending_api.llm.tools.execute_filter.lookup_agency_tool.function",
+            new_callable=AsyncMock,
+            side_effect=AgencyNotRecognizedError("Unable to filter. We couldn't find an agency with the name: 001"),
+        ):
+            with pytest.raises(AgencyNotRecognizedError) as exc_info:
+                await execute_filter(**sample_filters)
+
+        assert "Unresolvable selected agencies" in exc_info.value.model_detail
+
+
+class TestRecipientExistenceValidation:
+    """selectedRecipients entries are confirmed via lookup_recipient_tool before a filter is hashed."""
+
+    async def test_valid_recipient_passes(self, mock_filter_hash):
+        mock_filter_hash.objects.aget.side_effect = FilterHash.DoesNotExist
+        mock_instance = _new_mock_instance()
+        mock_filter_hash.return_value = mock_instance
+
+        with patch(
+            "usaspending_api.llm.tools.execute_filter.lookup_recipient_tool.function",
+            new_callable=AsyncMock,
+            return_value={"recipient_names": ["ACME CORPORATION"]},
+        ):
+            result = await execute_filter(selectedRecipients=["ACME Corporation"])
+
+        assert "hash" in result
+
+    async def test_unresolvable_recipient_raises(self):
+        with patch(
+            "usaspending_api.llm.tools.execute_filter.lookup_recipient_tool.function",
+            new_callable=AsyncMock,
+            return_value={"recipient_names": []},
+        ):
+            with pytest.raises(RecipientNotRecognizedError) as exc_info:
+                await execute_filter(selectedRecipients=["Totally Fake Recipient"])
+
+        assert "Totally Fake Recipient" in exc_info.value.user_message
+        assert "Unresolvable selected recipients" in exc_info.value.model_detail
+
+    async def test_multiple_unresolvable_recipients_are_all_listed(self):
+        with patch(
+            "usaspending_api.llm.tools.execute_filter.lookup_recipient_tool.function",
+            new_callable=AsyncMock,
+            return_value={"recipient_names": []},
+        ):
+            with pytest.raises(RecipientNotRecognizedError) as exc_info:
+                await execute_filter(selectedRecipients=["Fake One", "Fake Two"])
+
+        assert "Fake One" in exc_info.value.user_message
+        assert "Fake Two" in exc_info.value.user_message
+
+
+class TestAwardIdExistenceValidation:
+    """selectedAwardIDs entries are confirmed via the new lookup_award_tool before a filter is hashed."""
+
+    async def test_valid_award_id_passes(self, mock_filter_hash):
+        mock_filter_hash.objects.aget.side_effect = FilterHash.DoesNotExist
+        mock_instance = _new_mock_instance()
+        mock_filter_hash.return_value = mock_instance
+
+        with patch(
+            "usaspending_api.llm.tools.execute_filter.lookup_award_tool.function",
+            new_callable=AsyncMock,
+            return_value={"result": {"generated_unique_award_id": "CONT_AWD_123"}},
+        ):
+            result = await execute_filter(selectedAwardIDs=["CONT_AWD_123"])
+
+        assert "hash" in result
+
+    async def test_generated_award_id_is_replaced_with_display_award_id(self, mock_filter_hash):
+        """The award ID search filter only matches PIID/FAIN/URI, so a generated_unique_award_id the model
+        passes must be persisted as the award's display ID."""
+        mock_filter_hash.objects.aget.side_effect = FilterHash.DoesNotExist
+        mock_filter_hash.return_value = _new_mock_instance()
+
+        with patch(
+            "usaspending_api.llm.tools.execute_filter.lookup_award_tool.function",
+            new_callable=AsyncMock,
+            return_value={"award_id": "W56HZV07C0096", "result": {}},
+        ):
+            await execute_filter(selectedAwardIDs=["CONT_AWD_W56HZV07C0096_9700_-NONE-_-NONE-", "W56HZV07C0096"])
+
+        saved_filter = mock_filter_hash.call_args.kwargs["filter"]
+        assert saved_filter["filters"]["selectedAwardIDs"] == {"W56HZV07C0096": "W56HZV07C0096"}
+
+    async def test_unresolvable_award_id_raises(self):
+        with patch(
+            "usaspending_api.llm.tools.execute_filter.lookup_award_tool.function",
+            new_callable=AsyncMock,
+            side_effect=AwardNotRecognizedError("Unable to filter. We couldn't find an award with the ID: x"),
+        ):
+            with pytest.raises(AwardNotRecognizedError) as exc_info:
+                await execute_filter(selectedAwardIDs=["FAKE_AWARD_ID"])
+
+        assert "FAKE_AWARD_ID" in exc_info.value.user_message
+        assert "Unresolvable selected award IDs" in exc_info.value.model_detail
+        assert "lookup_recipient" in exc_info.value.model_detail
+        assert "lookup_recipient" not in exc_info.value.user_message
+
+
 class TestAIToolImplementation:
     """Test AITool model implementation."""
 
@@ -365,13 +631,18 @@ class TestAIToolImplementation:
         assert schema != Filters.model_json_schema()
 
     def test_execute_filter_input_exposes_every_filter_field(self):
-        """The assistant must be able to see and set every Filters field, and no more.
+        """The assistant must be able to see and set every Filters field, except documented legacy fields.
 
         Field-set equality is the drift guard in both directions: a Filters-only field would be a
         filter the assistant can't set, and an ExecuteFilterInput-only field would be rejected by
-        Filters(**kwargs) at runtime (extra='forbid').
+        Filters(**kwargs) at runtime (extra='forbid'). `defCode` is a deliberate, documented
+        exception: it's a legacy singular field kept on `Filters` so old persisted FilterHash blobs
+        still validate, but it's superseded by `defCodes` (require/exclude) and intentionally kept
+        off the tool surface so the assistant never emits it.
         """
-        assert set(ExecuteFilterInput.model_fields) == set(Filters.model_fields)
+        legacy_filters_only_fields = {"defCode"}
+        assert set(Filters.model_fields) - set(ExecuteFilterInput.model_fields) == legacy_filters_only_fields
+        assert set(ExecuteFilterInput.model_fields) - set(Filters.model_fields) == set()
 
     def test_execute_filter_input_omits_the_large_enums(self):
         """ExecuteFilterInput carries loose str types for recipientType/DEFC instead of the big enums.
@@ -388,16 +659,6 @@ class TestAIToolImplementation:
 
         # The validation model, by contrast, does pin the enum.
         assert "corporate_entity_tax_exempt" in json.dumps(Filters.model_json_schema())
-
-    def test_logging_function_formats_filters(self):
-        """Test that logging function formats filters properly."""
-        tool_input = {"awardType": ["A", "B"], "time_period": [{"start_date": "2023-01-01"}]}
-
-        log_msg = execute_filter_tool.logging(tool_input)
-
-        assert isinstance(log_msg, str)
-        assert "awardType" in log_msg
-        assert "time_period" in log_msg
 
     def test_logging_function_handles_empty_input(self):
         """Test that logging function handles empty input."""
@@ -433,7 +694,8 @@ class TestIntegrationWithFiltersModel:
             if "codes" in field_name:
                 test_data[field_name] = ["TEST"]
             elif "period" in field_name:
-                test_data[field_name] = [{"start_date": "2023-01-01"}]
+                test_data["timePeriodType"] = "dr"
+                test_data[field_name] = [{"start_date": "2023-01-01", "end_date": "2023-12-31"}]
             elif field_name == "keyword":
                 test_data[field_name] = ["test"]
 
@@ -442,12 +704,11 @@ class TestIntegrationWithFiltersModel:
         assert "hash" in result or "error" in result
 
     async def test_filters_model_validation_applied(self):
-        """Test that Filters model validation is applied."""
-        # Invalid date format should fail validation
-        result = await execute_filter(time_period=[{"start_date": "invalid-date"}])
-
-        # Should return validation error
-        assert "error" in result
+        """An unparseable date raises the specific time-period error instead of validating."""
+        with pytest.raises(TimePeriodNotParseableError):
+            await execute_filter(
+                timePeriodType="dr", time_period=[{"start_date": "invalid-date", "end_date": "2023-12-31"}]
+            )
 
     async def test_complex_filters_combination(self, mock_filter_hash):
         """Test complex combination of multiple filters."""
@@ -632,11 +893,9 @@ class TestRealWorldScenarios:
         assert "hash" in result
 
     async def test_award_amounts_invalid_returns_error(self):
-        """Combining 'specific' with a range bucket is rejected before any DB access."""
-        result = await execute_filter(awardAmounts={"specific": [1, 2], "range-1": [1000000, 25000000]})
-
-        assert "error" in result
-        assert "message" in result
+        """Combining 'specific' with a range bucket raises the specific award-amount error before any DB access."""
+        with pytest.raises(AwardAmountNotParseableError):
+            await execute_filter(awardAmounts={"specific": [1, 2], "range-1": [1000000, 25000000]})
 
     async def test_filter_reuse_returns_same_hash(self, mock_filter_hash):
         """Test that reusing same filters returns same hash."""

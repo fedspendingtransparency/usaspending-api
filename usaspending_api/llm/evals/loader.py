@@ -85,6 +85,8 @@ def parse_expected_output(value: Any, case_id: str) -> dict[str, Any]:
 
     if "keyword" in result:
         result["keyword"] = {v: v for v in result["keyword"]}
+    if "selectedAwardIDs" in result:
+        result["selectedAwardIDs"] = {v: v for v in result["selectedAwardIDs"]}
 
     return result
 
