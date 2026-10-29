@@ -52,8 +52,8 @@ class AITool(BaseModel):
 
 
 class AIToolResult(BaseModel):
-    instructions: str = Field(default="", description="Instructions for llm in event of certain tool return cases")
     results: dict = Field(default_factor=dict, description="Tool output to be incorporated into resulting filter")
+    instructions: str | None = Field(default=None, description="Instructions for llm in certain tool return cases")
 
 
 class LocationFilter(BaseModel):

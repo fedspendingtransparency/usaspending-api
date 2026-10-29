@@ -4,7 +4,7 @@ from typing import Any
 from opensearchpy.helpers.query import Q as ES_Q
 
 from usaspending_api.common.elasticsearch.search_wrappers import AsyncRecipientSearch
-from usaspending_api.llm.models.py_models import AITool, AIToolDescription, AIToolResult, Filters
+from usaspending_api.llm.models.py_models import AITool, AIToolDescription, AIToolResult
 from usaspending_api.search.v2.es_sanitization import es_sanitize
 
 logger = logging.getLogger(__name__)
@@ -56,7 +56,7 @@ class RecipientLookupTool:
                 await search.client.close()
 
         result = self._extract_recipient_names(response, query_upper)
-        recipient_count = len(result.selectedRecipients)
+        recipient_count = len(result["selectedRecipients"])
 
         # Log zero results as a warning for quality monitoring.
         if recipient_count == 0:
@@ -73,7 +73,7 @@ class RecipientLookupTool:
             f"Recipient lookup completed: query='{query}', recipient_names_count={recipient_count}",
             extra={"query": query, "recipient_names_count": recipient_count},
         )
-        return AIToolResult(results={"selectedRecipients": result.selectedRecipients})
+        return AIToolResult(results=result)
 
     def _build_search(self, query_upper: str, top_k: int) -> AsyncRecipientSearch:
         should_queries = []
@@ -106,7 +106,7 @@ class RecipientLookupTool:
             .sort({"_score": {"order": "desc"}})[:top_k]
         )
 
-    def _extract_recipient_names(self, response: Any, query_upper: str) -> Filters:
+    def _extract_recipient_names(self, response: Any, query_upper: str) -> dict[str, list[str]]:
         recipient_names = []
         seen_values = set()
         for hit in response.hits:
@@ -115,7 +115,7 @@ class RecipientLookupTool:
             # unambiguous hit: return only the matched identifier the caller searched by.
             matched_identifier = self._matched_identifier(hit_dict, query_upper)
             if matched_identifier:
-                return Filters(selectedRecipients=[matched_identifier])
+                return {"selectedRecipients": [matched_identifier]}
 
             recipient_name = hit_dict.get("recipient_name")
 
@@ -123,7 +123,7 @@ class RecipientLookupTool:
                 continue
             seen_values.add(recipient_name)
             recipient_names.append(recipient_name)
-        return Filters(selectedRecipients=recipient_names)
+        return {"selectedRecipients": recipient_names}
 
     @staticmethod
     def _matched_identifier(hit_dict: dict, query_upper: str) -> str | None:

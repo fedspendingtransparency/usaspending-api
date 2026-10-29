@@ -11,7 +11,7 @@ from pgvector.django import CosineDistance
 from usaspending_api.accounts.models.treasury_appropriation_account import TreasuryAppropriationAccount
 from usaspending_api.llm.embeddings.embedding_generator import EmbeddingGenerator
 from usaspending_api.llm.models.db_models import AIModel
-from usaspending_api.llm.models.py_models import AITool, AIToolDescription, CodeLists, Filters
+from usaspending_api.llm.models.py_models import AITool, AIToolDescription, AIToolResult
 from usaspending_api.llm.tools.exceptions import (
     AssistanceListingNotRecognizedError,
     NaicsCodeNotRecognizedError,
@@ -182,20 +182,17 @@ class CodeLookupTool:
         inclusion: Literal["require", "exclude"] = "require",
         top_k: int = 20,
         query_fanout: int | None = 3,
-    ) -> Filters | dict[str, Any]:
+    ) -> AIToolResult:
         """
         Hybrid search for various code types combining text matching and vector similarity.
         """
         if code_type not in CODE_TYPE_CONFIGS:
-            return {
-                "error": f"Unsupported code type: {code_type}. Supported types: {list(CODE_TYPE_CONFIGS.keys())}",
-                "results": [],
-            }
-        elif inclusion not in ["require", "exclude"]:
-            return {
-                "error": f"Unsupported code inclusion mode: {inclusion}. Supported types: [require, exclude]",
-                "results": [],
-            }
+            return AIToolResult(
+                results={
+                    "error": f"Unsupported code type: {code_type}. Supported types: {list(CODE_TYPE_CONFIGS.keys())}",
+                    "results": [],
+                }
+            )
 
         config = CODE_TYPE_CONFIGS[code_type]
         budget_bureau_names = {}
@@ -204,23 +201,11 @@ class CodeLookupTool:
         if codes is None:
             codes = await self._handle_hybrid_search(query, config, code_type, budget_bureau_names, top_k, query_fanout)
 
-        final_codes = list(self._flatten_codes(codes["hierarchy"]))
-        if len(final_codes) == 0:
+        if codes["total_codes"] == 0:
             error_class, label = CODE_NOT_RECOGNIZED_ERRORS[code_type]
             raise error_class(f"{label}: {query}")
 
-        results = Filters()
-        if code_type == "cfda":
-            cfda_codes = {}
-            for code in final_codes:
-                cfda_codes[code] = {}
-            results.selectedCFDA = cfda_codes
-        else:
-            code_lists = CodeLists()
-            code_lists.__setattr__(inclusion, final_codes)
-            results.__setattr__(f"{code_type}Codes", code_lists)
-
-        return results
+        return AIToolResult(results=codes)
 
     async def _handle_exact_search(
         self,
@@ -523,13 +508,6 @@ class CodeLookupTool:
                 count += self._count_codes_in_tree(child)
         return count
 
-    def _flatten_codes(self, hierarchy: dict) -> set[str]:
-        codes = set()
-        for code, node in hierarchy.items():
-            codes.add(code)
-            codes.update(self._flatten_codes(node.get("children", {})))
-        return codes
-
 
 lookup_code_tool = AITool(
     function=CodeLookupTool().lookup_codes,
@@ -623,12 +601,6 @@ lookup_code_tool = AITool(
                     "type": "string",
                     "enum": ["naics", "psc", "cfda", "tas"],
                     "description": "Type of code to search for",
-                },
-                "inclusion": {
-                    "type": "string",
-                    "enum": ["require", "exclude"],
-                    "description": "Optional. Whether the generated codes should be required or blocked from results",
-                    "default": "require",
                 },
                 "top_k": {"type": "integer", "description": "Number of results to return (default: 20)", "default": 20},
             },

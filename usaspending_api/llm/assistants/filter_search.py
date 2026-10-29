@@ -296,7 +296,7 @@ class FilterSearchAssistant:
             try:
                 tool_output = await tool.function(**tool_use["input"])
                 execution_time_ms = (time.time() - tool_start_time) * 1000
-                result = tool_output.results
+                result = tool_output.model_dump(exclude_none=True)
                 t.result = result
                 await t.asave()
 
