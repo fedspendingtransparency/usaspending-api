@@ -2,7 +2,7 @@
   pk: 1
   fields:
     name: filter-search
-    ai_model: 4  # nova micro model
+    ai_model: 5  # nova pro model
     system_prompt: 3  # filter-preference-v3 prompt
     inference_config:
       temperature: 0.0

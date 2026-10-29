@@ -1347,6 +1347,64 @@ class TestCodeListsSchema:
         assert set(definition["properties"]) == {"require", "exclude"}
 
 
+class TestCodePathRebuilding:
+    """The llm doesn't reliably assemble every tier of a PSC/TAS path, but a path is fully determined by its last
+    code, so it is rebuilt from that code."""
+
+    @pytest.mark.parametrize(
+        "path, expected",
+        [
+            (["Research and Development", "AA11"], ["Research and Development", "AA", "AA1", "AA11"]),
+            (["Service", "B502"], ["Service", "B", "B5", "B502"]),
+            (["Service", "D", "D3", "D301"], ["Service", "D", "D3", "D301"]),
+            (["Product", "10", "1005"], ["Product", "10", "1005"]),
+            # The group is derived from the code, so a wrong one is corrected
+            (["Product", "B502"], ["Service", "B", "B5", "B502"]),
+        ],
+    )
+    def test_psc_paths_are_rebuilt_from_the_last_code(self, path, expected):
+        model = PscCodeLists(require=[path], exclude=[path])
+
+        assert model.require == [expected]
+        assert model.exclude == [expected]
+
+    def test_psc_group_only_path_is_unchanged(self):
+        assert PscCodeLists(require=[["Service"]]).require == [["Service"]]
+
+    def test_psc_invalid_code_is_still_rejected(self):
+        with pytest.raises(ValidationError) as exc_info:
+            PscCodeLists(require=[["Service", "too-long-code"]])
+
+        assert "one to four character" in str(exc_info.value)
+
+    @pytest.mark.parametrize(
+        "path, expected",
+        [
+            (
+                ["310", "310-2012", "310-2012/2012-3200-000"],
+                ["310", "310-3200", "310-2012/2012-3200-000"],
+            ),
+            (
+                ["wrong", "wrong-0000", "019-011-X-1071-000"],
+                ["011", "011-1071", "019-011-X-1071-000"],
+            ),
+            (["310", "310-3200"], ["310", "310-3200"]),
+            (["310"], ["310"]),
+        ],
+    )
+    def test_tas_paths_are_rebuilt_from_the_rendering_label(self, path, expected):
+        model = TasCodeLists(require=[path], exclude=[path])
+
+        assert model.require == [expected]
+        assert model.exclude == [expected]
+
+    def test_tas_path_that_is_too_long_is_still_rejected(self):
+        with pytest.raises(ValidationError) as exc_info:
+            TasCodeLists(require=[["a", "b", "c", "d"]])
+
+        assert "between 1 and 3 elements" in str(exc_info.value)
+
+
 class TestSelectedCFDA:
     """Tests for the SelectedCFDA model and its wiring into Filters/ExecuteFilterInput.selectedCFDA
     (keyed by CFDA program number, mirroring the SelectedAgency re-keying pattern)."""

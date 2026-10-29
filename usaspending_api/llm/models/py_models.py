@@ -10,6 +10,7 @@ from pydantic_core import PydanticCustomError
 from usaspending_api.awards.v2.lookups.lookups import all_awards_types_to_category
 from usaspending_api.common.helpers.orm_helpers import award_types_are_valid_groups
 from usaspending_api.llm.tools.helpers.code_counts import build_naics_counts, build_psc_counts, build_tas_counts
+from usaspending_api.llm.tools.helpers.code_paths import build_psc_path, build_tas_path
 from usaspending_api.references.helpers import aget_defc_code_details, get_defc_code_details
 from usaspending_api.references.v2.views.filter_tree.psc_filter_tree import PSC_GROUPS
 
@@ -312,6 +313,26 @@ class PscCodeLists(CodeLists):
         ),
     ]
 
+    @field_validator("require", "exclude", mode="before")
+    @classmethod
+    def rebuild_psc_paths(cls, paths: Any) -> Any:
+        """A path is fully determined by its last code, so rebuild it rather than trusting the llm to assemble every
+        tier correctly (e.g. ["Research and Development", "AA11"] becomes [..., "AA", "AA1", "AA11"]). Anything that
+        doesn't look like a path ending in a code is left alone for the validation below to reject."""
+        if not isinstance(paths, list):
+            return paths
+
+        code_pattern = re.compile(r"[A-Z0-9]{1,4}")
+        return [
+            build_psc_path(path[-1])
+            if isinstance(path, list)
+            and len(path) > 1
+            and all(isinstance(segment, str) for segment in path)
+            and code_pattern.fullmatch(path[-1])
+            else path
+            for path in paths
+        ]
+
     @field_validator("require", "exclude", mode="after")
     @classmethod
     def validate_psc_paths(cls, paths: list[list[str]]) -> list[list[str]]:
@@ -356,6 +377,23 @@ class TasCodeLists(CodeLists):
             json_schema_extra={"examples": [[["535", "535-2724"]]]},
         ),
     ]
+
+    @field_validator("require", "exclude", mode="before")
+    @classmethod
+    def rebuild_tas_paths(cls, paths: Any) -> Any:
+        """Rebuild full paths from their TAS rendering label, which determines the agency and AID-MAIN above it,
+        rather than trusting the llm to assemble them (e.g. ["310", "310-2012", "310-2012/2012-3200-000"] becomes
+        ["310", "310-3200", "310-2012/2012-3200-000"]). Shorter paths are left as they are."""
+        if not isinstance(paths, list):
+            return paths
+
+        rebuilt = []
+        for path in paths:
+            if isinstance(path, list) and len(path) == 3 and all(isinstance(segment, str) for segment in path):
+                full_path = build_tas_path(path[2])
+                path = full_path if len(full_path) == 3 else path
+            rebuilt.append(path)
+        return rebuilt
 
     @field_validator("require", "exclude", mode="after")
     @classmethod
@@ -655,7 +693,6 @@ class Filters(BaseModel):
     pricingType: list[str] = Field(default_factory=list)
     setAside: list[SetAsideCode] = Field(default_factory=list)
     extentCompeted: list[ExtentCompetedCode] = Field(default_factory=list)
-    treasuryAccounts: dict[str, Any] = Field(default_factory=dict)
     tasCodes: TasCodeLists = Field(default_factory=TasCodeLists)
     awardDescription: str = ""
     filterNewAwardsOnlySelected: bool = False
@@ -930,10 +967,26 @@ class ExecuteFilterInput(BaseModel):
     )
     selectedCFDA: dict[str, SelectedCFDA] = Field(
         default_factory=dict,
-        description="CFDA / Assistance Listing filter keyed by program number. Use the lookup_code tool.",
+        description=(
+            "CFDA / Assistance Listing filter keyed by program number. Grants and assistance programs for a "
+            "subject are found with the lookup_codes tool using code_type 'cfda'. Pass its selectedCFDA value "
+            "through unchanged."
+        ),
     )
-    naicsCodes: NaicsCodeLists = Field(default_factory=NaicsCodeLists)
-    pscCodes: PscCodeLists = Field(default_factory=PscCodeLists)
+    naicsCodes: NaicsCodeLists = Field(
+        default_factory=NaicsCodeLists,
+        description=(
+            "Industry (NAICS) filter. Get the values from the lookup_codes tool with code_type 'naics' and pass "
+            "them through unchanged."
+        ),
+    )
+    pscCodes: PscCodeLists = Field(
+        default_factory=PscCodeLists,
+        description=(
+            "Product and Service Code (PSC) filter for what is being purchased. Get the values from the "
+            "lookup_codes tool with code_type 'psc' and pass them through unchanged."
+        ),
+    )
     defCodes: DEFCodeListsWithoutEnum = Field(
         default_factory=DEFCodeListsWithoutEnum,
         description=(
@@ -997,10 +1050,13 @@ class ExecuteFilterInput(BaseModel):
             "  NDO  Non-Competitive Delivery Order"
         ),
     )
-    treasuryAccounts: dict[str, Any] = Field(
-        default_factory=dict, description="Treasury Account Symbol (TAS) filter keyed by identifier."
+    tasCodes: TasCodeLists = Field(
+        default_factory=TasCodeLists,
+        description=(
+            "Treasury account (TAS) filter. Get the values from the lookup_codes tool with code_type 'tas' and "
+            "pass them through unchanged."
+        ),
     )
-    tasCodes: TasCodeLists = Field(default_factory=TasCodeLists)
     awardDescription: str = Field(
         default="",
         description=(
