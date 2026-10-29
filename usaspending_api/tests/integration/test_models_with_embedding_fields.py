@@ -96,6 +96,7 @@ def test_generate_embedding_integration(mock_generator_class, model_class, facto
     mock_generator_class.return_value = mock_generator
 
     instance = model_class.objects.create(**factory_data)
+    instance.save(auto_generate_embedding=True)
 
     assert instance.embedding is not None
     assert len(instance.embedding) == dimensions
