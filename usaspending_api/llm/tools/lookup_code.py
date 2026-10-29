@@ -5,13 +5,20 @@ from typing import Any, Callable, Literal
 from django.contrib.postgres.search import TrigramSimilarity
 from django.db.models import F, FloatField, Model, QuerySet, Value, Window
 from django.db.models.functions import Greatest, RowNumber
-from django.utils.functional import cached_property
 from pgvector.django import CosineDistance
 
 from usaspending_api.accounts.models.treasury_appropriation_account import TreasuryAppropriationAccount
 from usaspending_api.llm.embeddings.embedding_generator import EmbeddingGenerator
 from usaspending_api.llm.models.db_models import AIModel
-from usaspending_api.llm.models.py_models import AITool, AIToolDescription, CodeLists, Filters
+from usaspending_api.llm.models.py_models import (
+    AITool,
+    AIToolDescription,
+    AIToolResult,
+    NaicsCodeLists,
+    PscCodeLists,
+    SelectedCFDA,
+    TasCodeLists,
+)
 from usaspending_api.llm.tools.exceptions import (
     AssistanceListingNotRecognizedError,
     NaicsCodeNotRecognizedError,
@@ -77,6 +84,14 @@ CODE_TYPE_CONFIGS = {
         get_parent_code=hierarchy_parsers.get_tas_parent,
         get_all_ancestors=hierarchy_parsers.get_tas_ancestors,
     ),
+}
+
+
+# The filter model used to validate and format the codes found for each code type (CFDA has no require/exclude lists)
+CODE_LISTS_MODELS = {
+    "naics": NaicsCodeLists,
+    "psc": PscCodeLists,
+    "tas": TasCodeLists,
 }
 
 
@@ -158,19 +173,6 @@ class SearchResultNode:
     def is_root(self) -> bool:
         return self._is_root
 
-    @cached_property
-    def leaf_node_count(self) -> int:
-        def _node_count(node: SearchResultNode, counter: int = 0) -> int:
-            if len(node.children) > 0:
-                for child_node in node.children:
-                    counter = _node_count(child_node, counter)
-            else:
-                return counter + 1
-
-            return counter
-
-        return _node_count(self)
-
 
 class CodeLookupTool:
     """Generalized tool for looking up various code types using hybrid text + vector similarity search"""
@@ -182,20 +184,15 @@ class CodeLookupTool:
         inclusion: Literal["require", "exclude"] = "require",
         top_k: int = 20,
         query_fanout: int | None = 3,
-    ) -> Filters | dict[str, Any]:
+    ) -> AIToolResult:
         """
         Hybrid search for various code types combining text matching and vector similarity.
+
+        Returns the matched codes in the shape the execute_filter tool expects for that code type.
         """
-        if code_type not in CODE_TYPE_CONFIGS:
-            return {
-                "error": f"Unsupported code type: {code_type}. Supported types: {list(CODE_TYPE_CONFIGS.keys())}",
-                "results": [],
-            }
-        elif inclusion not in ["require", "exclude"]:
-            return {
-                "error": f"Unsupported code inclusion mode: {inclusion}. Supported types: [require, exclude]",
-                "results": [],
-            }
+
+        if msg := await self.validate_input(code_type, inclusion):
+            return AIToolResult(results={"error": msg})
 
         config = CODE_TYPE_CONFIGS[code_type]
         budget_bureau_names = {}
@@ -204,23 +201,46 @@ class CodeLookupTool:
         if codes is None:
             codes = await self._handle_hybrid_search(query, config, code_type, budget_bureau_names, top_k, query_fanout)
 
-        final_codes = list(self._flatten_codes(codes["hierarchy"]))
-        if len(final_codes) == 0:
+        # A query that is itself a code in the hierarchy (e.g. the TAS agency "309") selects that code alone, even
+        # when the node is only an ancestor of what matched. CFDA is excluded as only its programs can be selected.
+        query_node = None if code_type == "cfda" else self._find_node(codes["hierarchy"], query)
+        if query_node and not (code_type == "psc" and query_node[0] in PSC_GROUPS):
+            selected = [query_node]
+        else:
+            selected = self._select_matched_nodes(codes["hierarchy"], code_type)
+        if len(selected) == 0:
             error_class, label = CODE_NOT_RECOGNIZED_ERRORS[code_type]
             raise error_class(f"{label}: {query}")
 
-        results = Filters()
         if code_type == "cfda":
-            cfda_codes = {}
-            for code in final_codes:
-                cfda_codes[code] = {}
-            results.selectedCFDA = cfda_codes
-        else:
-            code_lists = CodeLists()
-            code_lists.__setattr__(inclusion, final_codes)
-            results.__setattr__(f"{code_type}Codes", code_lists)
+            programs = {
+                code: SelectedCFDA(identifier=code, program_number=code, program_title=node["description"]).model_dump(
+                    exclude_none=True
+                )
+                for code, node in selected
+                if "." in code
+            }
+            return AIToolResult(results={"selectedCFDA": programs})
 
-        return results
+        values = [self._build_filter_value(code, code_type, config) for code, _ in selected]
+        code_lists = CODE_LISTS_MODELS[code_type](**{inclusion: values})
+        # 'counts' is calculated with the sync ORM when it's read, so leave it out of what is returned
+        return AIToolResult(results={f"{code_type}Codes": code_lists.model_dump(exclude={"counts"})})
+
+    @staticmethod
+    async def validate_input(
+        code_type: Literal["naics", "psc", "cfda", "tas"],
+        inclusion: Literal["require", "exclude"] = "require",
+    ) -> str | None:
+        msg = None
+        if code_type not in CODE_TYPE_CONFIGS:
+            msg = f"Unsupported code type: {code_type}. Supported types: {list(CODE_TYPE_CONFIGS.keys())}"
+        elif inclusion not in ["require", "exclude"]:
+            msg = f"Unsupported code inclusion mode: {inclusion}. Supported types: [require, exclude]"
+        elif code_type == "cfda" and inclusion == "exclude":
+            msg = "Assistance listings can only be required, not excluded."
+
+        return msg
 
     async def _handle_exact_search(
         self,
@@ -414,7 +434,7 @@ class CodeLookupTool:
                 config=config,
                 is_root=True,
             )
-            hierarchy[root_code] = {**root_node.to_dict(), "leaf_node_count": root_node.leaf_node_count}
+            hierarchy[root_code] = root_node.to_dict()
         if code_type == "psc":
             hierarchy = self._group_psc_roots_by_tier1(hierarchy)
         sorted_hierarchy = dict(
@@ -523,12 +543,55 @@ class CodeLookupTool:
                 count += self._count_codes_in_tree(child)
         return count
 
-    def _flatten_codes(self, hierarchy: dict) -> set[str]:
-        codes = set()
+    def _find_node(self, hierarchy: dict, code: str) -> tuple[str, dict] | None:
+        """Find the node for a code (case-insensitive) anywhere in the hierarchy, as a (code, node) pair."""
+        for node_code, node in hierarchy.items():
+            if node_code.lower() == code.strip().lower():
+                return node_code, node
+            if found := self._find_node(node.get("children", {}), code):
+                return found
+        return None
+
+    def _select_matched_nodes(self, hierarchy: dict, code_type: str) -> list[tuple[str, dict]]:
+        """Pick the codes the search actually matched, as (code, node) pairs.
+
+        The hierarchy also holds ancestors that were only added for context (they have a score of 0), and selecting
+        one of those would select everything beneath it. PSC Tier1 group labels are skipped for the same reason; their
+        score is borrowed from their children. A matched code already covers all of the codes beneath it, so its
+        descendants aren't selected separately.
+        """
+        selected = []
         for code, node in hierarchy.items():
-            codes.add(code)
-            codes.update(self._flatten_codes(node.get("children", {})))
-        return codes
+            is_psc_group_label = code_type == "psc" and code in PSC_GROUPS
+            if node["score"] > 0 and not is_psc_group_label:
+                selected.append((code, node))
+            else:
+                selected.extend(self._select_matched_nodes(node.get("children", {}), code_type))
+        return selected
+
+    @staticmethod
+    def _build_filter_value(code: str, code_type: str, config: CodeTypeConfig) -> str | list[str]:
+        """Format a code the way the filter's 'require'/'exclude' expect it: a flat code for NAICS and a path from the
+        root node down for PSC and TAS."""
+        if code_type == "naics":
+            return code
+        if code_type == "tas":
+            path = [code]
+            while parent := config.get_parent_code(path[0]):
+                path.insert(0, parent)
+            return path
+
+        # PSC paths start with a Tier1 group label followed by a segment for each tier the code sits under, e.g.
+        # ["Service", "B", "B5", "B502"]. Each group has its own tier lengths. "A" is the R&D group itself.
+        if code[0].isdigit():
+            group, tier_lengths = PscGroupLabels.PRODUCT, (2, 4)
+        elif code[0] in PSC_GROUPS[PscGroupLabels.RESEARCH_AND_DEVELOPMENT].terms:
+            group = PscGroupLabels.RESEARCH_AND_DEVELOPMENT
+            tier_lengths = (2, 4) if code.startswith("AU") else (2, 3, 4)  # AU skips the three character tier
+        else:
+            group, tier_lengths = PscGroupLabels.SERVICE, (1, 2, 4)
+
+        return [str(group), *[code[:length] for length in tier_lengths if length <= len(code)]]
 
 
 lookup_code_tool = AITool(
@@ -556,64 +619,10 @@ lookup_code_tool = AITool(
                from generated text embeddings. The query may also be automatically expanded into
                related variations to broaden semantic recall.
 
-            A hierarchical tree is a data structure that starts with a "root" node and references other
-            nodes in the tier below as "children". There is only one root and all children are capable
-            of having children of their own. Nodes that don't contain any children are considered "leafs".
-            Results are returned as a dictionary containing a total number of codes across all trees and
-            a tree where the first value is the root's code which
-            points to details about the root. Then children of the root, and then their children, are
-            found in each step through the tree. Root nodes are automatically included and nested
-            above their matching children, even if the root itself didn't match the query directly.
-
-            Sample Hierarchical Tree:
-            - 33 | Manufacturing (root) | Leaf Count: 4
-                - 3315 | Foundries
-                    - 331511 | Iron Foundries (leaf)
-                    - 331512 | Steel Investment Foundries (leaf)
-                - 3321 | Forging and Stamping
-                    - 332111 | Iron and Steel Forging (leaf)
-                    - 332112 | Nonferrous Forging (leaf)
-
-            Building on the sample above, it is possible for two independent queries to return trees with
-            the same root. This leaf count should be combined across all of the identical roots based on
-            the "value". Meaning, in the updated sample below a search for "1131", "3315", and "3321" would
-            yield those three codes and a leaf count of 1 for "11" and 4 for "33".
-
-            PSC results carry one extra top tier that NAICS/TAS/CFDA do not have: every root returned for
-            code_type='psc' is nested under one of three synthetic Tier1 group labels - "Research and
-            Development", "Service", or "Product" - with an empty string description. That Tier1 label,
-            not the letter/digit code beneath it, is the true root for PSC: use it (not its child code)
-            as the root value when building the pscCodes filter's "require" paths and "counts" entries.
-
-            Sample Hierarchical Trees with Matching Roots:
-            - 11 | Agriculture, Forestry, Fishing and Hunting (root) | Leaf Count: 1
-                - 1131 | Timber Tract Operations
-                    - 113110 | Timber Tract Operations
-
-            - 33 | Manufacturing (root) | Leaf Count: 2
-                - 3315 | Foundries
-                    - 331511 | Iron Foundries (leaf)
-                    - 331512 | Steel Investment Foundries (leaf)
-
-            - 33 | Manufacturing (root) | Leaf Count: 2
-                - 3321 | Forging and Stamping
-                    - 332111 | Iron and Steel Forging (leaf)
-                    - 332112 | Nonferrous Forging (leaf)
-
-            Examples:
-            - lookup_codes('541330', 'naics') -> Exact match, returns the specific NAICS code
-              and its parent categories.
-            - lookup_codes('5413', 'naics') -> Prefix match, returns all NAICS codes starting
-              with 5413.
-            - lookup_codes('construction', 'naics') -> Semantic/text match, returns relevant
-              construction-related NAICS codes across the hierarchy.
-            - lookup_codes('software', 'psc') -> Semantic/text match, returns software-related
-              Product and Service Codes.
-            - lookup_codes('10.557', 'cfda') -> Exact match, returns the specific CFDA program.
-            - lookup_codes('nutrition assistance', 'cfda') -> Semantic match, returns relevant
-              CFDA programs even if the words don't appear literally in the title.
-            - lookup_codes('012-2020/2021-0123-000', 'tas') -> Exact match, returns the specific
-              Treasury Account Symbol along with its agency and bureau ancestors.
+            The matched codes are returned ready to use in the execute_filter tool, under the key for the
+            code_type (naicsCodes, pscCodes, tasCodes, or selectedCFDA). For naics, pscCodes and tasCodes the
+            codes are placed in "require" or "exclude" based on the inclusion value. Only codes that matched
+            the query are returned.
         """,
         input_schema={
             "type": "object",
