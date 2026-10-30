@@ -7,7 +7,7 @@
     inference_config:
       temperature: 0.0
       topP: 1.0
-      maxTokens: 5000
+      maxTokens: 10_000
       stopSequences: []
     is_active: true
     description: "Initial assistant created via fixture"
