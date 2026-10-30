@@ -167,8 +167,9 @@ class TestFilterSearchAssistant:
 
         assert len(results) == 1
         assert results[0]["type"] == "search_start"
-        assert assistant.client.converse.call_count == 1
-        assert mock_message_create.call_count == 2  # User message + assistant message
+        assert assistant.client.converse.call_count == 2  # Initial call + forced last-ditch call
+        # User query, assistant reply, last-ditch instruction, last-ditch assistant reply
+        assert mock_message_create.call_count == 4
 
     @patch("usaspending_api.llm.models.db_models.Message.objects.acreate", new_callable=AsyncMock)
     async def test_assistant_message_text_is_persisted(self, mock_message_create, assistant):
@@ -378,7 +379,74 @@ class TestFilterSearchAssistant:
                 _ = [event async for event in assistant.search("test query")]
 
         assert assistant.tool_iterations == assistant.MAX_TOOL_ITERATIONS
-        assert assistant.client.converse.call_count == assistant.MAX_TOOL_ITERATIONS + 1
+        assert assistant.client.converse.call_count == assistant.MAX_TOOL_ITERATIONS + 2
+
+        # The pending toolUse from the final loop response is answered, and the last-ditch
+        # instruction shares that user turn instead of creating two consecutive user messages.
+        instruction_index = next(
+            i
+            for i, msg in enumerate(assistant.messages)
+            if msg["role"] == "user" and any("last resort" in block.get("text", "") for block in msg["content"])
+        )
+        instruction_turn = assistant.messages[instruction_index]
+        assert any("toolResult" in block for block in instruction_turn["content"])
+        assert assistant.messages[instruction_index - 1]["role"] == "assistant"
+
+        roles = [msg["role"] for msg in assistant.messages]
+        assert all(a != b for a, b in zip(roles, roles[1:], strict=False))
+
+    @patch("usaspending_api.llm.models.db_models.ToolUse.objects.acreate", new_callable=AsyncMock)
+    @patch("usaspending_api.llm.models.db_models.Message.objects.acreate", new_callable=AsyncMock)
+    async def test_forces_completion_tool(self, mock_message_create, mock_tool_use_create, assistant):
+        """If the model never calls execute_filter, one final call forces it with a keyword instruction."""
+
+        def create_message(**kwargs):
+            mock_message = Mock()
+            mock_message.input_tokens = kwargs.get("input_tokens", 10)
+            mock_message.output_tokens = kwargs.get("output_tokens", 20)
+            mock_message.id = len(assistant.session._test_messages) + 1
+            mock_message.tool_uses = Mock()
+            mock_message.tool_uses.count.return_value = 0
+            assistant.session._test_messages.append(mock_message)
+            return mock_message
+
+        mock_message_create.side_effect = create_message
+        mock_tool_use_create.return_value.asave = AsyncMock()
+
+        text_only_response = {
+            "output": {"message": {"role": "assistant", "content": [{"text": "I need more details."}]}},
+            "usage": {"inputTokens": 10, "outputTokens": 20},
+            "metrics": {"latencyMs": 100},
+            "stopReason": "end_turn",
+        }
+        forced_response = {
+            "output": {
+                "message": {
+                    "role": "assistant",
+                    "content": [
+                        {"toolUse": {"toolUseId": "tool-999", "name": "execute_filter", "input": {"query": "test"}}}
+                    ],
+                }
+            },
+            "usage": {"inputTokens": 10, "outputTokens": 20},
+            "metrics": {"latencyMs": 100},
+            "stopReason": "tool_use",
+        }
+        assistant.client.converse.side_effect = [text_only_response, forced_response]
+
+        results = [event async for event in assistant.search("test query")]
+
+        assert assistant.client.converse.call_count == 2
+        first_call, last_ditch_call = assistant.client.converse.call_args_list
+        assert first_call.kwargs["toolConfig"]["toolChoice"] == {"auto": {}}
+        assert last_ditch_call.kwargs["toolConfig"]["toolChoice"] == {"tool": {"name": assistant.COMPLETION_TOOL_NAME}}
+        assert any(
+            "last resort" in block.get("text", "")
+            for msg in assistant.messages
+            if msg["role"] == "user"
+            for block in msg["content"]
+        )
+        assert any(r["type"] == "search_complete" and r["result"] == "abc123" for r in results)
 
     async def test_tool_config_property(self, assistant, mock_tool):
         """Test that tool_config is properly formatted."""
@@ -388,6 +456,13 @@ class TestFilterSearchAssistant:
         assert len(config["tools"]) == 2
         assert "toolSpec" in config["tools"][0]
         assert "inputSchema" in config["tools"][0]["toolSpec"]
+
+    async def test_tool_config_always_uses_auto_tool_choice(self, assistant):
+        """The main loop leaves tool selection to the model; forcing only happens in the last-ditch call."""
+        assert (await assistant.aget_tool_config())["toolChoice"] == {"auto": {}}
+
+        assistant.tool_iterations = assistant.MAX_TOOL_ITERATIONS - 1
+        assert (await assistant.aget_tool_config())["toolChoice"] == {"auto": {}}
 
     @pytest.mark.django_db
     async def test_tool_config_patches_defcodes_description_from_db(self, mock_assistant, mock_session):
