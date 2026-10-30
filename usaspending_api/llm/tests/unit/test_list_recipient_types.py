@@ -34,12 +34,14 @@ class TestRecipientTypesData:
 class TestListRecipientTypesFunction:
     """Tests for the list_recipient_types function"""
 
-    def test_returns_the_catalog(self):
-        assert list_recipient_types() is RECIPIENT_TYPES
+    async def test_returns_the_catalog(self):
+        output = await list_recipient_types()
+        assert output.results == RECIPIENT_TYPES
 
-    def test_callable_with_no_input(self):
-        """The assistant invokes tools as function(**tool_input); this tool takes no input."""
-        assert list_recipient_types_tool.function(**{}) is RECIPIENT_TYPES
+    async def test_callable_with_no_input(self):
+        """The assistant invokes tools as `await function(**tool_input)`; this tool takes no input."""
+        output = await list_recipient_types_tool.function(**{})
+        assert output.results == RECIPIENT_TYPES
 
 
 class TestListRecipientTypesTool:

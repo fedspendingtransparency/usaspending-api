@@ -4,7 +4,7 @@ from typing import Any
 from opensearchpy.helpers.query import Q as ES_Q
 
 from usaspending_api.common.elasticsearch.search_wrappers import AsyncRecipientSearch
-from usaspending_api.llm.models.py_models import AITool, AIToolDescription
+from usaspending_api.llm.models.py_models import AITool, AIToolDescription, AIToolResult
 from usaspending_api.search.v2.es_sanitization import es_sanitize
 
 logger = logging.getLogger(__name__)
@@ -25,12 +25,12 @@ class RecipientLookupTool:
         self,
         query: str,
         top_k: int = 10,
-    ) -> dict[str, list[str]]:
+    ) -> AIToolResult:
         """
         Search for recipients by name, uei, duns, and return recipient names.
         """
         if not query or not query.strip():
-            return {"errors": ["Query cannot be empty."]}
+            return AIToolResult(results={"error": "Query cannot be empty."})
 
         top_k = max(1, min(top_k, 100))
         query_upper = es_sanitize(query).strip().upper()
@@ -40,8 +40,8 @@ class RecipientLookupTool:
             extra={"query": query, "top_k": top_k},
         )
 
+        search = self._build_search(query_upper, top_k)
         try:
-            search = self._build_search(query_upper, top_k)
             logger.debug(f"Executing OpenSearch query for recipient: query='{query}'")
             response = await search.handle_execute()
             logger.info(
@@ -50,10 +50,13 @@ class RecipientLookupTool:
             )
         except Exception as exception:
             logger.error(f"OpenSearch query failed for query='{query}': {str(exception)}", exc_info=True)
-            return {"errors": [str(exception)]}
+            return AIToolResult(results={"error": str(exception)})
+        finally:
+            if search.client is not None:
+                await search.client.close()
 
         result = self._extract_recipient_names(response, query_upper)
-        recipient_count = len(result.get("recipient_names", []))
+        recipient_count = len(result["selectedRecipients"])
 
         # Log zero results as a warning for quality monitoring.
         if recipient_count == 0:
@@ -65,13 +68,12 @@ class RecipientLookupTool:
                     "zero_results": True,
                 },
             )
-            result = {**result, "messages": ["No results returned for recipient lookup."]}
 
         logger.info(
             f"Recipient lookup completed: query='{query}', recipient_names_count={recipient_count}",
             extra={"query": query, "recipient_names_count": recipient_count},
         )
-        return result
+        return AIToolResult(results=result)
 
     def _build_search(self, query_upper: str, top_k: int) -> AsyncRecipientSearch:
         should_queries = []
@@ -113,7 +115,7 @@ class RecipientLookupTool:
             # unambiguous hit: return only the matched identifier the caller searched by.
             matched_identifier = self._matched_identifier(hit_dict, query_upper)
             if matched_identifier:
-                return {"recipient_names": [matched_identifier]}
+                return {"selectedRecipients": [matched_identifier]}
 
             recipient_name = hit_dict.get("recipient_name")
 
@@ -121,7 +123,7 @@ class RecipientLookupTool:
                 continue
             seen_values.add(recipient_name)
             recipient_names.append(recipient_name)
-        return {"recipient_names": recipient_names}
+        return {"selectedRecipients": recipient_names}
 
     @staticmethod
     def _matched_identifier(hit_dict: dict, query_upper: str) -> str | None:

@@ -4,7 +4,19 @@ import pytest
 from model_bakery import baker
 from pydantic import ValidationError
 
-from usaspending_api.llm.models.py_models import AwardAmounts, Filters, InferenceConfig, clear_defc_rows_cache
+from usaspending_api.llm.models.py_models import (
+    AWARD_TYPE_LABELS,
+    AwardAmounts,
+    ExecuteFilterInput,
+    Filters,
+    InferenceConfig,
+    NaicsCodeLists,
+    PscCodeLists,
+    SelectedAgency,
+    SelectedCFDA,
+    TasCodeLists,
+    clear_defc_rows_cache,
+)
 
 
 class TestInferenceConfig:
@@ -297,6 +309,81 @@ class TestSelectedAgencyRekeying:
         assert filters.selectedAwardingAgencies == {}
 
 
+class TestSelectedAgencySubtierDefaulting:
+    """Tests for the subtier_agency defaulting/validation on the SelectedAgency model.
+
+    The frontend reads subtier_agency.name/.abbreviation unconditionally, so a toptier-only selection must mirror
+    the toptier agency's own name/abbreviation into subtier_agency rather than leaving it None.
+    """
+
+    TOPTIER_AGENCY = {
+        "id": 126,
+        "toptier_code": "097",
+        "abbreviation": "DOD",
+        "name": "Department of Defense",
+    }
+
+    def test_toptier_selection_defaults_subtier_agency_to_toptier(self):
+        agency = SelectedAgency(
+            id=1173,
+            agencyType="toptier",
+            toptier_flag=True,
+            toptier_agency=self.TOPTIER_AGENCY,
+        )
+
+        assert agency.subtier_agency is not None
+        assert agency.subtier_agency.abbreviation == "DOD"
+        assert agency.subtier_agency.name == "Department of Defense"
+
+    def test_toptier_agency_without_abbreviation_defaults_to_empty_string(self):
+        """Some toptier agencies have a NULL abbreviation in the DB; lookup_agencies must not crash on them."""
+        agency = SelectedAgency(
+            id=1173,
+            agencyType="toptier",
+            toptier_flag=True,
+            toptier_agency={**self.TOPTIER_AGENCY, "abbreviation": None},
+        )
+
+        assert agency.toptier_agency.abbreviation == ""
+        assert agency.subtier_agency.abbreviation == ""
+
+    def test_subtier_selection_keeps_its_own_subtier_agency(self):
+        agency = SelectedAgency(
+            id=42,
+            agencyType="subtier",
+            toptier_flag=False,
+            toptier_agency=self.TOPTIER_AGENCY,
+            subtier_agency={"abbreviation": "USA", "name": "Department of the Army"},
+        )
+
+        assert agency.subtier_agency.abbreviation == "USA"
+        assert agency.subtier_agency.name == "Department of the Army"
+
+    def test_subtier_selection_without_subtier_agency_is_rejected(self):
+        with pytest.raises(ValidationError) as exc_info:
+            SelectedAgency(
+                id=42,
+                agencyType="subtier",
+                toptier_flag=False,
+                toptier_agency=self.TOPTIER_AGENCY,
+            )
+
+        assert "subtier_agency is required when agencyType='subtier'" in str(exc_info.value)
+
+    def test_serialized_toptier_selection_always_includes_subtier_agency(self):
+        """exclude_none=True (used when persisting to FilterHash) must not drop subtier_agency."""
+        agency = SelectedAgency(
+            id=1173,
+            agencyType="toptier",
+            toptier_flag=True,
+            toptier_agency=self.TOPTIER_AGENCY,
+        )
+
+        dumped = agency.model_dump(exclude_none=True)
+
+        assert dumped["subtier_agency"] == {"abbreviation": "DOD", "name": "Department of Defense"}
+
+
 class TestRecipientType:
     """Tests for recipientType field in Filters model"""
 
@@ -541,8 +628,105 @@ class TestRecipientType:
         assert len(filters.recipientType) == len(all_types)
 
 
+class TestTimePeriod:
+    """Tests for the start_date/end_date format validation on the TimePeriod model"""
+
+    def test_time_period_accepts_valid_dates(self):
+        filters = Filters(timePeriodType="dr", time_period=[{"start_date": "2023-01-15", "end_date": "2023-12-31"}])
+
+        assert filters.time_period[0].start_date == "2023-01-15"
+        assert filters.time_period[0].end_date == "2023-12-31"
+
+    def test_time_period_rejects_unparseable_start_date(self):
+        with pytest.raises(ValidationError) as exc_info:
+            Filters(timePeriodType="dr", time_period=[{"start_date": "not-a-date", "end_date": "2023-12-31"}])
+
+        assert "not a valid date" in str(exc_info.value)
+
+    def test_time_period_rejects_unparseable_end_date(self):
+        with pytest.raises(ValidationError) as exc_info:
+            Filters(timePeriodType="dr", time_period=[{"start_date": "2023-01-15", "end_date": "12/31/2023"}])
+
+        assert "not a valid date" in str(exc_info.value)
+
+    def test_time_period_rejects_malformed_but_numeric_date(self):
+        """Dates must be real calendar dates, not just digit-shaped strings."""
+        with pytest.raises(ValidationError) as exc_info:
+            Filters(timePeriodType="dr", time_period=[{"start_date": "2023-13-01", "end_date": "2023-12-31"}])
+
+        assert "not a valid date" in str(exc_info.value)
+
+
+class TestTimePeriodFY:
+    """Tests for the timePeriodFY four-digit-year validation on the Filters model"""
+
+    def test_time_period_fy_default_empty_list(self):
+        filters = Filters()
+
+        assert filters.timePeriodFY == []
+
+    def test_time_period_fy_accepts_four_digit_years(self):
+        filters = Filters(timePeriodFY=["2023", "2024"])
+
+        assert filters.timePeriodFY == ["2023", "2024"]
+
+    def test_time_period_fy_accepts_single_year(self):
+        filters = Filters(timePeriodFY=["2026"])
+
+        assert filters.timePeriodFY == ["2026"]
+
+    def test_time_period_fy_rejects_fy_prefix(self):
+        with pytest.raises(ValidationError) as exc_info:
+            Filters(timePeriodFY=["FY2026"])
+
+        assert "Invalid fiscal year(s)" in str(exc_info.value)
+
+    def test_time_period_fy_rejects_fy_prefix_mixed_with_valid_year(self):
+        with pytest.raises(ValidationError) as exc_info:
+            Filters(timePeriodFY=["2024", "FY2026"])
+
+        assert "FY2026" in str(exc_info.value)
+
+    def test_time_period_fy_rejects_non_four_digit_year(self):
+        with pytest.raises(ValidationError) as exc_info:
+            Filters(timePeriodFY=["26"])
+
+        assert "Invalid fiscal year(s)" in str(exc_info.value)
+
+    def test_time_period_fy_rejects_non_numeric_value(self):
+        with pytest.raises(ValidationError) as exc_info:
+            Filters(timePeriodFY=["this year"])
+
+        assert "Invalid fiscal year(s)" in str(exc_info.value)
+
+    @pytest.mark.parametrize("raw", ["&quot;2025&quot;", '"2025"', "'2025'", " 2025 ", "&#39;2025&#39;"])
+    def test_time_period_fy_strips_quotes_and_html_entities(self, raw):
+        """The LLM can't see that it is HTML-escaping quotes around years; clean that up instead of erroring."""
+        assert Filters(timePeriodFY=[raw]).timePeriodFY == ["2025"]
+
+
+class TestSetAside:
+    def test_valid_codes_accepted(self):
+        assert Filters(setAside=["BI", "IEE", "ISBEE"]).setAside == ["BI", "IEE", "ISBEE"]
+
+    def test_invalid_code_error_names_the_valid_codes(self):
+        with pytest.raises(ValidationError) as exc_info:
+            Filters(setAside=["NOT_A_CODE"])
+
+        message = str(exc_info.value)
+        assert "Invalid setAside code(s): ['NOT_A_CODE']" in message
+        assert "BI = Buy Indian" in message
+        assert "ISBEE = Indian Small Business Economic Enterprise" in message
+
+    def test_recipient_type_value_points_to_recipient_type(self):
+        with pytest.raises(ValidationError) as exc_info:
+            Filters(setAside=["native_american_owned_business"])
+
+        assert "are recipientType values, not set-aside codes" in str(exc_info.value)
+
+
 class TestAwardType:
-    """Tests for the awardType single-group validation on the Filters model"""
+    """awardType is selected by frontend name and persisted as legacy-expanded codes on the Filters model."""
 
     def test_award_type_default_empty_list(self):
         filters = Filters()
@@ -550,64 +734,119 @@ class TestAwardType:
         assert filters.awardType == []
         assert isinstance(filters.awardType, list)
 
-    def test_award_type_accepts_all_contracts(self):
-        types = ["A", "B", "C", "D"]
-        filters = Filters(awardType=types)
-
-        assert filters.awardType == types
-
-    def test_award_type_accepts_all_grants(self):
-        types = ["02", "03", "04", "05"]
-        filters = Filters(awardType=types)
-
-        assert filters.awardType == types
-
-    def test_award_type_accepts_loans(self):
-        filters = Filters(awardType=["07", "08"])
-
-        assert filters.awardType == ["07", "08"]
-
-    def test_award_type_accepts_idvs(self):
-        types = ["IDV_A", "IDV_B_A", "IDV_C"]
-        filters = Filters(awardType=types)
-
-        assert filters.awardType == types
-
-    def test_award_type_accepts_single_code(self):
-        filters = Filters(awardType=["D"])
-
-        assert filters.awardType == ["D"]
-
-    def test_award_type_rejects_mixed_groups(self):
-        """Contracts (A) and grants (02) cannot be combined."""
-        with pytest.raises(ValidationError) as exc_info:
-            Filters(awardType=["A", "02"])
-
-        assert "must only contain types from one group" in str(exc_info.value)
-
-    def test_award_type_rejects_contract_mixed_with_loan(self):
-        with pytest.raises(ValidationError) as exc_info:
-            Filters(awardType=["D", "07"])
-
-        assert "must only contain types from one group" in str(exc_info.value)
-
-    def test_award_type_rejects_unknown_code(self):
-        with pytest.raises(ValidationError) as exc_info:
-            Filters(awardType=["NOT_A_REAL_CODE"])
-
-        assert "Invalid award type code" in str(exc_info.value)
-
-    def test_award_type_unknown_code_reported_even_within_one_group(self):
-        """A bogus code mixed with valid same-group codes still trips the 'invalid code' message."""
-        with pytest.raises(ValidationError) as exc_info:
-            Filters(awardType=["A", "B", "NOPE"])
-
-        assert "Invalid award type code" in str(exc_info.value)
-
     def test_award_type_empty_list_is_valid(self):
-        filters = Filters(awardType=[])
+        assert Filters(awardType=[]).awardType == []
 
-        assert filters.awardType == []
+    @pytest.mark.parametrize(
+        "label, expected",
+        [
+            ("All Award Types", []),
+            (
+                "Financial Assistance",
+                ["02", "03", "04", "05", "06", "07", "08", "10", "F001", "F002", "F003", "F004", "F006", "F007"],
+            ),
+            ("Contracts", ["A", "B", "C", "D"]),
+            ("Contract IDVs", ["IDV_A", "IDV_B", "IDV_B_A", "IDV_B_B", "IDV_B_C", "IDV_C", "IDV_D", "IDV_E"]),
+            ("Grants", ["02", "03", "04", "F001"]),
+            ("Cooperative Agreement", ["05", "F002"]),
+            ("Direct Payments", ["06", "10", "F006", "F007"]),
+            ("Loans", ["07", "08", "F003", "F004"]),
+            ("Other", ["-1", "09", "11", "F005", "F008", "F009", "F010"]),
+            ("Blanket Purchase Agreements (BPA) Calls", ["A"]),
+            ("Purchase Orders (PO)", ["B"]),
+            ("Delivery Orders (DO)", ["C"]),
+            ("Definitive Contracts", ["D"]),
+            ("Government-Wide Acquisition Contract (GWAC)", ["IDV_A"]),
+            ("Indefinite Delivery / Requirements Contract", ["IDV_B_A"]),
+            ("Indefinite Delivery / Indefinite Quantity (IDIQ) Contract", ["IDV_B_B"]),
+            ("Indefinite Delivery / Definite Quantity Contract", ["IDV_B_C"]),
+            ("Federal Supply Schedule (FSS)", ["IDV_C"]),
+            ("Basic Ordering Agreement (BOA)", ["IDV_D"]),
+            ("Blanket Purchase Agreements (BPA)", ["IDV_E"]),
+            ("Direct Payment with Unrestricted Use", ["10", "F007"]),
+            ("Direct Payment for Specified Use", ["06", "F006"]),
+            ("Direct Loans", ["07", "F003"]),
+            ("Loan Guarantees", ["08", "F004"]),
+            ("Indemnity/Insurance (non-loan)", ["09", "F005"]),
+            ("Asset Forfeiture/Equitable Sharing", ["F008"]),
+            ("Sale, Exchange, or Donation of Property and Goods", ["F009"]),
+            ("Other Financial Assistance", ["11", "F010"]),
+            ("Not Specified", ["-1"]),
+        ],
+    )
+    def test_award_type_label_resolves_to_codes(self, label, expected):
+        assert Filters(awardType=[label]).awardType == expected
+
+    def test_every_label_is_covered_by_a_test(self):
+        """Fails when a label is added to AWARD_TYPE_LABELS without a resolution test above."""
+        assert len(AWARD_TYPE_LABELS) == 29
+
+    def test_label_matching_ignores_case_and_extra_whitespace(self):
+        assert Filters(awardType=["  direct   LOANS "]).awardType == ["07", "F003"]
+
+    def test_multiple_groups_can_be_combined(self):
+        assert Filters(awardType=["Contracts", "Loans"]).awardType == ["07", "08", "A", "B", "C", "D", "F003", "F004"]
+
+    def test_grants_does_not_include_cooperative_agreements(self):
+        assert "05" not in Filters(awardType=["Grants"]).awardType
+        assert "F002" not in Filters(awardType=["Grants"]).awardType
+
+    def test_all_award_types_overrides_other_selections(self):
+        assert Filters(awardType=["Contracts", "All Award Types"]).awardType == []
+
+    def test_financial_assistance_excludes_contracts_idvs_and_other(self):
+        codes = Filters(awardType=["Financial Assistance"]).awardType
+
+        assert not {"A", "B", "C", "D"} & set(codes)
+        assert not any(code.startswith("IDV_") for code in codes)
+        assert not {"-1", "09", "11", "F005", "F008", "F009", "F010"} & set(codes)
+
+    def test_financial_assistance_plus_remaining_groups_means_no_filter(self):
+        assert Filters(awardType=["Financial Assistance", "Contracts", "Contract IDVs", "Other"]).awardType == []
+
+    def test_selecting_every_group_means_no_award_type_filter(self):
+        every_group = [
+            "Contracts",
+            "Contract IDVs",
+            "Grants",
+            "Cooperative Agreement",
+            "Direct Payments",
+            "Loans",
+            "Other",
+        ]
+
+        assert Filters(awardType=every_group).awardType == []
+
+    def test_selecting_all_but_one_group_keeps_the_filter(self):
+        """Grants and Cooperative Agreement share a backend category, so leaving one out must not collapse."""
+        filters = Filters(awardType=["Contracts", "Contract IDVs", "Grants", "Direct Payments", "Loans", "Other"])
+
+        assert filters.awardType != []
+        assert "F002" not in filters.awardType
+
+    def test_legacy_codes_resolve_like_current_codes(self):
+        assert Filters(awardType=["07"]).awardType == Filters(awardType=["F003"]).awardType == ["07", "F003"]
+
+    def test_raw_contract_codes_pass_through(self):
+        assert Filters(awardType=["A", "B"]).awardType == ["A", "B"]
+
+    def test_names_and_codes_can_be_mixed(self):
+        assert Filters(awardType=["Grants", "F002"]).awardType == ["02", "03", "04", "05", "F001", "F002"]
+
+    def test_unknown_award_type_rejected_with_guidance(self):
+        with pytest.raises(ValidationError) as exc_info:
+            Filters(awardType=["Contracts", "NOT_A_REAL_TYPE"])
+
+        message = str(exc_info.value)
+        assert "Unknown awardType value(s): ['NOT_A_REAL_TYPE']" in message
+        assert "omit awardType" in message
+
+    def test_execute_filter_schema_offers_only_names(self):
+        schema = ExecuteFilterInput.model_json_schema()
+        options = schema["properties"]["awardType"]["items"]["enum"]
+
+        assert options == list(AWARD_TYPE_LABELS)
+        assert "F001" not in options and "A" not in options
 
 
 @pytest.mark.django_db
@@ -908,3 +1147,413 @@ class TestRecipientFieldsCombinations:
         assert "recipientDomesticForeign" in schema["properties"]
         assert "enum" in schema["properties"]["recipientDomesticForeign"]
         assert set(schema["properties"]["recipientDomesticForeign"]["enum"]) == {"all", "foreign"}
+
+
+@pytest.fixture
+def psc_codes(db):
+    """A small PSC table: R&D (A), Service (B, D) and Product (10) codes across every tier."""
+    codes = [
+        # Research and Development: AA -> AA1 (tier 3 shares its code with AA10) -> AA11, AA12; AB -> AB20, AB21
+        "A",
+        "AA",
+        "AA10",
+        "AA11",
+        "AA12",
+        "AB20",
+        "AB21",
+        # Service: B -> B5 -> B502, B503, B504; D -> D3 -> D301
+        "B",
+        "B5",
+        "B502",
+        "B503",
+        "B504",
+        "D",
+        "D3",
+        "D301",
+        # Product
+        "10",
+        "1005",
+        "1010",
+    ]
+    for code in codes:
+        baker.make("references.PSC", code=code, length=len(code), description=f"Description {code}")
+
+
+@pytest.fixture
+def naics_codes(db):
+    for code in ["11", "1111", "111110", "111120", "111130", "1112", "111211", "33", "3364", "336411", "336412"]:
+        baker.make("references.NAICS", code=code, description=f"Description {code}")
+
+
+@pytest.fixture
+def tas_accounts(db):
+    """Two agencies. Agency 072 has federal accounts 072-0300 (2 TAS with awards, 1 without) and 072-1000 (1 TAS)."""
+    baker.make(
+        "references.ToptierAgency", toptier_agency_id=1, toptier_code="072", name="Agency One", abbreviation="A1"
+    )
+    baker.make(
+        "references.ToptierAgency", toptier_agency_id=2, toptier_code="310", name="Agency Two", abbreviation="A2"
+    )
+    for fa_id, fa_code, agency_id in [(1, "072-0300", 1), (2, "072-1000", 1), (3, "310-0001", 2)]:
+        baker.make(
+            "accounts.FederalAccount",
+            id=fa_id,
+            federal_account_code=fa_code,
+            parent_toptier_agency_id=agency_id,
+        )
+
+    tas = [
+        (1, 1, "072-2020/2021-0300-000", True),
+        (2, 1, "072-2021/2022-0300-000", True),
+        (3, 1, "072-2022/2023-0300-000", False),  # no award data so it is never counted
+        (4, 2, "072-X-1000-000", True),
+        (5, 3, "310-X-0001-000", True),
+    ]
+    for tas_id, fa_id, label, has_award in tas:
+        baker.make(
+            "accounts.TreasuryAppropriationAccount",
+            treasury_account_identifier=tas_id,
+            federal_account_id=fa_id,
+            tas_rendering_label=label,
+        )
+        if has_award:
+            baker.make("search.AwardSearch", award_id=tas_id)
+            baker.make("awards.FinancialAccountsByAwards", treasury_account_id=tas_id, award_id=tas_id)
+
+
+class TestPscCodeLists:
+    """Tests for the Tier1-group-aware require/exclude validation and the calculated counts on PscCodeLists
+    (Filters.pscCodes).
+
+    PSC's hierarchy root is one of three synthetic Tier1 group labels (Research and Development,
+    Service, Product) rather than a code with its own ancestor chain, so require/exclude are nested
+    [Tier1 label, ...PSC code segments] paths instead of flat codes.
+    """
+
+    def test_default_empty(self):
+        filters = Filters()
+
+        assert filters.pscCodes.require == []
+        assert filters.pscCodes.exclude == []
+        assert filters.pscCodes.counts == []
+
+    @pytest.mark.parametrize(
+        "require, exclude, expected",
+        [
+            ([["Service"]], [], {"Service": 4}),
+            ([["Product"]], [], {"Product": 2}),
+            ([["Research and Development"]], [], {"Research and Development": 5}),
+            ([["Service", "B"]], [], {"Service": 3}),
+            ([["Service", "B", "B5", "B502"]], [], {"Service": 1}),
+            # Selecting a middle tier and deselecting one of its leaves
+            ([["Service", "B", "B5"]], [["Service", "B", "B5", "B502"]], {"Service": 2}),
+            # A second tier code counts everything beneath it
+            ([["Research and Development", "AA"]], [], {"Research and Development": 3}),
+            # Third tier R&D codes don't own the "0" code, which is a second tier node
+            ([["Research and Development", "AA", "AA1"]], [], {"Research and Development": 2}),
+            # Several paths in the same group are combined, overlapping paths aren't double counted
+            ([["Service", "B"], ["Service", "D"], ["Service", "B", "B5"]], [], {"Service": 4}),
+            # Different groups get their own count
+            ([["Service", "D"], ["Product"]], [], {"Service": 1, "Product": 2}),
+            # An exclusion in one group doesn't touch another group
+            ([["Service"], ["Product"]], [["Service", "B"]], {"Service": 1, "Product": 2}),
+            # Nothing left over means no entry
+            ([["Service", "D"]], [["Service", "D"]], {}),
+        ],
+    )
+    def test_counts_are_calculated_from_require_and_exclude(self, psc_codes, require, exclude, expected):
+        filters = Filters(pscCodes={"require": require, "exclude": exclude})
+
+        assert {c.value: c.count for c in filters.pscCodes.counts} == expected
+        assert all(c.label == "" for c in filters.pscCodes.counts)
+
+    def test_counts_provided_by_the_llm_are_ignored(self, psc_codes):
+        filters = Filters(
+            pscCodes={"require": [["Service", "D"]], "counts": [{"value": "Service", "label": "", "count": 999}]}
+        )
+
+        assert [(c.value, c.count) for c in filters.pscCodes.counts] == [("Service", 1)]
+
+    def test_counts_are_included_when_dumped(self, psc_codes):
+        filters = Filters(pscCodes={"require": [["Service", "D"]]})
+
+        assert filters.model_dump()["pscCodes"]["counts"] == [{"value": "Service", "label": "", "count": 1}]
+
+    def test_require_rejects_root_not_a_tier1_label(self):
+        with pytest.raises(ValidationError) as exc_info:
+            Filters(pscCodes={"require": [["AC"]]})
+
+        assert "must be one of" in str(exc_info.value)
+
+    def test_require_rejects_empty_path(self):
+        with pytest.raises(ValidationError) as exc_info:
+            Filters(pscCodes={"require": [[]]})
+
+        assert "must be one of" in str(exc_info.value)
+
+    def test_require_rejects_malformed_code_segment(self):
+        with pytest.raises(ValidationError) as exc_info:
+            Filters(pscCodes={"require": [["Service", "too-long-code"]]})
+
+        assert "one to four character" in str(exc_info.value)
+
+    def test_exclude_uses_same_path_validation_as_require(self):
+        with pytest.raises(ValidationError) as exc_info:
+            Filters(pscCodes={"exclude": [["not-a-group"]]})
+
+        assert "must be one of" in str(exc_info.value)
+
+    def test_psc_code_lists_model_can_be_used_directly(self, psc_codes):
+        model = PscCodeLists(require=[["Service", "D"]])
+
+        assert model.require == [["Service", "D"]]
+        assert [c.model_dump() for c in model.counts] == [{"value": "Service", "label": "", "count": 1}]
+
+
+class TestTasCodeLists:
+    """Tests for the hierarchical AID / AID-MAIN / full-label path validation and the calculated counts on
+    TasCodeLists (Filters.tasCodes)."""
+
+    def test_default_empty(self):
+        filters = Filters()
+
+        assert filters.tasCodes.require == []
+        assert filters.tasCodes.exclude == []
+        assert filters.tasCodes.counts == []
+
+    @pytest.mark.parametrize(
+        "require, exclude, expected",
+        [
+            # Only TAS with award data are counted
+            ([["072"]], [], {"072": 3}),
+            ([["072", "072-0300"]], [], {"072": 2}),
+            ([["072", "072-0300", "072-2020/2021-0300-000"]], [], {"072": 1}),
+            # Selecting an agency and deselecting one of its federal accounts
+            ([["072"]], [["072", "072-0300"]], {"072": 1}),
+            ([["072"]], [["072", "072-0300", "072-2020/2021-0300-000"]], {"072": 2}),
+            ([["072"], ["310"]], [["072", "072-1000"]], {"072": 2, "310": 1}),
+            ([["072", "072-1000"]], [["072"]], {}),
+        ],
+    )
+    def test_counts_are_calculated_from_require_and_exclude(self, tas_accounts, require, exclude, expected):
+        filters = Filters(tasCodes={"require": require, "exclude": exclude})
+
+        assert {c.value: c.count for c in filters.tasCodes.counts} == expected
+
+    def test_count_label_is_the_agency_name_and_abbreviation(self, tas_accounts):
+        filters = Filters(tasCodes={"require": [["310"]]})
+
+        assert [c.model_dump() for c in filters.tasCodes.counts] == [
+            {"value": "310", "label": "Agency Two (A2)", "count": 1}
+        ]
+
+    def test_counts_provided_by_the_llm_are_ignored(self, tas_accounts):
+        filters = Filters(tasCodes={"require": [["310"]], "counts": [{"value": "310", "label": "Wrong", "count": 999}]})
+
+        assert [(c.label, c.count) for c in filters.tasCodes.counts] == [("Agency Two (A2)", 1)]
+
+    def test_require_rejects_path_over_three_elements(self):
+        with pytest.raises(ValidationError) as exc_info:
+            Filters(tasCodes={"require": [["535", "535-2724", "535-2020/2021-2724-000", "extra"]]})
+
+        assert "between 1 and 3 elements" in str(exc_info.value)
+
+    def test_require_rejects_empty_path(self):
+        with pytest.raises(ValidationError) as exc_info:
+            Filters(tasCodes={"require": [[]]})
+
+        assert "between 1 and 3 elements" in str(exc_info.value)
+
+    def test_exclude_uses_same_path_validation_as_require(self):
+        with pytest.raises(ValidationError) as exc_info:
+            Filters(tasCodes={"exclude": [["a", "b", "c", "d"]]})
+
+        assert "between 1 and 3 elements" in str(exc_info.value)
+
+    def test_tas_code_lists_model_can_be_used_directly(self, tas_accounts):
+        model = TasCodeLists(require=[["310"]])
+
+        assert model.require == [["310"]]
+        assert [c.count for c in model.counts] == [1]
+
+
+class TestNaicsCodeLists:
+    """Tests for the calculated counts on NaicsCodeLists (Filters.naicsCodes)."""
+
+    def test_default_empty(self):
+        assert Filters().naicsCodes.counts == []
+
+    @pytest.mark.parametrize(
+        "require, exclude, expected",
+        [
+            # Top tier covers every 6-digit code beneath it
+            (["11"], [], {"11": 4}),
+            # Middle tier
+            (["1111"], [], {"11": 3}),
+            # Middle tier with one leaf deselected
+            (["1111"], ["111110"], {"11": 2}),
+            # Explicit leaves, as the frontend sends them after a deselection
+            (["111120", "111130"], ["111110"], {"11": 2}),
+            (["111110"], [], {"11": 1}),
+            # Roots are kept separate and combined across codes that share one
+            (["1111", "1112", "3364"], [], {"11": 4, "33": 2}),
+            (["11", "33"], ["3364"], {"11": 4}),
+            (["1111"], ["11"], {}),
+        ],
+    )
+    def test_counts_are_calculated_from_require_and_exclude(self, naics_codes, require, exclude, expected):
+        filters = Filters(naicsCodes={"require": require, "exclude": exclude})
+
+        assert {c.value: c.count for c in filters.naicsCodes.counts} == expected
+
+    def test_count_label_is_the_root_description(self, naics_codes):
+        filters = Filters(naicsCodes={"require": ["336411"]})
+
+        assert [c.model_dump() for c in filters.naicsCodes.counts] == [
+            {"value": "33", "label": "Description 33", "count": 1}
+        ]
+
+    def test_counts_provided_by_the_llm_are_ignored(self, naics_codes):
+        model = NaicsCodeLists(
+            require=["336411", "336412"], counts=[{"value": "33", "label": "Manufacturing", "count": 99}]
+        )
+
+        assert model.require == ["336411", "336412"]
+        assert [(c.label, c.count) for c in model.counts] == [("Description 33", 2)]
+
+    def test_rejects_nested_path_shape(self):
+        """A PSC/TAS-style nested path must not silently work its way into NAICS's flat require list."""
+        with pytest.raises(ValidationError) as exc_info:
+            NaicsCodeLists(require=[["336411"]])
+
+        assert "require" in str(exc_info.value)
+
+
+class TestCodeListsSchema:
+    """'counts' is calculated, so the llm-facing (validation) schema must not ask the llm to populate it."""
+
+    @pytest.mark.parametrize("field", ["naicsCodes", "pscCodes", "tasCodes"])
+    def test_counts_not_in_llm_schema(self, field):
+        schema = ExecuteFilterInput.model_json_schema()
+        definition = schema["$defs"][schema["properties"][field]["$ref"].split("/")[-1]]
+
+        assert set(definition["properties"]) == {"require", "exclude"}
+
+
+class TestCodePathRebuilding:
+    """The llm doesn't reliably assemble every tier of a PSC/TAS path, but a path is fully determined by its last
+    code, so it is rebuilt from that code."""
+
+    @pytest.mark.parametrize(
+        "path, expected",
+        [
+            (["Research and Development", "AA11"], ["Research and Development", "AA", "AA1", "AA11"]),
+            (["Service", "B502"], ["Service", "B", "B5", "B502"]),
+            (["Service", "D", "D3", "D301"], ["Service", "D", "D3", "D301"]),
+            (["Product", "10", "1005"], ["Product", "10", "1005"]),
+            # The group is derived from the code, so a wrong one is corrected
+            (["Product", "B502"], ["Service", "B", "B5", "B502"]),
+        ],
+    )
+    def test_psc_paths_are_rebuilt_from_the_last_code(self, path, expected):
+        model = PscCodeLists(require=[path], exclude=[path])
+
+        assert model.require == [expected]
+        assert model.exclude == [expected]
+
+    def test_psc_group_only_path_is_unchanged(self):
+        assert PscCodeLists(require=[["Service"]]).require == [["Service"]]
+
+    def test_psc_invalid_code_is_still_rejected(self):
+        with pytest.raises(ValidationError) as exc_info:
+            PscCodeLists(require=[["Service", "too-long-code"]])
+
+        assert "one to four character" in str(exc_info.value)
+
+    @pytest.mark.parametrize(
+        "path, expected",
+        [
+            (
+                ["310", "310-2012", "310-2012/2012-3200-000"],
+                ["310", "310-3200", "310-2012/2012-3200-000"],
+            ),
+            (
+                ["wrong", "wrong-0000", "019-011-X-1071-000"],
+                ["011", "011-1071", "019-011-X-1071-000"],
+            ),
+            (["310", "310-3200"], ["310", "310-3200"]),
+            (["310"], ["310"]),
+        ],
+    )
+    def test_tas_paths_are_rebuilt_from_the_rendering_label(self, path, expected):
+        model = TasCodeLists(require=[path], exclude=[path])
+
+        assert model.require == [expected]
+        assert model.exclude == [expected]
+
+    def test_tas_path_that_is_too_long_is_still_rejected(self):
+        with pytest.raises(ValidationError) as exc_info:
+            TasCodeLists(require=[["a", "b", "c", "d"]])
+
+        assert "between 1 and 3 elements" in str(exc_info.value)
+
+
+class TestSelectedCFDA:
+    """Tests for the SelectedCFDA model and its wiring into Filters/ExecuteFilterInput.selectedCFDA
+    (keyed by CFDA program number, mirroring the SelectedAgency re-keying pattern)."""
+
+    def test_accepts_valid_entry(self):
+        cfda = SelectedCFDA(identifier="10.557", program_number="10.557", program_title="WIC")
+
+        assert cfda.program_title == "WIC"
+        assert cfda.popular_name is None
+
+    def test_accepts_optional_popular_name(self):
+        cfda = SelectedCFDA(identifier="10.557", program_number="10.557", program_title="WIC", popular_name="WIC")
+
+        assert cfda.popular_name == "WIC"
+
+    def test_identifier_must_match_program_number(self):
+        with pytest.raises(ValidationError) as exc_info:
+            SelectedCFDA(identifier="10.557", program_number="10.999", program_title="WIC")
+
+        assert "identifier' must equal 'program_number'" in str(exc_info.value)
+
+    def test_dict_key_must_equal_identifier(self):
+        with pytest.raises(ValidationError) as exc_info:
+            Filters(
+                selectedCFDA={"10.999": {"identifier": "10.557", "program_number": "10.557", "program_title": "WIC"}}
+            )
+
+        assert "must equal its entry's 'identifier'" in str(exc_info.value)
+
+    def test_dict_key_matching_identifier_is_accepted(self):
+        filters = Filters(
+            selectedCFDA={"10.557": {"identifier": "10.557", "program_number": "10.557", "program_title": "WIC"}}
+        )
+
+        assert set(filters.selectedCFDA.keys()) == {"10.557"}
+
+    def test_multiple_entries_each_correctly_keyed(self):
+        filters = Filters(
+            selectedCFDA={
+                "10.557": {"identifier": "10.557", "program_number": "10.557", "program_title": "WIC"},
+                "93.558": {"identifier": "93.558", "program_number": "93.558", "program_title": "TANF"},
+            }
+        )
+
+        assert set(filters.selectedCFDA.keys()) == {"10.557", "93.558"}
+
+    def test_empty_dict_is_valid(self):
+        filters = Filters(selectedCFDA={})
+
+        assert filters.selectedCFDA == {}
+
+    def test_execute_filter_input_also_validates_key_identifier_match(self):
+        """ExecuteFilterInput has its own copy of the selectedCFDA validator; both models must agree."""
+        with pytest.raises(ValidationError) as exc_info:
+            ExecuteFilterInput(
+                selectedCFDA={"10.999": {"identifier": "10.557", "program_number": "10.557", "program_title": "WIC"}}
+            )
+
+        assert "must equal its entry's 'identifier'" in str(exc_info.value)
