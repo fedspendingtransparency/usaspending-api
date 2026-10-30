@@ -792,6 +792,7 @@ class Filters(BaseModel):
     pricingType: list[str] = Field(default_factory=list)
     setAside: list[SetAsideCode] = Field(default_factory=list)
     extentCompeted: list[ExtentCompetedCode] = Field(default_factory=list)
+    treasuryAccounts: dict[str, Any] = Field(default_factory=dict)
     tasCodes: TasCodeLists = Field(default_factory=TasCodeLists)
     awardDescription: str = ""
     filterNewAwardsOnlySelected: bool = False
