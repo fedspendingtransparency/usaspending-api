@@ -337,7 +337,7 @@ class EmbeddingMixin(models.Model):
 
     def save(
         self,
-        auto_generate_embedding: bool = True,
+        auto_generate_embedding: bool = False,
         force_generate_embedding: bool = False,
         verbose: bool = False,
         *args,

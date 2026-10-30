@@ -92,6 +92,7 @@ class BaseEval(ABC):
                 case_name=case.name,
                 passed=False,
                 score=0.0,
+                details={"case_input": case.input, "case_metadata": case.metadata},
                 error=str(exc),
             )
         except Exception as exc:
