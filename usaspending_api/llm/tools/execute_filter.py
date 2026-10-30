@@ -1,6 +1,7 @@
 import json
 import logging
 
+from asgiref.sync import sync_to_async
 from pydantic import ValidationError
 
 from usaspending_api.llm.models.py_models import (
@@ -156,7 +157,8 @@ async def execute_filter(**kwargs) -> AIToolResult:
     logger.info(f"Starting execute_filter with {len(kwargs)} filter parameter(s)", extra={"filter_count": len(kwargs)})
 
     try:
-        filters = Filters(**kwargs)
+        # Validating and dumping the filters use the synchronous ORM, so keep both off the event loop
+        filters = await sync_to_async(Filters)(**kwargs)
     except ValidationError as exc:
         fields = {error["loc"][0] if error["loc"] else None for error in exc.errors()}
         model_detail = f"{exc}\n\n{RETRY_INSTRUCTION}"
@@ -168,7 +170,7 @@ async def execute_filter(**kwargs) -> AIToolResult:
     await _validate_recipients_exist(filters)
     await _validate_award_ids_exist(filters)
 
-    filter_request = _filter_request_from_filters(filters)
+    filter_request = await sync_to_async(_filter_request_from_filters)(filters)
 
     logger.debug(f"Filter validation successful: {list(kwargs.keys())}")
 

@@ -1149,8 +1149,81 @@ class TestRecipientFieldsCombinations:
         assert set(schema["properties"]["recipientDomesticForeign"]["enum"]) == {"all", "foreign"}
 
 
+@pytest.fixture
+def psc_codes(db):
+    """A small PSC table: R&D (A), Service (B, D) and Product (10) codes across every tier."""
+    codes = [
+        # Research and Development: AA -> AA1 (tier 3 shares its code with AA10) -> AA11, AA12; AB -> AB20, AB21
+        "A",
+        "AA",
+        "AA10",
+        "AA11",
+        "AA12",
+        "AB20",
+        "AB21",
+        # Service: B -> B5 -> B502, B503, B504; D -> D3 -> D301
+        "B",
+        "B5",
+        "B502",
+        "B503",
+        "B504",
+        "D",
+        "D3",
+        "D301",
+        # Product
+        "10",
+        "1005",
+        "1010",
+    ]
+    for code in codes:
+        baker.make("references.PSC", code=code, length=len(code), description=f"Description {code}")
+
+
+@pytest.fixture
+def naics_codes(db):
+    for code in ["11", "1111", "111110", "111120", "111130", "1112", "111211", "33", "3364", "336411", "336412"]:
+        baker.make("references.NAICS", code=code, description=f"Description {code}")
+
+
+@pytest.fixture
+def tas_accounts(db):
+    """Two agencies. Agency 072 has federal accounts 072-0300 (2 TAS with awards, 1 without) and 072-1000 (1 TAS)."""
+    baker.make(
+        "references.ToptierAgency", toptier_agency_id=1, toptier_code="072", name="Agency One", abbreviation="A1"
+    )
+    baker.make(
+        "references.ToptierAgency", toptier_agency_id=2, toptier_code="310", name="Agency Two", abbreviation="A2"
+    )
+    for fa_id, fa_code, agency_id in [(1, "072-0300", 1), (2, "072-1000", 1), (3, "310-0001", 2)]:
+        baker.make(
+            "accounts.FederalAccount",
+            id=fa_id,
+            federal_account_code=fa_code,
+            parent_toptier_agency_id=agency_id,
+        )
+
+    tas = [
+        (1, 1, "072-2020/2021-0300-000", True),
+        (2, 1, "072-2021/2022-0300-000", True),
+        (3, 1, "072-2022/2023-0300-000", False),  # no award data so it is never counted
+        (4, 2, "072-X-1000-000", True),
+        (5, 3, "310-X-0001-000", True),
+    ]
+    for tas_id, fa_id, label, has_award in tas:
+        baker.make(
+            "accounts.TreasuryAppropriationAccount",
+            treasury_account_identifier=tas_id,
+            federal_account_id=fa_id,
+            tas_rendering_label=label,
+        )
+        if has_award:
+            baker.make("search.AwardSearch", award_id=tas_id)
+            baker.make("awards.FinancialAccountsByAwards", treasury_account_id=tas_id, award_id=tas_id)
+
+
 class TestPscCodeLists:
-    """Tests for the Tier1-group-aware require/exclude/counts validation on PscCodeLists (Filters.pscCodes).
+    """Tests for the Tier1-group-aware require/exclude validation and the calculated counts on PscCodeLists
+    (Filters.pscCodes).
 
     PSC's hierarchy root is one of three synthetic Tier1 group labels (Research and Development,
     Service, Product) rather than a code with its own ancestor chain, so require/exclude are nested
@@ -1164,57 +1237,63 @@ class TestPscCodeLists:
         assert filters.pscCodes.exclude == []
         assert filters.pscCodes.counts == []
 
-    def test_accepts_nested_tier1_path(self):
+    @pytest.mark.parametrize(
+        "require, exclude, expected",
+        [
+            ([["Service"]], [], {"Service": 4}),
+            ([["Product"]], [], {"Product": 2}),
+            ([["Research and Development"]], [], {"Research and Development": 5}),
+            ([["Service", "B"]], [], {"Service": 3}),
+            ([["Service", "B", "B5", "B502"]], [], {"Service": 1}),
+            # Selecting a middle tier and deselecting one of its leaves
+            ([["Service", "B", "B5"]], [["Service", "B", "B5", "B502"]], {"Service": 2}),
+            # A second tier code counts everything beneath it
+            ([["Research and Development", "AA"]], [], {"Research and Development": 3}),
+            # Third tier R&D codes don't own the "0" code, which is a second tier node
+            ([["Research and Development", "AA", "AA1"]], [], {"Research and Development": 2}),
+            # Several paths in the same group are combined, overlapping paths aren't double counted
+            ([["Service", "B"], ["Service", "D"], ["Service", "B", "B5"]], [], {"Service": 4}),
+            # Different groups get their own count
+            ([["Service", "D"], ["Product"]], [], {"Service": 1, "Product": 2}),
+            # An exclusion in one group doesn't touch another group
+            ([["Service"], ["Product"]], [["Service", "B"]], {"Service": 1, "Product": 2}),
+            # Nothing left over means no entry
+            ([["Service", "D"]], [["Service", "D"]], {}),
+        ],
+    )
+    def test_counts_are_calculated_from_require_and_exclude(self, psc_codes, require, exclude, expected):
+        filters = Filters(pscCodes={"require": require, "exclude": exclude})
+
+        assert {c.value: c.count for c in filters.pscCodes.counts} == expected
+        assert all(c.label == "" for c in filters.pscCodes.counts)
+
+    def test_counts_provided_by_the_llm_are_ignored(self, psc_codes):
         filters = Filters(
-            pscCodes={
-                "require": [["Research and Development", "AC"]],
-                "counts": [{"value": "Research and Development", "label": "", "count": 5}],
-            }
+            pscCodes={"require": [["Service", "D"]], "counts": [{"value": "Service", "label": "", "count": 999}]}
         )
 
-        assert filters.pscCodes.require == [["Research and Development", "AC"]]
+        assert [(c.value, c.count) for c in filters.pscCodes.counts] == [("Service", 1)]
 
-    def test_accepts_paths_under_different_tier1_groups(self):
-        filters = Filters(
-            pscCodes={
-                "require": [["Research and Development", "AC"], ["Service", "D"]],
-                "counts": [
-                    {"value": "Research and Development", "label": "", "count": 5},
-                    {"value": "Service", "label": "", "count": 10},
-                ],
-            }
-        )
+    def test_counts_are_included_when_dumped(self, psc_codes):
+        filters = Filters(pscCodes={"require": [["Service", "D"]]})
 
-        assert filters.pscCodes.require == [["Research and Development", "AC"], ["Service", "D"]]
-
-    @pytest.mark.parametrize("tier1_label", ["Research and Development", "Service", "Product"])
-    def test_accepts_each_tier1_group_as_a_bare_root(self, tier1_label):
-        filters = Filters(
-            pscCodes={"require": [[tier1_label]], "counts": [{"value": tier1_label, "label": "", "count": 1}]}
-        )
-
-        assert filters.pscCodes.require == [[tier1_label]]
+        assert filters.model_dump()["pscCodes"]["counts"] == [{"value": "Service", "label": "", "count": 1}]
 
     def test_require_rejects_root_not_a_tier1_label(self):
         with pytest.raises(ValidationError) as exc_info:
-            Filters(pscCodes={"require": [["AC"]], "counts": [{"value": "Service", "label": "", "count": 1}]})
+            Filters(pscCodes={"require": [["AC"]]})
 
         assert "must be one of" in str(exc_info.value)
 
     def test_require_rejects_empty_path(self):
         with pytest.raises(ValidationError) as exc_info:
-            Filters(pscCodes={"require": [[]], "counts": [{"value": "Service", "label": "", "count": 1}]})
+            Filters(pscCodes={"require": [[]]})
 
         assert "must be one of" in str(exc_info.value)
 
     def test_require_rejects_malformed_code_segment(self):
         with pytest.raises(ValidationError) as exc_info:
-            Filters(
-                pscCodes={
-                    "require": [["Service", "too-long-code"]],
-                    "counts": [{"value": "Service", "label": "", "count": 1}],
-                }
-            )
+            Filters(pscCodes={"require": [["Service", "too-long-code"]]})
 
         assert "one to four character" in str(exc_info.value)
 
@@ -1224,114 +1303,64 @@ class TestPscCodeLists:
 
         assert "must be one of" in str(exc_info.value)
 
-    def test_counts_value_must_be_a_tier1_label(self):
-        with pytest.raises(ValidationError) as exc_info:
-            Filters(pscCodes={"require": [["Service", "D"]], "counts": [{"value": "D", "label": "", "count": 1}]})
-
-        assert "must be one of the PSC Tier1 group labels" in str(exc_info.value)
-
-    def test_counts_label_must_be_empty(self):
-        with pytest.raises(ValidationError) as exc_info:
-            Filters(
-                pscCodes={
-                    "require": [["Service", "D"]],
-                    "counts": [{"value": "Service", "label": "Service description", "count": 1}],
-                }
-            )
-
-        assert "must be an empty string" in str(exc_info.value)
-
-    def test_counts_rejects_zero_count(self):
-        with pytest.raises(ValidationError) as exc_info:
-            Filters(pscCodes={"require": [["Service", "D"]], "counts": [{"value": "Service", "label": "", "count": 0}]})
-
-        assert "count' must be greater than 0" in str(exc_info.value)
-
-    def test_counts_rejects_duplicate_tier1_labels(self):
-        with pytest.raises(ValidationError) as exc_info:
-            Filters(
-                pscCodes={
-                    "require": [["Service", "D"]],
-                    "counts": [
-                        {"value": "Service", "label": "", "count": 1},
-                        {"value": "Service", "label": "", "count": 2},
-                    ],
-                }
-            )
-
-        assert "combined under a new entry" in str(exc_info.value)
-
-    def test_codes_in_require_must_have_a_matching_counts_entry(self):
-        with pytest.raises(ValidationError) as exc_info:
-            Filters(
-                pscCodes={
-                    "require": [["Research and Development", "AC"], ["Service", "D"]],
-                    "counts": [{"value": "Research and Development", "label": "", "count": 5}],
-                }
-            )
-
-        assert "must contain an entry for each PSC Tier1 group" in str(exc_info.value)
-
-    def test_counts_required_when_require_present(self):
-        with pytest.raises(ValidationError) as exc_info:
-            Filters(pscCodes={"require": [["Service", "D"]]})
-
-        assert "There must be a unique entry in 'counts'" in str(exc_info.value)
-
-    def test_psc_code_lists_model_can_be_used_directly(self):
-        model = PscCodeLists(require=[["Service", "D"]], counts=[{"value": "Service", "label": "", "count": 1}])
+    def test_psc_code_lists_model_can_be_used_directly(self, psc_codes):
+        model = PscCodeLists(require=[["Service", "D"]])
 
         assert model.require == [["Service", "D"]]
+        assert [c.model_dump() for c in model.counts] == [{"value": "Service", "label": "", "count": 1}]
 
 
 class TestTasCodeLists:
-    """Tests for the hierarchical AID / AID-MAIN / full-label path validation on TasCodeLists (Filters.tasCodes)."""
+    """Tests for the hierarchical AID / AID-MAIN / full-label path validation and the calculated counts on
+    TasCodeLists (Filters.tasCodes)."""
 
     def test_default_empty(self):
         filters = Filters()
 
         assert filters.tasCodes.require == []
         assert filters.tasCodes.exclude == []
+        assert filters.tasCodes.counts == []
 
-    def test_accepts_single_element_agency_path(self):
-        filters = Filters(tasCodes={"require": [["310"]], "counts": [{"value": "310", "label": "Agency", "count": 3}]})
+    @pytest.mark.parametrize(
+        "require, exclude, expected",
+        [
+            # Only TAS with award data are counted
+            ([["072"]], [], {"072": 3}),
+            ([["072", "072-0300"]], [], {"072": 2}),
+            ([["072", "072-0300", "072-2020/2021-0300-000"]], [], {"072": 1}),
+            # Selecting an agency and deselecting one of its federal accounts
+            ([["072"]], [["072", "072-0300"]], {"072": 1}),
+            ([["072"]], [["072", "072-0300", "072-2020/2021-0300-000"]], {"072": 2}),
+            ([["072"], ["310"]], [["072", "072-1000"]], {"072": 2, "310": 1}),
+            ([["072", "072-1000"]], [["072"]], {}),
+        ],
+    )
+    def test_counts_are_calculated_from_require_and_exclude(self, tas_accounts, require, exclude, expected):
+        filters = Filters(tasCodes={"require": require, "exclude": exclude})
 
-        assert filters.tasCodes.require == [["310"]]
+        assert {c.value: c.count for c in filters.tasCodes.counts} == expected
 
-    def test_accepts_two_element_aid_main_path(self):
-        filters = Filters(
-            tasCodes={
-                "require": [["535", "535-2724"]],
-                "counts": [{"value": "535", "label": "Agency", "count": 2}],
-            }
-        )
+    def test_count_label_is_the_agency_name_and_abbreviation(self, tas_accounts):
+        filters = Filters(tasCodes={"require": [["310"]]})
 
-        assert filters.tasCodes.require == [["535", "535-2724"]]
+        assert [c.model_dump() for c in filters.tasCodes.counts] == [
+            {"value": "310", "label": "Agency Two (A2)", "count": 1}
+        ]
 
-    def test_accepts_three_element_full_label_path(self):
-        filters = Filters(
-            tasCodes={
-                "require": [["535", "535-2724", "535-2020/2021-2724-000"]],
-                "counts": [{"value": "535", "label": "Agency", "count": 1}],
-            }
-        )
+    def test_counts_provided_by_the_llm_are_ignored(self, tas_accounts):
+        filters = Filters(tasCodes={"require": [["310"]], "counts": [{"value": "310", "label": "Wrong", "count": 999}]})
 
-        assert filters.tasCodes.require == [["535", "535-2724", "535-2020/2021-2724-000"]]
+        assert [(c.label, c.count) for c in filters.tasCodes.counts] == [("Agency Two (A2)", 1)]
 
     def test_require_rejects_path_over_three_elements(self):
         with pytest.raises(ValidationError) as exc_info:
-            Filters(
-                tasCodes={
-                    "require": [["535", "535-2724", "535-2020/2021-2724-000", "extra"]],
-                    "counts": [{"value": "535", "label": "Agency", "count": 1}],
-                }
-            )
+            Filters(tasCodes={"require": [["535", "535-2724", "535-2020/2021-2724-000", "extra"]]})
 
         assert "between 1 and 3 elements" in str(exc_info.value)
 
     def test_require_rejects_empty_path(self):
         with pytest.raises(ValidationError) as exc_info:
-            Filters(tasCodes={"require": [[]], "counts": [{"value": "535", "label": "Agency", "count": 1}]})
+            Filters(tasCodes={"require": [[]]})
 
         assert "between 1 and 3 elements" in str(exc_info.value)
 
@@ -1341,53 +1370,132 @@ class TestTasCodeLists:
 
         assert "between 1 and 3 elements" in str(exc_info.value)
 
-    def test_codes_in_require_must_have_a_matching_counts_entry(self):
-        with pytest.raises(ValidationError) as exc_info:
-            Filters(
-                tasCodes={
-                    "require": [["310"], ["535"]],
-                    "counts": [{"value": "310", "label": "Agency A", "count": 3}],
-                }
-            )
-
-        assert "must contain an entry for each root node" in str(exc_info.value)
-
-    def test_counts_required_when_require_present(self):
-        with pytest.raises(ValidationError) as exc_info:
-            Filters(tasCodes={"require": [["310"]]})
-
-        assert "There must be a unique entry in 'counts'" in str(exc_info.value)
-
-    def test_tas_code_lists_model_can_be_used_directly(self):
-        model = TasCodeLists(require=[["310"]], counts=[{"value": "310", "label": "Agency", "count": 1}])
+    def test_tas_code_lists_model_can_be_used_directly(self, tas_accounts):
+        model = TasCodeLists(require=[["310"]])
 
         assert model.require == [["310"]]
+        assert [c.count for c in model.counts] == [1]
 
 
-class TestNaicsCodeListsRegression:
-    """Regression guard for NaicsCodeLists: splitting CodeLists into per-code-type require/exclude
-    shapes (nested paths for PSC/TAS) must not change NAICS, which stays a flat list of code strings.
-    """
+class TestNaicsCodeLists:
+    """Tests for the calculated counts on NaicsCodeLists (Filters.naicsCodes)."""
 
-    def test_accepts_multiple_codes_rolled_up_under_a_shared_root(self):
+    def test_default_empty(self):
+        assert Filters().naicsCodes.counts == []
+
+    @pytest.mark.parametrize(
+        "require, exclude, expected",
+        [
+            # Top tier covers every 6-digit code beneath it
+            (["11"], [], {"11": 4}),
+            # Middle tier
+            (["1111"], [], {"11": 3}),
+            # Middle tier with one leaf deselected
+            (["1111"], ["111110"], {"11": 2}),
+            # Explicit leaves, as the frontend sends them after a deselection
+            (["111120", "111130"], ["111110"], {"11": 2}),
+            (["111110"], [], {"11": 1}),
+            # Roots are kept separate and combined across codes that share one
+            (["1111", "1112", "3364"], [], {"11": 4, "33": 2}),
+            (["11", "33"], ["3364"], {"11": 4}),
+            (["1111"], ["11"], {}),
+        ],
+    )
+    def test_counts_are_calculated_from_require_and_exclude(self, naics_codes, require, exclude, expected):
+        filters = Filters(naicsCodes={"require": require, "exclude": exclude})
+
+        assert {c.value: c.count for c in filters.naicsCodes.counts} == expected
+
+    def test_count_label_is_the_root_description(self, naics_codes):
+        filters = Filters(naicsCodes={"require": ["336411"]})
+
+        assert [c.model_dump() for c in filters.naicsCodes.counts] == [
+            {"value": "33", "label": "Description 33", "count": 1}
+        ]
+
+    def test_counts_provided_by_the_llm_are_ignored(self, naics_codes):
         model = NaicsCodeLists(
-            require=["336411", "336412"], counts=[{"value": "33", "label": "Manufacturing", "count": 2}]
+            require=["336411", "336412"], counts=[{"value": "33", "label": "Manufacturing", "count": 99}]
         )
 
         assert model.require == ["336411", "336412"]
+        assert [(c.label, c.count) for c in model.counts] == [("Description 33", 2)]
 
     def test_rejects_nested_path_shape(self):
         """A PSC/TAS-style nested path must not silently work its way into NAICS's flat require list."""
         with pytest.raises(ValidationError) as exc_info:
-            NaicsCodeLists(require=[["336411"]], counts=[{"value": "33", "label": "Manufacturing", "count": 1}])
+            NaicsCodeLists(require=[["336411"]])
 
         assert "require" in str(exc_info.value)
 
-    def test_require_code_must_have_a_matching_root_in_counts(self):
-        with pytest.raises(ValidationError) as exc_info:
-            NaicsCodeLists(require=["336411"], counts=[{"value": "44", "label": "Retail Trade", "count": 1}])
 
-        assert "must contain a code from each root node" in str(exc_info.value)
+class TestCodeListsSchema:
+    """'counts' is calculated, so the llm-facing (validation) schema must not ask the llm to populate it."""
+
+    @pytest.mark.parametrize("field", ["naicsCodes", "pscCodes", "tasCodes"])
+    def test_counts_not_in_llm_schema(self, field):
+        schema = ExecuteFilterInput.model_json_schema()
+        definition = schema["$defs"][schema["properties"][field]["$ref"].split("/")[-1]]
+
+        assert set(definition["properties"]) == {"require", "exclude"}
+
+
+class TestCodePathRebuilding:
+    """The llm doesn't reliably assemble every tier of a PSC/TAS path, but a path is fully determined by its last
+    code, so it is rebuilt from that code."""
+
+    @pytest.mark.parametrize(
+        "path, expected",
+        [
+            (["Research and Development", "AA11"], ["Research and Development", "AA", "AA1", "AA11"]),
+            (["Service", "B502"], ["Service", "B", "B5", "B502"]),
+            (["Service", "D", "D3", "D301"], ["Service", "D", "D3", "D301"]),
+            (["Product", "10", "1005"], ["Product", "10", "1005"]),
+            # The group is derived from the code, so a wrong one is corrected
+            (["Product", "B502"], ["Service", "B", "B5", "B502"]),
+        ],
+    )
+    def test_psc_paths_are_rebuilt_from_the_last_code(self, path, expected):
+        model = PscCodeLists(require=[path], exclude=[path])
+
+        assert model.require == [expected]
+        assert model.exclude == [expected]
+
+    def test_psc_group_only_path_is_unchanged(self):
+        assert PscCodeLists(require=[["Service"]]).require == [["Service"]]
+
+    def test_psc_invalid_code_is_still_rejected(self):
+        with pytest.raises(ValidationError) as exc_info:
+            PscCodeLists(require=[["Service", "too-long-code"]])
+
+        assert "one to four character" in str(exc_info.value)
+
+    @pytest.mark.parametrize(
+        "path, expected",
+        [
+            (
+                ["310", "310-2012", "310-2012/2012-3200-000"],
+                ["310", "310-3200", "310-2012/2012-3200-000"],
+            ),
+            (
+                ["wrong", "wrong-0000", "019-011-X-1071-000"],
+                ["011", "011-1071", "019-011-X-1071-000"],
+            ),
+            (["310", "310-3200"], ["310", "310-3200"]),
+            (["310"], ["310"]),
+        ],
+    )
+    def test_tas_paths_are_rebuilt_from_the_rendering_label(self, path, expected):
+        model = TasCodeLists(require=[path], exclude=[path])
+
+        assert model.require == [expected]
+        assert model.exclude == [expected]
+
+    def test_tas_path_that_is_too_long_is_still_rejected(self):
+        with pytest.raises(ValidationError) as exc_info:
+            TasCodeLists(require=[["a", "b", "c", "d"]])
+
+        assert "between 1 and 3 elements" in str(exc_info.value)
 
 
 class TestSelectedCFDA:

@@ -2525,7 +2525,7 @@
                 "D"
             ],
             "pscCodes": {
-                "require": [["Research and Development", "AA"]],
+                "require": [["Research and Development"]],
                 "exclude": [],
                 "counts": [{"count": 890, "label":  "", "value": "Research and Development"}]
             }
@@ -2665,7 +2665,6 @@
             }
         },
         "expected_tools": [
-            "list_defc_codes",
             "execute_filter"
         ],
         "tags": [
@@ -2688,7 +2687,6 @@
             }
         },
         "expected_tools": [
-            "list_defc_codes",
             "execute_filter"
         ],
         "tags": [
@@ -2710,7 +2708,6 @@
             }
         },
         "expected_tools": [
-            "list_defc_codes",
             "execute_filter"
         ],
         "tags": [
@@ -2733,7 +2730,6 @@
             }
         },
         "expected_tools": [
-            "list_defc_codes",
             "execute_filter"
         ],
         "tags": [
@@ -2769,7 +2765,6 @@
             ]
         },
         "expected_tools": [
-            "list_defc_codes",
             "execute_filter"
         ],
         "tags": [
@@ -2820,7 +2815,6 @@
         },
         "expected_tools": [
             "lookup_location",
-            "list_defc_codes",
             "execute_filter"
         ],
         "tags": [
@@ -2868,7 +2862,6 @@
             }
         },
         "expected_tools": [
-            "lookup_codes",
             "execute_filter"
         ],
         "tags": [
