@@ -6,9 +6,11 @@ from pydantic import ValidationError
 from usaspending_api.llm.models.py_models import (
     AITool,
     AIToolDescription,
+    AIToolResult,
     ExecuteFilterInput,
     FilterRequest,
     Filters,
+    SelectedAgency,
 )
 from usaspending_api.llm.tools.exceptions import (
     AgencyNotRecognizedError,
@@ -18,12 +20,14 @@ from usaspending_api.llm.tools.exceptions import (
     FilterValidationError,
     RecipientNotRecognizedError,
     TimePeriodNotParseableError,
+    ToolUseRuntimeError,
 )
-from usaspending_api.llm.tools.lookup_agency import lookup_agency_tool
 from usaspending_api.llm.tools.lookup_award import lookup_award_tool
 from usaspending_api.llm.tools.lookup_recipient import lookup_recipient_tool
 from usaspending_api.references.helpers import create_hash
 from usaspending_api.references.models import FilterHash
+from usaspending_api.references.models.agency import Agency
+from usaspending_api.search.models.mv_agency_autocomplete import AgencyAutocompleteMatview
 
 logger = logging.getLogger(__name__)
 
@@ -32,6 +36,9 @@ _SINGLE_FIELD_ERRORS = {
     "awardAmounts": AwardAmountNotParseableError,
     "time_period": TimePeriodNotParseableError,
 }
+
+GENERIC_USER_MESSAGE = "Failed to select filters."
+RETRY_INSTRUCTION = "Fix the input based on the error above and call execute_filter again."
 
 
 def _build_user_message(field: str, kwargs: dict) -> str:
@@ -46,24 +53,37 @@ def _build_user_message(field: str, kwargs: dict) -> str:
     return message
 
 
+async def _agency_exists(agency: SelectedAgency) -> bool:
+    """Whether the selected agency id exists with the stated type under the stated toptier agency.
+
+    Checked directly by id: lookup_agencies' exact/prefix path returns ids from the agency autocomplete matview and its
+    semantic path returns agency-table ids, so a selection is valid if either source has it.
+    """
+    is_toptier = agency.agencyType == "toptier"
+    toptier_agency_id = agency.toptier_agency.id
+    if await AgencyAutocompleteMatview.objects.filter(
+        agency_autocomplete_id=agency.id, toptier_flag=is_toptier, toptier_agency_id=toptier_agency_id
+    ).aexists():
+        return True
+    return await Agency.objects.filter(
+        id=agency.id, toptier_flag=is_toptier, toptier_agency_id=toptier_agency_id
+    ).aexists()
+
+
 async def _validate_agencies_exist(filters: Filters) -> None:
-    """Confirm every selected agency is resolvable via lookup_agency."""
+    """Confirm every selected agency is a real agency selection as returned by lookup_agencies."""
     invalid = []
     for field in ("selectedAwardingAgencies", "selectedFundingAgencies"):
         for agency in getattr(filters, field).values():
-            query = agency.toptier_agency.toptier_code
-            try:
-                lookup_result = await lookup_agency_tool.function(query=query)
-                results = lookup_result["results"]
-            except AgencyNotRecognizedError:
-                results = {}
-            if f"{agency.id}_{agency.agencyType}" not in results:
-                invalid.append(agency.toptier_agency.name)
+            if not await _agency_exists(agency):
+                invalid.append(agency.subtier_agency.name if agency.subtier_agency else agency.toptier_agency.name)
     if invalid:
         raise AgencyNotRecognizedError(
-            f"Unable to filter. These agencies could not be verified: {', '.join(invalid)}. "
-            "Call lookup_agency for each and choose one of the returned agencies.",
-            model_detail=f"Unresolvable selected agencies: {invalid}",
+            f"Unable to filter. These agencies could not be verified: {', '.join(invalid)}.",
+            model_detail=(
+                f"Unresolvable selected agencies: {invalid}. Use the agency entries exactly as returned by "
+                "lookup_agencies (same id, agencyType, and toptier_agency); call lookup_agencies again if needed."
+            ),
         )
 
 
@@ -72,7 +92,7 @@ async def _validate_recipients_exist(filters: Filters) -> None:
     invalid = []
     for name in filters.selectedRecipients:
         result = await lookup_recipient_tool.function(query=name)
-        found = {n.upper() for n in result.get("recipient_names", [])}
+        found = {n.upper() for n in result.results.get("selectedRecipients", [])}
         if name.upper() not in found:
             invalid.append(name)
     if invalid:
@@ -94,7 +114,7 @@ async def _validate_award_ids_exist(filters: Filters) -> None:
         except AwardNotRecognizedError:
             invalid.append(award_id)
             continue
-        resolved = lookup.get("award_id") or award_id
+        resolved = lookup.results.get("award_id") or award_id
         if resolved not in canonical:
             canonical.append(resolved)
     filters.selectedAwardIDs = canonical
@@ -132,24 +152,17 @@ def build_filter_request(filter_input: dict) -> dict:
     return _filter_request_from_filters(filters)
 
 
-async def execute_filter(**kwargs) -> dict[str, str]:
+async def execute_filter(**kwargs) -> AIToolResult:
     logger.info(f"Starting execute_filter with {len(kwargs)} filter parameter(s)", extra={"filter_count": len(kwargs)})
 
     try:
         filters = Filters(**kwargs)
     except ValidationError as exc:
         fields = {error["loc"][0] if error["loc"] else None for error in exc.errors()}
+        model_detail = f"{exc}\n\n{RETRY_INSTRUCTION}"
         if len(fields) == 1 and (field := next(iter(fields))) in _SINGLE_FIELD_ERRORS:
-            raise _SINGLE_FIELD_ERRORS[field](_build_user_message(field, kwargs), model_detail=str(exc)) from exc
-        if len(fields) > 1:
-            raise FilterValidationError(
-                "The input parameters are invalid. Look at the error message and try again.",
-                model_detail=str(exc),
-            ) from exc
-        return {
-            "error": str(exc),
-            "message": "The input parameters are invalid. Look at the error message and try again.",
-        }
+            raise _SINGLE_FIELD_ERRORS[field](_build_user_message(field, kwargs), model_detail=model_detail) from exc
+        raise FilterValidationError(GENERIC_USER_MESSAGE, model_detail=model_detail) from exc
 
     await _validate_agencies_exist(filters)
     await _validate_recipients_exist(filters)
@@ -173,13 +186,13 @@ async def execute_filter(**kwargs) -> dict[str, str]:
             await fh.asave()
             logger.info(f"Successfully saved new filter hash: {hash_key}", extra={"hash": hash_key})
         except Exception as e:
-            return {
-                "error": str(e),
-                "message": "There was an error saving the filter hash.  Look at the error message and try again.",
-            }
+            raise ToolUseRuntimeError(
+                "There was an error saving the search filters. Please try again.",
+                model_detail=f"There was an error saving the filter hash: {e}",
+            ) from e
 
     logger.info(f"Execute filter completed successfully: hash={hash_key}", extra={"hash": hash_key})
-    return {"hash": hash_key}
+    return AIToolResult(results={"hash": hash_key})
 
 
 execute_filter_tool = AITool(

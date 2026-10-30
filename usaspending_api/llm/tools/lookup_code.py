@@ -11,7 +11,7 @@ from pgvector.django import CosineDistance
 from usaspending_api.accounts.models.treasury_appropriation_account import TreasuryAppropriationAccount
 from usaspending_api.llm.embeddings.embedding_generator import EmbeddingGenerator
 from usaspending_api.llm.models.db_models import AIModel
-from usaspending_api.llm.models.py_models import AITool, AIToolDescription
+from usaspending_api.llm.models.py_models import AITool, AIToolDescription, AIToolResult
 from usaspending_api.llm.tools.exceptions import (
     AssistanceListingNotRecognizedError,
     NaicsCodeNotRecognizedError,
@@ -179,32 +179,33 @@ class CodeLookupTool:
         self,
         query: str,
         code_type: Literal["naics", "psc", "cfda", "tas"],
+        inclusion: Literal["require", "exclude"] = "require",
         top_k: int = 20,
         query_fanout: int | None = 3,
-    ) -> dict[str, Any]:
+    ) -> AIToolResult:
         """
         Hybrid search for various code types combining text matching and vector similarity.
         """
         if code_type not in CODE_TYPE_CONFIGS:
-            return {
-                "error": f"Unsupported code type: {code_type}. Supported types: {list(CODE_TYPE_CONFIGS.keys())}",
-                "results": [],
-            }
+            return AIToolResult(
+                results={
+                    "error": f"Unsupported code type: {code_type}. Supported types: {list(CODE_TYPE_CONFIGS.keys())}",
+                    "results": [],
+                }
+            )
 
         config = CODE_TYPE_CONFIGS[code_type]
         budget_bureau_names = {}
 
-        results = await self._handle_exact_search(query, config, code_type, budget_bureau_names, top_k)
-        if results is None:
-            results = await self._handle_hybrid_search(
-                query, config, code_type, budget_bureau_names, top_k, query_fanout
-            )
+        codes = await self._handle_exact_search(query, config, code_type, budget_bureau_names, top_k)
+        if codes is None:
+            codes = await self._handle_hybrid_search(query, config, code_type, budget_bureau_names, top_k, query_fanout)
 
-        if results["total_codes"] == 0:
+        if codes["total_codes"] == 0:
             error_class, label = CODE_NOT_RECOGNIZED_ERRORS[code_type]
             raise error_class(f"{label}: {query}")
 
-        return results
+        return AIToolResult(results=codes)
 
     async def _handle_exact_search(
         self,
@@ -404,6 +405,7 @@ class CodeLookupTool:
         sorted_hierarchy = dict(
             sorted(hierarchy.items(), key=lambda x: self._get_best_score_in_tree(x[1]), reverse=True)
         )
+
         return {
             "hierarchy": sorted_hierarchy,
             "total_codes": sum(self._count_codes_in_tree(node) for node in sorted_hierarchy.values()),
