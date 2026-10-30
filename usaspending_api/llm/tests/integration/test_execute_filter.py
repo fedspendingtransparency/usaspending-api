@@ -701,9 +701,10 @@ class TestAIToolImplementation:
         Filters(**kwargs) at runtime (extra='forbid'). `defCode` is a deliberate, documented
         exception: it's a legacy singular field kept on `Filters` so old persisted FilterHash blobs
         still validate, but it's superseded by `defCodes` (require/exclude) and intentionally kept
-        off the tool surface so the assistant never emits it.
+        off the tool surface so the assistant never emits it. `treasuryAccounts` is likewise a
+        deprecated field kept on `Filters` for frontend compatibility; the assistant uses `tasCodes`.
         """
-        legacy_filters_only_fields = {"defCode"}
+        legacy_filters_only_fields = {"defCode", "treasuryAccounts"}
         assert set(Filters.model_fields) - set(ExecuteFilterInput.model_fields) == legacy_filters_only_fields
         assert set(ExecuteFilterInput.model_fields) - set(Filters.model_fields) == set()
 
