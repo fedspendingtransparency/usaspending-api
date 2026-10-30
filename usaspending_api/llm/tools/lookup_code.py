@@ -47,7 +47,6 @@ CODE_NOT_RECOGNIZED_ERRORS = {
 # Semantic search always returns its nearest neighbors, however loosely related. Only results scoring at least this
 # fraction of the best match are selected, and no more than the maximum number of them.
 SEMANTIC_MIN_RELATIVE_SCORE = 0.8
-SEMANTIC_MAX_SELECTIONS = 20
 # A match must also score at least this much, so a query with nothing related returns an error instead of its single
 # nearest neighbor.
 SEMANTIC_MIN_ABSOLUTE_SCORE = 0.3
@@ -251,7 +250,7 @@ class CodeLookupTool:
                 )
             selected = self._select_matched_nodes(codes["hierarchy"], code_type, min_score, margin)
             if is_semantic_search:
-                selected = sorted(selected, key=lambda item: item[1]["score"], reverse=True)[:SEMANTIC_MAX_SELECTIONS]
+                selected = sorted(selected, key=lambda item: item[1]["score"], reverse=True)
                 logger.info(
                     f"Selected {code_type} codes: {[(code, round(node['score'], 3)) for code, node in selected]}"
                 )
@@ -711,6 +710,8 @@ lookup_code_tool = AITool(
               writing them from memory.
             - Do not use it for DEFC or disaster codes, dollar amounts, dates, locations, agencies, recipients,
               award types, or set-asides. Those have their own tools or filters.
+            - Words that are part of a company, organization, or person's name are never an industry, product, or
+              program.
         """,
         input_schema={
             "type": "object",
