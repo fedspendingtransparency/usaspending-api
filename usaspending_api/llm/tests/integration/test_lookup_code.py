@@ -130,6 +130,12 @@ def tool():
     return CodeLookupTool()
 
 
+def _selected_codes(result, code_type: str, inclusion: str = "require") -> set[str]:
+    """Every code in a lookup_codes result's require/exclude list, flattening PSC/TAS paths."""
+    values = result.results[f"{code_type}Codes"][inclusion]
+    return {code for value in values for code in ([value] if isinstance(value, str) else value)}
+
+
 class TestQueryExactAndPrefixMatches:
     async def test_exact_match_case_insensitive(self, tool):
         await _make_naics("541330", "Test construction")
@@ -160,7 +166,7 @@ class TestExactMatchShortCircuit:
 
         result = await tool.lookup_codes("541330", "naics", query_fanout=3)
 
-        assert "541330" in result.results["naicsCodes"]["require"]
+        assert "541330" in _selected_codes(result, "naics")
         mock_embedding_generator.agenerate_embedding.assert_not_called()
         mock_expand_query.assert_not_called()
 
@@ -187,7 +193,7 @@ class TestPrefixMatch:
 
         result = await tool.lookup_codes("5413", "naics")
 
-        codes_in_tree = result.results["naicsCodes"]["require"]
+        codes_in_tree = _selected_codes(result, "naics")
         assert "541330" in codes_in_tree
         assert "541340" in codes_in_tree
         assert "541511" not in codes_in_tree
@@ -199,6 +205,14 @@ class TestPrefixMatch:
 
         mock_embedding_generator.agenerate_embedding.assert_not_called()
         mock_expand_query.assert_not_called()
+
+    async def test_prefix_match_score_below_exact(self, tool, mock_embedding_generator, mock_expand_query):
+        await _make_naics("541330", "Construction of buildings")
+
+        config = CODE_TYPE_CONFIGS["naics"]
+        result = await tool._handle_exact_search("5413", config, "naics", {}, 20)
+        node = result["hierarchy"]["541330"]
+        assert node["score"] == 0.95
 
 
 class TestHybridSearch:
@@ -212,7 +226,7 @@ class TestHybridSearch:
 
         result = await tool.lookup_codes("some semantic query", "naics")
 
-        assert "999999" in result.results["naicsCodes"]["require"]
+        assert "999999" in _selected_codes(result, "naics")
         mock_embedding_generator.agenerate_embedding.assert_called()
 
     async def test_vector_distance_threshold_excludes_far_matches(
@@ -226,7 +240,7 @@ class TestHybridSearch:
         mock_embedding_generator.agenerate_embedding.return_value = _unit_vector(dims, 0)
 
         result = await tool.lookup_codes("query text", "naics")
-        codes = result.results["naicsCodes"]["require"]
+        codes = _selected_codes(result, "naics")
 
         assert "111111" in codes
         assert "222222" not in codes
@@ -272,7 +286,7 @@ class TestHybridSearch:
 
             result = await tool.lookup_codes("query text", "naics", query_fanout=3)
 
-        assert "333333" in result.results["naicsCodes"]["require"]
+        assert "333333" in _selected_codes(result, "naics")
 
 
 class TestFinalizeResultsHierarchy:
@@ -738,7 +752,7 @@ class TestAIToolWiring:
     async def test_tool_execution_through_function_attribute(self, mock_embedding_generator, mock_expand_query):
         await _make_naics("541330", "Construction of buildings")
         result = await lookup_code_tool.function(query="541330", code_type="naics")
-        assert "541330" in result.results["naicsCodes"]["require"]
+        assert "541330" in _selected_codes(result, "naics")
 
 
 class TestCodeTypeConfigsConsistency:
@@ -775,7 +789,8 @@ class TestDedupeTasByPeriodOfAvailability:
 
         result = await tool.lookup_codes("test tas", "tas")
 
-        assert result.results["tasCodes"]["require"] == [["011", "011-0001"]]
+        codes = _selected_codes(result, "tas")
+        assert codes == {"011", "011-0001"}
 
     async def test_different_sub_account_not_collapsed(
         self, tool, mock_embedding_generator, mock_expand_query, mock_get_aimodel
@@ -805,7 +820,6 @@ class TestDedupeTasByPeriodOfAvailability:
 
         config = CODE_TYPE_CONFIGS["tas"]
         found = await tool._handle_hybrid_search("main sub", config, "tas", {}, 20, None)
-
         assert tool._find_node(found["hierarchy"], "011-2016/2016-0001-000")
         assert tool._find_node(found["hierarchy"], "011-2016/2016-0001-001")
 
@@ -839,6 +853,5 @@ class TestDedupeTasByPeriodOfAvailability:
 
         config = CODE_TYPE_CONFIGS["tas"]
         found = await tool._handle_hybrid_search("compensation", config, "tas", {}, 20, None)
-
         assert tool._find_node(found["hierarchy"], "011-2016/2016-0001-000")
         assert tool._find_node(found["hierarchy"], "[US_PHONE_REDACTED]/2016-0001-000")

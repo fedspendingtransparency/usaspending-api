@@ -1,14 +1,19 @@
+import html
 import re
 from abc import ABC, abstractmethod
 from datetime import date
 from functools import cached_property
-from typing import Annotated, Any, Callable, Literal
+from typing import Annotated, Any, Callable, Literal, get_args
 
 from pydantic import BaseModel, ConfigDict, Field, RootModel, computed_field, field_validator, model_validator
 from pydantic_core import PydanticCustomError
 
-from usaspending_api.awards.v2.lookups.lookups import all_awards_types_to_category
-from usaspending_api.common.helpers.orm_helpers import award_types_are_valid_groups
+from usaspending_api.awards.v2.lookups.lookups import (
+    all_awards_types_to_category,
+    new_to_old_award_type_mapping,
+    old_to_new_award_type_mapping,
+)
+from usaspending_api.data.gsdm_maps import gsdm_maps
 from usaspending_api.llm.tools.helpers.code_counts import build_naics_counts, build_psc_counts, build_tas_counts
 from usaspending_api.llm.tools.helpers.code_paths import build_psc_path, build_tas_path
 from usaspending_api.references.helpers import aget_defc_code_details, get_defc_code_details
@@ -52,8 +57,8 @@ class AITool(BaseModel):
 
 
 class AIToolResult(BaseModel):
-    instructions: str = Field(default="", description="Instructions for llm in event of certain tool return cases")
     results: dict = Field(default_factor=dict, description="Tool output to be incorporated into resulting filter")
+    instructions: str | None = Field(default=None, description="Instructions for llm in certain tool return cases")
 
 
 class LocationFilter(BaseModel):
@@ -133,14 +138,21 @@ class ToptierAgency(BaseModel):
 
     id: int
     toptier_code: str
-    abbreviation: str
+    abbreviation: str = ""
     name: str
+
+    @field_validator("abbreviation", mode="before")
+    @classmethod
+    def default_missing_abbreviation(cls, value: str | None) -> str:
+        """Some toptier agencies have no abbreviation in the DB; the frontend reads this field
+        unconditionally, so fall back to "" rather than rejecting the agency."""
+        return value or ""
 
 
 class SubtierAgency(BaseModel):
     """Model for subtier agency information"""
 
-    abbreviation: str
+    abbreviation: str = ""
     name: str
 
     @field_validator("abbreviation", mode="before")
@@ -665,6 +677,93 @@ class AwardAmounts(RootModel[dict[str, list[int | None]]]):
         return self
 
 
+def _with_legacy_codes(codes: Any) -> list[str]:
+    """Expand award-type codes so historic awards (which kept their legacy numeric codes) still match:
+    every code is normalized to its current code, then all legacy codes for that current code are added."""
+    expanded = set()
+    for code in codes:
+        current = old_to_new_award_type_mapping.get(code, code)
+        expanded.add(current)
+        expanded.update(new_to_old_award_type_mapping.get(current, []))
+    return sorted(expanded)
+
+
+# Award-type names as shown in the Advanced Search frontend's award type filter.
+AWARD_TYPE_GROUP_LABELS: dict[str, list[str]] = {
+    "Contracts": ["A", "B", "C", "D"],
+    "Contract IDVs": ["IDV_A", "IDV_B", "IDV_B_A", "IDV_B_B", "IDV_B_C", "IDV_C", "IDV_D", "IDV_E"],
+    "Grants": ["02", "03", "04", "F001"],
+    "Cooperative Agreement": ["05", "F002"],
+    "Direct Payments": ["06", "10", "F006", "F007"],
+    "Loans": ["07", "08", "F003", "F004"],
+    "Other": ["-1", "09", "11", "F005", "F008", "F009", "F010"],
+}
+ALL_AWARD_TYPE_CODES = frozenset(code for codes in AWARD_TYPE_GROUP_LABELS.values() for code in codes)
+AWARD_TYPE_LABELS: dict[str, list[str]] = {
+    # Not frontend checkboxes: shortcuts for selections the LLM otherwise spells out group by group.
+    # "All Award Types" selects every code, which resolve_award_types collapses to no awardType filter.
+    "All Award Types": sorted(ALL_AWARD_TYPE_CODES),
+    "Financial Assistance": sorted(
+        code
+        for group in ("Grants", "Cooperative Agreement", "Direct Payments", "Loans")
+        for code in AWARD_TYPE_GROUP_LABELS[group]
+    ),
+    **AWARD_TYPE_GROUP_LABELS,
+    # Contracts
+    "Blanket Purchase Agreements (BPA) Calls": ["A"],
+    "Purchase Orders (PO)": ["B"],
+    "Delivery Orders (DO)": ["C"],
+    "Definitive Contracts": ["D"],
+    # Contract IDVs
+    "Government-Wide Acquisition Contract (GWAC)": ["IDV_A"],
+    "Indefinite Delivery / Requirements Contract": ["IDV_B_A"],
+    "Indefinite Delivery / Indefinite Quantity (IDIQ) Contract": ["IDV_B_B"],
+    "Indefinite Delivery / Definite Quantity Contract": ["IDV_B_C"],
+    "Federal Supply Schedule (FSS)": ["IDV_C"],
+    "Basic Ordering Agreement (BOA)": ["IDV_D"],
+    "Blanket Purchase Agreements (BPA)": ["IDV_E"],
+    # Direct Payments
+    "Direct Payment with Unrestricted Use": _with_legacy_codes(["F007"]),
+    "Direct Payment for Specified Use": _with_legacy_codes(["F006"]),
+    # Loans
+    "Direct Loans": _with_legacy_codes(["F003"]),
+    "Loan Guarantees": _with_legacy_codes(["F004"]),
+    # Other
+    "Indemnity/Insurance (non-loan)": _with_legacy_codes(["F005"]),
+    "Asset Forfeiture/Equitable Sharing": _with_legacy_codes(["F008"]),
+    "Sale, Exchange, or Donation of Property and Goods": _with_legacy_codes(["F009"]),
+    "Other Financial Assistance": _with_legacy_codes(["F010"]),
+    "Not Specified": ["-1"],
+}
+AwardTypeLabel = Literal[tuple(AWARD_TYPE_LABELS)]
+_AWARD_TYPE_LABELS_BY_KEY = {" ".join(label.lower().split()): codes for label, codes in AWARD_TYPE_LABELS.items()}
+
+
+def resolve_award_types(values: list[Any]) -> list[str]:
+    """Resolve award-type names (or raw codes) to the sorted, legacy-expanded codes they select.
+
+    Selecting every award group is the same as not filtering by award type, so it resolves to [].
+    """
+    codes: set[str] = set()
+    unknown = []
+    for value in values:
+        key = " ".join(value.lower().split()) if isinstance(value, str) else None
+        if key in _AWARD_TYPE_LABELS_BY_KEY:
+            codes.update(_AWARD_TYPE_LABELS_BY_KEY[key])
+        elif value in all_awards_types_to_category:
+            codes.update(_with_legacy_codes([value]))
+        else:
+            unknown.append(value)
+    if unknown:
+        raise ValueError(
+            f"Unknown awardType value(s): {unknown}. Use the award type names listed in the awardType "
+            "description (e.g. 'Contracts', 'Grants', 'Direct Loans'), or omit awardType to include all award types."
+        )
+    if codes >= ALL_AWARD_TYPE_CODES:
+        return []
+    return sorted(codes)
+
+
 class Filters(BaseModel):
     """Validation model for all filter criteria and the persisted FilterHash blob."""
 
@@ -731,6 +830,35 @@ class Filters(BaseModel):
     def validate_selected_cfda(cls, value: dict[str, SelectedCFDA]) -> dict[str, SelectedCFDA]:
         return _validate_cfda_keys_match_identifier(value)
 
+    @field_validator("setAside", mode="before")
+    @classmethod
+    def validate_set_aside(cls, value: Any) -> Any:
+        """Name the valid codes in the error for the LLM to have additional context"""
+        if not isinstance(value, list):
+            return value
+        valid = get_args(SetAsideCode)
+        unknown = [code for code in value if code not in valid]
+        if unknown:
+            names = gsdm_maps["type_set_aside_map"]
+            options = "; ".join(f"{code} = {names.get(code, code)}" for code in valid)
+            recipient_types = [code for code in unknown if code in get_args(RecipientType)]
+            hint = (
+                f" {recipient_types} are recipientType values, not set-aside codes -- put them in recipientType."
+                if recipient_types
+                else ""
+            )
+            raise ValueError(f"Invalid setAside code(s): {unknown}.{hint} Valid setAside codes: {options}.")
+        return value
+
+    @field_validator("timePeriodFY", mode="before")
+    @classmethod
+    def clean_time_period_fy(cls, value: Any) -> Any:
+        """The LLM sometimes wraps years in HTML-escaped or literal quotes (e.g. '&quot;2025&quot;') and cannot see
+        that it is doing so, so validation errors alone send it into a retry loop. Strip that noise first."""
+        if not isinstance(value, list):
+            return value
+        return [html.unescape(year).strip().strip("\"'").strip() if isinstance(year, str) else year for year in value]
+
     @field_validator("timePeriodFY")
     @classmethod
     def validate_time_period_fy(cls, value: list[str]) -> list[str]:
@@ -743,20 +871,14 @@ class Filters(BaseModel):
             )
         return value
 
-    @field_validator("awardType")
+    @field_validator("awardType", mode="before")
     @classmethod
-    def validate_award_type(cls, value: list[str]) -> list[str]:
-        """Validate award-type codes: each must be a known code, and all must share one award group."""
-        if not value:
+    def resolve_award_type(cls, value: Any) -> Any:
+        """The LLM selects award types by frontend name (see AWARD_TYPE_LABELS); persist them as codes. Raw codes
+        are still accepted so code-based callers and previously persisted filters keep working."""
+        if not isinstance(value, list) or not value:
             return value
-        unknown = [code for code in value if code not in all_awards_types_to_category]
-        if unknown:
-            raise ValueError(
-                f"Invalid award type code(s): {unknown}. See the awardType field description for valid codes."
-            )
-        if not award_types_are_valid_groups(value):
-            raise ValueError("'award_type_codes' must only contain types from one group.")
-        return value
+        return resolve_award_types(value)
 
     @model_validator(mode="after")
     def validate_time_period_consistency(self) -> "Filters":
@@ -813,8 +935,8 @@ class ExecuteFilterInput(BaseModel):
         description=(
             "Free-text keywords. Only for discrete terms with no matching structured filter. For literal "
             "descriptive phrases, product/item names, addresses, or multi-term OR-style searches, use "
-            "awardDescription instead (comma-separate terms there for OR logic). Never put boolean or "
-            "HTML-escaped syntax (e.g. '&quot;jeep&quot; OR &quot;toyota&quot;') in either field."
+            "awardDescription instead (comma-separate terms there for OR logic). Never put boolean operators "
+            "(AND/OR), quotation marks, or HTML entities in either field."
         ),
         json_schema_extra={"examples": [["bridge", "repair"]]},
     )
@@ -923,22 +1045,37 @@ class ExecuteFilterInput(BaseModel):
         default_factory=dict,
         description="Recipient locations keyed by identifier. Use the lookup_location tool to build these.",
     )
-    awardType: list[str] = Field(
+    awardType: list[AwardTypeLabel] = Field(
         default_factory=list,
         description=(
-            "Award-type code filter. If the query mentions an award vehicle (contract, grant, loan, IDV, direct "
-            "payment, financial assistance, or a related word/concept), you MUST set this filter - even when the "
-            "query's main subject is a recipient, agency, or location (e.g. 'contracts for Boeing' requires BOTH "
-            "the recipient filter AND this filter). Use exactly one of these code groups, matching the query:\n"
-            "  contracts:       ['A', 'B', 'C', 'D']\n"
-            "  IDVs:            ['IDV_A', 'IDV_B', 'IDV_B_A', 'IDV_B_B', 'IDV_B_C', 'IDV_C', 'IDV_D', 'IDV_E']\n"
-            "  grants:          ['02', '03', '04', '05', 'F001', 'F002']\n"
-            "  loans:           ['07', '08', 'F003', 'F004']\n"
-            "  direct payments: ['06', '10', 'F006', 'F007']\n"
-            "  other:           ['09', '11', '-1', 'F005', 'F008', 'F009', 'F010']\n"
-            "A value may only contain codes from a SINGLE group."
+            "Award type filter, using the award type names below. Set it when the query names a specific award "
+            "vehicle (contracts, IDVs, grants, cooperative agreements, loans, direct payments, insurance, etc.) \n"
+            "Shortcuts:\n"
+            "  'All Award Types': every award type (the same as leaving awardType empty).\n"
+            "  'Financial Assistance': every non-contract type (Grants, Cooperative Agreement, Direct Payments, "
+            "Loans, Other). Use it for 'financial assistance' or 'assistance awards'.\n"
+            "Use a group name to select every type in that group, or individual names for specific types:\n"
+            "  'Contracts': 'Blanket Purchase Agreements (BPA) Calls', 'Purchase Orders (PO)', "
+            "'Delivery Orders (DO)', 'Definitive Contracts'\n"
+            "  'Contract IDVs': 'Government-Wide Acquisition Contract (GWAC)', "
+            "'Indefinite Delivery / Requirements Contract', "
+            "'Indefinite Delivery / Indefinite Quantity (IDIQ) Contract', "
+            "'Indefinite Delivery / Definite Quantity Contract', 'Federal Supply Schedule (FSS)', "
+            "'Basic Ordering Agreement (BOA)', 'Blanket Purchase Agreements (BPA)'\n"
+            "  'Grants' (no sub-types)\n"
+            "  'Cooperative Agreement' (no sub-types)\n"
+            "  'Direct Payments': 'Direct Payment with Unrestricted Use', 'Direct Payment for Specified Use'\n"
+            "  'Loans': 'Direct Loans', 'Loan Guarantees'\n"
+            "  'Other': 'Indemnity/Insurance (non-loan)', 'Asset Forfeiture/Equitable Sharing', "
+            "'Sale, Exchange, or Donation of Property and Goods', 'Other Financial Assistance', 'Not Specified'\n"
+            "'Grants' does not include cooperative agreements; only add 'Cooperative Agreement' when the query asks "
+            "for cooperative agreements. 'Blanket Purchase Agreements (BPA) Calls' is a contract type; "
+            "'Blanket Purchase Agreements (BPA)' is an IDV type. Combine names from different groups when the query "
+            "names several vehicles (e.g. 'grants and loans' -> ['Grants', 'Loans'])."
         ),
-        json_schema_extra={"examples": [["A", "B", "C", "D"], ["02", "03", "04", "05"], ["07", "08"]]},
+        json_schema_extra={
+            "examples": [["Contracts"], ["Grants", "Loans"], ["Direct Loans"], ["Financial Assistance"]]
+        },
     )
     selectedAwardIDs: list[str] = Field(
         default_factory=list,
