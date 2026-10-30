@@ -99,7 +99,7 @@ RECIPIENT_TYPES: dict[str, list[dict[str, str]]] = {
 }
 
 
-async def list_recipient_types() -> dict[str, list[dict[str, str]]]:
+async def list_recipient_types() -> AIToolResult:
     return AIToolResult(results=RECIPIENT_TYPES)
 
 

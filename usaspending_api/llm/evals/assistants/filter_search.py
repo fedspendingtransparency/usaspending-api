@@ -71,7 +71,8 @@ def get_final_filter_output(session: Session) -> dict[str, Any]:
     """
     execute_filter = (
         ToolUse.objects.filter(message__session=session, name=FilterSearchAssistant.COMPLETION_TOOL_NAME)
-        .exclude(result__contains="error")
+        .exclude(result__has_key="error")
+        .exclude(result__results__has_key="error")
         .order_by(
             "message__order",
             "created_at",
@@ -82,7 +83,8 @@ def get_final_filter_output(session: Session) -> dict[str, Any]:
     if not execute_filter:
         raise ExecutionError(f"Session '{session.id}' completed without a successful execute_filter call.")
 
-    hash_key = execute_filter.result.get("hash") if isinstance(execute_filter.result, dict) else None
+    result = execute_filter.result if isinstance(execute_filter.result, dict) else {}
+    hash_key = (result.get("results") or {}).get("hash")
     persisted = FilterHash.objects.filter(hash=hash_key).first() if hash_key else None
     if persisted is not None:
         return persisted.filter["filters"]

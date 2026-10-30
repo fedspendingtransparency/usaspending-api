@@ -9,6 +9,7 @@ from usaspending_api.llm.models.py_models import (
     AIToolResult,
     ExecuteFilterInput,
     Filters,
+    SelectedAgency,
     aget_defc_rows,
     clear_defc_rows_cache,
 )
@@ -20,9 +21,18 @@ from usaspending_api.llm.tools.exceptions import (
     FilterValidationError,
     RecipientNotRecognizedError,
     TimePeriodNotParseableError,
+    ToolUseRuntimeError,
 )
-from usaspending_api.llm.tools.execute_filter import execute_filter, execute_filter_tool
+from usaspending_api.llm.tools.execute_filter import (
+    GENERIC_USER_MESSAGE,
+    RETRY_INSTRUCTION,
+    execute_filter,
+    execute_filter_tool,
+)
+from usaspending_api.llm.tools.execute_filter import _agency_exists as agency_exists  # bound before autouse patch
 from usaspending_api.references.models import FilterHash
+from usaspending_api.references.models.agency import Agency
+from usaspending_api.references.models.toptier_agency import ToptierAgency
 
 pytestmark = pytest.mark.django_db(transaction=True)
 
@@ -33,9 +43,6 @@ def mock_existence_lookups():
     existence-validation paths) continue to pass without hitting real DB/OpenSearch backends.
     Tests exercising validation failures override these within their own nested `patch(...)`."""
 
-    async def agency_lookup(query, **kwargs):
-        return AIToolResult(results={"1_toptier": {"id": 1, "agencyType": "toptier"}}, instructions=None)
-
     async def recipient_lookup(query, **kwargs):
         return AIToolResult(results={"selectedRecipients": [query]})
 
@@ -43,7 +50,7 @@ def mock_existence_lookups():
         return AIToolResult(results={"award_id": query}, instructions=None)
 
     with (
-        patch("usaspending_api.llm.tools.execute_filter.lookup_agency_tool.function", side_effect=agency_lookup),
+        patch("usaspending_api.llm.tools.execute_filter._agency_exists", new_callable=AsyncMock, return_value=True),
         patch("usaspending_api.llm.tools.execute_filter.lookup_recipient_tool.function", side_effect=recipient_lookup),
         patch("usaspending_api.llm.tools.execute_filter.lookup_award_tool.function", side_effect=award_lookup),
     ):
@@ -98,13 +105,14 @@ class TestInputValidation:
         assert isinstance(result, AIToolResult)
         assert "error" not in result
 
-    async def test_invalid_filters_return_error(self):
-        """Test that invalid filters return validation error."""
-        result = await execute_filter(invalid_field="invalid_value")
+    async def test_invalid_filters_raise_validation_error(self):
+        """Test that invalid filters raise a validation error."""
+        with pytest.raises(FilterValidationError) as exc_info:
+            await execute_filter(invalid_field="invalid_value")
 
-        assert "error" in result.results
-        assert "message" in result.results
-        assert "invalid" in result.results["message"].lower()
+        assert exc_info.value.user_message == GENERIC_USER_MESSAGE
+        assert "invalid_field" in exc_info.value.model_detail
+        assert exc_info.value.model_detail.endswith(RETRY_INSTRUCTION)
 
     async def test_empty_filters_accepted(self):
         """Test that empty filters are valid."""
@@ -115,18 +123,16 @@ class TestInputValidation:
 
     async def test_validation_error_message_includes_details(self):
         """Test that validation errors include helpful details."""
-        result = await execute_filter(awardType="invalid")
+        with pytest.raises(FilterValidationError) as exc_info:
+            await execute_filter(awardType="invalid")
 
-        assert "error" in result.results
-        assert isinstance(result.results["error"], str)
-        assert len(result.results["error"]) > 0
+        assert "awardType" in exc_info.value.model_detail
 
     async def test_partial_valid_filters(self):
         """Test filters with only some valid fields."""
-        result = await execute_filter(awardType=["A", "B"], invalid_field="should_be_ignored")
-
         # Should fail validation due to invalid field
-        assert "error" in result.results
+        with pytest.raises(FilterValidationError):
+            await execute_filter(awardType=["A", "B"], invalid_field="should_be_ignored")
 
     async def test_selected_recipients_at_max_length_accepted(self):
         """Test that exactly 50 selected recipients is accepted."""
@@ -135,12 +141,12 @@ class TestInputValidation:
         assert isinstance(result, AIToolResult)
         assert "error" not in result
 
-    async def test_selected_recipients_over_max_length_returns_error(self):
+    async def test_selected_recipients_over_max_length_raises_error(self):
         """Test that more than 50 selected recipients is rejected to avoid oversized OpenSearch queries."""
-        result = await execute_filter(selectedRecipients=[f"RECIPIENT_{i}" for i in range(51)])
+        with pytest.raises(FilterValidationError) as exc_info:
+            await execute_filter(selectedRecipients=[f"RECIPIENT_{i}" for i in range(51)])
 
-        assert "error" in result.results
-        assert "message" in result.results
+        assert "selectedRecipients" in exc_info.value.model_detail
 
 
 class TestFilterProcessing:
@@ -331,42 +337,43 @@ class TestHashCreationAndStorage:
 class TestErrorHandling:
     """Test error handling scenarios."""
 
-    async def test_validation_error_returns_error_dict(self):
-        """Test that validation errors return proper error dict."""
-        result = await execute_filter(awardType="invalid_format")
+    async def test_validation_error_raises_with_user_message_and_model_detail(self):
+        """Test that validation errors raise with a user-facing message and pydantic detail for the model."""
+        with pytest.raises(FilterValidationError) as exc_info:
+            await execute_filter(awardType="invalid_format")
 
-        assert "error" in result.results
-        assert "message" in result.results
-        assert isinstance(result.results["error"], str)
-        assert isinstance(result.results["message"], str)
+        assert isinstance(exc_info.value.user_message, str)
+        assert "awardType" in exc_info.value.model_detail
 
-    async def test_database_save_error_returns_error_dict(self, mock_filter_hash):
-        """Test that database save errors return proper error dict."""
+    async def test_database_save_error_raises(self, mock_filter_hash):
+        """Test that database save errors raise a tool error with a user-facing message."""
         mock_filter_hash.objects.aget.side_effect = FilterHash.DoesNotExist
         mock_instance = _new_mock_instance()
         mock_instance.asave.side_effect = Exception("Database error")
         mock_filter_hash.return_value = mock_instance
 
-        result = await execute_filter(awardType=["A"])
+        with pytest.raises(ToolUseRuntimeError) as exc_info:
+            await execute_filter(awardType=["A"])
 
-        assert "error" in result.results
-        assert "message" in result.results
-        assert "error saving" in result.results["message"].lower()
+        assert "error saving" in exc_info.value.user_message.lower()
 
     async def test_error_message_includes_exception_details(self, mock_filter_hash):
-        """Test that error messages include exception details."""
+        """Test that the model-facing detail includes the underlying exception, not the user message."""
         mock_filter_hash.objects.aget.side_effect = FilterHash.DoesNotExist
         mock_instance = _new_mock_instance()
         mock_instance.asave.side_effect = Exception("Specific database error")
         mock_filter_hash.return_value = mock_instance
 
-        result = await execute_filter(awardType=["A"])
+        with pytest.raises(ToolUseRuntimeError) as exc_info:
+            await execute_filter(awardType=["A"])
 
-        assert "Specific database error" in result.results["error"]
+        assert "Specific database error" in exc_info.value.model_detail
+        assert "Specific database error" not in exc_info.value.user_message
 
     async def test_validation_error_does_not_save_to_database(self, mock_filter_hash):
         """Test that validation errors don't attempt database save."""
-        await execute_filter(invalid_field="invalid")
+        with pytest.raises(FilterValidationError):
+            await execute_filter(invalid_field="invalid")
 
         # Should not attempt to access database
         assert not mock_filter_hash.objects.aget.called
@@ -379,8 +386,8 @@ class TestValidationErrorTranslation:
     can show a clean user-facing message while still receiving the full pydantic detail for
     self-correction. Failures spanning more than one category are raised as a generic
     FilterValidationError for the same reason -- a returned error dict never reaches the frontend
-    as a visible error, even though it looks like one to the model. An unrecognized field by
-    itself keeps the original generic-error-dict behavior."""
+    as a visible error, even though it looks like one to the model. Any other failure (e.g. an
+    unrecognized field by itself) is also raised as a FilterValidationError."""
 
     @pytest.fixture(autouse=True)
     async def seed_defc_codes(self):
@@ -441,8 +448,9 @@ class TestValidationErrorTranslation:
                 time_period=[{"start_date": "invalid-date", "end_date": "2023-12-31"}],
             )
 
-        assert "invalid" in exc_info.value.user_message.lower()
+        assert exc_info.value.user_message == GENERIC_USER_MESSAGE
         assert "NOT_REAL" in exc_info.value.model_detail
+        assert exc_info.value.model_detail.endswith(RETRY_INSTRUCTION)
 
 
 class TestAwardTypeNames:
@@ -469,16 +477,15 @@ class TestAwardTypeNames:
         assert saved_filter["filters"]["awardType"] == ["02", "03", "04", "05", "F001", "F002"]
 
     async def test_unknown_award_type_name_returns_guidance(self):
-        result = await execute_filter(awardType=["Fellowships"])
+        with pytest.raises(FilterValidationError) as exc_info:
+            await execute_filter(awardType=["Fellowships"])
 
-        assert "error" in result.results
-        assert "Unknown awardType value(s): ['Fellowships']" in result.results["error"]
-        assert "omit awardType" in result.results["error"]
+        assert "Unknown awardType value(s): ['Fellowships']" in exc_info.value.model_detail
+        assert "omit awardType" in exc_info.value.model_detail
 
 
 class TestAgencyExistenceValidation:
-    """selectedAwardingAgencies/selectedFundingAgencies entries are confirmed via lookup_agency_tool
-    before a filter is hashed."""
+    """selectedAwardingAgencies/selectedFundingAgencies entries are confirmed to exist before a filter is hashed."""
 
     async def test_valid_agency_passes(self, sample_filters, mock_filter_hash):
         mock_filter_hash.objects.aget.side_effect = FilterHash.DoesNotExist
@@ -491,28 +498,78 @@ class TestAgencyExistenceValidation:
 
     async def test_unresolvable_agency_raises(self, sample_filters):
         with patch(
-            "usaspending_api.llm.tools.execute_filter.lookup_agency_tool.function",
-            new_callable=AsyncMock,
-            return_value=AIToolResult(results={}, instructions=None),
+            "usaspending_api.llm.tools.execute_filter._agency_exists", new_callable=AsyncMock, return_value=False
         ):
             with pytest.raises(AgencyNotRecognizedError) as exc_info:
                 await execute_filter(**sample_filters)
 
         assert "Department of Agriculture" in exc_info.value.user_message
         assert "Unresolvable selected agencies" in exc_info.value.model_detail
+        assert "exactly as returned by lookup_agencies" in exc_info.value.model_detail
 
-    async def test_agency_lookup_zero_results_is_treated_as_unresolvable(self, sample_filters):
-        """lookup_agency_tool raises AgencyNotRecognizedError on zero matches; that must be caught
-        and translated into the same unresolvable-agency error, not propagated raw."""
-        with patch(
-            "usaspending_api.llm.tools.execute_filter.lookup_agency_tool.function",
-            new_callable=AsyncMock,
-            side_effect=AgencyNotRecognizedError("Unable to filter. We couldn't find an agency with the name: 001"),
-        ):
-            with pytest.raises(AgencyNotRecognizedError) as exc_info:
-                await execute_filter(**sample_filters)
 
-        assert "Unresolvable selected agencies" in exc_info.value.model_detail
+async def _make_agency_rows(subtier_count: int) -> tuple[ToptierAgency, list[Agency]]:
+    toptier = await sync_to_async(baker.make)(
+        ToptierAgency,
+        toptier_code="070",
+        abbreviation="DHS",
+        name="Department of Homeland Security",
+        _save_kwargs={"auto_generate_embedding": False},
+    )
+    subtiers = [
+        await sync_to_async(baker.make)(
+            Agency,
+            toptier_agency=toptier,
+            toptier_flag=False,
+            subtier_agency__name=f"Subtier {i:02d}",
+            subtier_agency___save_kwargs={"auto_generate_embedding": False},
+        )
+        for i in range(subtier_count)
+    ]
+    return toptier, subtiers
+
+
+def _selection(agency: Agency, toptier: ToptierAgency, agency_type: str = "subtier") -> SelectedAgency:
+    return SelectedAgency(
+        id=agency.id,
+        agencyType=agency_type,
+        toptier_flag=agency_type == "toptier",
+        toptier_agency={
+            "id": toptier.toptier_agency_id,
+            "toptier_code": toptier.toptier_code,
+            "abbreviation": toptier.abbreviation,
+            "name": toptier.name,
+        },
+        subtier_agency={"abbreviation": "", "name": "Subtier"},
+    )
+
+
+class TestAgencyExistsLookup:
+    """_agency_exists checks the selected id directly, so it is not limited by lookup_agencies' top_k."""
+
+    async def test_subtier_beyond_lookup_top_k_is_found(self):
+        toptier, subtiers = await _make_agency_rows(subtier_count=15)
+
+        assert await agency_exists(_selection(subtiers[-1], toptier)) is True
+
+    async def test_wrong_toptier_agency_is_rejected(self):
+        toptier, subtiers = await _make_agency_rows(subtier_count=1)
+        other_toptier = await sync_to_async(baker.make)(
+            ToptierAgency, toptier_code="999", name="Other", _save_kwargs={"auto_generate_embedding": False}
+        )
+
+        assert await agency_exists(_selection(subtiers[0], other_toptier)) is False
+
+    async def test_wrong_agency_type_is_rejected(self):
+        toptier, subtiers = await _make_agency_rows(subtier_count=1)
+
+        assert await agency_exists(_selection(subtiers[0], toptier, agency_type="toptier")) is False
+
+    async def test_unknown_id_is_rejected(self):
+        toptier, _ = await _make_agency_rows(subtier_count=0)
+        missing = Agency(id=987654, toptier_agency_id=toptier.toptier_agency_id)
+
+        assert await agency_exists(_selection(missing, toptier)) is False
 
 
 class TestRecipientExistenceValidation:

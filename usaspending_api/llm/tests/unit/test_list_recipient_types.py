@@ -36,12 +36,12 @@ class TestListRecipientTypesFunction:
 
     async def test_returns_the_catalog(self):
         output = await list_recipient_types()
-        assert output.results is RECIPIENT_TYPES
+        assert output.results == RECIPIENT_TYPES
 
     async def test_callable_with_no_input(self):
         """The assistant invokes tools as `await function(**tool_input)`; this tool takes no input."""
         output = await list_recipient_types_tool.function(**{})
-        assert output.results is RECIPIENT_TYPES
+        assert output.results == RECIPIENT_TYPES
 
 
 class TestListRecipientTypesTool:

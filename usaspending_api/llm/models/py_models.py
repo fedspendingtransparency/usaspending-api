@@ -1,6 +1,7 @@
+import html
 import re
 from datetime import date
-from typing import Annotated, Any, Callable, ClassVar, Literal
+from typing import Annotated, Any, Callable, ClassVar, Literal, get_args
 
 from pydantic import BaseModel, ConfigDict, Field, RootModel, field_validator, model_validator
 from pydantic_core import PydanticCustomError
@@ -10,6 +11,7 @@ from usaspending_api.awards.v2.lookups.lookups import (
     new_to_old_award_type_mapping,
     old_to_new_award_type_mapping,
 )
+from usaspending_api.data.gsdm_maps import gsdm_maps
 from usaspending_api.llm.tools.helpers.hierarchy_parsers import get_naics_parent, get_tas_parent
 from usaspending_api.references.helpers import aget_defc_code_details, get_defc_code_details
 from usaspending_api.references.v2.views.filter_tree.psc_filter_tree import PSC_GROUPS
@@ -133,8 +135,15 @@ class ToptierAgency(BaseModel):
 
     id: int
     toptier_code: str
-    abbreviation: str
+    abbreviation: str = ""
     name: str
+
+    @field_validator("abbreviation", mode="before")
+    @classmethod
+    def default_missing_abbreviation(cls, value: str | None) -> str:
+        """Some toptier agencies have no abbreviation in the DB; the frontend reads this field
+        unconditionally, so fall back to "" rather than rejecting the agency."""
+        return value or ""
 
 
 class SubtierAgency(BaseModel):
@@ -217,21 +226,21 @@ class CodeDisplay(BaseModel):
         int,
         Field(
             description="The number of leaf nodes under the root node represented by codes in 'require'",
-            json_schema_extra={"examples": 279},
+            json_schema_extra={"examples": [279]},
         ),
     ]
     label: Annotated[
         str,
         Field(
             description="The name or description on the root node represented by codes in 'require'",
-            json_schema_extra={"examples": "Manufacturing"},
+            json_schema_extra={"examples": ["Manufacturing"]},
         ),
     ]
     value: Annotated[
         str,
         Field(
             description="The code on the root node represented by codes in 'require'",
-            json_schema_extra={"examples": "33"},
+            json_schema_extra={"examples": ["33"]},
         ),
     ]
 
@@ -901,6 +910,35 @@ class Filters(BaseModel):
     def validate_selected_cfda(cls, value: dict[str, SelectedCFDA]) -> dict[str, SelectedCFDA]:
         return _validate_cfda_keys_match_identifier(value)
 
+    @field_validator("setAside", mode="before")
+    @classmethod
+    def validate_set_aside(cls, value: Any) -> Any:
+        """Name the valid codes in the error for the LLM to have additional context"""
+        if not isinstance(value, list):
+            return value
+        valid = get_args(SetAsideCode)
+        unknown = [code for code in value if code not in valid]
+        if unknown:
+            names = gsdm_maps["type_set_aside_map"]
+            options = "; ".join(f"{code} = {names.get(code, code)}" for code in valid)
+            recipient_types = [code for code in unknown if code in get_args(RecipientType)]
+            hint = (
+                f" {recipient_types} are recipientType values, not set-aside codes -- put them in recipientType."
+                if recipient_types
+                else ""
+            )
+            raise ValueError(f"Invalid setAside code(s): {unknown}.{hint} Valid setAside codes: {options}.")
+        return value
+
+    @field_validator("timePeriodFY", mode="before")
+    @classmethod
+    def clean_time_period_fy(cls, value: Any) -> Any:
+        """The LLM sometimes wraps years in HTML-escaped or literal quotes (e.g. '&quot;2025&quot;') and cannot see
+        that it is doing so, so validation errors alone send it into a retry loop. Strip that noise first."""
+        if not isinstance(value, list):
+            return value
+        return [html.unescape(year).strip().strip("\"'").strip() if isinstance(year, str) else year for year in value]
+
     @field_validator("timePeriodFY")
     @classmethod
     def validate_time_period_fy(cls, value: list[str]) -> list[str]:
@@ -977,8 +1015,8 @@ class ExecuteFilterInput(BaseModel):
         description=(
             "Free-text keywords. Only for discrete terms with no matching structured filter. For literal "
             "descriptive phrases, product/item names, addresses, or multi-term OR-style searches, use "
-            "awardDescription instead (comma-separate terms there for OR logic). Never put boolean or "
-            "HTML-escaped syntax (e.g. '&quot;jeep&quot; OR &quot;toyota&quot;') in either field."
+            "awardDescription instead (comma-separate terms there for OR logic). Never put boolean operators "
+            "(AND/OR), quotation marks, or HTML entities in either field."
         ),
         json_schema_extra={"examples": [["bridge", "repair"]]},
     )
