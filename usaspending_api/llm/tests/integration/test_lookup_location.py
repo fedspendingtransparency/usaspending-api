@@ -3,7 +3,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from usaspending_api.llm.models.py_models import Filters
+from usaspending_api.llm.models.py_models import AIToolResult
 from usaspending_api.llm.tools.exceptions import LocationNotRecognizedError
 from usaspending_api.llm.tools.lookup_location import LocationLookupTool, lookup_location_tool
 
@@ -99,13 +99,13 @@ class TestInputValidation:
 
     async def test_empty_query_returns_error(self, location_tool):
         result = await location_tool.lookup_location("")
-        assert "error" in result
-        assert result["results"] == {}
+        assert "error" in result.results
+        assert result.results["results"] == {}
 
     async def test_invalid_location_type_returns_error(self, location_tool):
         result = await location_tool.lookup_location("Texas", location_type="invalid")
-        assert "error" in result
-        assert "Invalid location_type" in result["error"]
+        assert "error" in result.results
+        assert "Invalid location_type" in result.results["error"]
 
     async def test_top_k_clamping(self, location_tool, mock_search):
         mock_search.handle_execute.return_value.hits = []
@@ -130,16 +130,16 @@ class TestLocationTypes:
             create_mock_hit("TEXAS", "state", json.dumps({"state_name": "TEXAS", "country_name": "UNITED STATES"}))
         ]
 
-        resultFilter = await location_tool.lookup_location("Texas")
-        result = resultFilter.selectedLocations
+        toolResult = await location_tool.lookup_location("Texas")
+        result = toolResult.results
 
         assert len(result) == 1
         location_obj = result["USA_TX"]
-        assert location_obj.identifier == "USA_TX"
-        assert location_obj.filter.country == "USA"
-        assert location_obj.filter.state == "TX"
-        assert location_obj.display.entity == "State"
-        assert location_obj.display.standalone == "TEXAS"
+        assert location_obj["identifier"] == "USA_TX"
+        assert location_obj["filter"]["country"] == "USA"
+        assert location_obj["filter"]["state"] == "TX"
+        assert location_obj["display"]["entity"] == "State"
+        assert location_obj["display"]["standalone"] == "TEXAS"
 
     async def test_city_lookup(self, location_tool, mock_search):
         """AC: City name and code lookup."""
@@ -151,15 +151,15 @@ class TestLocationTypes:
             )
         ]
 
-        resultFilter = await location_tool.lookup_location("Chicago")
-        result = resultFilter.selectedLocations
+        toolResult = await location_tool.lookup_location("Chicago")
+        result = toolResult.results
 
         location_obj = result["USA_IL_CHICAGO"]
-        assert location_obj.identifier == "USA_IL_CHICAGO"
-        assert location_obj.filter.city == "CHICAGO"
-        assert location_obj.filter.state == "IL"
-        assert location_obj.display.entity == "City"
-        assert location_obj.display.title == "CHICAGO, ILLINOIS"
+        assert location_obj["identifier"] == "USA_IL_CHICAGO"
+        assert location_obj["filter"]["city"] == "CHICAGO"
+        assert location_obj["filter"]["state"] == "IL"
+        assert location_obj["display"]["entity"] == "City"
+        assert location_obj["display"]["title"] == "CHICAGO, ILLINOIS"
 
     async def test_foreign_city_lookup(self, location_tool, mock_search):
         """AC: Foreign city title keeps the country since there's no state to disambiguate it with."""
@@ -171,12 +171,12 @@ class TestLocationTypes:
             )
         ]
 
-        resultFilter = await location_tool.lookup_location("Paris")
-        result = resultFilter.selectedLocations
+        toolResult = await location_tool.lookup_location("Paris")
+        result = toolResult.results
 
         location_obj = next(iter(result.values()))
-        assert location_obj.display.standalone == "PARIS"
-        assert location_obj.display.title == "PARIS, FRANCE"
+        assert location_obj["display"]["standalone"] == "PARIS"
+        assert location_obj["display"]["title"] == "PARIS, FRANCE"
 
     async def test_county_lookup(self, location_tool, mock_search):
         """AC: County name and code lookup."""
@@ -195,14 +195,14 @@ class TestLocationTypes:
             )
         ]
 
-        resultFilter = await location_tool.lookup_location("Jackson County")
-        result = resultFilter.selectedLocations
+        toolResult = await location_tool.lookup_location("Jackson County")
+        result = toolResult.results
 
         location_obj = result["USA_MO_095"]
-        assert location_obj.identifier == "USA_MO_095"
-        assert location_obj.filter.county == "095"
-        assert location_obj.display.entity == "County"
-        assert location_obj.display.title == "JACKSON, MISSOURI"
+        assert location_obj["identifier"] == "USA_MO_095"
+        assert location_obj["filter"]["county"] == "095"
+        assert location_obj["display"]["entity"] == "County"
+        assert location_obj["display"]["title"] == "JACKSON, MISSOURI"
 
     async def test_zip_code_lookup(self, location_tool, mock_search):
         """AC: ZIP code lookup."""
@@ -214,14 +214,14 @@ class TestLocationTypes:
             )
         ]
 
-        resultFilter = await location_tool.lookup_location("64198")
-        result = resultFilter.selectedLocations
+        toolResult = await location_tool.lookup_location("64198")
+        result = toolResult.results
 
         location_obj = result["USA_64198"]
-        assert location_obj.identifier == "USA_64198"
-        assert location_obj.filter.zip == "64198"
-        assert location_obj.display.entity == "ZIP Code"
-        assert location_obj.display.title == "64198"
+        assert location_obj["identifier"] == "USA_64198"
+        assert location_obj["filter"]["zip"] == "64198"
+        assert location_obj["display"]["entity"] == "ZIP Code"
+        assert location_obj["display"]["title"] == "64198"
 
     async def test_congressional_district_current(self, location_tool, mock_search):
         """AC: Congressional district lookup (current)."""
@@ -233,13 +233,13 @@ class TestLocationTypes:
             )
         ]
 
-        resultFilter = await location_tool.lookup_location("MO-04")
-        result = resultFilter.selectedLocations
+        toolResult = await location_tool.lookup_location("MO-04")
+        result = toolResult.results
         location_obj = result["USA_MO_04"]
-        assert location_obj.identifier == "USA_MO_04"
-        assert location_obj.filter.district_current == "04"
-        assert location_obj.display.entity == "Current congressional district"
-        assert location_obj.display.title == "MO-04"
+        assert location_obj["identifier"] == "USA_MO_04"
+        assert location_obj["filter"]["district_current"] == "04"
+        assert location_obj["display"]["entity"] == "Current congressional district"
+        assert location_obj["display"]["title"] == "MO-04"
 
     async def test_congressional_district_original(self, location_tool, mock_search):
         """AC: Congressional district lookup (original)."""
@@ -251,12 +251,12 @@ class TestLocationTypes:
             )
         ]
 
-        resultFilter = await location_tool.lookup_location("NY-12", location_type="original_cd")
-        result = resultFilter.selectedLocations
+        toolResult = await location_tool.lookup_location("NY-12", location_type="original_cd")
+        result = toolResult.results
 
         location_obj = result["USA_NY_12"]
-        assert location_obj.filter.district_original == "12"
-        assert location_obj.display.title == "NY-12"
+        assert location_obj["filter"]["district_original"] == "12"
+        assert location_obj["display"]["title"] == "NY-12"
 
     async def test_country_lookup(self, location_tool, mock_search):
         """AC: Country name and code lookup."""
@@ -264,14 +264,14 @@ class TestLocationTypes:
             create_mock_hit("GERMANY", "country", json.dumps({"country_name": "GERMANY", "country_code": "DEU"}))
         ]
 
-        resultFilter = await location_tool.lookup_location("Germany")
-        result = resultFilter.selectedLocations
+        toolResult = await location_tool.lookup_location("Germany")
+        result = toolResult.results
 
         location_obj = result["DEU"]
-        assert location_obj.identifier == "DEU"
-        assert location_obj.filter.country == "DEU"
-        assert location_obj.display.entity == "Country"
-        assert location_obj.display.title == "GERMANY"
+        assert location_obj["identifier"] == "DEU"
+        assert location_obj["filter"]["country"] == "DEU"
+        assert location_obj["display"]["entity"] == "Country"
+        assert location_obj["display"]["title"] == "GERMANY"
 
 
 class TestFuzzyMatching:
@@ -286,8 +286,8 @@ class TestFuzzyMatching:
         ]
 
         # Typo: 'Flordia' instead of 'Florida'
-        resultFilter = await location_tool.lookup_location("Flordia")
-        result = resultFilter.selectedLocations
+        toolResult = await location_tool.lookup_location("Flordia")
+        result = toolResult.results
 
         assert len(result) == 1
         assert "USA_FL" in result.keys()
@@ -303,8 +303,8 @@ class TestFuzzyMatching:
             )
         ]
 
-        resultFilter = await location_tool.lookup_location("Massa")
-        result = resultFilter.selectedLocations
+        toolResult = await location_tool.lookup_location("Massa")
+        result = toolResult.results
 
         assert len(result) == 1
         assert "USA_MA" in result.keys()
@@ -316,8 +316,8 @@ class TestFuzzyMatching:
         ]
 
         for query in ["texas", "TEXAS", "Texas", "tExAs"]:
-            resultFilter = await location_tool.lookup_location(query)
-            result = resultFilter.selectedLocations
+            toolResult = await location_tool.lookup_location(query)
+            result = toolResult.results
             assert len(result) == 1
             assert "USA_TX" in result.keys()
 
@@ -369,8 +369,8 @@ class TestQueryBehavior:
             ),
         ]
 
-        resultFilter = await location_tool.lookup_location("Tex")
-        result = resultFilter.selectedLocations
+        toolResult = await location_tool.lookup_location("Tex")
+        result = toolResult.results
 
         assert len(result) == 2
         # Check both results present
@@ -388,9 +388,9 @@ class TestErrorHandling:
 
         result = await location_tool.lookup_location("Texas")
 
-        assert "error" in result
-        assert "OpenSearch query failed" in result["error"]
-        assert result["results"] == {}
+        assert "error" in result.results
+        assert "OpenSearch query failed" in result.results["error"]
+        assert result.results["results"] == {}
 
     async def test_malformed_json(self, location_tool, mock_search):
         """Test handling of malformed location_json."""
@@ -402,8 +402,8 @@ class TestErrorHandling:
             ),
         ]
 
-        resultFilter = await location_tool.lookup_location("Test")
-        result = resultFilter.selectedLocations
+        toolResult = await location_tool.lookup_location("Test")
+        result = toolResult.results
 
         # Both results will be returned (implementation handles empty data gracefully)
         # If you want to skip bad results, update the implementation to raise an exception
@@ -477,8 +477,8 @@ class TestAIToolImplementation:
         ]
 
         # Execute through the tool's function attribute
-        resultFilter = await lookup_location_tool.function(query="Texas")
-        result = resultFilter.selectedLocations
+        toolResult = await lookup_location_tool.function(query="Texas")
+        result = toolResult.results
 
         assert len(result) > 0
 
@@ -492,19 +492,19 @@ class TestResponseStructure:
             create_mock_hit("TEXAS", "state", json.dumps({"state_name": "TEXAS", "country_name": "UNITED STATES"}))
         ]
 
-        resultFilter = await location_tool.lookup_location("Texas")
+        toolResult = await location_tool.lookup_location("Texas")
 
         # Top-level fields
-        assert isinstance(resultFilter, Filters)
+        assert isinstance(toolResult, AIToolResult)
 
         # Result structure
-        location_dict = resultFilter.selectedLocations
+        location_dict = toolResult.results
         identifier = list(location_dict.keys())[0]
         location_obj = location_dict[identifier]
 
-        assert hasattr(location_obj, "identifier")
-        assert hasattr(location_obj, "filter")
-        assert hasattr(location_obj, "display")
+        assert "identifier" in location_obj
+        assert "filter" in location_obj
+        assert "display" in location_obj
 
     async def test_identifier_is_dictionary_key(self, location_tool, mock_search):
         """Test that identifier matches the dictionary key."""
@@ -512,13 +512,13 @@ class TestResponseStructure:
             create_mock_hit("TEXAS", "state", json.dumps({"state_name": "TEXAS", "country_name": "UNITED STATES"}))
         ]
 
-        resultFilter = await location_tool.lookup_location("Texas")
-        result = resultFilter.selectedLocations
+        toolResult = await location_tool.lookup_location("Texas")
+        result = toolResult.results
         location_dict = result
 
         # Key should match identifier
         key = list(location_dict.keys())[0]
-        identifier = location_dict[key].identifier
+        identifier = location_dict[key]["identifier"]
 
         assert key == identifier
 
@@ -538,8 +538,8 @@ class TestEdgeCases:
             ),
         ]
 
-        resultFilter = await location_tool.lookup_location("Texas")
-        result = resultFilter.selectedLocations
+        toolResult = await location_tool.lookup_location("Texas")
+        result = toolResult.results
 
         # Should only return one result despite two hits
         assert len(result) == 1
@@ -554,8 +554,8 @@ class TestEdgeCases:
             )
         ]
 
-        resultFilter = await location_tool.lookup_location("St. Louis")
-        result = resultFilter.selectedLocations
+        toolResult = await location_tool.lookup_location("St. Louis")
+        result = toolResult.results
 
         assert len(result) == 1
 
@@ -565,8 +565,8 @@ class TestEdgeCases:
             create_mock_hit("TEXAS", "state", json.dumps({"state_name": "TEXAS", "country_name": "UNITED STATES"}))
         ]
 
-        resultFilter = await location_tool.lookup_location("  Texas  ")
-        result = resultFilter.selectedLocations
+        toolResult = await location_tool.lookup_location("  Texas  ")
+        result = toolResult.results
 
         assert len(result) == 1
         assert "USA_TX" in result.keys()
@@ -577,14 +577,14 @@ class TestEdgeCases:
             create_mock_hit("ISTANBUL", "city", json.dumps({"city_name": "ISTANBUL", "country_name": "TURKEY"}))
         ]
 
-        resultFilter = await location_tool.lookup_location("Istanbul")
-        result = resultFilter.selectedLocations
+        toolResult = await location_tool.lookup_location("Istanbul")
+        result = toolResult.results
 
         location_obj = result["TUR_undefined_ISTANBUL"]
-        assert location_obj.filter.country == "TUR"
-        assert location_obj.filter.city == "ISTANBUL"
+        assert location_obj["filter"]["country"] == "TUR"
+        assert location_obj["filter"]["city"] == "ISTANBUL"
         # No state in filter since it's not a US city
-        assert "state" not in location_obj.filter or location_obj.filter.state == "XX"
+        assert location_obj["filter"]["state"] == "XX" or not location_obj["filter"]["state"]
 
 
 class TestHelperMethods:
@@ -706,8 +706,8 @@ class TestRealWorldScenarios:
             ),
         ]
 
-        resultFilter = await location_tool.lookup_location("Kansas City")
-        result = resultFilter.selectedLocations
+        toolResult = await location_tool.lookup_location("Kansas City")
+        result = toolResult.results
 
         assert len(result) == 2
         identifiers = list(result.keys())
@@ -722,8 +722,8 @@ class TestRealWorldScenarios:
             )
         ]
 
-        resultFilter = await location_tool.lookup_location("Washington", location_type="state")
-        result = resultFilter.selectedLocations
+        toolResult = await location_tool.lookup_location("Washington", location_type="state")
+        result = toolResult.results
 
         # Should get state, not city
         assert len(result) == 1
@@ -743,8 +743,8 @@ class TestRealWorldScenarios:
             for i in range(5)  # Changed from 10 to 5 to match top_k parameter
         ]
 
-        resultFilter = await location_tool.lookup_location("City", top_k=5)
-        result = resultFilter.selectedLocations
+        toolResult = await location_tool.lookup_location("City", top_k=5)
+        result = toolResult.results
 
         assert len(result) == 5
 

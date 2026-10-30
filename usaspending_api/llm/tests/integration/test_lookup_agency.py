@@ -176,41 +176,41 @@ class TestLookupAgenciesExactAndPrefix:
     async def test_exact_match_skips_embedding_generation(self, tool, mock_embedding_generator):
         await _make_matview_row("080", "National Aeronautics and Space Administration", "NASA")
 
-        resultFilter = await tool.lookup_agencies("NASA")
-        result = resultFilter.selectedAwardingAgencies
+        toolResult = await tool.lookup_agencies("NASA")
+        result = toolResult.results
 
-        assert list(result.values())[0].toptier_agency.toptier_code == "080"
+        assert list(result.values())[0]["toptier_agency"]["toptier_code"] == "080"
         mock_embedding_generator.agenerate_embedding.assert_not_called()
 
     async def test_result_is_keyed_by_id_and_agency_type(self, tool, mock_embedding_generator):
         row = await _make_matview_row("080", "National Aeronautics and Space Administration", "NASA")
 
-        resultFilter = await tool.lookup_agencies("NASA")
-        result = resultFilter.selectedAwardingAgencies
+        toolResult = await tool.lookup_agencies("NASA")
+        result = toolResult.results
 
         expected_key = f"{row.agency_autocomplete_id}_toptier"
         assert expected_key in result
-        assert result[expected_key].id == row.agency_autocomplete_id
-        assert result[expected_key].agencyType == "toptier"
+        assert result[expected_key]["id"] == row.agency_autocomplete_id
+        assert result[expected_key]["agencyType"] == "toptier"
 
     async def test_prefix_match_skips_embedding_generation(self, tool, mock_embedding_generator):
         await _make_matview_row("200", "National Archives and Records Administration", "NARA")
 
-        resultFilter = await tool.lookup_agencies("Nat")
-        result = resultFilter.selectedAwardingAgencies
+        toolResult = await tool.lookup_agencies("Nat")
+        result = toolResult.results
 
         assert len(result) == 1
         mock_embedding_generator.agenerate_embedding.assert_not_called()
 
     async def test_results_ordered_toptier_first_then_alphabetically(self, tool, mock_embedding_generator):
-        await _make_matview_row("100", "Bureau of Zeta", toptier_flag=False)
+        await _make_matview_row("100", "Bureau of Zeta", toptier_flag=False, toptier_abbreviation="Zeta")
         await _make_matview_row("200", "Bureau of Alpha", toptier_flag=True, toptier_abbreviation="Alpha")
         await _make_matview_row("300", "Bureau of Beta", toptier_flag=True, toptier_abbreviation="Beta")
 
-        resultFilter = await tool.lookup_agencies("Bureau")
-        result = resultFilter.selectedAwardingAgencies
+        toolResult = await tool.lookup_agencies("Bureau")
+        result = toolResult.results
 
-        names = [v.toptier_agency.name for v in result.values()]
+        names = [v["toptier_agency"]["name"] for v in result.values()]
         assert names[0] == "Bureau of Alpha"
         assert names[1] == "Bureau of Beta"
         assert names[-1] == "Bureau of Zeta"
@@ -219,18 +219,18 @@ class TestLookupAgenciesExactAndPrefix:
         for i in range(5):
             await _make_matview_row(f"20{i}", f"Prefix Agency {i}", f"agency-{i}")
 
-        resultFilter = await tool.lookup_agencies("Prefix", top_k=2)
-        result = resultFilter.selectedAwardingAgencies
+        toolResult = await tool.lookup_agencies("Prefix", top_k=2)
+        result = toolResult.results
 
         assert len(result) == 2
 
     async def test_query_is_stripped_before_matching(self, tool, mock_embedding_generator):
         await _make_matview_row("080", "National Aeronautics and Space Administration", "NASA")
 
-        resultFilter = await tool.lookup_agencies("  NASA  ")
-        result = resultFilter.selectedAwardingAgencies
+        toolResult = await tool.lookup_agencies("  NASA  ")
+        result = toolResult.results
 
-        assert list(result.values())[0].toptier_agency.toptier_code == "080"
+        assert list(result.values())[0]["toptier_agency"]["toptier_code"] == "080"
         mock_embedding_generator.agenerate_embedding.assert_not_called()
 
 
@@ -242,10 +242,10 @@ class TestHybridSearch:
 
         mock_embedding_generator.agenerate_embedding.return_value = _unit_vector(dims, 0)
 
-        resultFilter = await tool.lookup_agencies("orbital missions and rockets")
-        result = resultFilter.selectedAwardingAgencies
+        toolResult = await tool.lookup_agencies("orbital missions and rockets")
+        result = toolResult.results
 
-        codes = {v.toptier_agency.toptier_code for v in result.values()}
+        codes = {v["toptier_agency"]["toptier_code"] for v in result.values()}
         assert "999" in codes
         mock_embedding_generator.agenerate_embedding.assert_called_once()
 
@@ -258,10 +258,10 @@ class TestHybridSearch:
 
         mock_embedding_generator.agenerate_embedding.return_value = _unit_vector(dims, 0)
 
-        resultFilter = await tool.lookup_agencies("some non matching query text")
-        result = resultFilter.selectedAwardingAgencies
+        toolResult = await tool.lookup_agencies("some non matching query text")
+        result = toolResult.results
 
-        codes = {v.toptier_agency.toptier_code for v in result.values()}
+        codes = {v["toptier_agency"]["toptier_code"] for v in result.values()}
         assert "111" in codes
         assert "222" not in codes
 
@@ -277,10 +277,10 @@ class TestHybridSearch:
 
         mock_embedding_generator.agenerate_embedding.return_value = _unit_vector(dims, 0)
 
-        resultFilter = await tool.lookup_agencies("orbital research")
-        result = resultFilter.selectedAwardingAgencies
+        toolResult = await tool.lookup_agencies("orbital research")
+        result = toolResult.results
 
-        codes = [v.toptier_agency.toptier_code for v in result.values()]
+        codes = [v["toptier_agency"]["toptier_code"] for v in result.values()]
         assert codes[0] == "300"
 
     async def test_top_k_truncates_hybrid_results(self, tool, mock_embedding_generator):
@@ -293,8 +293,8 @@ class TestHybridSearch:
             )
             await _make_agency(top)
 
-        resultFilter = await tool.lookup_agencies("matching agency query", top_k=2)
-        result = resultFilter.selectedAwardingAgencies
+        toolResult = await tool.lookup_agencies("matching agency query", top_k=2)
+        result = toolResult.results
 
         assert len(result) == 2
 
@@ -306,11 +306,48 @@ class TestHybridSearch:
 
         mock_embedding_generator.agenerate_embedding.return_value = _unit_vector(dims, 0)
 
-        resultFilter = await tool.lookup_agencies("example bureau semantics")
-        result = resultFilter.selectedAwardingAgencies
+        toolResult = await tool.lookup_agencies("example bureau semantics")
+        result = toolResult.results
 
-        subtier_names = {v.subtier_agency.name for v in result.values() if v.subtier_agency}
+        subtier_names = {v["subtier_agency"]["name"] for v in result.values() if v["subtier_agency"]}
         assert "Example Bureau" in subtier_names
+
+
+class TestSemanticOnlyInstructions:
+    async def test_exact_match_has_no_instructions(self, tool, mock_embedding_generator):
+        await _make_matview_row("080", "National Aeronautics and Space Administration", "NASA")
+
+        result = await tool.lookup_agencies("NASA")
+
+        assert result.instructions is None
+
+    async def test_prefix_match_has_no_instructions(self, tool, mock_embedding_generator):
+        await _make_matview_row("200", "National Archives and Records Administration", "NARA")
+
+        result = await tool.lookup_agencies("Nat")
+
+        assert result.instructions is None
+
+    async def test_hybrid_only_match_includes_recipient_hint(self, tool, mock_embedding_generator):
+        dims = getattr(ToptierAgency, "embedding_dimensions", 256)
+        toptier = await _make_toptier_agency("999", "Space Exploration Agency", "SEA", embedding=_unit_vector(dims, 0))
+        await _make_agency(toptier)
+        mock_embedding_generator.agenerate_embedding.return_value = _unit_vector(dims, 0)
+
+        result = await tool.lookup_agencies("orbital missions and rockets")
+
+        assert result.instructions is not None
+        assert "lookup_recipient" in result.instructions
+
+    async def test_no_matches_error_mentions_lookup_recipient(self, tool, mock_embedding_generator):
+        dims = getattr(ToptierAgency, "embedding_dimensions", 256)
+        mock_embedding_generator.agenerate_embedding.return_value = _unit_vector(dims, 0)
+
+        with pytest.raises(AgencyNotRecognizedError) as exc_info:
+            await tool.lookup_agencies("zzz-not-a-real-agency")
+
+        assert "lookup_recipient" in exc_info.value.model_detail
+        assert "lookup_recipient" not in exc_info.value.user_message
 
 
 class TestMatviewRowToEntry:

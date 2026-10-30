@@ -57,7 +57,7 @@ class TestExtractRecipientNames:
             ]
         )
         result = RecipientLookupTool()._extract_recipient_names(response, "UEI123456789")
-        assert result.selectedRecipients == ["UEI123456789"]
+        assert result["selectedRecipients"] == ["UEI123456789"]
 
     def test_exact_duns_match_returns_only_that_identifier(self):
         response = _make_response(
@@ -67,7 +67,7 @@ class TestExtractRecipientNames:
             ]
         )
         result = RecipientLookupTool()._extract_recipient_names(response, "123456789")
-        assert result.selectedRecipients == ["123456789"]
+        assert result["selectedRecipients"] == ["123456789"]
 
     def test_exact_hash_match_returns_only_that_identifier(self):
         response = _make_response(
@@ -77,7 +77,7 @@ class TestExtractRecipientNames:
             ]
         )
         result = RecipientLookupTool()._extract_recipient_names(response, "HASH123")
-        assert result.selectedRecipients == ["hash123"]
+        assert result["selectedRecipients"] == ["hash123"]
 
     def test_exact_name_match_still_returns_all_fuzzy_matches(self):
         """An exact name match isn't short-circuited since a different match may rank better."""
@@ -88,7 +88,7 @@ class TestExtractRecipientNames:
             ]
         )
         result = RecipientLookupTool()._extract_recipient_names(response, "ACME CORP")
-        assert result.selectedRecipients == ["ACME CORP", "ACME CORPORATION"]
+        assert result["selectedRecipients"] == ["ACME CORP", "ACME CORPORATION"]
 
     def test_returns_all_names_when_no_exact_match(self):
         response = _make_response(
@@ -98,7 +98,7 @@ class TestExtractRecipientNames:
             ]
         )
         result = RecipientLookupTool()._extract_recipient_names(response, "ACME")
-        assert result.selectedRecipients == ["ACME CORP", "ACME INDUSTRIES"]
+        assert result["selectedRecipients"] == ["ACME CORP", "ACME INDUSTRIES"]
 
     def test_deduplicates_fuzzy_names(self):
         response = _make_response(
@@ -108,7 +108,7 @@ class TestExtractRecipientNames:
             ]
         )
         result = RecipientLookupTool()._extract_recipient_names(response, "ACME")
-        assert result.selectedRecipients == ["ACME CORP"]
+        assert result["selectedRecipients"] == ["ACME CORP"]
 
 
 class TestBuildFuzzyRecipientQuery:
