@@ -164,14 +164,15 @@ def _mock_successful_execute_filter(monkeypatch, persisted_filter):
             "timePeriodFY": ["2025"],
             "selectedRecipients": ["CLARK CONSTRUCTION"],
         },
-        result={"hash": "abc123"},
+        result={"results": {"hash": "abc123"}},
     )
 
-    # Mock the full Django ORM chain: filter().exclude().order_by().last()
+    # Mock the full Django ORM chain: filter().exclude().exclude().order_by().last()
     queryset_mock = Mock()
     queryset_mock.last.return_value = successful_use
 
     exclude_mock = Mock()
+    exclude_mock.exclude.return_value = exclude_mock
     exclude_mock.order_by.return_value = queryset_mock
 
     filter_mock = Mock()
@@ -229,12 +230,13 @@ async def test_get_final_filter_output_falls_back_to_tool_input(monkeypatch):
 
 async def test_get_final_filter_output_rejects_missing_successful_completion(monkeypatch):
     """An execution without a successful execute_filter call cannot produce a valid final filter observation."""
-    # Mock the full Django ORM chain: filter().exclude().order_by().last()
+    # Mock the full Django ORM chain: filter().exclude().exclude().order_by().last()
     # When no successful execute_filter exists, last() returns None
     queryset_mock = Mock()
     queryset_mock.last.return_value = None
 
     exclude_mock = Mock()
+    exclude_mock.exclude.return_value = exclude_mock
     exclude_mock.order_by.return_value = queryset_mock
 
     filter_mock = Mock()
@@ -251,6 +253,10 @@ async def test_get_final_filter_output_rejects_missing_successful_completion(mon
 
     with pytest.raises(ExecutionError, match="without a successful execute_filter call"):
         await get_final_filter_output(Mock())
+
+    # Errored calls are skipped whether the error is top-level or nested under "results".
+    filter_mock.exclude.assert_called_once_with(result__has_key="error")
+    exclude_mock.exclude.assert_called_once_with(result__results__has_key="error")
 
 
 async def _async_iter(items):
