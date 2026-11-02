@@ -259,6 +259,7 @@ def test_create_and_load_new_award_index(mock_date, award_data_fixture, elastics
     )
     # Also override SQL function listed in config object with the mock one
     es_etl_config["execute_sql_func"] = mock_execute_sql
+    ensure_view_exists(es_etl_config["sql_view"], force=True)
     loader = PostgresElasticsearchIndexerController(es_etl_config)
     assert loader.__class__.__name__ == "PostgresElasticsearchIndexerController"
     loader.prepare_for_etl()
@@ -673,11 +674,21 @@ def test_delete_one_assistance_transaction(award_data_fixture, elasticsearch_tra
 
 
 @patch("usaspending_api.etl.management.commands.elasticsearch_indexer.datetime", wraps=datetime)
-def test_default_index_name(mock_date, award_data_fixture, monkeypatch,
-                            elasticsearch_award_index, elasticsearch_transaction_index,
-                            elasticsearch_subaward_index, elasticsearch_recipient_index):
-    test_indices = {elasticsearch_award_index, elasticsearch_transaction_index,
-                    elasticsearch_subaward_index, elasticsearch_recipient_index}
+def test_default_index_name(
+    mock_date,
+    award_data_fixture,
+    monkeypatch,
+    elasticsearch_award_index,
+    elasticsearch_transaction_index,
+    elasticsearch_subaward_index,
+    elasticsearch_recipient_index,
+):
+    test_indices = {
+        elasticsearch_award_index,
+        elasticsearch_transaction_index,
+        elasticsearch_subaward_index,
+        elasticsearch_recipient_index,
+    }
     monkeypatch.setattr("usaspending_api.etl.elasticsearch_loader_helpers.index_config.logger", logging.getLogger())
     mock_date.now.return_value = _TEST_INDEX_TIME
 
@@ -701,9 +712,7 @@ def test_default_index_name(mock_date, award_data_fixture, monkeypatch,
         assert es_etl_config["index_name"] == f"{_TEST_INDEX_TIME:%Y-%m-%d-%H-%M-%S}-{required_suffix}"
 
 
-def _process_es_etl_test_config(
-    client: OpenSearch, test_es_index: TestElasticSearchIndex, options: dict | None = None
-):
+def _process_es_etl_test_config(client: OpenSearch, test_es_index: TestElasticSearchIndex, options: dict | None = None):
     """Use the Django mgmt cmd to extract args with default values, then update those with test ETL config values"""
     cmd = ElasticsearchIndexerCommand()
     cmd_name = cmd.__module__.split(".")[-1]  # should give "elasticsearch_indexer" unless name changed

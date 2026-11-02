@@ -194,6 +194,7 @@ class Command(BaseCommand):
         # Generate embedding
         if not instance.has_embedding or force:
             instance.save(
+                auto_generate_embedding=True,
                 verbose=verbose,
                 force_generate_embedding=force,
                 update_fields=["embedding", "embedding_generated_at"],
