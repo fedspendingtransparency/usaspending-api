@@ -251,6 +251,14 @@ class AsyncSearch(SearchBase):
         return await self._handle_errors(self._count, retries, None)
 
 
+class AsyncAwardSearch(AsyncSearch):
+    _index_name = f"{settings.ES_AWARDS_QUERY_ALIAS_PREFIX}*"
+
+    @staticmethod
+    def type_as_string():
+        return "award_search"
+
+
 class AsyncRecipientSearch(AsyncSearch):
     _index_name = f"{settings.ES_RECIPIENTS_QUERY_ALIAS_PREFIX}*"
 

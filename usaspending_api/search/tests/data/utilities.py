@@ -7,6 +7,7 @@ def setup_elasticsearch_test(monkeypatch, index_fixture, **options):
     async_search_wrapper = None
     if index_fixture.index_type == "award":
         search_wrapper = "AwardSearch"
+        async_search_wrapper = "AsyncAwardSearch"
         query_alias = settings.ES_AWARDS_QUERY_ALIAS_PREFIX
     elif index_fixture.index_type == "subaward":
         search_wrapper = "SubawardSearch"
