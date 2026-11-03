@@ -6,6 +6,7 @@ file within the Eval framework that understands the structure of the ground trut
 """
 
 import json
+from datetime import date
 from pathlib import Path
 from typing import Any
 
@@ -13,6 +14,7 @@ from django.conf import settings
 
 from usaspending_api.llm.evals.exceptions import DatasetError
 from usaspending_api.llm.evals.models import EvalCase
+from usaspending_api.llm.evals.temporal import TIME_KEY, resolve_time_spec
 from usaspending_api.llm.models.py_models import Filters
 
 REQUIRED_FIELDS = {
@@ -72,13 +74,16 @@ def parse_approved(value: Any, case_id: str) -> bool:
     raise DatasetError(f"Case '{case_id}' has invalid approved value '{value}'. Use a JSON boolean.")
 
 
-def parse_expected_output(value: Any, case_id: str) -> dict[str, Any]:
-    """Validates and returns the expected output object from a JSON case."""
+def parse_expected_output(value: Any, case_id: str, as_of: date) -> dict[str, Any]:
+    """Validates and returns the expected output object from a JSON case, resolving any relative `$time` spec."""
     if not isinstance(value, dict) or not value:
         raise DatasetError(f"Case '{case_id}' must define a non-empty expected_output object.")
 
     if not all(isinstance(key, str) and key for key in value):
         raise DatasetError(f"Case '{case_id}' expected_output keys must be non-empty strings.")
+
+    if TIME_KEY in value:
+        value = {k: v for k, v in value.items() if k != TIME_KEY} | resolve_time_spec(value[TIME_KEY], as_of, case_id)
 
     # Pass through Filters model to normalize and include all fields with defaults.
     result = Filters(**value).model_dump(exclude_none=True)
@@ -145,7 +150,7 @@ def _parse_query(value: Any, case_id: str) -> str:
     return query
 
 
-def _parse_case(row: Any, case_number: int, seen_case_ids: set[str]) -> EvalCase:
+def _parse_case(row: Any, case_number: int, seen_case_ids: set[str], as_of: date) -> EvalCase:
     if not isinstance(row, dict):
         raise DatasetError(f"Dataset case {case_number} must be a JSON object.")
 
@@ -167,11 +172,12 @@ def _parse_case(row: Any, case_number: int, seen_case_ids: set[str]) -> EvalCase
         name=case_id,
         input={"query": _parse_query(row["query"], case_id)},
         expected_tool_calls=parse_expected_tools(row["expected_tools"], case_id),
-        expected_output=parse_expected_output(row["expected_output"], case_id),
+        expected_output=parse_expected_output(row["expected_output"], case_id, as_of),
         metadata={
             "approved": approved,
             "tags": case_tags,
         },
+        as_of=as_of,
     )
 
 
@@ -184,6 +190,7 @@ def _case_is_selected(case: EvalCase, include_unapproved: bool, tags: set[str] |
 def parse_json_cases(
     dataset_path: Path,
     *,
+    as_of: date,
     include_unapproved: bool = False,
     tags: set[str] | None = None,
 ) -> list[EvalCase]:
@@ -192,17 +199,18 @@ def parse_json_cases(
     seen_case_ids: set[str] = set()
 
     for case_number, row in enumerate(_load_dataset(dataset_path), start=1):
-        case = _parse_case(row, case_number, seen_case_ids)
+        case = _parse_case(row, case_number, seen_case_ids, as_of)
         if _case_is_selected(case, include_unapproved, tags):
             cases.append(case)
 
     return cases
 
 
-def load_all_cases(dataset_name: str) -> list[EvalCase]:
+def load_all_cases(dataset_name: str, as_of: date | None = None) -> list[EvalCase]:
     """Loads every validated case without approval, tag, or case filtering."""
     return parse_json_cases(
         resolve_dataset_path(dataset_name),
+        as_of=as_of or date.today(),
         include_unapproved=True,
     )
 
@@ -213,10 +221,12 @@ def load_cases(
     selected_case_names: set[str] | None = None,
     include_unapproved: bool = False,
     tags: set[str] | None = None,
+    as_of: date | None = None,
 ) -> list[EvalCase]:
     """Loads all eligible cases, then optionally narrows them by case ID."""
     cases = parse_json_cases(
         resolve_dataset_path(dataset_name),
+        as_of=as_of or date.today(),
         include_unapproved=include_unapproved,
         tags=tags,
     )

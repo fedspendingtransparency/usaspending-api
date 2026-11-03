@@ -1,5 +1,6 @@
 import logging
 from abc import ABC, abstractmethod
+from datetime import date
 from pathlib import Path
 from statistics import fmean
 
@@ -24,7 +25,7 @@ class BaseEval(ABC):
     assistant_name: str
     default_dataset_name: str
 
-    def __init__(
+    def __init__(  # noqa: PLR0913
         self,
         *,
         dataset_name: str | None = None,
@@ -33,6 +34,7 @@ class BaseEval(ABC):
         tags: set[str] | None = None,
         fail_under: float | None = None,
         incremental_output: Path | None = None,
+        as_of: date | None = None,
     ) -> None:
         if not self.assistant_name:
             raise ValueError("assistant_name must be defined.")
@@ -47,6 +49,8 @@ class BaseEval(ABC):
         self.tags = tags
         self.fail_under = fail_under
         self.incremental_output = incremental_output
+        # Fixed once per run so relative dataset values (e.g. "last quarter") and the assistant agree on today.
+        self.as_of = as_of or date.today()
 
     def load_cases(self) -> list[EvalCase]:
         """
@@ -63,6 +67,7 @@ class BaseEval(ABC):
             selected_case_names=self.selected_case_names,
             include_unapproved=self.include_unapproved,
             tags=self.tags,
+            as_of=self.as_of,
         )
 
     @abstractmethod
@@ -140,13 +145,13 @@ class BaseEval(ABC):
 
         Progress is logged incrementally so results are not lost if the run fails.
         """
-        all_cases = load_all_cases(self.dataset_name)
+        all_cases = load_all_cases(self.dataset_name, self.as_of)
         cases = self.load_cases()
 
         if not cases:
             raise ValueError(f"Dataset `{self.dataset_name}` does not contain evaluation cases.")
 
-        logger.info(f"Starting evaluation: {len(cases)} case(s) to run")
+        logger.info(f"Starting evaluation: {len(cases)} case(s) to run (as of {self.as_of.isoformat()})")
 
         # Prepare incremental output file if specified
         if self.incremental_output:
@@ -155,6 +160,7 @@ class BaseEval(ABC):
             with self.incremental_output.open("w", encoding="utf-8") as f:
                 f.write(f"# Incremental evaluation results for {self.assistant_name}\n")
                 f.write(f"# Dataset: {self.dataset_name}\n")
+                f.write(f"# As of: {self.as_of.isoformat()}\n")
                 f.write(f"# Total cases: {len(cases)}\n\n")
 
         # Execute cases one by one with progress logging
