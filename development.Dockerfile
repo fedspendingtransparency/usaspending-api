@@ -82,3 +82,6 @@ RUN sed -i "s|spark.authenticate \{1,\}true|spark.authenticate false|" $SPARK_HO
 
 # Ensure Python STDOUT gets sent to container logs
 ENV PYTHONUNBUFFERED=1
+
+# Clear out the entrypoint carried over from the EMR image
+ENTRYPOINT []

@@ -1,6 +1,7 @@
 from typing import Any
 
 from usaspending_api.common.elasticsearch.search_wrappers import AsyncRecipientSearch
+from usaspending_api.llm.models.py_models import AIToolResult
 from usaspending_api.llm.tools.lookup_recipient import RecipientLookupTool
 from usaspending_api.search.v2.es_sanitization import es_sanitize
 
@@ -34,5 +35,5 @@ async def fuzzy_search_recipients(
 async def retrieve_recipient_names(
     search_text: str,
     limit: int = 5,
-) -> dict[str, list[str]]:
+) -> AIToolResult:
     return await _tool.lookup_recipient(search_text, top_k=limit)
