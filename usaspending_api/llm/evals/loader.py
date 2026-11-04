@@ -190,11 +190,12 @@ def _case_is_selected(case: EvalCase, include_unapproved: bool, tags: set[str] |
 def parse_json_cases(
     dataset_path: Path,
     *,
-    as_of: date,
+    as_of: date | None = None,
     include_unapproved: bool = False,
     tags: set[str] | None = None,
 ) -> list[EvalCase]:
-    """Load a JSON file and return the selected, validated cases."""
+    """Load a JSON file and return the selected, validated cases. ``as_of`` defaults to today."""
+    as_of = as_of or date.today()
     cases = []
     seen_case_ids: set[str] = set()
 
