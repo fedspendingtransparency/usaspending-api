@@ -140,7 +140,7 @@ class FilterSearchAssistant:
             f"timePeriodFY, use the bare four-digit year (e.g. '{current_fy}'), never the 'FY' prefix."
         )
 
-    @cached_property
+    @property
     def system_message(self) -> str:
         """Return the active Assistant's system prompt or the default prompt."""
         if self.assistant.system_prompt:
