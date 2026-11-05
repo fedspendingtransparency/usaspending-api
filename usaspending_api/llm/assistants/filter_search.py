@@ -22,8 +22,9 @@ class FilterSearchAssistant:
         "You are USAspending search assistant. Help the user select filters to search for federal spending"
     )
 
-    def __init__(self, assistant: Assistant, tools: list[AITool], session: Session) -> None:
+    def __init__(self, assistant: Assistant, tools: list[AITool], session: Session, as_of: date | None = None) -> None:
         self.assistant = assistant
+        self.as_of = as_of
         self.tools = tools
         self.tools_by_name = {tool.description.name: tool for tool in tools}
         self.session = session
@@ -127,9 +128,9 @@ class FilterSearchAssistant:
         return {**self._tool_config, "toolChoice": {"auto": {}}}
 
     @staticmethod
-    def _fiscal_year_date_context() -> str:
-        """Build the current-date/fiscal-year string appended to the system prompt."""
-        today = date.today()
+    def _fiscal_year_date_context(today: date | None = None) -> str:
+        """Build the current-date/fiscal-year string appended to the system prompt (``today`` defaults to now)."""
+        today = today or date.today()
         current_fy = today.year + 1 if today.month >= 10 else today.year
         return (
             f"\nThe current date is {today.strftime('%m/%d/%Y')}. The current federal fiscal year is "
@@ -140,11 +141,11 @@ class FilterSearchAssistant:
             f"timePeriodFY, use the bare four-digit year (e.g. '{current_fy}'), never the 'FY' prefix."
         )
 
-    @cached_property
+    @property
     def system_message(self) -> str:
         """Return the active Assistant's system prompt or the default prompt."""
         if self.assistant.system_prompt:
-            return self.assistant.system_prompt.text + self._fiscal_year_date_context()
+            return self.assistant.system_prompt.text + self._fiscal_year_date_context(self.as_of)
         return self.DEFAULT_SYSTEM_MESSAGE
 
     @cached_property
