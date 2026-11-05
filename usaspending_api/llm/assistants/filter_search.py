@@ -113,7 +113,7 @@ class FilterSearchAssistant:
         self.messages.append(output_message)
         return message
 
-    async def aget_tool_config(self) -> dict[str, list[dict]]:
+    async def aget_tool_config(self) -> dict[str, Any]:
         if self._tool_config is None:
             specs = [tool.description.model_dump() for tool in self.tools]
             for spec in specs:
@@ -123,7 +123,8 @@ class FilterSearchAssistant:
             self._tool_config = {
                 "tools": [{"toolSpec": {"inputSchema": {"json": spec.pop("input_schema")}, **spec}} for spec in specs]
             }
-        return self._tool_config
+
+        return {**self._tool_config, "toolChoice": {"auto": {}}}
 
     @staticmethod
     def _fiscal_year_date_context() -> str:
@@ -252,6 +253,12 @@ class FilterSearchAssistant:
                     },
                 )
 
+            if not search_complete:
+                async for event in self._aforce_completion(client, query, response, m):
+                    yield event
+                    if event.get("type") == "search_complete":
+                        search_complete = True
+
         # Calculate total token usage for this search.
         totals = await self.session.messages.aaggregate(
             input_tokens=Sum("input_tokens"), output_tokens=Sum("output_tokens")
@@ -259,9 +266,6 @@ class FilterSearchAssistant:
         total_input_tokens = totals["input_tokens"] or 0
         total_output_tokens = totals["output_tokens"] or 0
         total_tokens = total_input_tokens + total_output_tokens
-
-        if not search_complete:
-            raise RuntimeError(f"Filter search session {self.session.id} ended without completing")
 
         # Log each search.
         logger.info(
@@ -275,6 +279,57 @@ class FilterSearchAssistant:
                 "total_tokens": total_tokens,
             },
         )
+
+        if not search_complete:
+            raise RuntimeError(f"Filter search session {self.session.id} ended without completing")
+
+    async def _aforce_completion(
+        self, client: Any, query: str, response: dict, message: Message
+    ) -> AsyncGenerator[dict, None]:
+        """Force the completion tool after the main loop ends without it."""
+        if response["stopReason"] == "tool_use":
+            pending = [request for request in response["output"]["message"]["content"] if "toolUse" in request]
+
+            async for event in self.handle_tool_use(pending, message):
+                yield event
+                if event.get("type") == "search_complete":
+                    return
+
+        logger.info(
+            f"Search not complete after {self.tool_iterations} tool iterations. "
+            f"Force calling {self.COMPLETION_TOOL_NAME}."
+        )
+        model_message = (
+            f"Search is not complete and {self.COMPLETION_TOOL_NAME} was never called. As a last resort, "
+            f'extract a single relevant keyword from the user\'s original query ("{query}") and call '
+            f"{self.COMPLETION_TOOL_NAME} using that keyword."
+        )
+
+        await Message.objects.acreate(
+            session=self.session, role="user", message=model_message, order=self.message_order
+        )
+        self.message_order += 1
+
+        # Converse requires alternating roles, so merge into a trailing toolResult user turn.
+        if self.messages[-1]["role"] == "user":
+            self.messages[-1]["content"].append({"text": model_message})
+        else:
+            self.messages.append({"role": "user", "content": [{"text": model_message}]})
+
+        response = await client.converse(
+            modelId=self.assistant.ai_model.model_id,
+            messages=self.messages,
+            toolConfig={**await self.aget_tool_config(), "toolChoice": {"tool": {"name": self.COMPLETION_TOOL_NAME}}},
+            system=[{"text": self.system_message}],
+            inferenceConfig=self.inference_config,
+        )
+        self._sanitize_tool_use_input(response["output"]["message"]["content"])
+
+        forced_message = await self._create_message_from_response(response)
+        tool_requests = [request for request in response["output"]["message"]["content"] if "toolUse" in request]
+
+        async for event in self.handle_tool_use(tool_requests, forced_message):
+            yield event
 
     async def handle_tool_use(self, tool_requests: list[dict], message: Message) -> AsyncGenerator[dict, None]:
         tool_result_message = {"role": "user", "content": []}
