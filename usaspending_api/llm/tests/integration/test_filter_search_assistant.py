@@ -571,26 +571,19 @@ class TestFilterSearchAssistant:
         assert not any(e["type"] == "search_complete" for e in events)
 
 
-@patch("usaspending_api.llm.models.db_models.Message.objects.acreate", new_callable=AsyncMock)
-async def test_search_retries_converse_on_throttling(mock_message_create, assistant, monkeypatch):
-    """A throttled converse call is retried with backoff instead of failing the search."""
+async def test_converse_retries_on_throttling(assistant, monkeypatch):
+    """A throttled converse call is retried with backoff and the successful response is returned."""
     from botocore.exceptions import ClientError
 
     monkeypatch.setattr("asyncio.sleep", AsyncMock())
-    mock_message_create.return_value = Mock(id=1, message="", input_tokens=1, output_tokens=1)
     throttled = ClientError({"Error": {"Code": "ThrottlingException", "Message": "Too many tokens"}}, "Converse")
-    assistant.client.converse.side_effect = [
-        throttled,
-        {
-            "output": {"message": {"role": "assistant", "content": [{"text": "hi"}]}},
-            "usage": {"inputTokens": 1, "outputTokens": 1},
-            "metrics": {"latencyMs": 1},
-            "stopReason": "end_turn",
-        },
-    ]
+    success = {
+        "output": {"message": {"role": "assistant", "content": [{"text": "hi"}]}},
+        "usage": {"inputTokens": 1, "outputTokens": 1},
+        "metrics": {"latencyMs": 1},
+        "stopReason": "end_turn",
+    }
+    assistant.client.converse.side_effect = [throttled, success]
 
-    with pytest.raises(RuntimeError, match="ended without completing"):
-        async for _ in assistant.search("test query"):
-            pass
-
+    assert await assistant._converse(assistant.client) == success
     assert assistant.client.converse.call_count == 2
