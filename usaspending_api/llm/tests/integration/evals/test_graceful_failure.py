@@ -4,6 +4,7 @@ Tests for graceful failure handling in the evaluation framework.
 
 import threading
 import time
+from unittest.mock import Mock
 
 import pytest
 
@@ -500,3 +501,24 @@ def test_max_workers_below_one_raises_value_error():
     """Test that max_workers must be at least 1."""
     with pytest.raises(ValueError, match="max_workers must be at least 1"):
         MockEval(max_workers=0)
+
+
+def test_run_closes_asgiref_thread_connections_once_after_all_cases(test_cases, monkeypatch):
+    """The DB connection on asgiref's shared executor thread is closed exactly once, after every case has run."""
+    monkeypatch.setattr("usaspending_api.llm.evals.base.load_cases", lambda *args, **kwargs: test_cases)
+    monkeypatch.setattr("usaspending_api.llm.evals.base.load_all_cases", lambda *args, **kwargs: test_cases)
+
+    close_calls = []
+    fake_connections = Mock()
+    fake_connections.close_all.side_effect = lambda: close_calls.append(
+        (threading.current_thread(), len(evaluator.executed_cases))
+    )
+    monkeypatch.setattr("usaspending_api.llm.evals.base.connections", fake_connections)
+
+    evaluator = MockEval(fail_on_cases=set(), fail_under=0.9)
+    evaluator.run()
+
+    assert len(close_calls) == 1
+    thread, cases_run_before_close = close_calls[0]
+    assert thread is not threading.main_thread()  # ran on asgiref's executor thread, not the calling thread
+    assert cases_run_before_close == 3

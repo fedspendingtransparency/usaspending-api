@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import threading
 from abc import ABC, abstractmethod
@@ -5,6 +6,7 @@ from concurrent.futures import Future, ThreadPoolExecutor, as_completed
 from pathlib import Path
 from statistics import fmean
 
+from asgiref.sync import sync_to_async
 from django.db import connections
 
 from usaspending_api.llm.evals.exceptions import ExecutionError
@@ -160,6 +162,25 @@ class BaseEval(ABC):
         finally:
             connections.close_all()
 
+    @staticmethod
+    def _close_asgiref_connections() -> None:
+        """
+        Close the DB connection held by asgiref's shared executor thread.
+
+        Async ORM calls (and `sync_to_async` helpers) run on a single process-wide asgiref thread, not on the pool
+        workers, so `connections.close_all()` in a worker never reaches that connection. Close it once, after all cases
+        finish, rather than per case, since every worker shares it. `asyncio.run` is used (instead of `async_to_sync`)
+        so the call is not routed back to the calling thread.
+        """
+
+        async def close() -> None:
+            await sync_to_async(connections.close_all)()
+
+        try:
+            asyncio.run(close())
+        except Exception as exc:
+            logger.warning(f"Failed to close asgiref thread DB connections: {exc}")
+
     def _run_sequential(self, cases: list[EvalCase]) -> list[EvalResult]:
         """Execute cases one by one, in order, logging progress as each one completes."""
         results = []
@@ -225,10 +246,13 @@ class BaseEval(ABC):
                 f.write(f"# Dataset: {self.dataset_name}\n")
                 f.write(f"# Total cases: {len(cases)}\n\n")
 
-        if self.max_workers > 1:
-            results = self._run_parallel(cases)
-        else:
-            results = self._run_sequential(cases)
+        try:
+            if self.max_workers > 1:
+                results = self._run_parallel(cases)
+            else:
+                results = self._run_sequential(cases)
+        finally:
+            self._close_asgiref_connections()
 
         results = tuple(results)
         run_case_names = {case.name for case in cases}

@@ -10,6 +10,9 @@ from usaspending_api.llm.evals.reporting import render_json, render_text, write_
 
 logger = logging.getLogger(__name__)
 
+# Concurrency above this saturates Bedrock's per-model token quota, so results mostly measure throttling.
+MAX_WORKERS_LIMIT = 25
+
 
 class Command(BaseCommand):
     """
@@ -82,7 +85,12 @@ class Command(BaseCommand):
             "--max-workers",
             type=int,
             default=1,
-            help=("Run this many cases concurrently (default: 1, i.e. sequential)."),
+            choices=range(1, MAX_WORKERS_LIMIT + 1),
+            metavar=f"[1-{MAX_WORKERS_LIMIT}]",
+            help=(
+                f"Run this many cases concurrently (default: 1, i.e. sequential; max: {MAX_WORKERS_LIMIT} to stay "
+                "within Bedrock quotas)."
+            ),
         )
 
     def handle(self, *args, **options) -> None:

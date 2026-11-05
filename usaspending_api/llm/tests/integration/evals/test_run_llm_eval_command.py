@@ -1,6 +1,7 @@
 import json
 
-from django.core.management import call_command
+import pytest
+from django.core.management import CommandError, call_command
 from django.test import override_settings
 
 from usaspending_api.llm.evals.assistants import filter_search
@@ -137,3 +138,12 @@ def test_run_llm_eval_command_completes_when_score_is_below_threshold(tmp_path, 
             case_names=["1"],
             fail_under=1.0,
         )
+
+
+def test_run_llm_eval_command_rejects_max_workers_above_limit(tmp_path):
+    """--max-workers is capped to protect Bedrock quotas."""
+    write_dataset(tmp_path)
+
+    with override_settings(LLM_EVAL_DATASET_DIRECTORY=str(tmp_path)):
+        with pytest.raises(CommandError, match="max-workers"):
+            call_command("run_llm_eval", "--assistant", "filter_search", "--max-workers", "26")

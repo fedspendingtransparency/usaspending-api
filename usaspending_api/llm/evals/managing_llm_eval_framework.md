@@ -406,9 +406,10 @@ python manage.py run_llm_eval \
 
 Results are always reported in the original dataset order, regardless of completion order.
 
-Raise `--max-workers` cautiously: each case makes real AWS Bedrock calls, and Bedrock enforces
-per-model rate limits. Setting this too high risks `ThrottlingException`s, which will surface as
-failed cases rather than a cleanly throttled run.
+`--max-workers` is capped at 25: each case makes real AWS Bedrock calls, and Bedrock enforces
+per-model token and request quotas. Throttled Bedrock calls are retried
+with jittered exponential backoff (up to 5 attempts; timeouts are not retried), but sustained demand above the quota will still
+surface as failed cases. If you see `ThrottlingException`s in case errors, lower `--max-workers`.
 
 ## Assistant Metadata
 
