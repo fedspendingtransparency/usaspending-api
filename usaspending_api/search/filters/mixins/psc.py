@@ -1,14 +1,16 @@
-from re import compile
+from re import Pattern, compile
+from typing import Any
+
 from usaspending_api.common.exceptions import UnprocessableEntityException
 from usaspending_api.references.v2.views.filter_tree.psc_filter_tree import PSC_GROUPS
 
 
 class PSCCodesMixin:
-    underscore_name = "psc_codes"
-    validation_pattern = compile("[A-Z0-9]{1,4}")
+    underscore_name: str = "psc_codes"
+    validation_pattern: Pattern = compile("[A-Z0-9]{1,4}")
 
     @classmethod
-    def validate_filter_values(cls, filter_values):
+    def validate_filter_values(cls, filter_values: list[str] | dict[str, Any]) -> None:  # noqa: PLR0912
         """This is validation on top of whatever TinyShield performs."""
         if isinstance(filter_values, list):
             # Legacy.
@@ -23,14 +25,14 @@ class PSCCodesMixin:
             for key in ("require", "exclude"):
                 code_lists = filter_values.get(key) or []
                 if not isinstance(code_lists, list):
-                    raise UnprocessableEntityException(f"require and exclude properties must be arrays of arrays.")
+                    raise UnprocessableEntityException("require and exclude properties must be arrays of arrays.")
                 for code_list in code_lists:
                     if not isinstance(code_list, list):
-                        raise UnprocessableEntityException(f"require and exclude properties must be arrays of arrays.")
+                        raise UnprocessableEntityException("require and exclude properties must be arrays of arrays.")
                     for seq, code in enumerate(code_list):
                         if seq == 0 and code not in PSC_GROUPS:
                             raise UnprocessableEntityException(
-                                f"Tier1 PSC filter values must be one of: {tuple(PSC_GROUPS)}.  "
+                                f"Tier1 PSC filter values must be one of: {[str(val) for val in PSC_GROUPS]}.  "
                                 f"Offending code: '{code}'."
                             )
                         elif seq > 0 and (not isinstance(code, str) or not cls.validation_pattern.fullmatch(code)):
@@ -39,10 +41,10 @@ class PSCCodesMixin:
                                 f"Offending code: '{code}'."
                             )
         else:
-            raise UnprocessableEntityException(f"psc_codes must be an array or object")
+            raise UnprocessableEntityException("psc_codes must be an array or object")
 
     @classmethod
-    def split_filter_values(cls, filter_values):
+    def split_filter_values(cls, filter_values: list[str] | dict[str, Any]) -> tuple[list, list]:
         """Here we assume that filter_values has already been run through validate_filter_values."""
         if isinstance(filter_values, list):
             # Legacy is treated as a "require" filter.
@@ -53,12 +55,12 @@ class PSCCodesMixin:
             require = filter_values.get("require") or []
             exclude = filter_values.get("exclude") or []
         else:
-            raise UnprocessableEntityException(f"psc_codes must be an array or object")
+            raise UnprocessableEntityException("psc_codes must be an array or object")
 
         return require, exclude
 
     @staticmethod
-    def handle_tier1_names(code_lists):
+    def handle_tier1_names(code_lists: list[list[str]]) -> list[list[str]]:
         """
         The PSC lists can contain PSC codes and/or Tier1 names.  Tier1 names map to lists of prefix codes
         (see PSC_GROUPS).  If we have only been supplied a Tier1 name, we need to expand it out into something
@@ -80,7 +82,7 @@ class PSCCodesMixin:
             if code_list[0] in PSC_GROUPS:
                 if len(code_list) == 1:
                     # Replace group name with terms.
-                    expanded_list.extend(PSC_GROUPS[code_list[0]]["expanded_terms"])
+                    expanded_list.extend(PSC_GROUPS[code_list[0]].expanded_terms)
                 else:
                     # Remove group name.
                     expanded_list.append(code_list[1:])

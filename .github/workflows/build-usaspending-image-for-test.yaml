@@ -2,6 +2,8 @@ name: Build USA Spending Docker Image for Test
 
 on:
   workflow_call:
+  # Allow manually running this job via the GitHub UI / API as needed
+  workflow_dispatch:
   # Runs against the default branch (master) on a schedule to keep the GHA build-cache warm,
   # since PR branches without their own cache fall back to master's. Also guards against the
   # 7-day idle-eviction GitHub applies to unused cache entries.

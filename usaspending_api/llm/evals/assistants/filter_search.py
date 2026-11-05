@@ -14,6 +14,7 @@ from usaspending_api.llm.evals.registry import register_eval
 from usaspending_api.llm.models.db_models import Assistant, Session, ToolUse
 from usaspending_api.llm.tools.execute_filter import build_filter_request
 from usaspending_api.llm.v2.views.filter_search import tools as filter_search_tools
+from usaspending_api.references.models import FilterHash
 
 logger = logging.getLogger(__name__)
 
@@ -64,12 +65,14 @@ def get_final_filter_output(session: Session) -> dict[str, Any]:
     """
     Return canonical filters from the last successful execute_filter call.
 
-    execute_filter only returns a hash. Its ToolUse record retains the filter payload used by the model,
-    so the adapter reconstructs the same canonical FilterRequest used by production hash generation.
+    Prefers the FilterHash that execute_filter actually persisted -- that is what users get, and it includes
+    server-side canonicalization (e.g. generated award IDs replaced by PIID/FAIN/URI). Falls back to rebuilding
+    the canonical FilterRequest from the ToolUse payload when no persisted filter is found.
     """
     execute_filter = (
         ToolUse.objects.filter(message__session=session, name=FilterSearchAssistant.COMPLETION_TOOL_NAME)
-        .exclude(result__contains="error")
+        .exclude(result__has_key="error")
+        .exclude(result__results__has_key="error")
         .order_by(
             "message__order",
             "created_at",
@@ -79,6 +82,12 @@ def get_final_filter_output(session: Session) -> dict[str, Any]:
 
     if not execute_filter:
         raise ExecutionError(f"Session '{session.id}' completed without a successful execute_filter call.")
+
+    result = execute_filter.result if isinstance(execute_filter.result, dict) else {}
+    hash_key = (result.get("results") or {}).get("hash")
+    persisted = FilterHash.objects.filter(hash=hash_key).first() if hash_key else None
+    if persisted is not None:
+        return persisted.filter["filters"]
 
     try:
         filter_request = build_filter_request(execute_filter.tool_input)

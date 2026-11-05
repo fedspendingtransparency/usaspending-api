@@ -216,3 +216,19 @@ insurance_types_sql_string = convert_list_to_sql_array(insurance_type_mapping.ke
 other_types_sql_string = convert_list_to_sql_array(
     set(other_type_mapping.keys() - {*insurance_type_mapping.keys(), "-1"})
 )
+
+old_to_new_award_type_mapping = {
+    "02": "F001",
+    "03": "F001",
+    "04": "F001",
+    "05": "F002",
+    "10": "F007",
+    "06": "F006",
+    "07": "F003",
+    "08": "F004",
+    "09": "F005",
+    "11": "F010",
+}
+new_to_old_award_type_mapping = {}
+for old_code, new_code in old_to_new_award_type_mapping.items():
+    new_to_old_award_type_mapping.setdefault(new_code, []).append(old_code)
