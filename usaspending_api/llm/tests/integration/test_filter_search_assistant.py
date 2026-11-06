@@ -644,3 +644,21 @@ class TestFilterSearchAssistant:
         assert [r["toolUseId"] for r in tool_results] == ["tool-789"]
         assert "error" in tool_results[0]["content"][0]["json"]
         assert not any(e["type"] == "search_complete" for e in events)
+
+
+async def test_converse_retries_on_throttling(assistant, monkeypatch):
+    """A throttled converse call is retried with backoff and the successful response is returned."""
+    from botocore.exceptions import ClientError
+
+    monkeypatch.setattr("asyncio.sleep", AsyncMock())
+    throttled = ClientError({"Error": {"Code": "ThrottlingException", "Message": "Too many tokens"}}, "Converse")
+    success = {
+        "output": {"message": {"role": "assistant", "content": [{"text": "hi"}]}},
+        "usage": {"inputTokens": 1, "outputTokens": 1},
+        "metrics": {"latencyMs": 1},
+        "stopReason": "end_turn",
+    }
+    assistant.client.converse.side_effect = [throttled, success]
+
+    assert await assistant._converse(assistant.client) == success
+    assert assistant.client.converse.call_count == 2

@@ -7,9 +7,19 @@ from django.core.management.base import BaseCommand, CommandError, CommandParser
 from usaspending_api.llm.evals.exceptions import EvalError
 from usaspending_api.llm.evals.models import EvalSummary
 from usaspending_api.llm.evals.registry import get_eval_class, registered_assistant_names
-from usaspending_api.llm.evals.reporting import render_json, render_text, write_csv, write_xlsx
+from usaspending_api.llm.evals.reporting import (
+    render_json,
+    render_text,
+    throttled_case_names,
+    throttling_warning,
+    write_csv,
+    write_xlsx,
+)
 
 logger = logging.getLogger(__name__)
+
+# Concurrency above this saturates Bedrock's per-model token quota, so results mostly measure throttling.
+MAX_WORKERS_LIMIT = 25
 
 
 class Command(BaseCommand):
@@ -87,6 +97,17 @@ class Command(BaseCommand):
                 "Useful for long-running evaluations to preserve results if the run fails."
             ),
         )
+        parser.add_argument(
+            "--max-workers",
+            type=int,
+            default=1,
+            choices=range(1, MAX_WORKERS_LIMIT + 1),
+            metavar=f"[1-{MAX_WORKERS_LIMIT}]",
+            help=(
+                f"Run this many cases concurrently (default: 1, i.e. sequential; max: {MAX_WORKERS_LIMIT} to stay "
+                "within Bedrock quotas)."
+            ),
+        )
 
     def handle(self, *args, **options) -> None:
         """
@@ -96,6 +117,7 @@ class Command(BaseCommand):
         summary = self._run_evaluation(options)
         self._write_output(summary, options["format"], options["output"])
         self._check_threshold(summary)
+        self._warn_on_throttling(summary)
 
     def _run_evaluation(self, options: dict) -> EvalSummary:
         """Execute the evaluation and return the summary."""
@@ -108,6 +130,7 @@ class Command(BaseCommand):
                 tags=set(options["tags"] or []),
                 fail_under=options["fail_under"],
                 incremental_output=options.get("incremental_output"),
+                max_workers=options["max_workers"],
                 as_of=options.get("as_of"),
             )
             return evaluator.run()
@@ -160,3 +183,14 @@ class Command(BaseCommand):
             logger.warning(
                 f"Evaluation score {summary.score:.2%} is below required threshold {summary.fail_under:.2%}."
             )
+
+    def _warn_on_throttling(self, summary: EvalSummary) -> None:
+        """Print a prominent warning if any case still failed with a Bedrock throttling error after all retries."""
+        warning = throttling_warning(summary)
+        if not warning:
+            return
+
+        message = f"WARNING: {warning} Affected cases: {', '.join(throttled_case_names(summary))}"
+        logger.error(message)
+        banner = "!" * 100
+        self.stderr.write(self.style.ERROR(f"\n{banner}\n{message}\n{banner}\n"))
