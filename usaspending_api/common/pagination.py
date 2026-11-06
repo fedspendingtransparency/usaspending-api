@@ -1,9 +1,15 @@
 from collections import OrderedDict
+from typing import Any
 
-from rest_framework.response import Response
-from rest_framework.pagination import BasePagination
+from django.db.models import QuerySet
 from django.template import loader
+from rest_framework.pagination import BasePagination
+from rest_framework.request import Request
+from rest_framework.response import Response
 from rest_framework.utils.urls import replace_query_param
+from rest_framework.views import APIView
+
+from usaspending_api.common.exceptions import InvalidParameterException
 
 
 class UsaspendingPagination(BasePagination):
@@ -12,6 +18,9 @@ class UsaspendingPagination(BasePagination):
 
     # The maximum page size
     max_page_size = 500
+
+    # Keeps "page * limit" comfortably inside a Postgres bigint for OFFSET.
+    max_page = 2**31 - 1
 
     # Page size query param
     page_size_query_param = "limit"
@@ -22,7 +31,7 @@ class UsaspendingPagination(BasePagination):
     # Use a lazy template (i.e. doesn't need to know the total number of pages)
     template = "rest_framework/pagination/previous_and_next.html"
 
-    def paginate_queryset(self, queryset, request, view=None):
+    def paginate_queryset(self, queryset: QuerySet, request: Request, view: APIView | None = None) -> list:
         self.request = request
         self.count = queryset.count()
         self.limit = self.get_limit(request)
@@ -37,41 +46,47 @@ class UsaspendingPagination(BasePagination):
 
         return list(queryset[self.offset : self.offset + self.limit])
 
-    def next_page_exists(self, queryset):
+    def next_page_exists(self, queryset: QuerySet) -> bool:
         # If there are more results than the number of records returned so far, return True
         return (self.offset + self.limit) < self.count
 
-    def get_limit(self, request):
+    @staticmethod
+    def _as_int(value: object, name: str) -> int:
+        # Values arrive as a list from GET query params and as a scalar from a JSON body.
+        if isinstance(value, list):
+            value = value[0] if value else None
+        try:
+            return int(value)
+        except (TypeError, ValueError):
+            raise InvalidParameterException(f"'{name}' must be an integer, got {value!r}") from None
+
+    def get_limit(self, request: Request) -> int:
         # Check both POST and GET parameters for limit
         request_parameters = {**request.data, **request.query_params}
 
         if "limit" in request_parameters:
-            # We need to check if this is a list due to the fact we support both POST and GET
-            lim = request_parameters["limit"]
-            if isinstance(lim, list):
-                lim = lim[0]
+            lim = self._as_int(request_parameters["limit"], "limit")
             # This will ensure our limit is bounded by [1, max_page_size]
-            return max(min(int(lim), self.max_page_size), 1)
+            return max(min(lim, self.max_page_size), 1)
         else:
             return self.page_size
 
-    def get_page(self, request):
+    def get_page(self, request: Request) -> int:
         # Check both POST and GET parameters for page
         request_parameters = {**request.data, **request.query_params}
         if "page" in request_parameters:
-            # We need to check if this is a list due to the fact we support both POST and GET
-            p = request_parameters["page"]
-            if isinstance(p, list):
-                p = p[0]
-            # Ensures our page is bounded by [1, ..]
-            return max(int(p), 1)
+            p = self._as_int(request_parameters["page"], "page")
+            if p > self.max_page:
+                raise InvalidParameterException(f"'page' must be at most {self.max_page}")
+            # Ensures our page is bounded by [1, max_page]
+            return max(p, 1)
         else:
             return 1
 
-    def get_offset(self, request):
+    def get_offset(self, request: Request) -> int:
         return (self.page - 1) * self.limit
 
-    def get_paginated_response(self, data):
+    def get_paginated_response(self, data: Any) -> Response:
         page_metadata = OrderedDict(
             [
                 ("count", self.count),
@@ -86,7 +101,7 @@ class UsaspendingPagination(BasePagination):
 
         return Response(OrderedDict([("page_metadata", page_metadata), ("results", data)]))
 
-    def get_next_link(self):
+    def get_next_link(self) -> str | None:
         if not self.has_next_page:
             return None
 
@@ -96,14 +111,14 @@ class UsaspendingPagination(BasePagination):
 
         return url
 
-    def get_current_link(self):
+    def get_current_link(self) -> str:
         url = self.request.build_absolute_uri()
         url = replace_query_param(url, self.page_size_query_param, self.limit)
         url = replace_query_param(url, self.page_query_param, self.page)
 
         return url
 
-    def get_previous_link(self):
+    def get_previous_link(self) -> str | None:
         if self.page == 1:
             return None
 
@@ -113,10 +128,10 @@ class UsaspendingPagination(BasePagination):
 
         return url
 
-    def get_html_context(self):
+    def get_html_context(self) -> dict:
         return {"previous_url": self.get_previous_link(), "next_url": self.get_next_link()}
 
-    def to_html(self):
+    def to_html(self) -> str:
         template = loader.get_template(self.template)
         context = self.get_html_context()
         return template.render(context)
