@@ -10,7 +10,7 @@ from django.db.models import Sum
 from usaspending_api.common.helpers.aws_helpers import async_aws_client
 from usaspending_api.llm.models.db_models import Assistant, Message, Session, ToolUse
 from usaspending_api.llm.models.py_models import AITool, abuild_defc_description
-from usaspending_api.llm.tools.exceptions import ToolUseRuntimeError
+from usaspending_api.llm.tools.exceptions import GENERIC_TOOL_FAILURE_INSTRUCTIONS, ToolUseRuntimeError
 
 logger = logging.getLogger(__name__)
 
@@ -395,7 +395,10 @@ class FilterSearchAssistant:
                 is_known_error = isinstance(e, ToolUseRuntimeError)
                 error_message = e.user_message if is_known_error else "Tool execution failed."
                 model_detail = e.model_detail if is_known_error else str(e)
+                instructions = e.instructions if is_known_error else GENERIC_TOOL_FAILURE_INSTRUCTIONS
                 error_result = {"error": model_detail}
+                if instructions:
+                    error_result["instructions"] = instructions
                 t.result = error_result
                 await t.asave()
 

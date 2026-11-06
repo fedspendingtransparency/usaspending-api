@@ -7,6 +7,8 @@ from model_bakery import baker
 from usaspending_api.accounts.models.treasury_appropriation_account import TreasuryAppropriationAccount
 from usaspending_api.llm.tools.exceptions import (
     AssistanceListingNotRecognizedError,
+    CodeNotRecognizedError,
+    InvalidToolInputError,
     NaicsCodeNotRecognizedError,
     PscCodeNotRecognizedError,
     TasNotRecognizedError,
@@ -529,12 +531,13 @@ class TestAddTasAncestors:
 
 
 class TestErrorHandling:
-    async def test_unsupported_code_type_returns_error(self, tool):
-        result = await tool.lookup_codes("anything", "bogus")
-        assert (
-            result.results.get("error")
-            == "Unsupported code type: bogus. Supported types: ['naics', 'psc', 'cfda', 'tas']"
-        )
+    async def test_unsupported_code_type_raises_invalid_input(self, tool):
+        with pytest.raises(
+            InvalidToolInputError,
+            match=r"Unsupported code type: bogus. Supported types: \['naics', 'psc', 'cfda', 'tas'\]",
+        ) as exc_info:
+            await tool.lookup_codes("anything", "bogus")
+        assert exc_info.value.instructions
 
     async def test_no_matches_anywhere_raises_not_recognized(
         self, tool, mock_embedding_generator, mock_expand_query, mock_get_aimodel
@@ -560,6 +563,21 @@ class TestErrorHandling:
 
         with pytest.raises(exception_class):
             await tool.lookup_codes("nothing matches this", code_type)
+
+    @pytest.mark.parametrize("code_type", ["naics", "psc", "cfda", "tas"])
+    async def test_no_matches_error_keeps_detail_and_adds_instructions(
+        self, tool, mock_embedding_generator, mock_expand_query, mock_get_aimodel, code_type
+    ):
+        mock_embedding_generator.agenerate_embedding.return_value = None
+
+        with pytest.raises(CodeNotRecognizedError) as exc_info:
+            await tool.lookup_codes("nothing matches this", code_type)
+
+        assert "nothing matches this" in exc_info.value.model_detail
+        assert exc_info.value.instructions
+        assert ("Do not retry the same string" in exc_info.value.instructions) == (code_type in ("cfda", "tas"))
+        assert "tell the user" not in exc_info.value.instructions
+        assert ("dates" in exc_info.value.instructions) == (code_type == "tas")
 
 
 def _node(score, children=None):

@@ -5,6 +5,7 @@ from opensearchpy.helpers.query import Q as ES_Q
 
 from usaspending_api.common.elasticsearch.search_wrappers import AsyncRecipientSearch
 from usaspending_api.llm.models.py_models import AITool, AIToolDescription, AIToolResult
+from usaspending_api.llm.tools.exceptions import InvalidToolInputError
 from usaspending_api.search.v2.es_sanitization import es_sanitize
 
 logger = logging.getLogger(__name__)
@@ -30,7 +31,7 @@ class RecipientLookupTool:
         Search for recipients by name, uei, duns, and return recipient names.
         """
         if not query or not query.strip():
-            return AIToolResult(results={"error": "Query cannot be empty."})
+            raise InvalidToolInputError("Query cannot be empty")
 
         top_k = max(1, min(top_k, 100))
         query_upper = es_sanitize(query).strip().upper()
@@ -50,7 +51,7 @@ class RecipientLookupTool:
             )
         except Exception as exception:
             logger.error(f"OpenSearch query failed for query='{query}': {str(exception)}", exc_info=True)
-            return AIToolResult(results={"error": str(exception)})
+            raise
         finally:
             if search.client is not None:
                 await search.client.close()
@@ -148,9 +149,8 @@ exact name match - all fuzzy-matched recipient names are returned, since an exac
 necessarily the best or intended match (e.g. "ACME CORP" vs. "ACME CORPORATION"). Review every name
 returned and pick the one that best fits the user's query rather than assuming the first result.
 
-When no recipients are found, a "messages" key explains that zero results were returned - this is
-not an error, and you should still call execute_filter using the information you already have
-rather than quitting.
+When no recipients are found, an empty list is returned - this is not an error, and you should
+still call execute_filter using the information you already have rather than quitting.
 
 Supported inputs:
 - Recipient names (eg 'BOEING COMPANY', 'Lockheed Martin')
