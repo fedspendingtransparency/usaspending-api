@@ -37,10 +37,11 @@ class InvalidToolInputError(ToolUseRuntimeError):
 
 class LocationNotRecognizedError(ToolUseRuntimeError):
     instructions = (
-        "No location matched this query. Search for a specific place: a state name or abbreviation, city, county, "
-        "ZIP code, or congressional district (e.g. 'MO-04'). Broad or non-place phrases (a country, 'all states', "
-        "dates) cannot be looked up. Do not repeat the same query; if no specific place applies, omit the location "
-        "filter and continue."
+        "No location matched this query. Locations can be a country, state, city, county, ZIP code, or "
+        "congressional district (e.g. 'MO-04'). Check the spelling and try the standard name or abbreviation, or "
+        "set location_type to the kind of place you mean. Phrases that are not a single place (such as 'all "
+        "states') or that are dates cannot be looked up. Do not repeat the same query; if no specific place "
+        "applies, omit the location filter and continue."
     )
 
 
