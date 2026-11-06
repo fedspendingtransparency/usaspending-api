@@ -1,10 +1,12 @@
 import json
+from io import StringIO
 
 import pytest
 from django.core.management import CommandError, call_command
 from django.test import override_settings
 
 from usaspending_api.llm.evals.assistants import filter_search
+from usaspending_api.llm.evals.exceptions import ExecutionError
 from usaspending_api.llm.evals.models import EvalCase, EvalObservation, ToolCall
 
 
@@ -138,6 +140,40 @@ def test_run_llm_eval_command_completes_when_score_is_below_threshold(tmp_path, 
             case_names=["1"],
             fail_under=1.0,
         )
+
+
+def test_run_llm_eval_command_warns_when_cases_are_throttled(tmp_path, monkeypatch):
+    """A case that still fails with a Bedrock throttling error gets a prominent warning naming it."""
+    write_dataset(tmp_path)
+
+    def throttled_observation(case: EvalCase) -> EvalObservation:
+        if case.name == "1":
+            raise ExecutionError(
+                "Session completed without a successful execute_filter call. "
+                "Search failed with ThrottlingException: Too many tokens"
+            )
+        return fake_eval_observation(case)
+
+    monkeypatch.setattr(filter_search, "run_eval_case", throttled_observation)
+    stderr = StringIO()
+
+    with override_settings(LLM_EVAL_DATASET_DIRECTORY=str(tmp_path)):
+        call_command("run_llm_eval", assistant="filter_search", case_names=["1", "2"], fail_under=0.0, stderr=stderr)
+
+    output = stderr.getvalue()
+    assert "WARNING: 1 case(s) failed with ThrottlingException" in output
+    assert "Affected cases: 1" in output
+
+
+def test_run_llm_eval_command_does_not_warn_without_throttling(tmp_path, monkeypatch):
+    write_dataset(tmp_path)
+    monkeypatch.setattr(filter_search, "run_eval_case", fake_eval_observation)
+    stderr = StringIO()
+
+    with override_settings(LLM_EVAL_DATASET_DIRECTORY=str(tmp_path)):
+        call_command("run_llm_eval", assistant="filter_search", case_names=["1", "2"], stderr=stderr)
+
+    assert "ThrottlingException" not in stderr.getvalue()
 
 
 def test_run_llm_eval_command_rejects_max_workers_above_limit(tmp_path):

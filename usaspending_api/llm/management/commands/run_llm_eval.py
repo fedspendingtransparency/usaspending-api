@@ -7,7 +7,14 @@ from django.core.management.base import BaseCommand, CommandError, CommandParser
 from usaspending_api.llm.evals.exceptions import EvalError
 from usaspending_api.llm.evals.models import EvalSummary
 from usaspending_api.llm.evals.registry import get_eval_class, registered_assistant_names
-from usaspending_api.llm.evals.reporting import render_json, render_text, write_csv, write_xlsx
+from usaspending_api.llm.evals.reporting import (
+    render_json,
+    render_text,
+    throttled_case_names,
+    throttling_warning,
+    write_csv,
+    write_xlsx,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -110,6 +117,7 @@ class Command(BaseCommand):
         summary = self._run_evaluation(options)
         self._write_output(summary, options["format"], options["output"])
         self._check_threshold(summary)
+        self._warn_on_throttling(summary)
 
     def _run_evaluation(self, options: dict) -> EvalSummary:
         """Execute the evaluation and return the summary."""
@@ -175,3 +183,14 @@ class Command(BaseCommand):
             logger.warning(
                 f"Evaluation score {summary.score:.2%} is below required threshold {summary.fail_under:.2%}."
             )
+
+    def _warn_on_throttling(self, summary: EvalSummary) -> None:
+        """Print a prominent warning if any case still failed with a Bedrock throttling error after all retries."""
+        warning = throttling_warning(summary)
+        if not warning:
+            return
+
+        message = f"WARNING: {warning} Affected cases: {', '.join(throttled_case_names(summary))}"
+        logger.error(message)
+        banner = "!" * 100
+        self.stderr.write(self.style.ERROR(f"\n{banner}\n{message}\n{banner}\n"))
