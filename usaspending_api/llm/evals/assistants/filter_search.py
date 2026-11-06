@@ -111,6 +111,7 @@ async def run_eval_case(case: EvalCase) -> EvalObservation:
         assistant=assistant_config,
         tools=filter_search_tools,
         session=session,
+        as_of=case.as_of,
     )
 
     events: list[dict[str, Any]] = []

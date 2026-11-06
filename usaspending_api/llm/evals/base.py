@@ -3,6 +3,7 @@ import logging
 import threading
 from abc import ABC, abstractmethod
 from concurrent.futures import Future, ThreadPoolExecutor, as_completed
+from datetime import date
 from pathlib import Path
 from statistics import fmean
 
@@ -40,6 +41,7 @@ class BaseEval(ABC):
         fail_under: float | None = None,
         incremental_output: Path | None = None,
         max_workers: int = 1,
+        as_of: date | None = None,
     ) -> None:
         if not self.assistant_name:
             raise ValueError("assistant_name must be defined.")
@@ -58,6 +60,8 @@ class BaseEval(ABC):
         self.incremental_output = incremental_output
         self.max_workers = max_workers
         self._incremental_lock = threading.Lock()
+        # Fixed once per run so relative dataset values (e.g. "last quarter") and the assistant agree on today.
+        self.as_of = as_of or date.today()
 
     def load_cases(self) -> list[EvalCase]:
         """
@@ -74,6 +78,7 @@ class BaseEval(ABC):
             selected_case_names=self.selected_case_names,
             include_unapproved=self.include_unapproved,
             tags=self.tags,
+            as_of=self.as_of,
         )
 
     @abstractmethod
@@ -229,13 +234,13 @@ class BaseEval(ABC):
         When `max_workers > 1`, cases execute concurrently via a thread pool, but `results`
         is always returned in original dataset order, independent of completion order.
         """
-        all_cases = load_all_cases(self.dataset_name)
+        all_cases = load_all_cases(self.dataset_name, self.as_of)
         cases = self.load_cases()
 
         if not cases:
             raise ValueError(f"Dataset `{self.dataset_name}` does not contain evaluation cases.")
 
-        logger.info(f"Starting evaluation: {len(cases)} case(s) to run")
+        logger.info(f"Starting evaluation: {len(cases)} case(s) to run (as of {self.as_of.isoformat()})")
 
         # Prepare incremental output file if specified
         if self.incremental_output:
@@ -244,6 +249,7 @@ class BaseEval(ABC):
             with self.incremental_output.open("w", encoding="utf-8") as f:
                 f.write(f"# Incremental evaluation results for {self.assistant_name}\n")
                 f.write(f"# Dataset: {self.dataset_name}\n")
+                f.write(f"# As of: {self.as_of.isoformat()}\n")
                 f.write(f"# Total cases: {len(cases)}\n\n")
 
         try:

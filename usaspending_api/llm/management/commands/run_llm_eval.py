@@ -1,4 +1,5 @@
 import logging
+from datetime import date
 from pathlib import Path
 
 from django.core.management.base import BaseCommand, CommandError, CommandParser
@@ -52,6 +53,14 @@ class Command(BaseCommand):
         )
         parser.add_argument(
             "--include-unapproved", action="store_true", help="Include draft cases whose approved value is false."
+        )
+        parser.add_argument(
+            "--as-of",
+            type=date.fromisoformat,
+            help=(
+                "Date (YYYY-MM-DD) treated as today when resolving relative dataset values such as 'last quarter' "
+                "and when telling the assistant the current date. (default: today)"
+            ),
         )
         parser.add_argument(
             "--fail-under",
@@ -114,6 +123,7 @@ class Command(BaseCommand):
                 fail_under=options["fail_under"],
                 incremental_output=options.get("incremental_output"),
                 max_workers=options["max_workers"],
+                as_of=options.get("as_of"),
             )
             return evaluator.run()
         except (EvalError, ValueError) as exc:
