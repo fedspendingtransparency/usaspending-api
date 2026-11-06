@@ -346,8 +346,9 @@ class TestSemanticOnlyInstructions:
         with pytest.raises(AgencyNotRecognizedError) as exc_info:
             await tool.lookup_agencies("zzz-not-a-real-agency")
 
-        assert "lookup_recipient" in exc_info.value.model_detail
+        assert "lookup_recipient" in exc_info.value.instructions
         assert "lookup_recipient" not in exc_info.value.user_message
+        assert "lookup_recipient" not in exc_info.value.model_detail
 
 
 class TestMatviewRowToEntry:
