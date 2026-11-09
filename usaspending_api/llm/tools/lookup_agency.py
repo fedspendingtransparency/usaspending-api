@@ -43,7 +43,7 @@ class AgencyLookupTool:
         "semantic-similarity guesses and may be completely wrong. Many entities that sound like government "
         "agencies -- state, local, tribal, or foreign government bodies, universities, hospitals, and "
         "companies -- are RECIPIENTS of federal funding, not federal agencies. "
-        "If none of these results seem correct, Do NOT select one of these results and do NOT tell the user there is "
+        "If none of these results seem correct, do NOT select one of these results and do NOT tell the user there is "
         "no federal data unless you have first called lookup_recipient with this entity's name and confirmed it has no "
         "matches either."
     )

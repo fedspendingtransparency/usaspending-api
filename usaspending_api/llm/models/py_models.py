@@ -1198,7 +1198,10 @@ class ExecuteFilterInput(BaseModel):
         json_schema_extra={
             "examples": [
                 {"require": [["310"]]},
-                {"require": [["535", "535-2724", "535-2020/2021-2724-000"]], "exclude": [["310"]]},
+                {
+                    "require": [["535", "535-2724"]],
+                    "exclude": [["535", "535-2724", "535-2026/2027-2724-000"]],
+                },
             ]
         },
     )

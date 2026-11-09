@@ -50,10 +50,11 @@ CODE_NOT_FOUND_INSTRUCTIONS = (
     "full phrase), or try a different code_type if the query may describe a different kind of code. If no reasonable "
     "match exists, omit this filter."
 )
-# Assistance listing codes are numeric, so a query that isn't is usually a mis-formatted code or a program name
+# A query that isn't an assistance listing number is usually a mis-formatted code or a program name
 CFDA_NOT_FOUND_INSTRUCTIONS = (
-    "Do not retry the same string. Assistance listing codes are numeric (NN.NNN): strip any alphabetic prefix, or "
-    "search by the program name instead. Retry at most once; if there is still no match, omit this filter."
+    "Do not retry the same string. If the query was an assistance listing number, strip any prefix such as 'AL' or "
+    "'CFDA' and search with just the number, or search by the program name instead. Retry at most once; if there is "
+    "still no match, omit this filter."
 )
 # TAS lookups are often attempted for values that are not treasury accounts at all (dates, fiscal years, topics)
 TAS_NOT_FOUND_INSTRUCTIONS = (

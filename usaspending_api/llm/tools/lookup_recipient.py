@@ -147,7 +147,9 @@ Returns recipient_names: a list of strings. When the query is an exact match for
 since identifiers are unique and unambiguous. Name queries never short-circuit this way, even on an
 exact name match - all fuzzy-matched recipient names are returned, since an exact text match is not
 necessarily the best or intended match (e.g. "ACME CORP" vs. "ACME CORPORATION"). Review every name
-returned and pick the one that best fits the user's query rather than assuming the first result.
+returned and pick the names that best fit the user's query rather than assuming the first result. Pick all
+of the names that are close variants of the same organization (e.g. "ACME CORP" and "ACME CORP."), since the
+data often records one organization under slightly different names.
 
 When no recipients are found, an empty list is returned - this is not an error, and you should
 still call execute_filter using the information you already have rather than quitting.
