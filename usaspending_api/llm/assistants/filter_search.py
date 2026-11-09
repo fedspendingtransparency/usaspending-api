@@ -7,7 +7,11 @@ from typing import Any, AsyncGenerator, Callable
 
 from django.db.models import Sum
 
-from usaspending_api.common.helpers.aws_helpers import async_aws_client
+from usaspending_api.common.helpers.aws_helpers import (
+    NO_BOTOCORE_RETRIES_CONFIG,
+    async_aws_client,
+    retry_on_throttling,
+)
 from usaspending_api.llm.models.db_models import Assistant, Message, Session, ToolUse
 from usaspending_api.llm.models.py_models import AITool, abuild_defc_description
 from usaspending_api.llm.tools.exceptions import GENERIC_TOOL_FAILURE_INSTRUCTIONS, ToolUseRuntimeError
@@ -170,6 +174,22 @@ class FilterSearchAssistant:
             "stopSequences": [],
         }
 
+    @retry_on_throttling
+    async def _converse(self, client: Any) -> dict:
+        """
+        Call Bedrock's converse API, retrying with jittered backoff if AWS throttles the request.
+
+        Retrying here (rather than re-running the whole search) means a transient error late in a conversation does not
+        replay earlier iterations, which would consume more of the model's token quota.
+        """
+        return await client.converse(
+            modelId=self.assistant.ai_model.model_id,
+            messages=self.messages,
+            toolConfig=await self.aget_tool_config(),
+            system=[{"text": self.system_message}],
+            inferenceConfig=self.inference_config,
+        )
+
     async def search(self, query: str) -> AsyncGenerator[dict[str, str], None]:
         yield {"search_id": str(self.session.id), "type": "search_start", "message": "Thinking..."}
 
@@ -186,14 +206,8 @@ class FilterSearchAssistant:
         self.message_order += 1
         self.messages.append({"role": "user", "content": [{"text": query}]})
 
-        async with async_aws_client("bedrock-runtime") as client:
-            response = await client.converse(
-                modelId=self.assistant.ai_model.model_id,
-                messages=self.messages,
-                toolConfig=await self.aget_tool_config(),
-                system=[{"text": self.system_message}],
-                inferenceConfig=self.inference_config,
-            )
+        async with async_aws_client("bedrock-runtime", config=NO_BOTOCORE_RETRIES_CONFIG) as client:
+            response = await self._converse(client)
             self._sanitize_tool_use_input(response["output"]["message"]["content"])
             m = await self._create_message_from_response(response)
             stop_reason = response["stopReason"]
@@ -227,13 +241,7 @@ class FilterSearchAssistant:
                 if search_complete:
                     break
 
-                response = await client.converse(
-                    modelId=self.assistant.ai_model.model_id,
-                    messages=self.messages,
-                    toolConfig=await self.aget_tool_config(),
-                    system=[{"text": self.system_message}],
-                    inferenceConfig=self.inference_config,
-                )
+                response = await self._converse(client)
                 self._sanitize_tool_use_input(response["output"]["message"]["content"])
                 m = await self._create_message_from_response(response)
                 stop_reason = response["stopReason"]
