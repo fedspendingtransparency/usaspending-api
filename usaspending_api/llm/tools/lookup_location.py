@@ -13,7 +13,7 @@ from usaspending_api.llm.models.py_models import (
     LocationFilter,
     SelectedLocation,
 )
-from usaspending_api.llm.tools.exceptions import LocationNotRecognizedError
+from usaspending_api.llm.tools.exceptions import InvalidToolInputError, LocationNotRecognizedError
 from usaspending_api.references.models import PopCongressionalDistrict, RefCountryCode
 
 logger = logging.getLogger(__name__)
@@ -70,9 +70,7 @@ class LocationLookupTool:
 
     async def lookup_location(self, query: str, location_type: str | None = None, top_k: int = 15) -> AIToolResult:
         # Validation
-        error_response = self._validate_inputs(query, location_type)
-        if error_response:
-            return error_response
+        self._validate_inputs(query, location_type)
 
         # Clamp top_k
         top_k = max(1, min(top_k, 100))
@@ -93,7 +91,7 @@ class LocationLookupTool:
             )
         except Exception as e:
             logger.error(f"OpenSearch query failed for query='{query}': {str(e)}", exc_info=True)
-            return AIToolResult(results={"error": f"OpenSearch query failed: {str(e)}", "results": {}})
+            raise
         finally:
             if search.client is not None:
                 await search.client.close()
@@ -123,20 +121,15 @@ class LocationLookupTool:
         # return {"results": results, "count": len(results), "query": query, "location_type": location_type}
         return AIToolResult(results=results)
 
-    def _validate_inputs(self, query: str, location_type: str | None) -> AIToolResult | None:
-        """Validate input parameters and return error dict if invalid, None otherwise."""
+    def _validate_inputs(self, query: str, location_type: str | None) -> None:
+        """Raise InvalidToolInputError if the input parameters are invalid."""
         if not query or not query.strip():
-            return AIToolResult(results={"error": "Query cannot be empty", "results": {}})
+            raise InvalidToolInputError("Query cannot be empty")
 
         if location_type and location_type not in self.LOCATION_TYPES:
-            return AIToolResult(
-                results={
-                    "error": f"Invalid location_type. Must be one of: {', '.join(sorted(self.LOCATION_TYPES))}",
-                    "results": {},
-                }
+            raise InvalidToolInputError(
+                f"Invalid location_type. Must be one of: {', '.join(sorted(self.LOCATION_TYPES))}"
             )
-
-        return None
 
     def _build_search(self, query_upper: str, location_type: str | None, top_k: int) -> AsyncLocationSearch:
         """Build the OpenSearch query with fuzzy matching."""
