@@ -10,6 +10,23 @@ from usaspending_api.search.v2.es_sanitization import es_sanitize
 
 logger = logging.getLogger(__name__)
 
+RECIPIENT_NAMES_INSTRUCTIONS = (
+    "These names are fuzzy matches ordered by relevance, and many are unrelated businesses or people with a similar "
+    "name. Use only the names that refer to what the user named: usually the single best match for each recipient "
+    "they named, plus another only when it is clearly the same organization under another legal name or the user "
+    "asked for related entities. Do not include every result. Use the names exactly as returned in selectedRecipients."
+)
+IDENTIFIER_MATCH_INSTRUCTIONS = (
+    "The query matched this identifier exactly, so it is the recipient. Use it as returned in selectedRecipients."
+)
+NO_RECIPIENT_INSTRUCTIONS = (
+    "No recipient matched this query. This is not an error. Do not repeat the same query, and do not use a name that "
+    "was not returned. If the query is an award identifier (a contract number, PIID, FAIN, or award number) rather "
+    "than a recipient, use lookup_award instead. If the user was describing a kind of recipient (such as small "
+    "businesses or universities) rather than naming one, use list_recipient_types instead. Otherwise leave the "
+    "recipient filter out and continue with the other filters."
+)
+
 
 class RecipientLookupTool:
     """Tool for looking up recipients in OpenSearch with fuzzy matching support."""
@@ -74,7 +91,15 @@ class RecipientLookupTool:
             f"Recipient lookup completed: query='{query}', recipient_names_count={recipient_count}",
             extra={"query": query, "recipient_names_count": recipient_count},
         )
-        return AIToolResult(results=result)
+        is_identifier_match = any(self._matched_identifier(hit.to_dict(), query_upper) for hit in response.hits)
+        instructions = self._build_instructions(recipient_count, is_identifier_match)
+        return AIToolResult(results=result, instructions=instructions)
+
+    @staticmethod
+    def _build_instructions(recipient_count: int, is_identifier_match: bool) -> str:
+        if recipient_count == 0:
+            return NO_RECIPIENT_INSTRUCTIONS
+        return IDENTIFIER_MATCH_INSTRUCTIONS if is_identifier_match else RECIPIENT_NAMES_INSTRUCTIONS
 
     def _build_search(self, query_upper: str, top_k: int) -> AsyncRecipientSearch:
         should_queries = []
