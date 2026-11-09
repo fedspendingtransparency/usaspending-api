@@ -11,6 +11,8 @@ from usaspending_api.llm.evals.models import EvalCase, EvalResult, EvalSummary
 
 logger = logging.getLogger(__name__)
 
+THROTTLING_MARKER = "ThrottlingException"
+
 SUMMARY_FIELDS = (
     "assistant",
     "dataset",
@@ -22,6 +24,7 @@ SUMMARY_FIELDS = (
     "score",
     "fail_under",
     "passed",
+    "throttled_count",
 )
 CASE_FIELDS = (
     "case_name",
@@ -216,6 +219,27 @@ def case_rows(summary: EvalSummary) -> list[dict[str, Any]]:
     return executed + unrun
 
 
+def throttled_case_names(summary: EvalSummary) -> list[str]:
+    """Names of cases that still failed with a Bedrock throttling error after exhausting retries."""
+    return [result.case_name for result in summary.results if THROTTLING_MARKER in (result.error or "")]
+
+
+def throttling_warning(summary: EvalSummary) -> str | None:
+    """
+    A warning if any case failed from throttling, otherwise None.
+
+    Those cases score 0 because of quota limits, not the code under test, so the overall score understates the real
+    result and shouldn't be compared with other runs.
+    """
+    throttled = throttled_case_names(summary)
+    if not throttled:
+        return None
+    return (
+        f"{len(throttled)} case(s) failed with {THROTTLING_MARKER} after exhausting retries, so this run's score is "
+        "LOWER than the code deserves and is not comparable to other runs. Re-run with fewer --max-workers."
+    )
+
+
 def summary_to_dict(summary: EvalSummary) -> dict[str, Any]:
     """Converts aggregate run results to a machine-readable summary."""
     return {
@@ -229,6 +253,7 @@ def summary_to_dict(summary: EvalSummary) -> dict[str, Any]:
         "score": summary.score,
         "fail_under": summary.fail_under,
         "passed": summary.passed,
+        "throttled_count": len(throttled_case_names(summary)),
     }
 
 
@@ -325,6 +350,9 @@ def write_xlsx(summary: EvalSummary, output_path: Path) -> None:
     summary_sheet.append(["Generated At", datetime.now(timezone.utc).isoformat()])
     for field in SUMMARY_FIELDS:
         summary_sheet.append([field, _display_value(summary_data[field])])
+    warning = throttling_warning(summary)
+    if warning:
+        summary_sheet.append(["WARNING", warning])
 
     tags_sheet.append(list(TAG_FIELDS))
     for tag in tag_rows(summary, rows):
@@ -338,6 +366,11 @@ def write_xlsx(summary: EvalSummary, output_path: Path) -> None:
     header_font = Font(color="FFFFFF", bold=True)
     for sheet in (summary_sheet, tags_sheet, evaluation_sheet):
         _style_sheet(sheet, header_fill, header_font, get_column_letter)
+
+    if warning:
+        for cell in summary_sheet[summary_sheet.max_row]:
+            cell.fill = PatternFill(fill_type="solid", fgColor="C00000")
+            cell.font = Font(color="FFFFFF", bold=True)
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
     try:
@@ -382,6 +415,8 @@ def render_text(summary: EvalSummary) -> str:
         lines.append(f"Required score: {summary.fail_under:.2%}")
 
     lines.extend([f"Result: {'PASS' if summary.passed else 'FAIL'}", ""])
+    if warning := throttling_warning(summary):
+        lines.extend([f"WARNING: {warning}", ""])
 
     for row in case_rows(summary):
         lines.append(f"{row['status']}  {row['case_name']}  ({_display_value(row['score'])})")
