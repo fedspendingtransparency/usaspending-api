@@ -9,5 +9,17 @@
       topP: 1.0
       maxTokens: 10_000
       stopSequences: []
-    is_active: true
+    is_active: false
     description: "Initial assistant created via fixture"
+- model: llm.assistant
+  pk: 2
+  fields:
+    name: filter-search
+    ai_model: 1  # claude 4.5
+    system_prompt: 3  # filter-preference-v3 prompt
+    inference_config:
+      temperature: 0.0
+      maxTokens: 10_000
+      stopSequences: []
+    is_active: true
+    description: "claude 4.5 model"
