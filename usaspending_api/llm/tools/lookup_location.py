@@ -18,6 +18,18 @@ from usaspending_api.references.models import PopCongressionalDistrict, RefCount
 
 logger = logging.getLogger(__name__)
 
+# What to do with the locations found. The same objects are valid for either location filter, so the choice depends on
+# what the user said the place describes.
+LOCATION_INSTRUCTIONS = (
+    "These are candidate locations ordered by relevance, not a selection: use only the ones that match the place the "
+    "user named, not every result. Use each object as returned, keyed by its identifier. Choose the filter by what "
+    "the place describes. Use selectedRecipientLocations when the place is where the recipients are located, as in "
+    "companies, businesses, nonprofits, or recipients in or based in a place, or awards given to recipients in a "
+    "place. Use selectedLocations when the place is where the work was performed or the award was delivered, as in "
+    "awards, projects, or spending in a place. Do not put the same location in both filters unless the user asked "
+    "for both."
+)
+
 
 class LocationLookupTool:
     """Tool for looking up locations in OpenSearch with fuzzy matching support."""
@@ -119,7 +131,7 @@ class LocationLookupTool:
         )
 
         # return {"results": results, "count": len(results), "query": query, "location_type": location_type}
-        return AIToolResult(results=results)
+        return AIToolResult(results=results, instructions=LOCATION_INSTRUCTIONS)
 
     def _validate_inputs(self, query: str, location_type: str | None) -> None:
         """Raise InvalidToolInputError if the input parameters are invalid."""
@@ -382,8 +394,10 @@ lookup_location_tool = AITool(
         description="""
                 Search for valid location objects by name, code, zip, or congressional district
                 using fuzzy matching. Returns properly formatted SelectedLocation objects ready
-                to use in selectedLocations filter. The returned 'identifier' field should be
-                used as the dictionary key in selectedLocations.
+                to use in the selectedLocations filter (where work was performed) or the
+                selectedRecipientLocations filter (where recipients are located). The returned
+                'identifier' field should be used as the dictionary key. Read the instructions
+                returned with the results to choose between the two filters.
 
                 This tool supports:
                 - Country names and codes (e.g., 'USA', 'United States', 'Germany')
@@ -406,7 +420,7 @@ lookup_location_tool = AITool(
                 - lookup_location('Germany')  Returns DEU country
 
                 USAGE NOTES:
-                1. Always use the returned objects directly in selectedLocations
+                1. Always use the returned objects directly, without editing them
                 2. The identifier is automatically included as the dictionary key
                 3. Use location_type to filter results when query is ambiguous
                 4. Results are ranked by relevance score

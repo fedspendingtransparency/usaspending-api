@@ -503,6 +503,16 @@ class TestResponseStructure:
         assert "filter" in location_obj
         assert "display" in location_obj
 
+    async def test_result_explains_which_location_filter_to_use(self, location_tool, mock_search):
+        mock_search.handle_execute.return_value.hits = [
+            create_mock_hit("TEXAS", "state", json.dumps({"state_name": "TEXAS", "country_name": "UNITED STATES"}))
+        ]
+
+        toolResult = await location_tool.lookup_location("Texas")
+
+        assert "selectedRecipientLocations" in toolResult.instructions
+        assert "selectedLocations" in toolResult.instructions
+
     async def test_identifier_is_dictionary_key(self, location_tool, mock_search):
         """Test that identifier matches the dictionary key."""
         mock_search.handle_execute.return_value.hits = [
