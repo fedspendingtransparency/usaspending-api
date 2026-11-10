@@ -149,7 +149,7 @@ class Command(BaseCommand):
 
         # Create file paths and working directory
         timestamp = datetime.strftime(datetime.now(), "%Y%m%d%H%M%S%f")
-        working_dir = f"{settings.CSV_LOCAL_PATH}_{agency_code}_delta_gen_{timestamp}/"
+        working_dir = f"{settings.MONTHLY_PATH}_{agency_code}_delta_gen_{timestamp}/"
         if not os.path.exists(working_dir):
             os.mkdir(working_dir)
         agency_str = "All" if agency_code == "all" else agency_code
