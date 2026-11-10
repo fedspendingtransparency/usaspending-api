@@ -314,19 +314,21 @@ class TestHybridSearch:
 
 
 class TestSemanticOnlyInstructions:
-    async def test_exact_match_has_no_instructions(self, tool, mock_embedding_generator):
+    async def test_exact_match_explains_how_to_use_the_agency(self, tool, mock_embedding_generator):
         await _make_matview_row("080", "National Aeronautics and Space Administration", "NASA")
 
         result = await tool.lookup_agencies("NASA")
 
-        assert result.instructions is None
+        assert result.instructions == tool.MATCH_INSTRUCTIONS
+        assert "selectedFundingAgencies" in result.instructions
+        assert "selectedAwardingAgencies" in result.instructions
 
-    async def test_prefix_match_has_no_instructions(self, tool, mock_embedding_generator):
+    async def test_prefix_match_explains_how_to_use_the_agency(self, tool, mock_embedding_generator):
         await _make_matview_row("200", "National Archives and Records Administration", "NARA")
 
         result = await tool.lookup_agencies("Nat")
 
-        assert result.instructions is None
+        assert result.instructions == tool.MATCH_INSTRUCTIONS
 
     async def test_hybrid_only_match_includes_recipient_hint(self, tool, mock_embedding_generator):
         dims = getattr(ToptierAgency, "embedding_dimensions", 256)

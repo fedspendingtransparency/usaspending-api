@@ -1107,22 +1107,23 @@ class ExecuteFilterInput(BaseModel):
         default_factory=dict,
         description=(
             "CFDA / Assistance Listing filter keyed by program number. Grants and assistance programs for a "
-            "subject are found with the lookup_codes tool using code_type 'cfda'. Pass its selectedCFDA value "
-            "through unchanged."
+            "subject are found with the lookup_codes tool using code_type 'cfda'. For each program you choose from "
+            "its results, use the program's filter_value as the value."
         ),
     )
     naicsCodes: NaicsCodeLists = Field(
         default_factory=NaicsCodeLists,
         description=(
-            "Industry (NAICS) filter. Get the values from the lookup_codes tool with code_type 'naics' and pass "
-            "them through unchanged."
+            "Industry (NAICS) filter for the kind of business that received the award. Find the codes with the "
+            "lookup_codes tool using code_type 'naics' and use the filter_value of each code you choose."
         ),
     )
     pscCodes: PscCodeLists = Field(
         default_factory=PscCodeLists,
         description=(
-            "Product and Service Code (PSC) filter for what is being purchased. Get the values from the "
-            "lookup_codes tool with code_type 'psc' and pass them through unchanged."
+            "Product and Service Code (PSC) filter for what is being purchased: products, services, and research "
+            "and development. Find the codes with the lookup_codes tool using code_type 'psc' and use the "
+            "filter_value of each code you choose."
         ),
     )
     defCodes: DEFCodeListsWithoutEnum = Field(
@@ -1191,9 +1192,9 @@ class ExecuteFilterInput(BaseModel):
     tasCodes: TasCodeLists = Field(
         default_factory=TasCodeLists,
         description=(
-            "Treasury account (TAS) filter. Get the values from the lookup_codes tool with code_type 'tas' and "
-            "pass them through unchanged. Only for specific treasury accounts; dates, fiscal years, and time "
-            "periods belong in the time period filters instead."
+            "Treasury account (TAS) filter. Find the accounts with the lookup_codes tool using code_type 'tas' and "
+            "use the filter_value of each one you choose. Only for specific treasury accounts; dates, fiscal "
+            "years, and time periods belong in the time period filters instead."
         ),
         json_schema_extra={
             "examples": [
