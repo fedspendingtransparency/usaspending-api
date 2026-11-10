@@ -50,7 +50,7 @@ class TestModelNoImplementation(EmbeddingMixin, models.Model):
         app_label = "tests"
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="session", autouse=True)
 def create_test_tables(django_db_setup, django_db_blocker):
     """Create tables for test models"""
     with django_db_blocker.unblock():
@@ -225,6 +225,7 @@ class TestEmbeddingMixinGenerateEmbedding:
         mock_generator_class.return_value = mock_generator
 
         instance = TestModel.objects.create(name="Test")
+        instance.save(auto_generate_embedding=True)
 
         assert instance.embedding_generated_at == fixed_time
 
@@ -337,7 +338,7 @@ class TestEmbeddingMixinSave:
         mock_generator_class.return_value = mock_generator
 
         instance = TestModel(name="Test")
-        instance.save()
+        instance.save(auto_generate_embedding=True)
 
         assert instance.embedding is not None
         assert instance.embedding == [0.1] * 256
@@ -360,7 +361,7 @@ class TestEmbeddingMixinSave:
         mock_generator_class.return_value = mock_generator
 
         instance = TestModel(name="Test")
-        instance.save()
+        instance.save(auto_generate_embedding=True)
 
         # Instance should be saved despite embedding failure
         assert instance.pk is not None
@@ -376,7 +377,7 @@ class TestEmbeddingMixinSave:
         mock_generator_class.return_value = mock_generator
 
         instance = TestModel(name="Test")
-        instance.save()
+        instance.save(auto_generate_embedding=True)
 
         # Reset mock
         mock_generator_class.reset_mock()
@@ -384,7 +385,7 @@ class TestEmbeddingMixinSave:
 
         # Save again
         instance.name = "Updated"
-        instance.save()
+        instance.save(auto_generate_embedding=True)
 
         # Should not call generator again
         mock_generator_class.assert_not_called()
@@ -398,7 +399,7 @@ class TestEmbeddingMixinSave:
         mock_generator_class.return_value = mock_generator
 
         instance = TestModel(name="Test")
-        instance.save()
+        instance.save(auto_generate_embedding=True)
 
         original_embedding = instance.embedding
 
@@ -419,7 +420,7 @@ class TestEmbeddingMixinSave:
         mock_generator_class.return_value = mock_generator
 
         instance = TestModel(name="Test")
-        instance.save(verbose=True)
+        instance.save(verbose=True, auto_generate_embedding=True)
 
         # Should log info message
         mock_logger.info.assert_called_once()
@@ -450,9 +451,9 @@ class TestEmbeddingMixinSave:
         mock_generator_class.return_value = mock_generator
 
         instance = TestModel(name="Test")
-        instance.save()
-        instance.save()
-        instance.save()
+        instance.save(auto_generate_embedding=True)
+        instance.save(auto_generate_embedding=True)
+        instance.save(auto_generate_embedding=True)
 
         # Should only generate once
         assert mock_generator.generate_embedding.call_count == 1

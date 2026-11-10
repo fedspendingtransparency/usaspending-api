@@ -25,13 +25,6 @@ jobs:
 
   # The conditional in each of the workflows below is required. Without these checks they will be skipped
   # when the "Cancel-If-Draft-Pull-Request" workflow is skipped.
-  Run-Code-Style-Checks:
-    name: Run Code Style Checks
-    needs: Cancel-If-Draft-Pull-Request
-    if: |
-      always() &&
-      needs.Cancel-If-Draft-Pull-Request.result == 'skipped'
-    uses: ./.github/workflows/code-style-checks.yaml
 
   # Determine the Broker branch to use for tests and add it as output to the workflow for consumption later
   Setup-Broker-Branch:
@@ -62,6 +55,12 @@ jobs:
       always() &&
       needs.Cancel-If-Draft-Pull-Request.result == 'skipped'
     uses: ./.github/workflows/build-usaspending-image-for-test.yaml
+
+  Run-Code-Style-Checks:
+    name: Run Code Style Checks
+    needs: Build-USAspending-Docker-Image
+    if: ${{ !failure() && !cancelled() }}
+    uses: ./.github/workflows/code-style-checks.yaml
 
   # The test suite is broken into multiple groups based on a combination of what is under test
   # and the time that it takes to run tests for that group.

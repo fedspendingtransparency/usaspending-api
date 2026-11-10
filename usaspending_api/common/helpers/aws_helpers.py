@@ -8,6 +8,30 @@ from urllib.request import urlopen
 import aioboto3
 from botocore.config import Config
 from botocore.credentials import Credentials
+from botocore.exceptions import ClientError
+from tenacity import retry, retry_if_exception, stop_after_attempt, wait_random_exponential
+
+THROTTLING_ERROR_CODES = frozenset({"ThrottlingException", "TooManyRequestsException", "ServiceUnavailableException"})
+
+
+def is_throttling_error(exc: BaseException) -> bool:
+    """True if the exception is a botocore ClientError signaling AWS throttling."""
+    return isinstance(exc, ClientError) and exc.response.get("Error", {}).get("Code") in THROTTLING_ERROR_CODES
+
+
+# Retries throttled AWS calls (sync or async functions) with jittered exponential backoff, then re-raises the original
+# error. Jitter matters here: parallel callers throttled at the same moment would otherwise retry in lockstep.
+# Timeouts are deliberately not retried: callers may be waiting on a user-facing request, so fail fast instead.
+retry_on_throttling = retry(
+    retry=retry_if_exception(is_throttling_error),
+    wait=wait_random_exponential(multiplier=1, max=20),
+    stop=stop_after_attempt(5),
+    reraise=True,
+)
+
+# Disables botocore's built-in retries (which would otherwise re-send a timed-out request up to 5 times, ~5 minutes at
+# a 60s read timeout, and multiply with the tenacity retries above). Use with `retry_on_throttling` for throttling.
+NO_BOTOCORE_RETRIES_CONFIG = Config(retries={"total_max_attempts": 1})
 
 
 def is_aws() -> bool:

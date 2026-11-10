@@ -41,6 +41,7 @@ def make_case(
 def test_filter_search_eval_uses_the_same_tools_as_the_endpoint():
     assert [tool.description.name for tool in filter_search.filter_search_tools] == [
         "lookup_agencies",
+        "lookup_award",
         "lookup_codes",
         "lookup_location",
         "lookup_recipient",
@@ -155,10 +156,7 @@ async def test_get_tool_calls_reads_tool_use_records_in_execution_order(monkeypa
     )
 
 
-async def test_get_final_filter_output_uses_successful_execute_filter_call(monkeypatch):
-    """
-    The adapter uses execute_filter's ToolUse.tool_input, not the returned hash, as the observable final filter payload.
-    """
+def _mock_successful_execute_filter(monkeypatch, persisted_filter):
     successful_use = Mock(
         name="successful_use",
         tool_input={
@@ -166,14 +164,15 @@ async def test_get_final_filter_output_uses_successful_execute_filter_call(monke
             "timePeriodFY": ["2025"],
             "selectedRecipients": ["CLARK CONSTRUCTION"],
         },
-        result={"hash": "abc123"},
+        result={"results": {"hash": "abc123"}},
     )
 
-    # Mock the full Django ORM chain: filter().exclude().order_by().last()
+    # Mock the full Django ORM chain: filter().exclude().exclude().order_by().last()
     queryset_mock = Mock()
     queryset_mock.last.return_value = successful_use
 
     exclude_mock = Mock()
+    exclude_mock.exclude.return_value = exclude_mock
     exclude_mock.order_by.return_value = queryset_mock
 
     filter_mock = Mock()
@@ -187,6 +186,30 @@ async def test_get_final_filter_output_uses_successful_execute_filter_call(monke
         "objects",
         manager,
     )
+
+    filter_hash_manager = Mock()
+    filter_hash_manager.filter.return_value.first.return_value = (
+        Mock(filter=persisted_filter) if persisted_filter is not None else None
+    )
+    monkeypatch.setattr(filter_search.FilterHash, "objects", filter_hash_manager)
+    return filter_hash_manager
+
+
+async def test_get_final_filter_output_prefers_persisted_filter_hash(monkeypatch):
+    """The persisted FilterHash (including server-side canonicalization) is what gets evaluated."""
+    filter_hash_manager = _mock_successful_execute_filter(
+        monkeypatch, {"filters": {"selectedAwardIDs": {"W56HZV07C0096": "W56HZV07C0096"}}, "version": "2020-06-01"}
+    )
+
+    output = await get_final_filter_output(Mock())
+
+    assert output == {"selectedAwardIDs": {"W56HZV07C0096": "W56HZV07C0096"}}
+    filter_hash_manager.filter.assert_called_once_with(hash="abc123")
+
+
+async def test_get_final_filter_output_falls_back_to_tool_input(monkeypatch):
+    """Without a persisted FilterHash, the adapter rebuilds the canonical filter from execute_filter's tool_input."""
+    _mock_successful_execute_filter(monkeypatch, None)
     monkeypatch.setattr(
         filter_search,
         "build_filter_request",
@@ -207,12 +230,13 @@ async def test_get_final_filter_output_uses_successful_execute_filter_call(monke
 
 async def test_get_final_filter_output_rejects_missing_successful_completion(monkeypatch):
     """An execution without a successful execute_filter call cannot produce a valid final filter observation."""
-    # Mock the full Django ORM chain: filter().exclude().order_by().last()
+    # Mock the full Django ORM chain: filter().exclude().exclude().order_by().last()
     # When no successful execute_filter exists, last() returns None
     queryset_mock = Mock()
     queryset_mock.last.return_value = None
 
     exclude_mock = Mock()
+    exclude_mock.exclude.return_value = exclude_mock
     exclude_mock.order_by.return_value = queryset_mock
 
     filter_mock = Mock()
@@ -229,6 +253,10 @@ async def test_get_final_filter_output_rejects_missing_successful_completion(mon
 
     with pytest.raises(ExecutionError, match="without a successful execute_filter call"):
         await get_final_filter_output(Mock())
+
+    # Errored calls are skipped whether the error is top-level or nested under "results".
+    filter_mock.exclude.assert_called_once_with(result__has_key="error")
+    exclude_mock.exclude.assert_called_once_with(result__results__has_key="error")
 
 
 async def _async_iter(items):
@@ -373,7 +401,41 @@ async def test_run_eval_case_rejects_search_error(monkeypatch):
     case = make_case()
 
     # Execution fails when get_final_filter_output finds no successful execute_filter
-    with pytest.raises(ExecutionError, match="without a successful execute_filter call"):
+    with pytest.raises(ExecutionError, match="without a successful execute_filter call.*Search failed with Bedrock"):
         await run_eval_case(case)
 
     session.asave.assert_awaited_once_with(update_fields=["ended_at"])
+
+
+async def test_run_eval_case_includes_exception_type_and_message_in_error(monkeypatch):
+    """A non-throttling exception from search() is reported with its type and message in the case error."""
+
+    async def failing_search(query):
+        raise TimeoutError("Read timeout on endpoint URL")
+        yield  # pragma: no cover - makes this an async generator
+
+    assistant_instance = Mock()
+    assistant_instance.search = Mock(side_effect=failing_search)
+    session = Mock()
+    session.asave = AsyncMock()
+
+    async def fake_get_active_filter_search_assistant():
+        return Mock()
+
+    async def fake_create_eval_session(value):
+        return session
+
+    async def fake_get_tool_calls(value):
+        return ()
+
+    async def fake_get_final_filter_output(session):
+        raise ExecutionError("Session completed without a successful execute_filter call.")
+
+    monkeypatch.setattr(filter_search, "get_active_filter_search_assistant", fake_get_active_filter_search_assistant)
+    monkeypatch.setattr(filter_search, "create_eval_session", fake_create_eval_session)
+    monkeypatch.setattr(filter_search, "FilterSearchAssistant", Mock(return_value=assistant_instance))
+    monkeypatch.setattr(filter_search, "get_tool_calls", fake_get_tool_calls)
+    monkeypatch.setattr(filter_search, "get_final_filter_output", fake_get_final_filter_output)
+
+    with pytest.raises(ExecutionError, match="Search failed with TimeoutError: Read timeout on endpoint URL"):
+        await run_eval_case(make_case())

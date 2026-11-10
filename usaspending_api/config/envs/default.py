@@ -29,9 +29,7 @@ from usaspending_api.config.utils import (
 _PROJECT_NAME = "usaspending-api"
 # WARNING: This is relative to THIS file's location. If it is moved/refactored, this needs to be confirmed to point
 # to the project root dir (i.e. usaspending-api/)
-_PROJECT_ROOT_DIR: pathlib.Path = pathlib.Path(
-    __file__
-).parent.parent.parent.parent.resolve()
+_PROJECT_ROOT_DIR: pathlib.Path = pathlib.Path(__file__).parent.parent.parent.parent.resolve()
 _SRC_ROOT_DIR: pathlib.Path = _PROJECT_ROOT_DIR / _PROJECT_NAME.replace("-", "_")
 
 
@@ -77,9 +75,7 @@ class DefaultConfig(BaseSettings):
     PROJECT_LOG_DIR: str = str(_SRC_ROOT_DIR / "logs")
 
     # ==== [Postgres] ====
-    DATABASE_URL: str = (
-        None  # FACTORY_PROVIDED_VALUE. See its root validator-factory below
-    )
+    DATABASE_URL: str = None  # FACTORY_PROVIDED_VALUE. See its root validator-factory below
     USASPENDING_DB_SCHEME: str = "postgres"
     USASPENDING_DB_NAME: str = "data_store_api"
     USASPENDING_DB_USER: str = ENV_SPECIFIC_OVERRIDE
@@ -87,9 +83,7 @@ class DefaultConfig(BaseSettings):
     USASPENDING_DB_HOST: str = ENV_SPECIFIC_OVERRIDE
     USASPENDING_DB_PORT: str = ENV_SPECIFIC_OVERRIDE
 
-    BROKER_DB: str | None = (
-        None  # FACTORY_PROVIDED_VALUE. See its root validator-factory below
-    )
+    BROKER_DB: str | None = None  # FACTORY_PROVIDED_VALUE. See its root validator-factory below
     BROKER_DB_SCHEME: str | None = "postgres"
     BROKER_DB_NAME: str | None = "data_broker"
     BROKER_DB_USER: str | None = ENV_SPECIFIC_OVERRIDE
@@ -114,9 +108,7 @@ class DefaultConfig(BaseSettings):
         # - it should take precedence
         # - its values will be used to backfill any missing URL parts stored as separate config vars
         if is_full_conf_provided:
-            values = backfill_url_parts_config(
-                cls, url_conf_name, resource_conf_prefix, values
-            )
+            values = backfill_url_parts_config(cls, url_conf_name, resource_conf_prefix, values)
 
         # If the full URL config is not provided, try to build-it-up from provided parts, then set the full URL
         if not is_full_conf_provided:
@@ -147,9 +139,7 @@ class DefaultConfig(BaseSettings):
                     port=_port,
                     path=values.get(f"{resource_conf_prefix}_NAME"),
                 )
-                values = eval_default_factory_from_root_validator(
-                    cls, values, url_conf_name, lambda: str(pg_dsn)
-                )
+                values = eval_default_factory_from_root_validator(cls, values, url_conf_name, lambda: str(pg_dsn))
 
         # if the fully configured URL is now available, check for consistency with the URL-part config values
         if values.get(url_conf_name, None):
@@ -281,9 +271,7 @@ class DefaultConfig(BaseSettings):
                     port=values[f"{resource_conf_prefix}_PORT"],
                     path=values.get(f"{resource_conf_prefix}_NAME"),
                 )
-                values = eval_default_factory_from_root_validator(
-                    cls, values, url_conf_name, lambda: str(http_url)
-                )
+                values = eval_default_factory_from_root_validator(cls, values, url_conf_name, lambda: str(http_url))
 
         # if the fully configured URL is now available, check for consistency with the URL-part config values
         if values.get(url_conf_name, None):
@@ -326,7 +314,25 @@ class DefaultConfig(BaseSettings):
     # number of partitions to split/group batches of CSV files into, which need to be written via COPY to PG
     # This multiplier will be multiplied against the max_parallel_workers value of the target database. It can be a
     # fraction less than 1.0. The final value will be the greater of that or ``SPARK_CSV_WRITE_TO_PG_MIN_PARTITIONS``
+    # NOTE: Retained only as a fallback used to derive COPY concurrency when ``SPARK_CSV_WRITE_TO_PG_CONCURRENCY``
+    # is left unset (0). Prefer setting ``SPARK_CSV_WRITE_TO_PG_CONCURRENCY`` directly.
     SPARK_CSV_WRITE_TO_PG_PARALLEL_WORKER_MULTIPLIER: float = 1.0
+
+    # Number of concurrent COPY streams (== RDD partitions == simultaneous DB connections) used to bulk-load the
+    # gzipped CSV files into Postgres. This is the "how many at once" knob and should be sized to what the target
+    # DB writer can absorb (watch RDS CPUUtilization/WriteLatency; raise until CPU approaches ~70% or latency climbs),
+    # NOT to the DB's ``max_parallel_workers`` (which governs parallel query workers, not COPY ingestion capacity).
+    # When set to 0, concurrency falls back to the legacy ``max_parallel_workers``-derived value for backwards
+    # compatibility.
+    SPARK_CSV_WRITE_TO_PG_CONCURRENCY: int = 16
+
+    # Batch oversubscription factor. The CSV files are byte-balanced into
+    # ``concurrency * SPARK_CSV_WRITE_TO_PG_BATCH_OVERSUBSCRIBE_FACTOR`` small batches, which are then processed across
+    # ``concurrency`` RDD partitions. Creating many more, smaller batches than there are concurrent streams keeps the
+    # scheduler able to hand a fresh small batch to any executor that finishes early, so the DB stays fully fed to the
+    # end of the run instead of idling while a few oversized tail batches drain (observed as throughput declining over
+    # the back half of the load). Must be >= 1; a value of 1 reproduces the legacy one-batch-per-partition behavior.
+    SPARK_CSV_WRITE_TO_PG_BATCH_OVERSUBSCRIBE_FACTOR: int = 4
 
     # Spark is connecting JDBC to Elasticsearch here and this config calibrates the throughput from one to the other,
     # and have to accommodate limitations on either side of the pipe.
@@ -362,22 +368,16 @@ class DefaultConfig(BaseSettings):
     SPARK_S3_BUCKET: str | None = os.environ.get("SPARK_S3_BUCKET")
     BULK_DOWNLOAD_S3_BUCKET_NAME: str | None = os.environ.get("BULK_DOWNLOAD_S3_BUCKET_NAME")
     MONTHLY_DOWNLOAD_S3_BUCKET_NAME: str = os.environ.get("MONTHLY_DOWNLOAD_S3_BUCKET_NAME", "")
-    DATABASE_DOWNLOAD_S3_BUCKET_NAME: str | None = os.environ.get(
-        "DATABASE_DOWNLOAD_S3_BUCKET_NAME"
-    )
+    DATABASE_DOWNLOAD_S3_BUCKET_NAME: str | None = os.environ.get("DATABASE_DOWNLOAD_S3_BUCKET_NAME")
     DELTA_LAKE_S3_PATH: str = "data/delta"  # path within SPARK_S3_BUCKET where Delta output data will accumulate
-    SPARK_CSV_S3_PATH: str = (
-        "data/csv"  # path within SPARK_S3_BUCKET where CSV output data will accumulate
-    )
+    SPARK_CSV_S3_PATH: str = "data/csv"  # path within SPARK_S3_BUCKET where CSV output data will accumulate
     AWS_S3_ENDPOINT: str = "s3.us-gov-west-1.amazonaws.com"
     AWS_STS_ENDPOINT: str = "sts.us-gov-west-1.amazonaws.com"
 
     # ==== [MISC] ====
     # Miscellaneous configs that are used through the codebase but don't fall into one of the categories above
     COVID19_DOWNLOAD_README_FILE_NAME: str = "COVID-19_download_readme.txt"
-    COVID19_DOWNLOAD_README_OBJECT_KEY: str = (
-        f"files/{COVID19_DOWNLOAD_README_FILE_NAME}"
-    )
+    COVID19_DOWNLOAD_README_OBJECT_KEY: str = f"files/{COVID19_DOWNLOAD_README_FILE_NAME}"
     model_config = SettingsConfigDict(
         env_file=str(_PROJECT_ROOT_DIR / ".env"),
         env_file_encoding="utf-8",
