@@ -39,12 +39,13 @@ class AgencyLookupTool:
     VECTOR_DISTANCE_THRESHOLD = 0.75
 
     SEMANTIC_ONLY_INSTRUCTIONS = (
-        "STOP AND READ: no exact or prefix match was found for this query. The results below are weak "
+        "STOP AND READ: no exact or prefix match was found for this query. The results below are "
         "semantic-similarity guesses and may be completely wrong. Many entities that sound like government "
         "agencies -- state, local, tribal, or foreign government bodies, universities, hospitals, and "
         "companies -- are RECIPIENTS of federal funding, not federal agencies. "
-        "Do NOT select one of these results and do NOT tell the user there is no federal data unless you "
-        "have first called lookup_recipient with this entity's name and confirmed it has no matches either."
+        "If none of these results seem correct, do NOT select one of these results and do NOT tell the user there is "
+        "no federal data unless you have first called lookup_recipient with this entity's name and confirmed it has no "
+        "matches either."
     )
 
     NO_MATCH_INSTRUCTIONS = (
@@ -72,7 +73,7 @@ class AgencyLookupTool:
 
         if not entries:
             user_message = f"Unable to filter. We couldn't find an agency with the name: {query}"
-            raise AgencyNotRecognizedError(user_message, model_detail=f"{user_message}. {self.NO_MATCH_INSTRUCTIONS}")
+            raise AgencyNotRecognizedError(user_message, instructions=self.NO_MATCH_INSTRUCTIONS)
 
         results = AIToolResult(
             results={f"{entry.id}_{entry.agencyType}": entry.model_dump() for entry in entries},

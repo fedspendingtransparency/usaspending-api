@@ -1192,8 +1192,18 @@ class ExecuteFilterInput(BaseModel):
         default_factory=TasCodeLists,
         description=(
             "Treasury account (TAS) filter. Get the values from the lookup_codes tool with code_type 'tas' and "
-            "pass them through unchanged."
+            "pass them through unchanged. Only for specific treasury accounts; dates, fiscal years, and time "
+            "periods belong in the time period filters instead."
         ),
+        json_schema_extra={
+            "examples": [
+                {"require": [["310"]]},
+                {
+                    "require": [["535", "535-2724"]],
+                    "exclude": [["535", "535-2724", "535-2026/2027-2724-000"]],
+                },
+            ]
+        },
     )
     awardDescription: str = Field(
         default="",

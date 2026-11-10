@@ -22,6 +22,7 @@ from usaspending_api.llm.models.py_models import (
 )
 from usaspending_api.llm.tools.exceptions import (
     AssistanceListingNotRecognizedError,
+    InvalidToolInputError,
     NaicsCodeNotRecognizedError,
     PscCodeNotRecognizedError,
     TasNotRecognizedError,
@@ -43,6 +44,25 @@ CODE_NOT_RECOGNIZED_ERRORS = {
     "cfda": (AssistanceListingNotRecognizedError, "Assistance listing code not found"),
     "tas": (TasNotRecognizedError, "TAS not found"),
 }
+
+CODE_NOT_FOUND_INSTRUCTIONS = (
+    "Try a shorter or more general query (e.g. a top-level category, a partial code, or a single keyword instead of a "
+    "full phrase), or try a different code_type if the query may describe a different kind of code. If no reasonable "
+    "match exists, omit this filter."
+)
+# A query that isn't an assistance listing number is usually a mis-formatted code or a program name
+CFDA_NOT_FOUND_INSTRUCTIONS = (
+    "Do not retry the same string. If the query was an assistance listing number, strip any prefix such as 'AL' or "
+    "'CFDA' and search with just the number, or search by the program name instead. Retry at most once; if there is "
+    "still no match, omit this filter."
+)
+# TAS lookups are often attempted for values that are not treasury accounts at all (dates, fiscal years, topics)
+TAS_NOT_FOUND_INSTRUCTIONS = (
+    "Treasury accounts are identified by agency, account number, or account title. Do not use this tool for dates, "
+    "fiscal years, time periods, or general topics; those belong to other filters. Do not retry the same string. "
+    "If the value is not a treasury account, omit this filter and continue."
+)
+NOT_FOUND_INSTRUCTIONS = {"cfda": CFDA_NOT_FOUND_INSTRUCTIONS, "tas": TAS_NOT_FOUND_INSTRUCTIONS}
 
 # Semantic search always returns its nearest neighbors, however loosely related. Only results scoring at least this
 # fraction of the best match are selected, and no more than the maximum number of them.
@@ -219,7 +239,7 @@ class CodeLookupTool:
         """
 
         if msg := await self.validate_input(code_type, inclusion):
-            return AIToolResult(results={"error": msg})
+            raise InvalidToolInputError(msg)
 
         config = CODE_TYPE_CONFIGS[code_type]
         budget_bureau_names = {}
@@ -256,7 +276,10 @@ class CodeLookupTool:
                 )
         if len(selected) == 0:
             error_class, label = CODE_NOT_RECOGNIZED_ERRORS[code_type]
-            raise error_class(f"{label}: {query}")
+            raise error_class(
+                f"{label}: {query}",
+                instructions=NOT_FOUND_INSTRUCTIONS.get(code_type, CODE_NOT_FOUND_INSTRUCTIONS),
+            )
 
         if code_type == "cfda":
             programs = {
@@ -683,7 +706,10 @@ lookup_code_tool = AITool(
             - naics: North American Industry Classification System codes
             - psc: Product and Service Codes
             - cfda: Catalog of Federal Domestic Assistance program numbers
-            - tas: Treasury Account Symbol components
+            - tas: Treasury accounts, identified by agency code, main account number, or account title
+
+            Never use this tool for dates, fiscal years (e.g. "FY25"), quarters, or other time periods; those are
+            handled by the time period filters.
 
             Matching behavior (in priority order):
             1. Exact match: if the query exactly matches a code (case-insensitive), only that
@@ -700,27 +726,33 @@ lookup_code_tool = AITool(
             placed in "require" or "exclude" based on the inclusion value. Pass the returned value to
             execute_filter unchanged; do not edit the codes or add counts, which are calculated for you. Only
             codes that matched the query are returned. A code that covers others (for example the NAICS sector
-            "23") selects everything beneath it. If nothing matches, an error is returned: retry with a
-            different or simpler query, or continue without the filter if it isn't essential.
+            "23") selects everything beneath it. If nothing matches, an error is returned with instructions: follow
+            them, do not repeat the same query, and continue without the filter if it isn't essential.
 
             When to use this tool:
             - Use it whenever the request involves a NAICS code or industry, a PSC code or the products or
               services being purchased, a Treasury Account Symbol or federal account, or an assistance listing
               (CFDA) program for grants and other assistance programs by subject. Look codes up instead of
               writing them from memory.
-            - Do not use it for DEFC or disaster codes, dollar amounts, dates, locations, agencies, recipients,
-              award types, or set-asides. Those have their own tools or filters.
+            - Do not use it for DEFC or disaster codes, dollar amounts, dates or fiscal years, locations,
+              agencies, recipients, award types, or set-asides. Those have their own tools or filters.
             - Words that are part of a company, organization, or person's name are never an industry, product, or
               program.
         """,
         input_schema={
             "type": "object",
             "properties": {
-                "query": {"type": "string", "description": "Code or description to search for"},
+                "query": {
+                    "type": "string",
+                    "description": "A code, or a description of what the code covers. Not a date or time period.",
+                },
                 "code_type": {
                     "type": "string",
                     "enum": ["naics", "psc", "cfda", "tas"],
-                    "description": "Type of code to search for",
+                    "description": (
+                        "Type of code to search for. Use tas only when the user names a Treasury account, federal "
+                        "account, or account title; never for dates, fiscal years, or time periods."
+                    ),
                 },
                 "inclusion": {
                     "type": "string",
