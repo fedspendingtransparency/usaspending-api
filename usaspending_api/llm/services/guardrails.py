@@ -1,4 +1,5 @@
 import logging
+import os
 import threading
 import time
 from dataclasses import dataclass
@@ -49,6 +50,11 @@ class BedrockGuardrailService:
     def client(self) -> Any:
         return boto3.client("bedrock-runtime", region_name=self.region_name)
 
+    @cached_property
+    def control_client(self) -> Any:
+        # `list_guardrails` lives on the Bedrock control-plane client, not bedrock-runtime.
+        return boto3.client("bedrock", region_name=self.region_name)
+
     _version_cache: str | None = None
     _version_cache_expires_at: float = 0.0
     # Use a lock to ensure thread-safe access to the cache.
@@ -60,9 +66,9 @@ class BedrockGuardrailService:
         # Cache duration (default: 5 minutes).
         self.version_cache_seconds = settings.AWS_BEDROCK_GUARDRAIL_VERSION_CACHE_SECONDS
         # AWS Region (default: same as USAspending AWS Region).
-        self.region_name = settings.AWS_BEDROCK_GUARDRAIL_AWS_REGION or self.client
+        self.region_name = settings.AWS_BEDROCK_GUARDRAIL_AWS_REGION or os.environ.get("AWS_REGION", "us-gov-west-1")
 
-        self.bedrock_runtime_client = bedrock_runtime_client or self.client()
+        self.bedrock_runtime_client = bedrock_runtime_client or self.client
 
     def assess_input(self, text: str) -> GuardrailAssessment:
         """Submit input text for moderation by Guardrails."""
@@ -137,7 +143,7 @@ class BedrockGuardrailService:
                 return self.__class__._version_cache
 
             try:
-                response = self.bedrock_runtime_client.list_guardrails(guardrailIdentifier=self.guardrail_id)
+                response = self.control_client.list_guardrails(guardrailIdentifier=self.guardrail_id)
                 numeric_versions = [
                     # Retrieve a collection of Guardrail versions (as integers, for sorting).
                     int(item["version"])
