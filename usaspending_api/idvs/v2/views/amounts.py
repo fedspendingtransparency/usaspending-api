@@ -1,6 +1,5 @@
 import logging
 import re
-
 from collections import OrderedDict
 
 from rest_framework.exceptions import NotFound
@@ -9,11 +8,11 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from usaspending_api.awards.models import ParentAward
+from usaspending_api.awards.v2.data_layer.sql import defc_sql
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.helpers.sql_helpers import execute_sql_to_ordered_dictionary
 from usaspending_api.common.validator.award import get_internal_or_generated_award_id_model
 from usaspending_api.common.validator.tinyshield import TinyShield
-from usaspending_api.awards.v2.data_layer.sql import defc_sql
 from usaspending_api.references.models import DisasterEmergencyFundCode
 
 logger = logging.getLogger("console")
@@ -44,7 +43,7 @@ grandchild_award_sql = """
     """
 
 
-def fetch_account_details_idv(award_id, award_id_column) -> dict:
+def fetch_account_details_idv(award_id: int | str, award_id_column: str) -> dict:
     if award_id_column != "award_id":
         award_id = re.sub(r"[']", r"''", award_id)
     children = execute_sql_to_ordered_dictionary(
@@ -107,49 +106,50 @@ def fetch_account_details_idv(award_id, award_id_column) -> dict:
     return results
 
 
-def fetch_idv_child_outlays(award_id: int, award_id_column) -> dict:
-    award_id_piid = award_id
+child_outlay_sql = """
+    select
+        sum(ac.total_outlays) as total_outlay
+    from
+        parent_award pap
+        inner join vw_awards ap on ap.id = pap.award_id
+        inner join rpt.award_search ac on ac.fpds_parent_agency_id = ap.fpds_agency_id and
+            ac.parent_award_piid = ap.piid and ac.type not like 'IDV%'
+    where
+        pap.{award_id_column} = '{award_id}'
+    """
+grandchild_outlay_sql = """
+    select
+        sum(ac.total_outlays) as total_outlay
+    from
+        parent_award pap
+        inner join parent_award pac on pac.parent_award_id = pap.award_id
+        inner join vw_awards ap on ap.id = pac.award_id
+        inner join rpt.award_search ac on ac.fpds_parent_agency_id = ap.fpds_agency_id and
+            ac.parent_award_piid = ap.piid and ac.type not like 'IDV%'
+    where
+        pap.{award_id_column} = '{award_id}'
+    """
+
+
+def fetch_idv_child_outlays(award_id: int | str, award_id_column: str) -> dict:
+    """Sum the outlays of the IDV's child and grandchild contracts.
+
+    The outlays are read in the same join that finds the children (vw_awards is a view of rpt.award_search, which
+    carries total_outlays), so each child row is visited once. Filtering again on parent_award_piid is unnecessary:
+    the join already matches on it, together with the agency.
+    """
     if award_id_column != "award_id":
         award_id = re.sub(r"[']", r"''", award_id)
-        parts = award_id.split("_")
-        if len(parts) >= 3:
-            award_id_piid = parts[2]
-
-    sql = """
-        with child_cte (award_id) as ({child_sql})
-        SELECT  sum(total_outlays) as total_outlay
-        FROM rpt.award_search
-        INNER JOIN child_cte ON child_cte.award_id = award_search.award_id
-        WHERE
-            parent_award_piid = '{award_id_piid}' OR
-            parent_award_piid IN(
-                SELECT piid
-                FROM rpt.award_search
-                WHERE parent_award_piid = '{award_id_piid}' AND category='idv'
-                )
-        """
     child_results = execute_sql_to_ordered_dictionary(
-        sql.format(
-            award_id_piid=award_id_piid,
-            child_sql=child_award_sql.format(award_id=award_id, award_id_column=award_id_column),
-        )
+        child_outlay_sql.format(award_id=award_id, award_id_column=award_id_column)
     )
     grandchild_results = execute_sql_to_ordered_dictionary(
-        sql.format(
-            award_id_piid=award_id_piid,
-            child_sql=grandchild_award_sql.format(award_id=award_id, award_id_column=award_id_column),
-        )
+        grandchild_outlay_sql.format(award_id=award_id, award_id_column=award_id_column)
     )
-    if len(child_results) == 0:
-        child_results = None
-    else:
-        child_results = child_results[0]["total_outlay"]
-    if len(grandchild_results) == 0:
-        grandchild_results = None
-    else:
-        grandchild_results = grandchild_results[0]["total_outlay"]
-
-    return {"child_award_total_outlay": child_results, "grandchild_award_total_outlay": grandchild_results}
+    return {
+        "child_award_total_outlay": child_results[0]["total_outlay"] if child_results else None,
+        "grandchild_award_total_outlay": grandchild_results[0]["total_outlay"] if grandchild_results else None,
+    }
 
 
 class IDVAmountsViewSet(APIView):
@@ -211,7 +211,7 @@ class IDVAmountsViewSet(APIView):
             )
         except ParentAward.DoesNotExist:
             logger.info("No IDV Award found where '%s' is '%s'" % next(iter(request_data.items())))
-            raise NotFound("No IDV award found with this id")
+            raise NotFound("No IDV award found with this id") from None
 
     @cache_response()
     def get(self, request: Request, requested_award: str) -> Response:
