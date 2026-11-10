@@ -145,8 +145,8 @@
                 "04",
                 "F001"
             ],
-            "timePeriodFY": ["2026"]
-        },
+            "$time": {"unit": "fiscal_year", "offset": -1}
+            },
         "expected_tools": [
             "lookup_award",
             "execute_filter"
@@ -184,7 +184,9 @@
                 "SPE7M118F42Z8"
             ],
             "selectedRecipients": [
-                "LOCKHEED MARTIN CORPORATION"
+                "LOCKHEED MARTIN",
+                "LOCKHEED MARTIN CORPORATION",
+                "LOCKHEED MARTIN CORP"
             ]
         },
         "expected_tools": [
@@ -204,7 +206,8 @@
         "query": "How much did Elon Musk's company receive in funding so far?",
         "expected_output": {
             "selectedRecipients": [
-                "SPACE EXPLORATION TECHNOLOGIES CORP."
+                "SPACE EXPLORATION TECHNOLOGIES CORP.",
+                "SPACE EXPLORATION TECHNOLOGIES CORP"
             ]
         },
         "expected_tools": [
@@ -278,9 +281,8 @@
                     }
                 }
             },
-            "timePeriodType": "fy",
-            "timePeriodFY": ["2026"]
-        },
+            "$time": {"unit": "fiscal_year", "offset": -1}
+            },
         "expected_tools": [
             "lookup_recipient",
             "lookup_agencies",
@@ -311,9 +313,8 @@
                     }
                 }
             },
-            "timePeriodType": "dr",
-                "time_period": [{"start_date": "2026-09-01", "end_date": "2026-09-30"}]
-        },
+            "$time": {"unit": "month", "offset": -1}
+            },
         "expected_tools": [
             "lookup_agencies",
             "execute_filter"
@@ -330,7 +331,15 @@
         "id": 17,
         "query": "Show me all contracts for Lockheed, Boeing and General Dynamics",
         "expected_output": {
-            "selectedRecipients": ["LOCKHEED MARTIN CORPORATION", "BOEING", "GENERAL DYNAMICS CORPORATION"],
+            "selectedRecipients": [
+                "LOCKHEED MARTIN",
+                "LOCKHEED MARTIN CORPORATION",
+                "BOEING",
+                "BOEING COMPANY",
+                "BOEING COMPANY, THE",
+                "GENERAL DYNAMICS CORPORATION",
+                "GENERAL DYNAMICS CORP"
+            ],
             "awardType": [
                 "A",
                 "B",
@@ -482,10 +491,11 @@
         "query": "How many awards were given to Space Exploration Technologies (SpaceX) in the last 5 years?",
         "expected_output": {
             "selectedRecipients": [
-                "SPACE EXPLORATION TECHNOLOGIES CORP."
+                "SPACE EXPLORATION TECHNOLOGIES CORP.",
+                "SPACE EXPLORATION TECHNOLOGIES CORP"
             ],
-            "timePeriodFY": ["2023", "2023", "2024", "2025", "2026"]
-        },
+            "$time": {"unit": "fiscal_year", "offset": -1, "span": 5}
+            },
         "expected_tools": [
             "lookup_recipient",
             "execute_filter"
@@ -539,13 +549,7 @@
         "id": 26,
         "query": "Total funding given to companies in Virginia last quarter?",
         "expected_output": {
-            "timePeriodType": "dr",
-            "time_period": [
-                {
-                    "start_date": "2026-07-01",
-                    "end_date": "2026-09-30"
-                }
-            ],
+            "$time": {"unit": "fiscal_quarter", "offset": -1},
             "recipientType": [
                 "business",
                 "minority_owned_business",
@@ -596,13 +600,7 @@
         "id": 27,
         "query": "Total funding given to recipients in Virginia last quarter?",
         "expected_output": {
-            "timePeriodType": "dr",
-            "time_period": [
-                {
-                    "start_date": "2026-07-01",
-                    "end_date": "2026-09-30"
-                }
-            ],
+            "$time": {"unit": "fiscal_quarter", "offset": -1},
             "selectedRecipientLocations": {
                 "USA_VA": {
                     "identifier": "USA_VA",
@@ -726,10 +724,7 @@
         "id": 30,
         "query": "How much funding did USAID give to overseas companies last fiscal year?",
         "expected_output": {
-            "timePeriodType": "fy",
-            "timePeriodFY": [
-                "2026"
-            ],
+            "$time": {"unit": "fiscal_year", "offset": -1},
             "selectedFundingAgencies": {
                 "801_toptier": {
                     "id": 801,
@@ -912,15 +907,10 @@
         "id": 36,
         "query": "How much was contracted to Booz Allen for AI last month?",
         "expected_output": {
-            "timePeriodType": "dr",
-            "time_period": [
-                {
-                    "start_date": "2026-09-01",
-                    "end_date": "2026-09-30"
-                }
-            ],
+            "$time": {"unit": "month", "offset": -1},
             "selectedRecipients": [
-                "Booz Allen"
+                "BOOZ ALLEN HAMILTON INC.",
+                "BOOZ ALLEN HAMILTON INC"
             ],
             "awardType": [
                 "A",
@@ -975,10 +965,7 @@
         "id": 38,
         "query": "How many loans were given to small businesses by the SBA last year?",
         "expected_output": {
-            "timePeriodType": "fy",
-            "timePeriodFY": [
-                "2026"
-            ],
+            "$time": {"unit": "fiscal_year", "offset": -1},
             "awardType": [
                 "07",
                 "08",
@@ -1078,10 +1065,7 @@
         "id": 42,
         "query": "How many contract idvs were given to companies in the DMV last year?",
         "expected_output": {
-            "timePeriodType": "fy",
-            "timePeriodFY": [
-                "2026"
-            ],
+            "$time": {"unit": "fiscal_year", "offset": -1},
             "awardType": [
                 "IDV_A",
                 "IDV_B",
@@ -1150,10 +1134,7 @@
         "id": 43,
         "query": "How much funding did CBP receive for this fiscal year?",
         "expected_output": {
-            "timePeriodType": "fy",
-            "timePeriodFY": [
-                "2027"
-            ],
+            "$time": {"unit": "fiscal_year", "offset": 0},
             "selectedFundingAgencies": {
                 "778_subtier": {
                     "id": 778,
@@ -1188,10 +1169,7 @@
         "id": 44,
         "query": "Which state received the most funding for medicare last FY?",
         "expected_output": {
-            "timePeriodType": "fy",
-            "timePeriodFY": [
-                "2026"
-            ],
+            "$time": {"unit": "fiscal_year", "offset": -1},
             "selectedCFDA": {
                 "93.071": {"identifier": "93.071", "program_number": "93.071", "program_title": "Medicare Enrollment Assistance Program"},
                 "93.518": {"identifier": "93.518", "program_number": "93.518", "program_title": "Affordable Care Act - Medicare Improvements for Patients and Providers"},
@@ -1224,13 +1202,7 @@
         "id": 45,
         "query": "Which agencies financed construction contracts in Texas last month?",
         "expected_output": {
-            "timePeriodType": "dr",
-            "time_period": [
-                {
-                    "start_date": "2026-09-01",
-                    "end_date": "2026-09-30"
-                }
-            ],
+            "$time": {"unit": "month", "offset": -1},
             "awardType": [
                 "A",
                 "B",
@@ -1318,10 +1290,7 @@
         "id": 47,
         "query": "What was the total amount of funding that went to black owned businesses last year?",
         "expected_output": {
-            "timePeriodType": "fy",
-            "timePeriodFY": [
-                "2026"
-            ],
+            "$time": {"unit": "fiscal_year", "offset": -1},
             "recipientType": [
                 "black_american_owned_business"
             ]
@@ -1452,10 +1421,7 @@
         "id": 56,
         "query": "All contracts over $100000 awarded to small businesses, minority owned businesses and veteran owned businesses in Tennessee last year",
         "expected_output": {
-            "timePeriodType": "fy",
-            "timePeriodFY": [
-                "2026"
-            ],
+            "$time": {"unit": "fiscal_year", "offset": -1},
             "recipientType": [
                 "small_business",
                 "minority_owned_business",
@@ -1664,10 +1630,7 @@
         "id": 64,
         "query": "Find all grants between $100000 and $200000 last year",
         "expected_output": {
-            "timePeriodType": "fy",
-            "timePeriodFY": [
-                "2026"
-            ],
+            "$time": {"unit": "fiscal_year", "offset": -1},
             "awardType": [
                 "02",
                 "03",
@@ -1758,10 +1721,7 @@
                 "IDV_D",
                 "IDV_E"
             ],
-            "timePeriodType": "fy",
-            "timePeriodFY": [
-                "2026"
-            ],
+            "$time": {"unit": "fiscal_year", "offset": -1},
             "selectedAwardingAgencies": {
                 "766_toptier": {
                     "id": 766,
@@ -2033,7 +1993,8 @@
         "query": "How many awards did Space Exploration Technologies (SpaceX) receive?",
         "expected_output": {
             "selectedRecipients": [
-                "SPACE EXPLORATION TECHNOLOGIES CORP."
+                "SPACE EXPLORATION TECHNOLOGIES CORP.",
+                "SPACE EXPLORATION TECHNOLOGIES CORP"
             ]
         },
         "expected_tools": [
@@ -2052,7 +2013,8 @@
         "query": "Find all awards to Space Exploration Technologies (SpaceX)",
         "expected_output": {
             "selectedRecipients": [
-                "SPACE EXPLORATION TECHNOLOGIES CORP."
+                "SPACE EXPLORATION TECHNOLOGIES CORP.",
+                "SPACE EXPLORATION TECHNOLOGIES CORP"
             ]
         },
         "expected_tools": [
@@ -2409,10 +2371,7 @@
         "id": 94,
         "query": "Awards with NAICS 111910 for last year",
         "expected_output": {
-            "timePeriodType": "fy",
-            "timePeriodFY": [
-                "2026"
-            ],
+            "$time": {"unit": "fiscal_year", "offset": -1},
             "naicsCodes": {
                 "require": [
                     "111910"
@@ -2616,10 +2575,7 @@
         "id": 101,
         "query": "Contracts for chemical weapons last year",
         "expected_output": {
-            "timePeriodType": "fy",
-            "timePeriodFY": [
-                "2026"
-            ],
+            "$time": {"unit": "fiscal_year", "offset": -1},
             "pscCodes": {
                 "require": [
                     ["Product", "1040"]
@@ -3047,13 +3003,7 @@
         "id": 117,
         "query": "List all fixed price and time and materials contracts awarded last month",
         "expected_output": {
-            "timePeriodType": "dr",
-            "time_period": [
-                {
-                    "start_date": "2026-09-01",
-                    "end_date": "2026-09-30"
-                }
-            ],
+            "$time": {"unit": "month", "offset": -1},
             "pricingType": [
                 "A",
                 "B",
@@ -3086,10 +3036,7 @@
         "id": 118,
         "query": "Show me cost reimbursement contracts awarded to small businesses in Virginia last year for technology services",
         "expected_output": {
-            "timePeriodType": "fy",
-            "timePeriodFY": [
-                "2026"
-            ],
+            "$time": {"unit": "fiscal_year", "offset": -1},
             "pricingType": [
                 "R",
                 "S",
@@ -3154,10 +3101,7 @@
         "id": 119,
         "query": "Find all cost reimbursement contracts set aside for small businesses in Virginia last year for technology services",
         "expected_output": {
-            "timePeriodType": "fy",
-            "timePeriodFY": [
-                "2026"
-            ],
+            "$time": {"unit": "fiscal_year", "offset": -1},
             "pricingType": [
                 "R",
                 "S",
@@ -3349,10 +3293,7 @@
         "id": 125,
         "query": "How many fixed priced contracts set aside for veteran owned business last year for consulting services were there?",
         "expected_output": {
-            "timePeriodType": "fy",
-            "timePeriodFY": [
-                "2026"
-            ],
+            "$time": {"unit": "fiscal_year", "offset": -1},
             "pricingType": [
                 "A",
                 "B",
@@ -3487,10 +3428,7 @@
         "id": 129,
         "query": "All no bid contracts awarded last year for mining services",
         "expected_output": {
-            "timePeriodType": "fy",
-            "timePeriodFY": [
-                "2026"
-            ],
+            "$time": {"unit": "fiscal_year", "offset": -1},
             "extentCompeted": [
                 "B"
             ],
@@ -3794,10 +3732,7 @@
         "id": 139,
         "query": "All spending on the updates to the White house ball room this year",
         "expected_output": {
-            "timePeriodType": "fy",
-            "timePeriodFY": [
-                "2027"
-            ],
+            "$time": {"unit": "fiscal_year", "offset": 0},
             "keyword": [
                 "updates to the White house ball room"
             ]
@@ -3890,7 +3825,8 @@
         "query": "All the Space Exploration Technologies (SpaceX) contracts in Texas",
         "expected_output": {
             "selectedRecipients": [
-                "SPACE EXPLORATION TECHNOLOGIES CORP."
+                "SPACE EXPLORATION TECHNOLOGIES CORP.",
+                "SPACE EXPLORATION TECHNOLOGIES CORP"
             ],
             "selectedLocations": {
                 "USA_TX": {
@@ -4032,10 +3968,7 @@
         "id": 147,
         "query": "All contracts with 123 Main St. in the award description last year",
         "expected_output": {
-            "timePeriodType": "fy",
-            "timePeriodFY": [
-                "2026"
-            ],
+            "$time": {"unit": "fiscal_year", "offset": -1},
             "awardDescription": "123 Main St.",
             "awardType": [
                 "A",
@@ -4125,10 +4058,7 @@
         "id": 151,
         "query": "All awards over 1 trillion last fiscal year",
         "expected_output": {
-            "timePeriodType": "fy",
-            "timePeriodFY": [
-                "2026"
-            ],
+            "$time": {"unit": "fiscal_year", "offset": -1},
             "awardAmounts": {
                 "specific": [
                     1000000000000,
@@ -4199,10 +4129,7 @@
         "id": 153,
         "query": "Show me all awards for assistance listing 16.014 last year",
         "expected_output": {
-            "timePeriodType": "fy",
-            "timePeriodFY": [
-                "2026"
-            ],
+            "$time": {"unit": "fiscal_year", "offset": -1},
             "selectedCFDA": {
                 "16.014": {"identifier": "16.014", "program_number": "16.014", "program_title": "Engaging Men and Youth in Preventing Domestic Violence, Dating Violence, Sexual Assault, and Stalking"}
             }
@@ -4258,10 +4185,7 @@
         "id": 155,
         "query": "List all spending under Treasury Account Symbol 310-2012/2012-3200-000 last fiscal year",
         "expected_output": {
-            "timePeriodType": "fy",
-            "timePeriodFY": [
-                "2026"
-            ],
+            "$time": {"unit": "fiscal_year", "offset": -1},
             "tasCodes": {
                 "require": [
                     ["310", "310-3200", "310-2012/2012-3200-000"]
@@ -4390,13 +4314,7 @@
         "id": 160,
         "query": "All contracts that available for competition in Utah so far this year",
         "expected_output": {
-            "timePeriodType": "dr",
-            "time_period": [
-                {
-                    "start_date": "2026-10-01",
-                    "end_date": "2026-10-05"
-                }
-            ],
+            "$time": {"unit": "fiscal_year", "offset": 0, "to_date": true, "as": "dr"},
             "extentCompeted": [
                 "A"
             ],
@@ -4617,10 +4535,7 @@
         "id": 170,
         "query": "Show me all awards given to Nonprofits this year",
         "expected_output": {
-            "timePeriodType": "fy",
-            "timePeriodFY": [
-                "2027"
-            ],
+            "$time": {"unit": "fiscal_year", "offset": 0},
             "recipientType": [
                 "nonprofit"
             ]
@@ -4642,7 +4557,9 @@
         "query": "Boeing contracts",
         "expected_output": {
             "selectedRecipients": [
-                "Boeing"
+                "BOEING",
+                "BOEING COMPANY",
+                "BOEING COMPANY, THE"
             ],
             "awardType": [
                 "A",
@@ -4667,10 +4584,7 @@
         "id": 175,
         "query": "How much taxpayer dollars went to defense contractors this year?",
         "expected_output": {
-            "timePeriodType": "fy",
-            "timePeriodFY": [
-                "2027"
-            ],
+            "$time": {"unit": "fiscal_year", "offset": 0},
             "keyword": [
                 "defense"
             ]
@@ -4788,10 +4702,7 @@
         "id": 181,
         "query": "How much did we give to foreign aid last year?",
         "expected_output": {
-            "timePeriodType": "fy",
-            "timePeriodFY": [
-                "2026"
-            ],
+            "$time": {"unit": "fiscal_year", "offset": -1},
             "locationDomesticForeign": "foreign"
         },
         "expected_tools": [
@@ -4836,10 +4747,7 @@
         "id": 183,
         "query": "8(a) contracts in the last year",
         "expected_output": {
-            "timePeriodType": "fy",
-            "timePeriodFY": [
-                "2026"
-            ],
+            "$time": {"unit": "fiscal_year", "offset": -1},
             "setAside": [
                 "8A",
                 "8AN",

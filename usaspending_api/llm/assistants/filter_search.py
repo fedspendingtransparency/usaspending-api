@@ -7,10 +7,14 @@ from typing import Any, AsyncGenerator, Callable
 
 from django.db.models import Sum
 
-from usaspending_api.common.helpers.aws_helpers import async_aws_client
+from usaspending_api.common.helpers.aws_helpers import (
+    NO_BOTOCORE_RETRIES_CONFIG,
+    async_aws_client,
+    retry_on_throttling,
+)
 from usaspending_api.llm.models.db_models import Assistant, Message, Session, ToolUse
 from usaspending_api.llm.models.py_models import AITool, abuild_defc_description
-from usaspending_api.llm.tools.exceptions import ToolUseRuntimeError
+from usaspending_api.llm.tools.exceptions import GENERIC_TOOL_FAILURE_INSTRUCTIONS, ToolUseRuntimeError
 
 logger = logging.getLogger(__name__)
 
@@ -22,8 +26,9 @@ class FilterSearchAssistant:
         "You are USAspending search assistant. Help the user select filters to search for federal spending"
     )
 
-    def __init__(self, assistant: Assistant, tools: list[AITool], session: Session) -> None:
+    def __init__(self, assistant: Assistant, tools: list[AITool], session: Session, as_of: date | None = None) -> None:
         self.assistant = assistant
+        self.as_of = as_of
         self.tools = tools
         self.tools_by_name = {tool.description.name: tool for tool in tools}
         self.session = session
@@ -113,7 +118,7 @@ class FilterSearchAssistant:
         self.messages.append(output_message)
         return message
 
-    async def aget_tool_config(self) -> dict[str, list[dict]]:
+    async def aget_tool_config(self) -> dict[str, Any]:
         if self._tool_config is None:
             specs = [tool.description.model_dump() for tool in self.tools]
             for spec in specs:
@@ -123,12 +128,13 @@ class FilterSearchAssistant:
             self._tool_config = {
                 "tools": [{"toolSpec": {"inputSchema": {"json": spec.pop("input_schema")}, **spec}} for spec in specs]
             }
-        return self._tool_config
+
+        return {**self._tool_config, "toolChoice": {"auto": {}}}
 
     @staticmethod
-    def _fiscal_year_date_context() -> str:
-        """Build the current-date/fiscal-year string appended to the system prompt."""
-        today = date.today()
+    def _fiscal_year_date_context(today: date | None = None) -> str:
+        """Build the current-date/fiscal-year string appended to the system prompt (``today`` defaults to now)."""
+        today = today or date.today()
         current_fy = today.year + 1 if today.month >= 10 else today.year
         return (
             f"\nThe current date is {today.strftime('%m/%d/%Y')}. The current federal fiscal year is "
@@ -139,11 +145,11 @@ class FilterSearchAssistant:
             f"timePeriodFY, use the bare four-digit year (e.g. '{current_fy}'), never the 'FY' prefix."
         )
 
-    @cached_property
+    @property
     def system_message(self) -> str:
         """Return the active Assistant's system prompt or the default prompt."""
         if self.assistant.system_prompt:
-            return self.assistant.system_prompt.text + self._fiscal_year_date_context()
+            return self.assistant.system_prompt.text + self._fiscal_year_date_context(self.as_of)
         return self.DEFAULT_SYSTEM_MESSAGE
 
     @cached_property
@@ -168,6 +174,22 @@ class FilterSearchAssistant:
             "stopSequences": [],
         }
 
+    @retry_on_throttling
+    async def _converse(self, client: Any) -> dict:
+        """
+        Call Bedrock's converse API, retrying with jittered backoff if AWS throttles the request.
+
+        Retrying here (rather than re-running the whole search) means a transient error late in a conversation does not
+        replay earlier iterations, which would consume more of the model's token quota.
+        """
+        return await client.converse(
+            modelId=self.assistant.ai_model.model_id,
+            messages=self.messages,
+            toolConfig=await self.aget_tool_config(),
+            system=[{"text": self.system_message}],
+            inferenceConfig=self.inference_config,
+        )
+
     async def search(self, query: str) -> AsyncGenerator[dict[str, str], None]:
         yield {"search_id": str(self.session.id), "type": "search_start", "message": "Thinking..."}
 
@@ -184,14 +206,8 @@ class FilterSearchAssistant:
         self.message_order += 1
         self.messages.append({"role": "user", "content": [{"text": query}]})
 
-        async with async_aws_client("bedrock-runtime") as client:
-            response = await client.converse(
-                modelId=self.assistant.ai_model.model_id,
-                messages=self.messages,
-                toolConfig=await self.aget_tool_config(),
-                system=[{"text": self.system_message}],
-                inferenceConfig=self.inference_config,
-            )
+        async with async_aws_client("bedrock-runtime", config=NO_BOTOCORE_RETRIES_CONFIG) as client:
+            response = await self._converse(client)
             self._sanitize_tool_use_input(response["output"]["message"]["content"])
             m = await self._create_message_from_response(response)
             stop_reason = response["stopReason"]
@@ -225,13 +241,7 @@ class FilterSearchAssistant:
                 if search_complete:
                     break
 
-                response = await client.converse(
-                    modelId=self.assistant.ai_model.model_id,
-                    messages=self.messages,
-                    toolConfig=await self.aget_tool_config(),
-                    system=[{"text": self.system_message}],
-                    inferenceConfig=self.inference_config,
-                )
+                response = await self._converse(client)
                 self._sanitize_tool_use_input(response["output"]["message"]["content"])
                 m = await self._create_message_from_response(response)
                 stop_reason = response["stopReason"]
@@ -252,6 +262,12 @@ class FilterSearchAssistant:
                     },
                 )
 
+            if not search_complete:
+                async for event in self._aforce_completion(client, query, response, m):
+                    yield event
+                    if event.get("type") == "search_complete":
+                        search_complete = True
+
         # Calculate total token usage for this search.
         totals = await self.session.messages.aaggregate(
             input_tokens=Sum("input_tokens"), output_tokens=Sum("output_tokens")
@@ -259,9 +275,6 @@ class FilterSearchAssistant:
         total_input_tokens = totals["input_tokens"] or 0
         total_output_tokens = totals["output_tokens"] or 0
         total_tokens = total_input_tokens + total_output_tokens
-
-        if not search_complete:
-            raise RuntimeError(f"Filter search session {self.session.id} ended without completing")
 
         # Log each search.
         logger.info(
@@ -275,6 +288,57 @@ class FilterSearchAssistant:
                 "total_tokens": total_tokens,
             },
         )
+
+        if not search_complete:
+            raise RuntimeError(f"Filter search session {self.session.id} ended without completing")
+
+    async def _aforce_completion(
+        self, client: Any, query: str, response: dict, message: Message
+    ) -> AsyncGenerator[dict, None]:
+        """Force the completion tool after the main loop ends without it."""
+        if response["stopReason"] == "tool_use":
+            pending = [request for request in response["output"]["message"]["content"] if "toolUse" in request]
+
+            async for event in self.handle_tool_use(pending, message):
+                yield event
+                if event.get("type") == "search_complete":
+                    return
+
+        logger.info(
+            f"Search not complete after {self.tool_iterations} tool iterations. "
+            f"Force calling {self.COMPLETION_TOOL_NAME}."
+        )
+        model_message = (
+            f"Search is not complete and {self.COMPLETION_TOOL_NAME} was never called. As a last resort, "
+            f'extract a single relevant keyword from the user\'s original query ("{query}") and call '
+            f"{self.COMPLETION_TOOL_NAME} using that keyword."
+        )
+
+        await Message.objects.acreate(
+            session=self.session, role="user", message=model_message, order=self.message_order
+        )
+        self.message_order += 1
+
+        # Converse requires alternating roles, so merge into a trailing toolResult user turn.
+        if self.messages[-1]["role"] == "user":
+            self.messages[-1]["content"].append({"text": model_message})
+        else:
+            self.messages.append({"role": "user", "content": [{"text": model_message}]})
+
+        response = await client.converse(
+            modelId=self.assistant.ai_model.model_id,
+            messages=self.messages,
+            toolConfig={**await self.aget_tool_config(), "toolChoice": {"tool": {"name": self.COMPLETION_TOOL_NAME}}},
+            system=[{"text": self.system_message}],
+            inferenceConfig=self.inference_config,
+        )
+        self._sanitize_tool_use_input(response["output"]["message"]["content"])
+
+        forced_message = await self._create_message_from_response(response)
+        tool_requests = [request for request in response["output"]["message"]["content"] if "toolUse" in request]
+
+        async for event in self.handle_tool_use(tool_requests, forced_message):
+            yield event
 
     async def handle_tool_use(self, tool_requests: list[dict], message: Message) -> AsyncGenerator[dict, None]:
         tool_result_message = {"role": "user", "content": []}
@@ -339,7 +403,10 @@ class FilterSearchAssistant:
                 is_known_error = isinstance(e, ToolUseRuntimeError)
                 error_message = e.user_message if is_known_error else "Tool execution failed."
                 model_detail = e.model_detail if is_known_error else str(e)
+                instructions = e.instructions if is_known_error else GENERIC_TOOL_FAILURE_INSTRUCTIONS
                 error_result = {"error": model_detail}
+                if instructions:
+                    error_result["instructions"] = instructions
                 t.result = error_result
                 await t.asave()
 

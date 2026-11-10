@@ -393,6 +393,24 @@ This is useful for:
 - Gradual quality improvement campaigns (start at 0.8, increase to 0.9, then 0.95)
 - Preventing regressions when deploying new models or prompts
 
+## Running Cases Concurrently
+
+By default, cases run one at a time. Use `--max-workers` to run multiple cases concurrently and
+reduce wall-clock time for large datasets:
+
+```sh
+python manage.py run_llm_eval \
+  --assistant filter_search \
+  --max-workers 4
+```
+
+Results are always reported in the original dataset order, regardless of completion order.
+
+`--max-workers` is capped at 25: each case makes real AWS Bedrock calls, and Bedrock enforces
+per-model token and request quotas. Throttled Bedrock calls are retried
+with jittered exponential backoff (up to 5 attempts; timeouts are not retried), but sustained demand above the quota will still
+surface as failed cases. If you see `ThrottlingException`s in case errors, lower `--max-workers`.
+
 ## Assistant Metadata
 
 For executed cases, the Evaluation sheet includes configuration metadata captured from the active Assistant record:
@@ -457,6 +475,29 @@ When adding a new case:
 The report is the stakeholder-facing output.
 It should not be edited and fed back into `config.json` automatically.
 Any ground-truth change should be made intentionally in the JSON source.
+
+## Relative Time Periods (`$time`)
+
+Queries such as "last quarter" or "this fiscal year" should not hardcode dates in `expected_output`. Use a `$time` object instead; the loader replaces it with `timePeriodType` plus `timePeriodFY` or `time_period` when the dataset is loaded (see `llm/evals/temporal.py`).
+
+```json
+"expected_output": {
+  "selectedRecipients": ["Booz Allen"],
+  "$time": {"unit": "month", "offset": -1}
+}
+```
+
+| Key | Description |
+| --- | --- |
+| `unit` | Required. `fiscal_year`, `fiscal_quarter`, `calendar_year` or `month`. |
+| `offset` | Units relative to the current one; `0` is current, `-1` is previous. Default `0`. |
+| `span` | Number of consecutive units ending at `offset` (e.g. "last 5 years" is `offset: -1, span: 5`). Default `1`. |
+| `to_date` | Cap the end of a date range at the as-of date ("so far this year"). Default `false`. |
+| `as` | Force `fy` (fiscal years only) or `dr` (date range). Defaults to `fy` for `fiscal_year` and `dr` otherwise. |
+
+Fixed periods that never change (e.g. "FY25", "Q2 2024") stay as literal `timePeriodType`/`timePeriodFY`/`time_period` values.
+
+Use `--as-of YYYY-MM-DD` on `run_llm_eval` to pin "today" for a run. The same date is used to resolve `$time` and is given to the assistant as the current date, so a run can be reproduced later. It defaults to the current date.
 
 ## Ground Truth Values and Normalization
 
