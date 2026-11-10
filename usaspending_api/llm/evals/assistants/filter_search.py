@@ -111,13 +111,16 @@ async def run_eval_case(case: EvalCase) -> EvalObservation:
         assistant=assistant_config,
         tools=filter_search_tools,
         session=session,
+        as_of=case.as_of,
     )
 
     events: list[dict[str, Any]] = []
+    failure: str | None = None
 
     try:
         events = [event async for event in assistant.search(case.input["query"])]
     except Exception as exc:
+        failure = f"{type(exc).__name__}: {exc}"
         logger.exception(f"Filter Search execution failed for case '{case.name}': {exc}")
     finally:
         session.ended_at = timezone.now()
@@ -126,17 +129,21 @@ async def run_eval_case(case: EvalCase) -> EvalObservation:
     error_events = [event for event in events if event.get("type") == "search_error"]
 
     if error_events:
-        logger.error(
-            f"Filter Search execution failed for case '{case.name}': "
-            f"{error_events[-1].get('message', 'Unknown search error')}"
-        )
+        failure = error_events[-1].get("message", "Unknown search error")
+        logger.error(f"Filter Search execution failed for case '{case.name}': {failure}")
 
     tool_calls = await get_tool_calls(session)
 
     if not tool_calls:
         logger.error(f"Filter Search case '{case.name}' produced no tool calls.")
 
-    output = await get_final_filter_output(session)
+    try:
+        output = await get_final_filter_output(session)
+    except ExecutionError as exc:
+        # Surface the underlying search failure (e.g. a Bedrock timeout) rather than only the missing-output symptom.
+        if failure:
+            raise ExecutionError(f"{exc} Search failed with {failure}") from exc
+        raise
 
     inference_config = assistant_config.inference_config or {}
 
