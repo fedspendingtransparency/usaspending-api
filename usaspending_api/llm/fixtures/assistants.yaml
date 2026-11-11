@@ -23,3 +23,15 @@
       stopSequences: []
     is_active: true
     description: "claude 4.5 model"
+- model: llm.assistant
+  pk: 3
+  fields:
+    name: query-assistant
+    ai_model: 5  # nova pro model
+    system_prompt: 4  # query-assistant-v1 prompt
+    inference_config:
+      temperature: 0.0
+      maxTokens: 1_000
+      stopSequences: []
+    is_active: true
+    description: "First step of smart assist: decides if a query is answerable and may reword it"
