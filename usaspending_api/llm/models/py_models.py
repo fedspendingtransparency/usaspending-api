@@ -1277,6 +1277,7 @@ QueryAssistantReasonCode = Literal[
     "needs_aggregation",
     "ambiguous_time_period",
     "not_a_search",
+    "too_broad",
 ]
 
 
@@ -1298,7 +1299,8 @@ class QueryAssistantDecision(BaseModel):
         "",
         description=(
             "One or two plain sentences for the user. Required unless the verdict is answerable. "
-            "Explain what the search tool cannot do, or what was changed in the rewritten query."
+            "Refer to the product as Smart Assist, never 'the tool'. Say what Smart Assist cannot do, or what the "
+            "rewritten query will search for."
         ),
     )
     rewritten_query: str | None = Field(
@@ -1307,9 +1309,6 @@ class QueryAssistantDecision(BaseModel):
             "The reworded query, describing exactly ONE search. Only for answerable_after_rephrase. "
             "Never invent dates, amounts or names, and never combine several searches into one."
         ),
-    )
-    caveat: str | None = Field(
-        None, description="Optional note on what the results will not tell the user (for example, not a war total)."
     )
     separate_queries: list[str] = Field(
         default_factory=list,
@@ -1323,5 +1322,7 @@ class QueryAssistantDecision(BaseModel):
 
 class QueryAssistantOutput(QueryAssistantDecision):
     suggestions: list[str] = Field(default_factory=list, description="Example prompts the user can click")
-    suggestions_heading: str = Field("Examples of searches I can run:", description="Label shown above suggestions")
+    suggestions_heading: str = Field(
+        "Examples of searches Smart Assist can run:", description="Label shown above suggestions"
+    )
     search_id: str | None = None

@@ -15,7 +15,7 @@ from usaspending_api.llm.models.py_models import QueryAssistantDecision, QueryAs
 logger = logging.getLogger(__name__)
 
 DEFAULT_OUT_OF_SCOPE_MESSAGE = "Smart Assist can't build a search for this question."
-SUGGESTIONS_HEADING = "Examples of searches I can run:"
+SUGGESTIONS_HEADING = "Examples of searches Smart Assist can run:"
 SEPARATE_QUERIES_HEADING = "Search them one at a time:"
 
 
@@ -116,7 +116,6 @@ class QueryAssistant:
             verdict="out_of_scope",
             reason_code=decision.reason_code,
             message=decision.message.strip() or DEFAULT_OUT_OF_SCOPE_MESSAGE,
-            caveat=decision.caveat,
             suggestions=suggestions,
             suggestions_heading=heading,
             search_id=str(session.id),

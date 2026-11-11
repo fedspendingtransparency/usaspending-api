@@ -23,6 +23,7 @@ SUGGESTIONS_BY_REASON_CODE: dict[str, list[str]] = {
         "Spending from January 1, 2024 to December 31, 2024",
     ],
     "not_a_search": GENERAL_SUGGESTIONS,
+    "too_broad": GENERAL_SUGGESTIONS,
 }
 
 
