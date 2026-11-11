@@ -1257,3 +1257,71 @@ class FilterSearchEvent(BaseModel):
     type: Literal["search_start", "search_error", "search_complete", "tool_start", "tool_complete", "tool_error"]
     message: str
     result: Any = None
+
+
+class QueryAssistantInput(BaseModel):
+    query: str = Field(
+        ...,
+        min_length=1,
+        max_length=1000,
+        description="The natural language query the user typed into Smart Assist",
+        json_schema_extra={"examples": ["How much has been spent, as of today, on the Iran war?"]},
+    )
+
+
+QueryAssistantVerdict = Literal["answerable", "answerable_after_rephrase", "out_of_scope"]
+QueryAssistantReasonCode = Literal[
+    "ok",
+    "no_matching_data",
+    "needs_comparison",
+    "needs_aggregation",
+    "ambiguous_time_period",
+    "not_a_search",
+]
+
+
+class QueryAssistantDecision(BaseModel):
+    """The structured decision the model submits; also used as the tool input schema."""
+
+    verdict: QueryAssistantVerdict = Field(
+        ...,
+        description=(
+            "answerable: filters can be built from the query as written. "
+            "answerable_after_rephrase: filters can be built only after the query is reworded. "
+            "out_of_scope: no useful set of filters can be built."
+        ),
+    )
+    reason_code: QueryAssistantReasonCode = Field(
+        ..., description="Why the verdict was chosen. Use 'ok' when the verdict is answerable."
+    )
+    message: str = Field(
+        "",
+        description=(
+            "One or two plain sentences for the user. Required unless the verdict is answerable. "
+            "Explain what the search tool cannot do, or what was changed in the rewritten query."
+        ),
+    )
+    rewritten_query: str | None = Field(
+        None,
+        description=(
+            "The reworded query, describing exactly ONE search. Only for answerable_after_rephrase. "
+            "Never invent dates, amounts or names, and never combine several searches into one."
+        ),
+    )
+    caveat: str | None = Field(
+        None, description="Optional note on what the results will not tell the user (for example, not a war total)."
+    )
+    separate_queries: list[str] = Field(
+        default_factory=list,
+        max_length=3,
+        description=(
+            "Only when reason_code is needs_comparison: one complete search per item being compared, built from the "
+            "user's own words and constraints (for example 'Federal funding for Wyoming in 2025'). Otherwise empty."
+        ),
+    )
+
+
+class QueryAssistantOutput(QueryAssistantDecision):
+    suggestions: list[str] = Field(default_factory=list, description="Example prompts the user can click")
+    suggestions_heading: str = Field("Examples of searches I can run:", description="Label shown above suggestions")
+    search_id: str | None = None
