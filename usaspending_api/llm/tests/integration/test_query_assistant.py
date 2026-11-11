@@ -75,15 +75,14 @@ async def test_rewrite(mock_assistant, mock_session, mock_bedrock_client, no_db_
         {
             "verdict": "answerable_after_rephrase",
             "reason_code": "no_matching_data",
-            "message": "Awards are not tagged by conflict.",
-            "rewritten_query": "  DoD awards with place of performance in Iran ",
-            "caveat": "Not the cost of the war.",
+            "message": "Reworded your question as a search for matching awards.",
+            "rewritten_query": "  Awards to Arizona in 2025 ",
         }
     )
     output = await _evaluate(mock_assistant, mock_session)
     assert output.verdict == "answerable_after_rephrase"
-    assert output.rewritten_query == "DoD awards with place of performance in Iran"
-    assert output.caveat is None  # notes are not shown for rewrites
+    assert output.rewritten_query == "Awards to Arizona in 2025"
+    assert output.message == "Reworded your question as a search for matching awards."
     assert output.suggestions == []
 
 
@@ -126,6 +125,24 @@ async def test_out_of_scope_gets_default_message_and_suggestions(
     assert output.verdict == "out_of_scope"
     assert output.message == DEFAULT_OUT_OF_SCOPE_MESSAGE
     assert output.suggestions
+
+
+@pytest.mark.asyncio
+async def test_too_broad_is_out_of_scope_with_suggestions(mock_session):
+    """A query with nothing to filter on is turned away with examples, not rewritten to an empty search."""
+    message = "Sorry, Smart Assist needs a little more to go on. Try adding an agency, place or time period."
+    decision = QueryAssistantDecision(
+        verdict="out_of_scope",
+        reason_code="too_broad",
+        message=message,
+        rewritten_query="Federal awards",
+    )
+    output = QueryAssistant.build_output(decision, mock_session)
+    assert output.verdict == "out_of_scope"
+    assert output.message == message
+    assert output.rewritten_query is None
+    assert output.suggestions
+    assert output.suggestions_heading == SUGGESTIONS_HEADING
 
 
 @pytest.mark.asyncio
