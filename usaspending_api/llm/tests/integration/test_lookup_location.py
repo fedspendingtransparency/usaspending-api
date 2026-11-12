@@ -626,14 +626,10 @@ class TestHelperMethods:
 
     def test_format_query(self, location_tool):
         """Test query formatting for edge cases"""
-        state_names = {
-            "KS": "KANSAS",
-            "WA": "WASHINGTON"
-        }
+        state_names = {"KS": "KANSAS", "WA": "WASHINGTON"}
 
         assert location_tool._format_query("WICHITA, KS", "city", state_names) == "WICHITA, KANSAS"
         assert location_tool._format_query("seattle, wa", "city", state_names) == "SEATTLE, WASHINGTON"
-
 
     def test_build_identifier_formats(self, location_tool):
         """Test identifier format for each location type."""
