@@ -14,6 +14,7 @@ from usaspending_api.llm.models.py_models import (
     clear_defc_rows_cache,
 )
 from usaspending_api.llm.tools.exceptions import (
+    FINAL_TOOL_RETRY_INSTRUCTIONS,
     AgencyNotRecognizedError,
     AwardAmountNotParseableError,
     AwardNotRecognizedError,
@@ -25,7 +26,6 @@ from usaspending_api.llm.tools.exceptions import (
 )
 from usaspending_api.llm.tools.execute_filter import (
     GENERIC_USER_MESSAGE,
-    RETRY_INSTRUCTION,
     execute_filter,
     execute_filter_tool,
 )
@@ -112,7 +112,7 @@ class TestInputValidation:
 
         assert exc_info.value.user_message == GENERIC_USER_MESSAGE
         assert "invalid_field" in exc_info.value.model_detail
-        assert exc_info.value.model_detail.endswith(RETRY_INSTRUCTION)
+        assert exc_info.value.instructions == FINAL_TOOL_RETRY_INSTRUCTIONS
 
     async def test_empty_filters_accepted(self):
         """Test that empty filters are valid."""
@@ -450,7 +450,7 @@ class TestValidationErrorTranslation:
 
         assert exc_info.value.user_message == GENERIC_USER_MESSAGE
         assert "NOT_REAL" in exc_info.value.model_detail
-        assert exc_info.value.model_detail.endswith(RETRY_INSTRUCTION)
+        assert exc_info.value.instructions == FINAL_TOOL_RETRY_INSTRUCTIONS
 
 
 class TestAwardTypeNames:
@@ -506,6 +506,7 @@ class TestAgencyExistenceValidation:
         assert "Department of Agriculture" in exc_info.value.user_message
         assert "Unresolvable selected agencies" in exc_info.value.model_detail
         assert "exactly as returned by lookup_agencies" in exc_info.value.model_detail
+        assert "unchanged" in exc_info.value.instructions
 
 
 async def _make_agency_rows(subtier_count: int) -> tuple[ToptierAgency, list[Agency]]:
@@ -600,6 +601,7 @@ class TestRecipientExistenceValidation:
 
         assert "Totally Fake Recipient" in exc_info.value.user_message
         assert "Unresolvable selected recipients" in exc_info.value.model_detail
+        assert "lookup_recipient" in exc_info.value.instructions
 
     async def test_multiple_unresolvable_recipients_are_all_listed(self):
         with patch(
@@ -659,6 +661,7 @@ class TestAwardIdExistenceValidation:
         assert "FAKE_AWARD_ID" in exc_info.value.user_message
         assert "Unresolvable selected award IDs" in exc_info.value.model_detail
         assert "lookup_recipient" in exc_info.value.model_detail
+        assert exc_info.value.instructions == FINAL_TOOL_RETRY_INSTRUCTIONS
         assert "lookup_recipient" not in exc_info.value.user_message
 
 

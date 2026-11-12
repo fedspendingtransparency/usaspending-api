@@ -8,7 +8,11 @@ from model_bakery import baker
 from usaspending_api.llm.assistants.filter_search import FilterSearchAssistant
 from usaspending_api.llm.models.db_models import AIModel, Assistant, Session
 from usaspending_api.llm.models.py_models import AITool, AIToolResult, clear_defc_rows_cache
-from usaspending_api.llm.tools.exceptions import DefcCodeNotRecognizedError
+from usaspending_api.llm.tools.exceptions import (
+    GENERIC_TOOL_FAILURE_INSTRUCTIONS,
+    DefcCodeNotRecognizedError,
+    ToolUseRuntimeError,
+)
 from usaspending_api.llm.tools.execute_filter import execute_filter_tool
 
 
@@ -601,7 +605,9 @@ class TestFilterSearchAssistant:
         mock_tool_use_create.return_value = mock_tool_use
 
         mock_search_tool.function.side_effect = DefcCodeNotRecognizedError(
-            "DEFC code not found: BAD.", model_detail="Value error, Invalid DEFC code(s): ['BAD']."
+            "DEFC code not found: BAD.",
+            model_detail="Value error, Invalid DEFC code(s): ['BAD'].",
+            instructions="Fix the DEFC codes and call execute_filter again.",
         )
 
         tool_requests = [
@@ -624,6 +630,41 @@ class TestFilterSearchAssistant:
         tool_result_message = assistant.messages[-1]
         tool_result_content = tool_result_message["content"][0]["toolResult"]["content"][0]["json"]
         assert tool_result_content["error"] == "Value error, Invalid DEFC code(s): ['BAD']."
+        assert tool_result_content["instructions"] == "Fix the DEFC codes and call execute_filter again."
+
+    @patch("usaspending_api.llm.models.db_models.ToolUse.objects.acreate", new_callable=AsyncMock)
+    async def test_handle_tool_use_omits_instructions_when_none(
+        self, mock_tool_use_create, assistant, mock_search_tool
+    ):
+        mock_tool_use = Mock()
+        mock_tool_use.id = "tool-use-457"
+        mock_tool_use.asave = AsyncMock()
+        mock_tool_use_create.return_value = mock_tool_use
+        mock_search_tool.function.side_effect = ToolUseRuntimeError("Something failed.")
+
+        tool_requests = [{"toolUse": {"toolUseId": "tool-457", "name": "execute_filter", "input": {}}}]
+        [event async for event in assistant.handle_tool_use(tool_requests, Mock())]
+
+        tool_result_content = assistant.messages[-1]["content"][0]["toolResult"]["content"][0]["json"]
+        assert tool_result_content == {"error": "Something failed."}
+
+    @patch("usaspending_api.llm.models.db_models.ToolUse.objects.acreate", new_callable=AsyncMock)
+    async def test_handle_tool_use_adds_generic_instructions_for_unexpected_errors(
+        self, mock_tool_use_create, assistant, mock_search_tool
+    ):
+        mock_tool_use = Mock()
+        mock_tool_use.id = "tool-use-458"
+        mock_tool_use.asave = AsyncMock()
+        mock_tool_use_create.return_value = mock_tool_use
+        mock_search_tool.function.side_effect = TimeoutError("timed out")
+
+        tool_requests = [{"toolUse": {"toolUseId": "tool-458", "name": "execute_filter", "input": {}}}]
+        events = [event async for event in assistant.handle_tool_use(tool_requests, Mock())]
+
+        tool_result_content = assistant.messages[-1]["content"][0]["toolResult"]["content"][0]["json"]
+        assert tool_result_content["error"] == "timed out"
+        assert tool_result_content["instructions"] == GENERIC_TOOL_FAILURE_INSTRUCTIONS
+        assert [e["message"] for e in events if e["type"] == "tool_error"] == ["Tool execution failed."]
 
     @patch("usaspending_api.llm.models.db_models.ToolUse.objects.acreate", new_callable=AsyncMock)
     async def test_completion_failure_records_exactly_one_tool_result(

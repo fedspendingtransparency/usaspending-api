@@ -184,7 +184,9 @@
                 "SPE7M118F42Z8"
             ],
             "selectedRecipients": [
-                "LOCKHEED MARTIN CORPORATION"
+                "LOCKHEED MARTIN",
+                "LOCKHEED MARTIN CORPORATION",
+                "LOCKHEED MARTIN CORP"
             ]
         },
         "expected_tools": [
@@ -204,7 +206,8 @@
         "query": "How much did Elon Musk's company receive in funding so far?",
         "expected_output": {
             "selectedRecipients": [
-                "SPACE EXPLORATION TECHNOLOGIES CORP."
+                "SPACE EXPLORATION TECHNOLOGIES CORP.",
+                "SPACE EXPLORATION TECHNOLOGIES CORP"
             ]
         },
         "expected_tools": [
@@ -328,7 +331,15 @@
         "id": 17,
         "query": "Show me all contracts for Lockheed, Boeing and General Dynamics",
         "expected_output": {
-            "selectedRecipients": ["LOCKHEED MARTIN CORPORATION", "BOEING", "GENERAL DYNAMICS CORPORATION"],
+            "selectedRecipients": [
+                "LOCKHEED MARTIN",
+                "LOCKHEED MARTIN CORPORATION",
+                "BOEING",
+                "BOEING COMPANY",
+                "BOEING COMPANY, THE",
+                "GENERAL DYNAMICS CORPORATION",
+                "GENERAL DYNAMICS CORP"
+            ],
             "awardType": [
                 "A",
                 "B",
@@ -480,7 +491,8 @@
         "query": "How many awards were given to Space Exploration Technologies (SpaceX) in the last 5 years?",
         "expected_output": {
             "selectedRecipients": [
-                "SPACE EXPLORATION TECHNOLOGIES CORP."
+                "SPACE EXPLORATION TECHNOLOGIES CORP.",
+                "SPACE EXPLORATION TECHNOLOGIES CORP"
             ],
             "$time": {"unit": "fiscal_year", "offset": -1, "span": 5}
             },
@@ -897,7 +909,8 @@
         "expected_output": {
             "$time": {"unit": "month", "offset": -1},
             "selectedRecipients": [
-                "Booz Allen"
+                "BOOZ ALLEN HAMILTON INC.",
+                "BOOZ ALLEN HAMILTON INC"
             ],
             "awardType": [
                 "A",
@@ -1980,7 +1993,8 @@
         "query": "How many awards did Space Exploration Technologies (SpaceX) receive?",
         "expected_output": {
             "selectedRecipients": [
-                "SPACE EXPLORATION TECHNOLOGIES CORP."
+                "SPACE EXPLORATION TECHNOLOGIES CORP.",
+                "SPACE EXPLORATION TECHNOLOGIES CORP"
             ]
         },
         "expected_tools": [
@@ -1999,7 +2013,8 @@
         "query": "Find all awards to Space Exploration Technologies (SpaceX)",
         "expected_output": {
             "selectedRecipients": [
-                "SPACE EXPLORATION TECHNOLOGIES CORP."
+                "SPACE EXPLORATION TECHNOLOGIES CORP.",
+                "SPACE EXPLORATION TECHNOLOGIES CORP"
             ]
         },
         "expected_tools": [
@@ -3810,7 +3825,8 @@
         "query": "All the Space Exploration Technologies (SpaceX) contracts in Texas",
         "expected_output": {
             "selectedRecipients": [
-                "SPACE EXPLORATION TECHNOLOGIES CORP."
+                "SPACE EXPLORATION TECHNOLOGIES CORP.",
+                "SPACE EXPLORATION TECHNOLOGIES CORP"
             ],
             "selectedLocations": {
                 "USA_TX": {
@@ -4541,7 +4557,9 @@
         "query": "Boeing contracts",
         "expected_output": {
             "selectedRecipients": [
-                "Boeing"
+                "BOEING",
+                "BOEING COMPANY",
+                "BOEING COMPANY, THE"
             ],
             "awardType": [
                 "A",

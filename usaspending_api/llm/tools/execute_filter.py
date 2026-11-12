@@ -14,6 +14,7 @@ from usaspending_api.llm.models.py_models import (
     SelectedAgency,
 )
 from usaspending_api.llm.tools.exceptions import (
+    FINAL_TOOL_RETRY_INSTRUCTIONS,
     AgencyNotRecognizedError,
     AwardAmountNotParseableError,
     AwardNotRecognizedError,
@@ -39,7 +40,17 @@ _SINGLE_FIELD_ERRORS = {
 }
 
 GENERIC_USER_MESSAGE = "Failed to select filters."
-RETRY_INSTRUCTION = "Fix the input based on the error above and call execute_filter again."
+LOOKUP_OBJECT_INSTRUCTIONS = (
+    "Selected locations, agencies, recipients, and award IDs must be passed exactly as returned by their lookup "
+    "tool, unchanged. Do not construct them yourself; call the lookup tool again if you no longer have the result."
+)
+LOOKUP_OBJECT_FIELDS = {
+    "selectedLocations",
+    "selectedAwardingAgencies",
+    "selectedFundingAgencies",
+    "selectedRecipients",
+    "selectedAwardIDs",
+}
 
 
 def _build_user_message(field: str, kwargs: dict) -> str:
@@ -83,8 +94,9 @@ async def _validate_agencies_exist(filters: Filters) -> None:
             f"Unable to filter. These agencies could not be verified: {', '.join(invalid)}.",
             model_detail=(
                 f"Unresolvable selected agencies: {invalid}. Use the agency entries exactly as returned by "
-                "lookup_agencies (same id, agencyType, and toptier_agency); call lookup_agencies again if needed."
+                "lookup_agencies (same id, agencyType, and toptier_agency)."
             ),
+            instructions=f"{LOOKUP_OBJECT_INSTRUCTIONS} {FINAL_TOOL_RETRY_INSTRUCTIONS}",
         )
 
 
@@ -101,6 +113,10 @@ async def _validate_recipients_exist(filters: Filters) -> None:
             f"Unable to filter. These recipients could not be verified: {', '.join(invalid)}. "
             "Call lookup_recipient for each and choose one of the returned recipient names.",
             model_detail=f"Unresolvable selected recipients: {invalid}",
+            instructions=(
+                "Call lookup_recipient for each unresolved name and use one of the returned recipient names exactly. "
+                f"{FINAL_TOOL_RETRY_INSTRUCTIONS}"
+            ),
         )
 
 
@@ -128,6 +144,7 @@ async def _validate_award_ids_exist(filters: Filters) -> None:
                 "or names rather than award IDs -- call lookup_recipient with each and, if it matches, use "
                 "selectedRecipients instead of selectedAwardIDs."
             ),
+            instructions=FINAL_TOOL_RETRY_INSTRUCTIONS,
         )
 
 
@@ -161,10 +178,15 @@ async def execute_filter(**kwargs) -> AIToolResult:
         filters = await sync_to_async(Filters)(**kwargs)
     except ValidationError as exc:
         fields = {error["loc"][0] if error["loc"] else None for error in exc.errors()}
-        model_detail = f"{exc}\n\n{RETRY_INSTRUCTION}"
+        model_detail = str(exc)
+        instructions = FINAL_TOOL_RETRY_INSTRUCTIONS
+        if fields & LOOKUP_OBJECT_FIELDS:
+            instructions = f"{LOOKUP_OBJECT_INSTRUCTIONS} {instructions}"
         if len(fields) == 1 and (field := next(iter(fields))) in _SINGLE_FIELD_ERRORS:
-            raise _SINGLE_FIELD_ERRORS[field](_build_user_message(field, kwargs), model_detail=model_detail) from exc
-        raise FilterValidationError(GENERIC_USER_MESSAGE, model_detail=model_detail) from exc
+            raise _SINGLE_FIELD_ERRORS[field](
+                _build_user_message(field, kwargs), model_detail=model_detail, instructions=instructions
+            ) from exc
+        raise FilterValidationError(GENERIC_USER_MESSAGE, model_detail=model_detail, instructions=instructions) from exc
 
     await _validate_agencies_exist(filters)
     await _validate_recipients_exist(filters)
@@ -191,6 +213,7 @@ async def execute_filter(**kwargs) -> AIToolResult:
             raise ToolUseRuntimeError(
                 "There was an error saving the search filters. Please try again.",
                 model_detail=f"There was an error saving the filter hash: {e}",
+                instructions="Call execute_filter again with the same input.",
             ) from e
 
     logger.info(f"Execute filter completed successfully: hash={hash_key}", extra={"hash": hash_key})

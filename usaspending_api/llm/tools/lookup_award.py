@@ -5,7 +5,7 @@ from opensearchpy.helpers.query import Q as ES_Q
 
 from usaspending_api.common.elasticsearch.search_wrappers import AsyncAwardSearch
 from usaspending_api.llm.models.py_models import AITool, AIToolDescription, AIToolResult
-from usaspending_api.llm.tools.exceptions import AwardNotRecognizedError
+from usaspending_api.llm.tools.exceptions import AwardNotRecognizedError, InvalidToolInputError
 
 logger = logging.getLogger(__name__)
 
@@ -31,7 +31,7 @@ class AwardLookupTool:
     async def lookup_award(self, query: str) -> AIToolResult:
         normalized = query.strip()
         if not normalized:
-            return AIToolResult(results={"error": "Query cannot be empty", "results": {}})
+            raise InvalidToolInputError("Query cannot be empty")
 
         logger.info(f"Starting award lookup: query='{query}'", extra={"query": query})
 
@@ -43,7 +43,7 @@ class AwardLookupTool:
                 extra={"query": query, "zero_results": True},
             )
             user_message = f"Unable to filter. We couldn't find an award with the ID: {query}"
-            raise AwardNotRecognizedError(user_message, model_detail=f"{user_message}. {self.NO_MATCH_INSTRUCTIONS}")
+            raise AwardNotRecognizedError(user_message, instructions=self.NO_MATCH_INSTRUCTIONS)
 
         award_id = display_award_id(award)
         logger.info(f"Award lookup completed: query='{query}'", extra={"query": query})
