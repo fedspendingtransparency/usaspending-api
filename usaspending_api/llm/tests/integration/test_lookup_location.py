@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 
 from usaspending_api.llm.models.py_models import AIToolResult
-from usaspending_api.llm.tools.exceptions import LocationNotRecognizedError
+from usaspending_api.llm.tools.exceptions import InvalidToolInputError, LocationNotRecognizedError
 from usaspending_api.llm.tools.lookup_location import LocationLookupTool, lookup_location_tool
 
 pytestmark = pytest.mark.django_db(transaction=True)
@@ -97,15 +97,15 @@ def create_mock_hit(location, location_type, location_json, score=10.0):
 class TestInputValidation:
     """Test input validation."""
 
-    async def test_empty_query_returns_error(self, location_tool):
-        result = await location_tool.lookup_location("")
-        assert "error" in result.results
-        assert result.results["results"] == {}
+    async def test_empty_query_raises_invalid_input(self, location_tool):
+        with pytest.raises(InvalidToolInputError, match="Query cannot be empty") as exc_info:
+            await location_tool.lookup_location("")
+        assert exc_info.value.instructions
 
-    async def test_invalid_location_type_returns_error(self, location_tool):
-        result = await location_tool.lookup_location("Texas", location_type="invalid")
-        assert "error" in result.results
-        assert "Invalid location_type" in result.results["error"]
+    async def test_invalid_location_type_raises_invalid_input(self, location_tool):
+        with pytest.raises(InvalidToolInputError, match="Invalid location_type") as exc_info:
+            await location_tool.lookup_location("Texas", location_type="invalid")
+        assert exc_info.value.instructions
 
     async def test_top_k_clamping(self, location_tool, mock_search):
         mock_search.handle_execute.return_value.hits = []
@@ -382,15 +382,12 @@ class TestQueryBehavior:
 class TestErrorHandling:
     """Test error handling."""
 
-    async def test_opensearch_failure(self, location_tool, mock_search):
-        """Test handling of OpenSearch failures."""
+    async def test_opensearch_failure_propagates(self, location_tool, mock_search):
+        """OpenSearch failures propagate so the assistant reports them with generic retry instructions."""
         mock_search.handle_execute.side_effect = Exception("Connection failed")
 
-        result = await location_tool.lookup_location("Texas")
-
-        assert "error" in result.results
-        assert "OpenSearch query failed" in result.results["error"]
-        assert result.results["results"] == {}
+        with pytest.raises(Exception, match="Connection failed"):
+            await location_tool.lookup_location("Texas")
 
     async def test_malformed_json(self, location_tool, mock_search):
         """Test handling of malformed location_json."""
@@ -505,6 +502,16 @@ class TestResponseStructure:
         assert "identifier" in location_obj
         assert "filter" in location_obj
         assert "display" in location_obj
+
+    async def test_result_explains_which_location_filter_to_use(self, location_tool, mock_search):
+        mock_search.handle_execute.return_value.hits = [
+            create_mock_hit("TEXAS", "state", json.dumps({"state_name": "TEXAS", "country_name": "UNITED STATES"}))
+        ]
+
+        toolResult = await location_tool.lookup_location("Texas")
+
+        assert "selectedRecipientLocations" in toolResult.instructions
+        assert "selectedLocations" in toolResult.instructions
 
     async def test_identifier_is_dictionary_key(self, location_tool, mock_search):
         """Test that identifier matches the dictionary key."""

@@ -13,10 +13,22 @@ from usaspending_api.llm.models.py_models import (
     LocationFilter,
     SelectedLocation,
 )
-from usaspending_api.llm.tools.exceptions import LocationNotRecognizedError
+from usaspending_api.llm.tools.exceptions import InvalidToolInputError, LocationNotRecognizedError
 from usaspending_api.references.models import PopCongressionalDistrict, RefCountryCode
 
 logger = logging.getLogger(__name__)
+
+# What to do with the locations found. The same objects are valid for either location filter, so the choice depends on
+# what the user said the place describes.
+LOCATION_INSTRUCTIONS = (
+    "These are candidate locations ordered by relevance, not a selection: use only the ones that match the place the "
+    "user named, not every result. Use each object as returned, keyed by its identifier. Choose the filter by what "
+    "the place describes. Use selectedRecipientLocations when the place is where the recipients are located, as in "
+    "companies, businesses, nonprofits, or recipients in or based in a place, or awards given to recipients in a "
+    "place. Use selectedLocations when the place is where the work was performed or the award was delivered, as in "
+    "awards, projects, or spending in a place. Do not put the same location in both filters unless the user asked "
+    "for both."
+)
 
 
 class LocationLookupTool:
@@ -85,9 +97,7 @@ class LocationLookupTool:
 
     async def lookup_location(self, query: str, location_type: str | None = None, top_k: int = 15) -> AIToolResult:
         # Validation
-        error_response = self._validate_inputs(query, location_type)
-        if error_response:
-            return error_response
+        self._validate_inputs(query, location_type)
 
         # Clamp top_k and query formatting
         top_k = max(1, min(top_k, 100))
@@ -109,7 +119,7 @@ class LocationLookupTool:
             )
         except Exception as e:
             logger.error(f"OpenSearch query failed for query='{query}': {str(e)}", exc_info=True)
-            return AIToolResult(results={"error": f"OpenSearch query failed: {str(e)}", "results": {}})
+            raise
         finally:
             if search.client is not None:
                 await search.client.close()
@@ -137,22 +147,29 @@ class LocationLookupTool:
         )
 
         # return {"results": results, "count": len(results), "query": query, "location_type": location_type}
-        return AIToolResult(results=results)
+        return AIToolResult(results=results, instructions=LOCATION_INSTRUCTIONS)
 
-    def _validate_inputs(self, query: str, location_type: str | None) -> AIToolResult | None:
-        """Validate input parameters and return error dict if invalid, None otherwise."""
+    def _validate_inputs(self, query: str, location_type: str | None) -> None:
+        """Raise InvalidToolInputError if the input parameters are invalid."""
         if not query or not query.strip():
-            return AIToolResult(results={"error": "Query cannot be empty", "results": {}})
+            raise InvalidToolInputError("Query cannot be empty")
 
         if location_type and location_type not in self.LOCATION_TYPES:
-            return AIToolResult(
-                results={
-                    "error": f"Invalid location_type. Must be one of: {', '.join(sorted(self.LOCATION_TYPES))}",
-                    "results": {},
-                }
+            raise InvalidToolInputError(
+                f"Invalid location_type. Must be one of: {', '.join(sorted(self.LOCATION_TYPES))}"
             )
 
-        return None
+    def _format_query(self, query: str, location_type: str, state_names: dict) -> str:
+        """Applies conditional formatting to assist fuzzy search"""
+        query_upper = query.strip().upper()
+
+        # Replaces state abbr in city queries with state name
+        if location_type == "city" and "," in query_upper:
+            city, state_abbr = [item.strip() for item in query_upper.split(",")]
+            if state_abbr in state_names.keys():
+                query_upper = city + ", " + state_names[state_abbr]
+
+        return query_upper
 
     def _format_query(self, query: str, location_type: str, state_names: dict) -> str:
         """Applies conditional formatting to assist fuzzy search"""
@@ -417,8 +434,10 @@ lookup_location_tool = AITool(
         description="""
                 Search for valid location objects by name, code, zip, or congressional district
                 using fuzzy matching. Returns properly formatted SelectedLocation objects ready
-                to use in selectedLocations filter. The returned 'identifier' field should be
-                used as the dictionary key in selectedLocations.
+                to use in the selectedLocations filter (where work was performed) or the
+                selectedRecipientLocations filter (where recipients are located). The returned
+                'identifier' field should be used as the dictionary key. Read the instructions
+                returned with the results to choose between the two filters.
 
                 This tool supports:
                 - Country names and codes (e.g., 'USA', 'United States', 'Germany')
@@ -441,7 +460,7 @@ lookup_location_tool = AITool(
                 - lookup_location('Germany')  Returns DEU country
 
                 USAGE NOTES:
-                1. Always use the returned objects directly in selectedLocations
+                1. Always use the returned objects directly, without editing them
                 2. The identifier is automatically included as the dictionary key
                 3. Use location_type to filter results when query is ambiguous
                 4. Results are ranked by relevance score

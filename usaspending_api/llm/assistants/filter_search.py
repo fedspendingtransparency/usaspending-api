@@ -7,10 +7,14 @@ from typing import Any, AsyncGenerator, Callable
 
 from django.db.models import Sum
 
-from usaspending_api.common.helpers.aws_helpers import async_aws_client
+from usaspending_api.common.helpers.aws_helpers import (
+    NO_BOTOCORE_RETRIES_CONFIG,
+    async_aws_client,
+    retry_on_throttling,
+)
 from usaspending_api.llm.models.db_models import Assistant, Message, Session, ToolUse
 from usaspending_api.llm.models.py_models import AITool, abuild_defc_description
-from usaspending_api.llm.tools.exceptions import ToolUseRuntimeError
+from usaspending_api.llm.tools.exceptions import GENERIC_TOOL_FAILURE_INSTRUCTIONS, ToolUseRuntimeError
 
 logger = logging.getLogger(__name__)
 
@@ -22,8 +26,9 @@ class FilterSearchAssistant:
         "You are USAspending search assistant. Help the user select filters to search for federal spending"
     )
 
-    def __init__(self, assistant: Assistant, tools: list[AITool], session: Session) -> None:
+    def __init__(self, assistant: Assistant, tools: list[AITool], session: Session, as_of: date | None = None) -> None:
         self.assistant = assistant
+        self.as_of = as_of
         self.tools = tools
         self.tools_by_name = {tool.description.name: tool for tool in tools}
         self.session = session
@@ -127,9 +132,9 @@ class FilterSearchAssistant:
         return {**self._tool_config, "toolChoice": {"auto": {}}}
 
     @staticmethod
-    def _fiscal_year_date_context() -> str:
-        """Build the current-date/fiscal-year string appended to the system prompt."""
-        today = date.today()
+    def _fiscal_year_date_context(today: date | None = None) -> str:
+        """Build the current-date/fiscal-year string appended to the system prompt (``today`` defaults to now)."""
+        today = today or date.today()
         current_fy = today.year + 1 if today.month >= 10 else today.year
         return (
             f"\nThe current date is {today.strftime('%m/%d/%Y')}. The current federal fiscal year is "
@@ -140,11 +145,11 @@ class FilterSearchAssistant:
             f"timePeriodFY, use the bare four-digit year (e.g. '{current_fy}'), never the 'FY' prefix."
         )
 
-    @cached_property
+    @property
     def system_message(self) -> str:
         """Return the active Assistant's system prompt or the default prompt."""
         if self.assistant.system_prompt:
-            return self.assistant.system_prompt.text + self._fiscal_year_date_context()
+            return self.assistant.system_prompt.text + self._fiscal_year_date_context(self.as_of)
         return self.DEFAULT_SYSTEM_MESSAGE
 
     @cached_property
@@ -169,6 +174,22 @@ class FilterSearchAssistant:
             "stopSequences": [],
         }
 
+    @retry_on_throttling
+    async def _converse(self, client: Any) -> dict:
+        """
+        Call Bedrock's converse API, retrying with jittered backoff if AWS throttles the request.
+
+        Retrying here (rather than re-running the whole search) means a transient error late in a conversation does not
+        replay earlier iterations, which would consume more of the model's token quota.
+        """
+        return await client.converse(
+            modelId=self.assistant.ai_model.model_id,
+            messages=self.messages,
+            toolConfig=await self.aget_tool_config(),
+            system=[{"text": self.system_message}],
+            inferenceConfig=self.inference_config,
+        )
+
     async def search(self, query: str) -> AsyncGenerator[dict[str, str], None]:
         yield {"search_id": str(self.session.id), "type": "search_start", "message": "Thinking..."}
 
@@ -185,14 +206,8 @@ class FilterSearchAssistant:
         self.message_order += 1
         self.messages.append({"role": "user", "content": [{"text": query}]})
 
-        async with async_aws_client("bedrock-runtime") as client:
-            response = await client.converse(
-                modelId=self.assistant.ai_model.model_id,
-                messages=self.messages,
-                toolConfig=await self.aget_tool_config(),
-                system=[{"text": self.system_message}],
-                inferenceConfig=self.inference_config,
-            )
+        async with async_aws_client("bedrock-runtime", config=NO_BOTOCORE_RETRIES_CONFIG) as client:
+            response = await self._converse(client)
             self._sanitize_tool_use_input(response["output"]["message"]["content"])
             m = await self._create_message_from_response(response)
             stop_reason = response["stopReason"]
@@ -226,13 +241,7 @@ class FilterSearchAssistant:
                 if search_complete:
                     break
 
-                response = await client.converse(
-                    modelId=self.assistant.ai_model.model_id,
-                    messages=self.messages,
-                    toolConfig=await self.aget_tool_config(),
-                    system=[{"text": self.system_message}],
-                    inferenceConfig=self.inference_config,
-                )
+                response = await self._converse(client)
                 self._sanitize_tool_use_input(response["output"]["message"]["content"])
                 m = await self._create_message_from_response(response)
                 stop_reason = response["stopReason"]
@@ -394,7 +403,10 @@ class FilterSearchAssistant:
                 is_known_error = isinstance(e, ToolUseRuntimeError)
                 error_message = e.user_message if is_known_error else "Tool execution failed."
                 model_detail = e.model_detail if is_known_error else str(e)
+                instructions = e.instructions if is_known_error else GENERIC_TOOL_FAILURE_INSTRUCTIONS
                 error_result = {"error": model_detail}
+                if instructions:
+                    error_result["instructions"] = instructions
                 t.result = error_result
                 await t.asave()
 
