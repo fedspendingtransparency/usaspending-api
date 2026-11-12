@@ -5,11 +5,30 @@ from typing import Any
 from opensearchpy.helpers.query import Q
 
 from usaspending_api.common.elasticsearch.search_wrappers import AsyncLocationSearch
-from usaspending_api.llm.models.py_models import AITool, AIToolDescription
-from usaspending_api.llm.tools.exceptions import LocationNotRecognizedError
+from usaspending_api.llm.models.py_models import (
+    AITool,
+    AIToolDescription,
+    AIToolResult,
+    LocationDisplay,
+    LocationFilter,
+    SelectedLocation,
+)
+from usaspending_api.llm.tools.exceptions import InvalidToolInputError, LocationNotRecognizedError
 from usaspending_api.references.models import PopCongressionalDistrict, RefCountryCode
 
 logger = logging.getLogger(__name__)
+
+# What to do with the locations found. The same objects are valid for either location filter, so the choice depends on
+# what the user said the place describes.
+LOCATION_INSTRUCTIONS = (
+    "These are candidate locations ordered by relevance, not a selection: use only the ones that match the place the "
+    "user named, not every result. Use each object as returned, keyed by its identifier. Choose the filter by what "
+    "the place describes. Use selectedRecipientLocations when the place is where the recipients are located, as in "
+    "companies, businesses, nonprofits, or recipients in or based in a place, or awards given to recipients in a "
+    "place. Use selectedLocations when the place is where the work was performed or the award was delivered, as in "
+    "awards, projects, or spending in a place. Do not put the same location in both filters unless the user asked "
+    "for both."
+)
 
 
 class LocationLookupTool:
@@ -61,11 +80,9 @@ class LocationLookupTool:
                     self._country_code_cache[country_name.lower()] = country_code
         return self._country_code_cache
 
-    async def lookup_location(self, query: str, location_type: str | None = None, top_k: int = 15) -> dict[str, Any]:
+    async def lookup_location(self, query: str, location_type: str | None = None, top_k: int = 15) -> AIToolResult:
         # Validation
-        error_response = self._validate_inputs(query, location_type)
-        if error_response:
-            return error_response
+        self._validate_inputs(query, location_type)
 
         # Clamp top_k
         top_k = max(1, min(top_k, 100))
@@ -86,7 +103,7 @@ class LocationLookupTool:
             )
         except Exception as e:
             logger.error(f"OpenSearch query failed for query='{query}': {str(e)}", exc_info=True)
-            return {"error": f"OpenSearch query failed: {str(e)}", "results": {}}
+            raise
         finally:
             if search.client is not None:
                 await search.client.close()
@@ -113,20 +130,18 @@ class LocationLookupTool:
             extra={"query": query, "results_count": len(results), "location_type": location_type},
         )
 
-        return {"results": results, "count": len(results), "query": query, "location_type": location_type}
+        # return {"results": results, "count": len(results), "query": query, "location_type": location_type}
+        return AIToolResult(results=results, instructions=LOCATION_INSTRUCTIONS)
 
-    def _validate_inputs(self, query: str, location_type: str | None) -> dict[str, Any] | None:
-        """Validate input parameters and return error dict if invalid, None otherwise."""
+    def _validate_inputs(self, query: str, location_type: str | None) -> None:
+        """Raise InvalidToolInputError if the input parameters are invalid."""
         if not query or not query.strip():
-            return {"error": "Query cannot be empty", "results": {}}
+            raise InvalidToolInputError("Query cannot be empty")
 
         if location_type and location_type not in self.LOCATION_TYPES:
-            return {
-                "error": f"Invalid location_type. Must be one of: {', '.join(sorted(self.LOCATION_TYPES))}",
-                "results": {},
-            }
-
-        return None
+            raise InvalidToolInputError(
+                f"Invalid location_type. Must be one of: {', '.join(sorted(self.LOCATION_TYPES))}"
+            )
 
     def _build_search(self, query_upper: str, location_type: str | None, top_k: int) -> AsyncLocationSearch:
         """Build the OpenSearch query with fuzzy matching."""
@@ -157,7 +172,7 @@ class LocationLookupTool:
 
     def _transform_results(
         self, response: Any, state_abbreviations: dict[str, str], country_codes: dict[str, str]
-    ) -> list[dict[str, Any]]:
+    ) -> dict[str, dict]:
         """Transform OpenSearch hits to SelectedLocation format."""
         results = {}
         seen_identifiers = set()
@@ -174,7 +189,7 @@ class LocationLookupTool:
                     country_codes=country_codes,
                 )
 
-                identifier = location_obj["identifier"]
+                identifier = location_obj.identifier
 
                 # Skip duplicates (can happen with fuzzy matching)
                 if identifier in seen_identifiers:
@@ -183,7 +198,7 @@ class LocationLookupTool:
                 seen_identifiers.add(identifier)
 
                 # Return in the format expected by selectedLocations
-                results[identifier] = location_obj
+                results[identifier] = location_obj.model_dump()
 
             except Exception as e:
                 logger.warning(
@@ -203,7 +218,7 @@ class LocationLookupTool:
         score: float,
         state_abbreviations: dict[str, str],
         country_codes: dict[str, str],
-    ) -> dict[str, Any]:
+    ) -> SelectedLocation:
         """
         Transform OpenSearch result to SelectedLocation format.
 
@@ -219,12 +234,7 @@ class LocationLookupTool:
         filter_obj = self._build_filter(location_data, location_type, state_abbreviations, country_codes)
         display_obj = self._build_display(location_data, location_type, location)
 
-        return {
-            "identifier": identifier,
-            "filter": filter_obj,
-            "display": display_obj,
-            "score": score,
-        }
+        return SelectedLocation(identifier=identifier, filter=filter_obj, display=display_obj)
 
     def _build_identifier(
         self,
@@ -281,37 +291,37 @@ class LocationLookupTool:
         location_type: str,
         state_abbreviations: dict[str, str],
         country_codes: dict[str, str],
-    ) -> dict[str, Any]:
+    ) -> LocationFilter:
         """Build the filter object for the location."""
-        filter_obj = {}
+        filter_obj = LocationFilter()
 
         # Always include country
         country_name = data.get("country_name", "UNITED STATES")
-        filter_obj["country"] = self._get_country_code(country_name, country_codes)
+        filter_obj.country = self._get_country_code(country_name, country_codes)
 
         # Add type-specific fields (only non-None values)
         if data.get("state_name"):
-            filter_obj["state"] = self._get_state_abbr(data["state_name"], state_abbreviations)
+            filter_obj.state = self._get_state_abbr(data["state_name"], state_abbreviations)
 
         if data.get("city_name"):
-            filter_obj["city"] = data["city_name"]
+            filter_obj.city = data["city_name"]
 
         if data.get("county_fips"):
-            filter_obj["county"] = data["county_fips"]
+            filter_obj.county = data["county_fips"]
 
         if data.get("zip_code"):
-            filter_obj["zip"] = data["zip_code"]
+            filter_obj.zip = data["zip_code"]
 
         # Handle congressional districts
         for cd_type, filter_key in [("current_cd", "district_current"), ("original_cd", "district_original")]:
             if data.get(cd_type):
                 cd_parts = data[cd_type].split("-")
                 if len(cd_parts) == 2:
-                    filter_obj[filter_key] = cd_parts[1]
+                    filter_obj.__setattr__(filter_key, cd_parts[1])
 
         return filter_obj
 
-    def _build_display(self, data: dict[str, Any], location_type: str, full_location: str) -> dict[str, str]:
+    def _build_display(self, data: dict[str, Any], location_type: str, full_location: str) -> LocationDisplay:
         """Build the display object for UI."""
         # Determine standalone name
         standalone_map = {
@@ -328,11 +338,7 @@ class LocationLookupTool:
         entity = self.ENTITY_DISPLAY_MAP.get(location_type, "Location")
         title = self._build_title(data, location_type, standalone)
 
-        return {
-            "entity": entity,
-            "standalone": standalone,
-            "title": title,
-        }
+        return LocationDisplay(entity=entity, standalone=standalone, title=title)
 
     @staticmethod
     def _build_title(data: dict[str, Any], location_type: str, standalone: str) -> str:
@@ -388,8 +394,10 @@ lookup_location_tool = AITool(
         description="""
                 Search for valid location objects by name, code, zip, or congressional district
                 using fuzzy matching. Returns properly formatted SelectedLocation objects ready
-                to use in selectedLocations filter. The returned 'identifier' field should be
-                used as the dictionary key in selectedLocations.
+                to use in the selectedLocations filter (where work was performed) or the
+                selectedRecipientLocations filter (where recipients are located). The returned
+                'identifier' field should be used as the dictionary key. Read the instructions
+                returned with the results to choose between the two filters.
 
                 This tool supports:
                 - Country names and codes (e.g., 'USA', 'United States', 'Germany')
@@ -412,7 +420,7 @@ lookup_location_tool = AITool(
                 - lookup_location('Germany')  Returns DEU country
 
                 USAGE NOTES:
-                1. Always use the returned objects directly in selectedLocations
+                1. Always use the returned objects directly, without editing them
                 2. The identifier is automatically included as the dictionary key
                 3. Use location_type to filter results when query is ambiguous
                 4. Results are ranked by relevance score

@@ -14,6 +14,7 @@ from usaspending_api.llm.evals.registry import register_eval
 from usaspending_api.llm.models.db_models import Assistant, Session, ToolUse
 from usaspending_api.llm.tools.execute_filter import build_filter_request
 from usaspending_api.llm.v2.views.filter_search import tools as filter_search_tools
+from usaspending_api.references.models import FilterHash
 
 logger = logging.getLogger(__name__)
 
@@ -64,12 +65,14 @@ def get_final_filter_output(session: Session) -> dict[str, Any]:
     """
     Return canonical filters from the last successful execute_filter call.
 
-    execute_filter only returns a hash. Its ToolUse record retains the filter payload used by the model,
-    so the adapter reconstructs the same canonical FilterRequest used by production hash generation.
+    Prefers the FilterHash that execute_filter actually persisted -- that is what users get, and it includes
+    server-side canonicalization (e.g. generated award IDs replaced by PIID/FAIN/URI). Falls back to rebuilding
+    the canonical FilterRequest from the ToolUse payload when no persisted filter is found.
     """
     execute_filter = (
         ToolUse.objects.filter(message__session=session, name=FilterSearchAssistant.COMPLETION_TOOL_NAME)
-        .exclude(result__contains="error")
+        .exclude(result__has_key="error")
+        .exclude(result__results__has_key="error")
         .order_by(
             "message__order",
             "created_at",
@@ -79,6 +82,12 @@ def get_final_filter_output(session: Session) -> dict[str, Any]:
 
     if not execute_filter:
         raise ExecutionError(f"Session '{session.id}' completed without a successful execute_filter call.")
+
+    result = execute_filter.result if isinstance(execute_filter.result, dict) else {}
+    hash_key = (result.get("results") or {}).get("hash")
+    persisted = FilterHash.objects.filter(hash=hash_key).first() if hash_key else None
+    if persisted is not None:
+        return persisted.filter["filters"]
 
     try:
         filter_request = build_filter_request(execute_filter.tool_input)
@@ -102,13 +111,16 @@ async def run_eval_case(case: EvalCase) -> EvalObservation:
         assistant=assistant_config,
         tools=filter_search_tools,
         session=session,
+        as_of=case.as_of,
     )
 
     events: list[dict[str, Any]] = []
+    failure: str | None = None
 
     try:
         events = [event async for event in assistant.search(case.input["query"])]
     except Exception as exc:
+        failure = f"{type(exc).__name__}: {exc}"
         logger.exception(f"Filter Search execution failed for case '{case.name}': {exc}")
     finally:
         session.ended_at = timezone.now()
@@ -117,17 +129,21 @@ async def run_eval_case(case: EvalCase) -> EvalObservation:
     error_events = [event for event in events if event.get("type") == "search_error"]
 
     if error_events:
-        logger.error(
-            f"Filter Search execution failed for case '{case.name}': "
-            f"{error_events[-1].get('message', 'Unknown search error')}"
-        )
+        failure = error_events[-1].get("message", "Unknown search error")
+        logger.error(f"Filter Search execution failed for case '{case.name}': {failure}")
 
     tool_calls = await get_tool_calls(session)
 
     if not tool_calls:
         logger.error(f"Filter Search case '{case.name}' produced no tool calls.")
 
-    output = await get_final_filter_output(session)
+    try:
+        output = await get_final_filter_output(session)
+    except ExecutionError as exc:
+        # Surface the underlying search failure (e.g. a Bedrock timeout) rather than only the missing-output symptom.
+        if failure:
+            raise ExecutionError(f"{exc} Search failed with {failure}") from exc
+        raise
 
     inference_config = assistant_config.inference_config or {}
 

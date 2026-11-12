@@ -12,6 +12,7 @@ from usaspending_api.llm.models.py_models import FilterSearchEvent, FilterSearch
 from usaspending_api.llm.tools.execute_filter import execute_filter_tool
 from usaspending_api.llm.tools.list_recipient_types import list_recipient_types_tool
 from usaspending_api.llm.tools.lookup_agency import lookup_agency_tool
+from usaspending_api.llm.tools.lookup_award import lookup_award_tool
 from usaspending_api.llm.tools.lookup_code import lookup_code_tool
 from usaspending_api.llm.tools.lookup_location import lookup_location_tool
 from usaspending_api.llm.tools.lookup_recipient import lookup_recipient_tool
@@ -21,6 +22,7 @@ logger = logging.getLogger(__name__)
 
 tools = [
     lookup_agency_tool,
+    lookup_award_tool,
     lookup_code_tool,
     lookup_location_tool,
     lookup_recipient_tool,

@@ -7,7 +7,14 @@ from pgvector.django import CosineDistance
 
 from usaspending_api.llm.embeddings.embedding_generator import EmbeddingGenerator
 from usaspending_api.llm.models.db_models import AIModel
-from usaspending_api.llm.models.py_models import AITool, AIToolDescription
+from usaspending_api.llm.models.py_models import (
+    AITool,
+    AIToolDescription,
+    AIToolResult,
+    SelectedAgency,
+    SubtierAgency,
+    ToptierAgency,
+)
 from usaspending_api.llm.tools.exceptions import AgencyNotRecognizedError
 from usaspending_api.references.models.agency import Agency
 from usaspending_api.search.models.mv_agency_autocomplete import AgencyAutocompleteMatview
@@ -31,23 +38,57 @@ class AgencyLookupTool:
     HYBRID_VECTOR_WEIGHT = 0.5
     VECTOR_DISTANCE_THRESHOLD = 0.75
 
-    async def lookup_agencies(self, query: str, top_k: int = 10) -> dict:
+    SEMANTIC_ONLY_INSTRUCTIONS = (
+        "STOP AND READ: no exact or prefix match was found for this query. The results below are "
+        "semantic-similarity guesses and may be completely wrong. Many entities that sound like government "
+        "agencies -- state, local, tribal, or foreign government bodies, universities, hospitals, and "
+        "companies -- are RECIPIENTS of federal funding, not federal agencies. "
+        "If none of these results seem correct, do NOT select one of these results and do NOT tell the user there is "
+        "no federal data unless you have first called lookup_recipient with this entity's name and confirmed it has no "
+        "matches either."
+    )
+
+    MATCH_INSTRUCTIONS = (
+        "Use only the agencies the user named, exactly as returned and with their keys. Choose the filter by the "
+        "user's wording: selectedFundingAgencies when they ask which agency provided or gave the money, as in funded "
+        "by or funding from an agency; selectedAwardingAgencies when they ask which agency awarded or issued the "
+        "awards, or when it is not clear. When a toptier agency and one of its subtier agencies both match, use the "
+        "one the user's wording refers to: the department or agency as a whole, or a specific bureau or office."
+    )
+
+    NO_MATCH_INSTRUCTIONS = (
+        "STOP AND READ: no federal agency matched this query at all. Do NOT tell the user there is no "
+        "federal funding data for this entity yet. Many entities that sound like government agencies -- "
+        "state, local, tribal, or foreign government bodies, universities, hospitals, and companies -- are "
+        "RECIPIENTS of federal funding, not federal agencies. You MUST call lookup_recipient with this "
+        "entity's name before concluding there is no data or ending the conversation."
+    )
+
+    async def lookup_agencies(self, query: str, top_k: int = 10, agency_type: str = "awarding") -> AIToolResult:
         normalized = query.strip()
         matches = await self._query_exact_and_prefix_matches(normalized)
 
         if await matches.aexists():
             ordered = matches.order_by("-toptier_flag", Upper("toptier_name"), Upper("subtier_name"))
             entries = [self._matview_row_to_entry(row) async for row in ordered[:top_k]]
+            semantic_only = False
         else:
             model = await AIModel.objects.aget(name="titan")
             embedding = await EmbeddingGenerator(model=model).agenerate_embedding(normalized)
             hybrid_matches = self._hybrid_search(normalized, embedding)
             entries = [self._agency_row_to_entry(row) async for row in hybrid_matches[:top_k]]
+            semantic_only = True
 
         if not entries:
-            raise AgencyNotRecognizedError(f"Unable to filter. We couldn't find an agency with the name: {query}")
+            user_message = f"Unable to filter. We couldn't find an agency with the name: {query}"
+            raise AgencyNotRecognizedError(user_message, instructions=self.NO_MATCH_INSTRUCTIONS)
 
-        return {f"{entry['id']}_{entry['agencyType']}": entry for entry in entries}
+        results = AIToolResult(
+            results={f"{entry.id}_{entry.agencyType}": entry.model_dump() for entry in entries},
+            instructions=self.SEMANTIC_ONLY_INSTRUCTIONS if semantic_only else self.MATCH_INSTRUCTIONS,
+        )
+
+        return results
 
     @staticmethod
     async def _query_exact_and_prefix_matches(query: str) -> QuerySet:
@@ -94,42 +135,49 @@ class AgencyLookupTool:
         )
 
     @staticmethod
-    def _matview_row_to_entry(row: AgencyAutocompleteMatview) -> dict:
+    def _matview_row_to_entry(row: AgencyAutocompleteMatview) -> SelectedAgency:
         agency_type = "toptier" if row.toptier_flag else "subtier"
-        entry = {
-            "id": row.agency_autocomplete_id,
-            "agencyType": agency_type,
-            "toptier_flag": row.toptier_flag,
-            "toptier_agency": {
-                "id": row.toptier_agency_id,
-                "toptier_code": row.toptier_code,
-                "abbreviation": row.toptier_abbreviation,
-                "name": row.toptier_name,
-            },
-        }
         if agency_type == "subtier":
-            entry["subtier_agency"] = {"abbreviation": row.subtier_abbreviation, "name": row.subtier_name}
+            subAgency = SubtierAgency(abbreviation=row.subtier_abbreviation, name=row.subtier_name)
+        else:
+            subAgency = None
+        topAgency = ToptierAgency(
+            id=row.toptier_agency_id,
+            toptier_code=row.toptier_code,
+            abbreviation=row.toptier_abbreviation,
+            name=row.toptier_name,
+        )
+        entry = SelectedAgency(
+            id=row.agency_autocomplete_id,
+            agencyType=agency_type,
+            toptier_flag=row.toptier_flag,
+            toptier_agency=topAgency,
+            subtier_agency=subAgency,
+        )
+
         return entry
 
     @staticmethod
-    def _agency_row_to_entry(row: Agency) -> dict:
+    def _agency_row_to_entry(row: Agency) -> SelectedAgency:
         agency_type = "toptier" if row.toptier_flag else "subtier"
-        entry = {
-            "id": row.id,
-            "agencyType": agency_type,
-            "toptier_flag": row.toptier_flag,
-            "toptier_agency": {
-                "id": row.toptier_agency_id,
-                "toptier_code": row.toptier_agency.toptier_code,
-                "abbreviation": row.toptier_agency.abbreviation,
-                "name": row.toptier_agency.name,
-            },
-        }
         if agency_type == "subtier" and row.subtier_agency:
-            entry["subtier_agency"] = {
-                "abbreviation": row.subtier_agency.abbreviation,
-                "name": row.subtier_agency.name,
-            }
+            subAgency = SubtierAgency(abbreviation=row.subtier_agency.abbreviation, name=row.subtier_agency.name)
+        else:
+            subAgency = None
+
+        topAgency = ToptierAgency(
+            id=int(row.toptier_agency.toptier_agency_id),
+            toptier_code=row.toptier_agency.toptier_code,
+            abbreviation=row.toptier_agency.abbreviation,
+            name=row.toptier_agency.name,
+        )
+        entry = SelectedAgency(
+            id=row.id,
+            agencyType=agency_type,
+            toptier_flag=row.toptier_flag,
+            toptier_agency=topAgency,
+            subtier_agency=subAgency,
+        )
         return entry
 
 
@@ -139,23 +187,29 @@ lookup_agency_tool = AITool(
     description=AIToolDescription(
         name="lookup_agencies",
         description="""
-            Look up federal awarding/funding agencies using a mix of exact matching, prefix
-            matching, and semantic similarity search.
+            Look up federal agencies that distribute awards or fund awards
+            using a mix of exact matching, prefix matching, and semantic similarity search.
 
             Agencies may be toptier (e.g. departments and independent agencies) or subtier
             (e.g. sub-agencies, bureaus, and offices within a toptier agency). Each result
             includes the toptier agency; subtier results also include the specific subtier
             agency that matched.
 
-            Returns a dictionary keyed by "{id}_{agencyType}" (e.g. "803_toptier"), where each
-            value has this shape:
+            Returns a dictionary with two keys:
                 {
-                    "id": 803,
-                    "agencyType": "toptier",           # or "subtier"
-                    "toptier_flag": true,
-                    "toptier_agency": {"id": 66, "toptier_code": "073", "abbreviation": "SBA", "name": "..."},
-                    "subtier_agency": {"abbreviation": "...", "name": "..."}   # only present for subtier results
+                    "results": {
+                        "803_toptier": {
+                            "id": 803,
+                            "agencyType": "toptier",           # or "subtier"
+                            "toptier_flag": true,
+                            "toptier_agency": {"id": 66, "toptier_code": "073", "abbreviation": "SBA", "name": "..."},
+                            "subtier_agency": {"abbreviation": "...", "name": "..."}   # only for subtier results
+                        },
+                        ...
+                    },
+                    "instructions": "..."   # READ THIS, see below
                 }
+            "results" is keyed by "{id}_{agencyType}" (e.g. "803_toptier").
 
             Matching behavior (in priority order):
             1. Exact match: if the query exactly matches an agency's toptier code,
@@ -170,6 +224,15 @@ lookup_agency_tool = AITool(
 
             Results are ordered toptier agencies first, then alphabetically.
 
+            "instructions" is always present: read it to choose between selectedAwardingAgencies and
+            selectedFundingAgencies. When the match came from semantic search only (no exact or
+            prefix hit) it is a warning -- this means the results are weak guesses, and the entity may not be a federal
+            agency at all (it could be a recipient of federal funds instead, e.g. a state, local, tribal,
+            or foreign government body, a university, hospital, or company). When this happens, you MUST
+            call lookup_recipient before selecting a result or concluding there's no federal data. The same
+            applies if this tool raises an error for zero matches -- do not give up without trying
+            lookup_recipient first.
+
             Examples:
             - lookup_agencies('NASA') -> Exact match, returns the National Aeronautics and
               Space Administration.
@@ -179,13 +242,23 @@ lookup_agency_tool = AITool(
             - lookup_agencies('space exploration') -> Semantic match, returns agencies related
               to space exploration even without literal keyword overlap.
             - lookup_agencies('food and nutrition') -> Semantic match, may return USDA subtier
-              agencies like NIFA or NASS if their mission/description aligns.
+              agencies like NIFA or NASS if their description align. This use case should be avoided
+              in situations where you are looking for awards in a given field or industry, as
+              the using a different tool or no tool at all would be more appropriate.
         """,
         input_schema={
             "type": "object",
             "properties": {
                 "query": {"type": "string", "description": "Agency name, abbreviation, or code to search for"},
                 "top_k": {"type": "integer", "description": "Number of results to return (default: 20)", "default": 20},
+                "agency_type": {
+                    "type": "string",
+                    "enum": ["awarding", "funding"],
+                    "description": (
+                        "Optional: Whether an agency should be listed as an awarding agency or a funding agency"
+                    ),
+                    "default": "awarding",
+                },
             },
             "required": ["query"],
         },

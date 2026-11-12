@@ -5,8 +5,11 @@ from asgiref.sync import sync_to_async
 from model_bakery import baker
 
 from usaspending_api.accounts.models.treasury_appropriation_account import TreasuryAppropriationAccount
+from usaspending_api.llm.models.py_models import Filters
 from usaspending_api.llm.tools.exceptions import (
     AssistanceListingNotRecognizedError,
+    CodeNotRecognizedError,
+    InvalidToolInputError,
     NaicsCodeNotRecognizedError,
     PscCodeNotRecognizedError,
     TasNotRecognizedError,
@@ -130,12 +133,20 @@ def tool():
     return CodeLookupTool()
 
 
-def _flatten_codes(hierarchy: dict) -> set[str]:
-    codes = set()
-    for code, node in hierarchy.items():
-        codes.add(code)
-        codes.update(_flatten_codes(node.get("children", {})))
-    return codes
+def _walk(nodes):
+    for node in nodes:
+        yield node
+        yield from _walk(node.get("children", []))
+
+
+def _tree_nodes(result) -> dict[str, dict]:
+    """Every node in a lookup_codes result's tree, by code."""
+    return {node["code"]: node for node in _walk(result.results["tree"])}
+
+
+def _matched_codes(result) -> set[str]:
+    """The codes in a lookup_codes result's tree that the search matched, as opposed to ancestors shown for context."""
+    return {code for code, node in _tree_nodes(result).items() if node["matched"]}
 
 
 class TestQueryExactAndPrefixMatches:
@@ -168,14 +179,15 @@ class TestExactMatchShortCircuit:
 
         result = await tool.lookup_codes("541330", "naics", query_fanout=3)
 
-        assert "541330" in _flatten_codes(result["hierarchy"])
+        assert _matched_codes(result) == {"541330"}
         mock_embedding_generator.agenerate_embedding.assert_not_called()
         mock_expand_query.assert_not_called()
 
     async def test_exact_match_score_is_one(self, tool, mock_embedding_generator, mock_expand_query):
         await _make_naics("541330", "Construction of buildings")
 
-        result = await tool.lookup_codes("541330", "naics")
+        config = CODE_TYPE_CONFIGS["naics"]
+        result = await tool._handle_exact_search("541330", config, "naics", {}, 20)
         node = result["hierarchy"]["541330"]
         assert node["score"] == 1.0
 
@@ -183,7 +195,7 @@ class TestExactMatchShortCircuit:
         await _make_cfda("10.557", "Nutrition Program")
 
         result = await tool.lookup_codes("10.557", "cfda")
-        assert "10.557" in result["hierarchy"]
+        assert _matched_codes(result) == {"10.557"}
 
 
 class TestPrefixMatch:
@@ -194,7 +206,7 @@ class TestPrefixMatch:
 
         result = await tool.lookup_codes("5413", "naics")
 
-        codes_in_tree = _flatten_codes(result["hierarchy"])
+        codes_in_tree = set(_tree_nodes(result))
         assert "541330" in codes_in_tree
         assert "541340" in codes_in_tree
         assert "541511" not in codes_in_tree
@@ -210,7 +222,8 @@ class TestPrefixMatch:
     async def test_prefix_match_score_below_exact(self, tool, mock_embedding_generator, mock_expand_query):
         await _make_naics("541330", "Construction of buildings")
 
-        result = await tool.lookup_codes("5413", "naics")
+        config = CODE_TYPE_CONFIGS["naics"]
+        result = await tool._handle_exact_search("5413", config, "naics", {}, 20)
         node = result["hierarchy"]["541330"]
         assert node["score"] == 0.95
 
@@ -226,7 +239,7 @@ class TestHybridSearch:
 
         result = await tool.lookup_codes("some semantic query", "naics")
 
-        assert "999999" in _flatten_codes(result["hierarchy"])
+        assert "999999" in _matched_codes(result)
         mock_embedding_generator.agenerate_embedding.assert_called()
 
     async def test_vector_distance_threshold_excludes_far_matches(
@@ -240,7 +253,7 @@ class TestHybridSearch:
         mock_embedding_generator.agenerate_embedding.return_value = _unit_vector(dims, 0)
 
         result = await tool.lookup_codes("query text", "naics")
-        codes = _flatten_codes(result["hierarchy"])
+        codes = set(_tree_nodes(result))
 
         assert "111111" in codes
         assert "222222" not in codes
@@ -253,7 +266,7 @@ class TestHybridSearch:
             await _make_naics(f"10000{i}", f"Match {i}", embedding=_unit_vector(dims, 0))
 
         result = await tool.lookup_codes("query text", "naics", top_k=2)
-        assert result["total_codes"] <= 2
+        assert len(_matched_codes(result)) <= 2
 
     async def test_use_fanout_false_does_not_call_expand_query(
         self, tool, mock_embedding_generator, mock_expand_query, mock_get_aimodel
@@ -286,7 +299,7 @@ class TestHybridSearch:
 
             result = await tool.lookup_codes("query text", "naics", query_fanout=3)
 
-        assert "333333" in _flatten_codes(result["hierarchy"])
+        assert "333333" in _matched_codes(result)
 
 
 class TestFinalizeResultsHierarchy:
@@ -345,6 +358,121 @@ class TestFinalizeResultsHierarchy:
         result = await tool._finalize_results({}, config, "naics", {}, top_k=20)
         assert result == {"hierarchy": {}, "total_codes": 0}
 
+    async def test_non_psc_code_type_does_not_apply_tier1_grouping(self, tool, monkeypatch):
+        """The synthetic Tier1 grouping step is PSC-only; other code types keep their real root
+        codes as top-level hierarchy keys."""
+        config = CODE_TYPE_CONFIGS["naics"]
+        monkeypatch.setattr(config, "get_parent_code", lambda code: None)
+        monkeypatch.setattr(config, "get_all_ancestors", lambda code: [])
+
+        all_results = {"33": CodeResult(code="33", description="Manufacturing", score=0.5)}
+        result = await tool._finalize_results(all_results, config, "naics", {}, top_k=20)
+
+        assert set(result["hierarchy"].keys()) == {"33"}
+
+
+class TestGroupPscRootsByTier1:
+    """Tests for CodeLookupTool._group_psc_roots_by_tier1, the PSC-only post-processing step that
+    wraps each real PSC root ('A', 'D', '10', ...) under its synthetic Tier1 PSC_GROUPS label
+    (Research and Development / Service / Product), matching the grouping the real PSC filter tree
+    API uses (PSCFilterTree.toptier_search).
+    """
+
+    @staticmethod
+    def _root_node(code, score=0.5, children=None, leaf_node_count=1):
+        return {
+            "code": code,
+            "description": f"description for {code}",
+            "score": score,
+            "is_root": True,
+            "is_leaf": not children,
+            "children": children or {},
+            "leaf_node_count": leaf_node_count,
+        }
+
+    def test_groups_roots_under_their_tier1_labels(self):
+        hierarchy = {
+            "A": self._root_node("A"),
+            "D": self._root_node("D"),
+            "10": self._root_node("10"),
+        }
+
+        grouped = CodeLookupTool._group_psc_roots_by_tier1(hierarchy)
+
+        assert set(grouped.keys()) == {"Research and Development", "Service", "Product"}
+
+    def test_research_and_development_merges_root_children_without_nesting_the_root_itself(self):
+        """'A' is the only PSC code whose root value is itself a valid description in the PSC
+        table, so its children are merged straight into the Tier1 bucket instead of nesting 'A'
+        as an intermediate child node, unlike the Service/Product groups."""
+        hierarchy = {"A": self._root_node("A", children={"AC": self._root_node("AC", children=None)})}
+
+        grouped = CodeLookupTool._group_psc_roots_by_tier1(hierarchy)
+
+        rd_bucket = grouped["Research and Development"]
+        assert "A" not in rd_bucket["children"]
+        assert "AC" in rd_bucket["children"]
+
+    def test_research_and_development_group_is_flagged_when_the_a_root_itself_matched(self):
+        hierarchy = {"A": self._root_node("A", score=0.98, children={"AC": self._root_node("AC", score=0.2)})}
+
+        grouped = CodeLookupTool._group_psc_roots_by_tier1(hierarchy)
+
+        assert grouped["Research and Development"]["is_group_match"] is True
+
+    def test_research_and_development_group_is_not_flagged_when_the_a_root_is_only_an_ancestor(self):
+        hierarchy = {"A": self._root_node("A", score=0.0, children={"AC": self._root_node("AC", score=0.9)})}
+
+        grouped = CodeLookupTool._group_psc_roots_by_tier1(hierarchy)
+
+        assert grouped["Research and Development"]["is_group_match"] is False
+
+    def test_service_and_product_roots_are_nested_as_children_and_marked_non_root(self):
+        hierarchy = {"D": self._root_node("D"), "10": self._root_node("10")}
+
+        grouped = CodeLookupTool._group_psc_roots_by_tier1(hierarchy)
+
+        assert grouped["Service"]["children"]["D"]["is_root"] is False
+        assert grouped["Product"]["children"]["10"]["is_root"] is False
+
+    def test_leaf_node_count_summed_across_roots_in_same_group(self):
+        hierarchy = {
+            "D": self._root_node("D", leaf_node_count=3),
+            "F": self._root_node("F", leaf_node_count=4),
+        }
+
+        grouped = CodeLookupTool._group_psc_roots_by_tier1(hierarchy)
+
+        assert grouped["Service"]["leaf_node_count"] == 7
+
+    def test_leaf_node_count_not_summed_across_different_groups(self):
+        hierarchy = {
+            "D": self._root_node("D", leaf_node_count=3),
+            "10": self._root_node("10", leaf_node_count=4),
+        }
+
+        grouped = CodeLookupTool._group_psc_roots_by_tier1(hierarchy)
+
+        assert grouped["Service"]["leaf_node_count"] == 3
+        assert grouped["Product"]["leaf_node_count"] == 4
+
+    def test_bucket_score_is_the_best_score_among_its_roots(self):
+        hierarchy = {
+            "D": self._root_node("D", score=0.2),
+            "F": self._root_node("F", score=0.8),
+        }
+
+        grouped = CodeLookupTool._group_psc_roots_by_tier1(hierarchy)
+
+        assert grouped["Service"]["score"] == 0.8
+
+    def test_bucket_description_is_empty_string(self):
+        hierarchy = {"D": self._root_node("D")}
+
+        grouped = CodeLookupTool._group_psc_roots_by_tier1(hierarchy)
+
+        assert grouped["Service"]["description"] == ""
+
 
 class TestSearchResultNode:
     def test_to_dict_shape_and_child_sorting(self):
@@ -365,7 +493,7 @@ class TestSearchResultNode:
         node = SearchResultNode(code="54", description="Root", score=0.1, all_results=all_results, config=config)
         d = node.to_dict()
 
-        assert set(d.keys()) == {"code", "description", "score", "children"}
+        assert set(d.keys()) == {"code", "description", "score", "children", "is_root", "is_leaf"}
         assert list(d["children"].keys()) == ["5413", "5411"]  # sorted by score desc
 
     def test_no_children_when_config_has_no_parent_fn(self):
@@ -407,6 +535,24 @@ class TestAddTasAncestors:
 
         assert all_results["012"] is existing
 
+    async def test_account_without_a_bureau_is_described_by_its_best_matching_tas(self, tool):
+        all_results = {
+            "012-2020/2021-0123-000": CodeResult(code="012-2020/2021-0123-000", description="Older title", score=0.4),
+            "012-2021/2022-0123-000": CodeResult(code="012-2021/2022-0123-000", description="Newer title", score=0.9),
+            "013-2021/2022-0123-000": CodeResult(code="013-2021/2022-0123-000", description="Other agency", score=1.0),
+        }
+
+        await tool._add_tas_ancestors({"012-0123"}, all_results, budget_bureau_names={"012-0123": None})
+
+        assert all_results["012-0123"].description == "Newer title"
+
+    async def test_bureau_name_is_preferred_to_a_child_description(self, tool):
+        all_results = {"012-X-0123-000": CodeResult(code="012-X-0123-000", description="Title", score=0.9)}
+
+        await tool._add_tas_ancestors({"012-0123"}, all_results, budget_bureau_names={"012-0123": "Test Bureau"})
+
+        assert all_results["012-0123"].description == "Test Bureau"
+
     async def test_missing_ancestor_data_is_silently_skipped(self, tool):
         all_results: dict[str, CodeResult] = {}
         await tool._add_tas_ancestors({"999"}, all_results, budget_bureau_names={})
@@ -414,10 +560,13 @@ class TestAddTasAncestors:
 
 
 class TestErrorHandling:
-    async def test_unsupported_code_type_returns_error(self, tool):
-        result = await tool.lookup_codes("anything", "bogus")
-        assert "error" in result
-        assert result["results"] == []
+    async def test_unsupported_code_type_raises_invalid_input(self, tool):
+        with pytest.raises(
+            InvalidToolInputError,
+            match=r"Unsupported code type: bogus. Supported types: \['naics', 'psc', 'cfda', 'tas'\]",
+        ) as exc_info:
+            await tool.lookup_codes("anything", "bogus")
+        assert exc_info.value.instructions
 
     async def test_no_matches_anywhere_raises_not_recognized(
         self, tool, mock_embedding_generator, mock_expand_query, mock_get_aimodel
@@ -444,6 +593,374 @@ class TestErrorHandling:
         with pytest.raises(exception_class):
             await tool.lookup_codes("nothing matches this", code_type)
 
+    @pytest.mark.parametrize("code_type", ["naics", "psc", "cfda", "tas"])
+    async def test_no_matches_error_keeps_detail_and_adds_instructions(
+        self, tool, mock_embedding_generator, mock_expand_query, mock_get_aimodel, code_type
+    ):
+        mock_embedding_generator.agenerate_embedding.return_value = None
+
+        with pytest.raises(CodeNotRecognizedError) as exc_info:
+            await tool.lookup_codes("nothing matches this", code_type)
+
+        assert "nothing matches this" in exc_info.value.model_detail
+        assert exc_info.value.instructions
+        assert ("Do not retry the same string" in exc_info.value.instructions) == (code_type in ("cfda", "tas"))
+        assert "tell the user" not in exc_info.value.instructions
+        assert ("dates" in exc_info.value.instructions) == (code_type == "tas")
+
+
+def _node(score, children=None):
+    return {"score": score, "description": "", "children": children or {}}
+
+
+class TestNormalizeQuery:
+    @pytest.mark.parametrize(
+        "query, code_type, expected",
+        [
+            ("AL 14.257", "cfda", "14.257"),
+            ("al 14.257", "cfda", "14.257"),
+            ("ALN 14.257", "cfda", "14.257"),
+            ("CFDA: 14.257", "cfda", "14.257"),
+            ("Assistance Listing #14.257", "cfda", "14.257"),
+            ("assistance listing number 93.00A", "cfda", "93.00A"),
+            ("14.257", "cfda", "14.257"),
+            ("AL14.257", "cfda", "14.257"),
+            ("grants under program 14.257 please", "cfda", "14.257"),
+            # A program number is only pulled out of a phrase when there is exactly one
+            ("14.257 and 14.258", "cfda", "14.257 and 14.258"),
+            ("AL 14", "cfda", "14"),
+            ("homelessness", "cfda", "homelessness"),
+            ("NAICS 1111", "naics", "1111"),
+            ("naics code 111110", "naics", "111110"),
+            ("PSC AA11", "psc", "AA11"),
+            ("TAS 310-2012/2012-3200-000", "tas", "310-2012/2012-3200-000"),
+            ("Treasury Account Symbol 310", "tas", "310"),
+            # Labels followed by words, not a code, are left alone
+            ("PSC for software", "psc", "PSC for software"),
+            ("assistance listing for housing", "cfda", "assistance listing for housing"),
+            ("  541330  ", "naics", "541330"),
+        ],
+    )
+    def test_query_is_reduced_to_the_code(self, tool, query, code_type, expected):
+        assert tool._normalize_query(query, code_type) == expected
+
+    async def test_labelled_assistance_listing_is_found_by_exact_match(
+        self, tool, mock_embedding_generator, mock_expand_query
+    ):
+        await _make_cfda("14.257", "Homelessness Prevention and Rapid Re-Housing Program")
+
+        result = await tool.lookup_codes("AL 14.257", "cfda")
+
+        assert _matched_codes(result) == {"14.257"}
+        mock_embedding_generator.agenerate_embedding.assert_not_called()
+
+
+class TestMarkTasAccountsMatched:
+    def test_unscored_accounts_are_matched_but_agencies_and_scored_codes_are_left_alone(self, tool):
+        hierarchy = {"310": _node(0.0, {"310-3200": _node(0.0, {"310-X-3200-000": _node(0.95)})})}
+
+        marked = tool._mark_tas_accounts_matched(hierarchy)
+
+        assert marked["310"]["score"] == 0.0
+        assert marked["310"]["children"]["310-3200"]["score"] == 0.95
+        assert marked["310"]["children"]["310-3200"]["children"]["310-X-3200-000"]["score"] == 0.95
+
+    @pytest.mark.parametrize(
+        "query, expected", [("3200", True), ("014-0102", True), ("treasury", False), ("310", False)]
+    )
+    def test_account_queries(self, tool, query, expected):
+        assert tool._is_tas_account_query(query) is expected
+
+
+class TestKeepOnlyPathTo:
+    def test_keeps_the_ancestors_and_drops_everything_beneath_the_code(self, tool):
+        hierarchy = {
+            "23": _node(0.0, {"2362": _node(1.0, {"236220": _node(0.95)}), "2361": _node(0.0)}),
+            "33": _node(0.0),
+        }
+
+        pruned = tool._keep_only_path_to(hierarchy, "2362")
+
+        assert list(pruned) == ["23"]
+        assert list(pruned["23"]["children"]) == ["2362"]
+        assert pruned["23"]["children"]["2362"]["children"] == {}
+
+    def test_code_that_was_only_an_ancestor_counts_as_matched(self, tool):
+        pruned = tool._keep_only_path_to({"309": _node(0.0, {"309-0200": _node(0.0)})}, "309")
+
+        assert pruned["309"]["score"] == 1.0
+
+    def test_unknown_code_leaves_nothing(self, tool):
+        assert tool._keep_only_path_to({"23": _node(0.0)}, "99") == {}
+
+
+class TestBuildOutputNode:
+    def test_matched_and_context_nodes_are_labelled(self, tool):
+        node = _node(0.0, {"3315": _node(0.0, {"331511": _node(0.954)})})
+
+        output = tool._build_output_node("33", node, "naics", {"33": 12, "3315": 4, "331511": 1})
+
+        assert (output["code"], output["matched"], output["score"], output["covers"]) == ("33", False, 0.0, 12)
+        leaf = output["children"][0]["children"][0]
+        assert (leaf["code"], leaf["matched"], leaf["score"], leaf["filter_value"]) == ("331511", True, 0.95, "331511")
+        assert "children" not in leaf
+
+    def test_children_are_ordered_by_the_best_score_beneath_them(self, tool):
+        node = _node(0.0, {"A": _node(0.2), "B": _node(0.0, {"B1": _node(0.9)}), "C": _node(0.5)})
+
+        output = tool._build_output_node("R", node, "naics", {})
+
+        assert [child["code"] for child in output["children"]] == ["B", "C", "A"]
+
+    def test_psc_group_label_is_left_out_and_its_children_take_its_place(self, tool):
+        hierarchy = {
+            "Service": _node(0.9, {"D": _node(0.9)}),
+            "Product": _node(0.4, {"10": _node(0.4)}),
+        }
+
+        roots = tool._order_output_nodes(tool._rank_output_nodes(hierarchy, "psc", {}))
+
+        assert [root["code"] for root in roots] == ["D", "10"]
+        assert [root["filter_value"] for root in roots] == [["Service", "D"], ["Product", "10"]]
+
+    def test_matched_research_and_development_group_is_kept(self, tool):
+        node = {**_node(0.98, {"AC": _node(0.2)}), "is_group_match": True}
+
+        roots = tool._order_output_nodes(tool._rank_output_nodes({"Research and Development": node}, "psc", {}))
+
+        assert [root["code"] for root in roots] == ["Research and Development"]
+        assert roots[0]["matched"] is True
+        assert roots[0]["filter_value"] == ["Research and Development"]
+        assert [child["code"] for child in roots[0]["children"]] == ["AC"]
+
+    def test_assistance_listing_agency_has_no_filter_value_but_a_program_does(self, tool):
+        agency = tool._build_output_node("14", _node(0.0), "cfda", {})
+        program = tool._build_output_node("14.257", {**_node(0.8), "description": "Prevention"}, "cfda", {})
+
+        assert "filter_value" not in agency
+        assert program["filter_value"] == {
+            "identifier": "14.257",
+            "program_number": "14.257",
+            "program_title": "Prevention",
+        }
+
+    def test_only_the_best_scoring_children_are_shown_and_the_rest_counted(self, tool):
+        children = {f"AA{i}": _node(i / 10) for i in range(1, 9)}
+
+        output = tool._build_output_node("AA", _node(0.0, children), "psc", {"AA": 8})
+
+        assert [child["code"] for child in output["children"]] == ["AA8", "AA7", "AA6", "AA5", "AA4"]
+        assert output["more_children"] == 3
+        assert output["covers"] == 8
+
+    def test_more_children_is_left_out_when_every_child_is_shown(self, tool):
+        output = tool._build_output_node("AA", _node(0.0, {"AA1": _node(0.5), "AA2": _node(0.4)}), "psc", {})
+
+        assert len(output["children"]) == 2
+        assert "more_children" not in output
+
+    def test_children_beneath_a_hidden_psc_group_count_toward_the_cap(self, tool):
+        output = tool._build_output_node("X", _node(0.0, {"Service": _node(0.9, {"D": _node(0.9)})}), "psc", {})
+
+        assert [child["code"] for child in output["children"]] == ["D"]
+
+
+class TestBuildInstructions:
+    @pytest.mark.parametrize(
+        "code_type, inclusion, destination",
+        [
+            ("naics", "require", "naicsCodes.require"),
+            ("naics", "exclude", "naicsCodes.exclude"),
+            ("psc", "require", "pscCodes.require"),
+            ("tas", "exclude", "tasCodes.exclude"),
+            ("cfda", "require", "selectedCFDA"),
+        ],
+    )
+    def test_names_where_the_chosen_codes_go(self, tool, code_type, inclusion, destination):
+        assert destination in tool._build_instructions(code_type, inclusion, is_exact_code=False)
+
+    def test_selection_guidance_weighs_description_score_and_position(self, tool):
+        instructions = tool._build_instructions("naics", "require", is_exact_code=False)
+
+        assert "best represent" in instructions
+        assert "score" in instructions
+        assert "leave this filter out" in instructions
+
+    def test_selection_guidance_prefers_the_named_category_over_its_highest_scoring_part(self, tool):
+        instructions = tool._build_instructions("psc", "require", is_exact_code=False)
+
+        assert "even if codes beneath it score higher" in instructions
+        assert "cover the same number of codes, choose the higher one" in instructions
+
+    def test_exact_code_is_not_asked_to_be_weighed(self, tool):
+        instructions = tool._build_instructions("naics", "require", is_exact_code=True)
+
+        assert "itself a code" in instructions
+        assert "best represent" not in instructions
+
+    def test_only_tas_has_period_of_availability_guidance(self, tool):
+        assert "period" in tool._build_instructions("tas", "require", is_exact_code=False)
+        assert "period" not in tool._build_instructions("naics", "require", is_exact_code=False)
+
+
+class TestLookupResultShape:
+    async def test_result_carries_the_tree_and_instructions(self, tool, mock_embedding_generator, mock_expand_query):
+        await _make_naics("5413", "Architectural services")
+        await _make_naics("541330", "Engineering services")
+        await _make_naics("541340", "Drafting services")
+
+        result = await tool.lookup_codes("5413", "naics", inclusion="exclude")
+
+        assert {key: result.results[key] for key in ("code_type", "inclusion", "query")} == {
+            "code_type": "naics",
+            "inclusion": "exclude",
+            "query": "5413",
+        }
+        assert result.instructions and "naicsCodes.exclude" in result.instructions
+
+    async def test_exact_code_query_returns_only_that_code_beneath_its_ancestors(
+        self, tool, mock_embedding_generator, mock_expand_query
+    ):
+        await _make_naics("54", "Professional services")
+        await _make_naics("5413", "Architectural services")
+        await _make_naics("541330", "Engineering services")
+
+        result = await tool.lookup_codes("5413", "naics")
+
+        assert set(_tree_nodes(result)) == {"54", "5413"}
+        assert _matched_codes(result) == {"5413"}
+
+    async def test_naics_nodes_report_how_many_lowest_level_codes_they_cover(
+        self, tool, mock_embedding_generator, mock_expand_query
+    ):
+        await _make_naics("212115", "Coal mining")
+        await _make_naics("212114", "Surface coal mining")
+        await _make_naics("2121", "Coal Mining")
+        await _make_naics("212299", "Other mining")
+
+        result = await tool.lookup_codes("212", "naics")
+
+        nodes = _tree_nodes(result)
+        assert (nodes["2121"]["covers"], nodes["212115"]["covers"]) == (2, 1)
+        assert "212299" in nodes
+
+    @pytest.mark.parametrize("code_type, query", [("naics", "541330"), ("psc", "B502"), ("cfda", "10.557")])
+    async def test_filter_values_are_accepted_by_the_filters(
+        self, tool, mock_embedding_generator, mock_expand_query, code_type, query
+    ):
+        """The llm copies each filter_value into execute_filter, so it has to validate there as it is."""
+        await _make_naics("541330", "Engineering services")
+        await _make_psc("B502", "Special studies")
+        await _make_cfda("10.557", "Nutrition Program")
+
+        result = await tool.lookup_codes(query, code_type)
+        values = [_tree_nodes(result)[code]["filter_value"] for code in _matched_codes(result)]
+
+        if code_type == "cfda":
+            filters = await sync_to_async(Filters)(selectedCFDA={value["program_number"]: value for value in values})
+            assert list(filters.selectedCFDA) == [query]
+        else:
+            filters = await sync_to_async(Filters)(**{f"{code_type}Codes": {"require": values}})
+            assert getattr(filters, f"{code_type}Codes").require == values
+
+
+class TestBuildFilterValue:
+    def test_naics_is_a_flat_code(self, tool):
+        assert tool._build_filter_value("541330", "naics") == "541330"
+
+    @pytest.mark.parametrize(
+        "code, expected",
+        [
+            ("B502", ["Service", "B", "B5", "B502"]),
+            ("D3", ["Service", "D", "D3"]),
+            ("D", ["Service", "D"]),
+            ("1005", ["Product", "10", "1005"]),
+            ("10", ["Product", "10"]),
+            ("AA11", ["Research and Development", "AA", "AA1", "AA11"]),
+            ("AU10", ["Research and Development", "AU", "AU10"]),
+            ("AA", ["Research and Development", "AA"]),
+        ],
+    )
+    def test_psc_paths_have_a_segment_for_each_tier(self, tool, code, expected):
+        assert tool._build_filter_value(code, "psc") == expected
+
+    def test_assistance_listing_is_the_program_object(self, tool):
+        assert tool._build_filter_value("14.257", "cfda", "Prevention") == {
+            "identifier": "14.257",
+            "program_number": "14.257",
+            "program_title": "Prevention",
+        }
+
+    def test_psc_group_label_is_the_whole_path(self, tool):
+        assert tool._build_filter_value("Research and Development", "psc") == ["Research and Development"]
+        assert tool._build_filter_value("A", "psc") == ["Research and Development"]
+
+    @pytest.mark.parametrize(
+        "code, expected",
+        [
+            ("309-2025/2025-0200-000", ["309", "309-0200", "309-2025/2025-0200-000"]),
+            ("309-X-0200-000", ["309", "309-0200", "309-X-0200-000"]),
+            ("309-0200", ["309", "309-0200"]),
+            ("309", ["309"]),
+        ],
+    )
+    def test_tas_paths_start_at_the_agency(self, tool, code, expected):
+        assert tool._build_filter_value(code, "tas") == expected
+
+
+class TestSemanticScoreFloor:
+    async def test_strong_match_is_returned(self, tool, mock_embedding_generator, mock_expand_query, mock_get_aimodel):
+        dims = getattr(NAICS, "embedding_dimensions", 256)
+        await _make_naics("999999", "Unrelated description", embedding=_unit_vector(dims, 0))
+        mock_embedding_generator.agenerate_embedding.return_value = _unit_vector(dims, 0)
+
+        result = await tool.lookup_codes("query text", "naics")
+
+        assert _matched_codes(result) == {"999999"}
+
+
+class TestTasAccountQueries:
+    @pytest.fixture(autouse=True)
+    async def accounts(self):
+        await _make_tas("014-2020/2021-0102-000", "Account A", agency_id="014", main="0102", bpoa="2020", epoa="2021")
+        await _make_tas("014-2021/2022-0102-000", "Account A", agency_id="014", main="0102", bpoa="2021", epoa="2022")
+        await _make_tas("310-X-0102-000", "Account B", agency_id="310", main="0102")
+        await _make_tas("310-X-3200-000", "Account C", agency_id="310", main="3200")
+
+    async def test_main_account_code_finds_the_account_in_every_agency(self, tool):
+        result = await tool.lookup_codes("0102", "tas")
+
+        nodes = _tree_nodes(result)
+        assert {"014-0102", "310-0102"} <= set(nodes)
+        assert "310-3200" not in nodes
+        # An account code matches the accounts themselves, which are described by their titles
+        assert [nodes[code]["matched"] for code in ("014-0102", "310-0102")] == [True, True]
+        assert [nodes[code]["description"] for code in ("014-0102", "310-0102")] == ["Account A", "Account B"]
+        # Both periods of the 014 account are shown beneath it so the llm can choose the account or a period
+        assert {child["code"] for child in nodes["014-0102"]["children"]} == {
+            "014-2020/2021-0102-000",
+            "014-2021/2022-0102-000",
+        }
+
+    async def test_aid_main_query_matches_the_account_not_each_year(self, tool):
+        result = await tool.lookup_codes("014-0102", "tas")
+
+        assert _matched_codes(result) == {"014-0102"}
+        assert _tree_nodes(result)["014-0102"]["filter_value"] == ["014", "014-0102"]
+
+    async def test_full_label_is_matched_at_the_label(self, tool):
+        result = await tool.lookup_codes("014-2020/2021-0102-000", "tas")
+
+        assert _matched_codes(result) == {"014-2020/2021-0102-000"}
+        label = _tree_nodes(result)["014-2020/2021-0102-000"]
+        assert label["filter_value"] == ["014", "014-0102", "014-2020/2021-0102-000"]
+
+    async def test_exclude_inclusion_is_used_for_the_destination(self, tool):
+        result = await tool.lookup_codes("014-0102", "tas", inclusion="exclude")
+
+        assert result.results["inclusion"] == "exclude"
+        assert "tasCodes.exclude" in result.instructions
+
 
 class TestAIToolWiring:
     def test_input_schema_requires_query_and_code_type(self):
@@ -463,7 +980,7 @@ class TestAIToolWiring:
     async def test_tool_execution_through_function_attribute(self, mock_embedding_generator, mock_expand_query):
         await _make_naics("541330", "Construction of buildings")
         result = await lookup_code_tool.function(query="541330", code_type="naics")
-        assert "541330" in _flatten_codes(result["hierarchy"])
+        assert "541330" in _matched_codes(result)
 
 
 class TestCodeTypeConfigsConsistency:
@@ -500,9 +1017,9 @@ class TestDedupeTasByPeriodOfAvailability:
 
         result = await tool.lookup_codes("test tas", "tas")
 
-        codes = _flatten_codes(result["hierarchy"])
-        tas_leaf_codes = {c for c in codes if c.count("-") == 3}
-        assert len(tas_leaf_codes) == 1
+        # Only the best scoring period of the account is shown, not one for each year
+        nodes = _tree_nodes(result)
+        assert len(nodes["011-0001"]["children"]) == 1
 
     async def test_different_sub_account_not_collapsed(
         self, tool, mock_embedding_generator, mock_expand_query, mock_get_aimodel
@@ -530,11 +1047,10 @@ class TestDedupeTasByPeriodOfAvailability:
         )
         mock_embedding_generator.agenerate_embedding.return_value = _unit_vector(dims, 0)
 
-        result = await tool.lookup_codes("main sub", "tas")
-
-        codes = _flatten_codes(result["hierarchy"])
-        assert "011-2016/2016-0001-000" in codes
-        assert "011-2016/2016-0001-001" in codes
+        config = CODE_TYPE_CONFIGS["tas"]
+        found = await tool._handle_hybrid_search("main sub", config, "tas", {}, 20, None)
+        assert tool._find_node(found["hierarchy"], "011-2016/2016-0001-000")
+        assert tool._find_node(found["hierarchy"], "011-2016/2016-0001-001")
 
     async def test_different_ata_not_collapsed(
         self, tool, mock_embedding_generator, mock_expand_query, mock_get_aimodel
@@ -564,8 +1080,7 @@ class TestDedupeTasByPeriodOfAvailability:
         )
         mock_embedding_generator.agenerate_embedding.return_value = _unit_vector(dims, 0)
 
-        result = await tool.lookup_codes("compensation", "tas")
-
-        codes = _flatten_codes(result["hierarchy"])
-        assert "011-2016/2016-0001-000" in codes
-        assert "[US_PHONE_REDACTED]/2016-0001-000" in codes
+        config = CODE_TYPE_CONFIGS["tas"]
+        found = await tool._handle_hybrid_search("compensation", config, "tas", {}, 20, None)
+        assert tool._find_node(found["hierarchy"], "011-2016/2016-0001-000")
+        assert tool._find_node(found["hierarchy"], "[US_PHONE_REDACTED]/2016-0001-000")

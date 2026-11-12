@@ -7,8 +7,12 @@ from model_bakery import baker
 
 from usaspending_api.llm.assistants.filter_search import FilterSearchAssistant
 from usaspending_api.llm.models.db_models import AIModel, Assistant, Session
-from usaspending_api.llm.models.py_models import AITool, clear_defc_rows_cache
-from usaspending_api.llm.tools.exceptions import DefcCodeNotRecognizedError
+from usaspending_api.llm.models.py_models import AITool, AIToolResult, clear_defc_rows_cache
+from usaspending_api.llm.tools.exceptions import (
+    GENERIC_TOOL_FAILURE_INSTRUCTIONS,
+    DefcCodeNotRecognizedError,
+    ToolUseRuntimeError,
+)
 from usaspending_api.llm.tools.execute_filter import execute_filter_tool
 
 
@@ -53,7 +57,7 @@ def mock_tool():
             "input_schema": {"type": "object", "properties": {}},
         }
     )
-    tool.function = AsyncMock(return_value={"result": "success"})
+    tool.function = AsyncMock(return_value=AIToolResult(results={"result": "success"}))
     tool.logging = Mock(return_value="Executing test_tool")
     return tool
 
@@ -70,7 +74,7 @@ def mock_search_tool():
             "input_schema": {"type": "object", "properties": {}},
         }
     )
-    tool.function = AsyncMock(return_value={"hash": "abc123", "results": []})
+    tool.function = AsyncMock(return_value=AIToolResult(results={"hash": "abc123"}))
     tool.logging = Mock(return_value="Searching federal contracts")
     return tool
 
@@ -167,8 +171,9 @@ class TestFilterSearchAssistant:
 
         assert len(results) == 1
         assert results[0]["type"] == "search_start"
-        assert assistant.client.converse.call_count == 1
-        assert mock_message_create.call_count == 2  # User message + assistant message
+        assert assistant.client.converse.call_count == 2  # Initial call + forced last-ditch call
+        # User query, assistant reply, last-ditch instruction, last-ditch assistant reply
+        assert mock_message_create.call_count == 4
 
     @patch("usaspending_api.llm.models.db_models.Message.objects.acreate", new_callable=AsyncMock)
     async def test_assistant_message_text_is_persisted(self, mock_message_create, assistant):
@@ -378,7 +383,74 @@ class TestFilterSearchAssistant:
                 _ = [event async for event in assistant.search("test query")]
 
         assert assistant.tool_iterations == assistant.MAX_TOOL_ITERATIONS
-        assert assistant.client.converse.call_count == assistant.MAX_TOOL_ITERATIONS + 1
+        assert assistant.client.converse.call_count == assistant.MAX_TOOL_ITERATIONS + 2
+
+        # The pending toolUse from the final loop response is answered, and the last-ditch
+        # instruction shares that user turn instead of creating two consecutive user messages.
+        instruction_index = next(
+            i
+            for i, msg in enumerate(assistant.messages)
+            if msg["role"] == "user" and any("last resort" in block.get("text", "") for block in msg["content"])
+        )
+        instruction_turn = assistant.messages[instruction_index]
+        assert any("toolResult" in block for block in instruction_turn["content"])
+        assert assistant.messages[instruction_index - 1]["role"] == "assistant"
+
+        roles = [msg["role"] for msg in assistant.messages]
+        assert all(a != b for a, b in zip(roles, roles[1:], strict=False))
+
+    @patch("usaspending_api.llm.models.db_models.ToolUse.objects.acreate", new_callable=AsyncMock)
+    @patch("usaspending_api.llm.models.db_models.Message.objects.acreate", new_callable=AsyncMock)
+    async def test_forces_completion_tool(self, mock_message_create, mock_tool_use_create, assistant):
+        """If the model never calls execute_filter, one final call forces it with a keyword instruction."""
+
+        def create_message(**kwargs):
+            mock_message = Mock()
+            mock_message.input_tokens = kwargs.get("input_tokens", 10)
+            mock_message.output_tokens = kwargs.get("output_tokens", 20)
+            mock_message.id = len(assistant.session._test_messages) + 1
+            mock_message.tool_uses = Mock()
+            mock_message.tool_uses.count.return_value = 0
+            assistant.session._test_messages.append(mock_message)
+            return mock_message
+
+        mock_message_create.side_effect = create_message
+        mock_tool_use_create.return_value.asave = AsyncMock()
+
+        text_only_response = {
+            "output": {"message": {"role": "assistant", "content": [{"text": "I need more details."}]}},
+            "usage": {"inputTokens": 10, "outputTokens": 20},
+            "metrics": {"latencyMs": 100},
+            "stopReason": "end_turn",
+        }
+        forced_response = {
+            "output": {
+                "message": {
+                    "role": "assistant",
+                    "content": [
+                        {"toolUse": {"toolUseId": "tool-999", "name": "execute_filter", "input": {"query": "test"}}}
+                    ],
+                }
+            },
+            "usage": {"inputTokens": 10, "outputTokens": 20},
+            "metrics": {"latencyMs": 100},
+            "stopReason": "tool_use",
+        }
+        assistant.client.converse.side_effect = [text_only_response, forced_response]
+
+        results = [event async for event in assistant.search("test query")]
+
+        assert assistant.client.converse.call_count == 2
+        first_call, last_ditch_call = assistant.client.converse.call_args_list
+        assert first_call.kwargs["toolConfig"]["toolChoice"] == {"auto": {}}
+        assert last_ditch_call.kwargs["toolConfig"]["toolChoice"] == {"tool": {"name": assistant.COMPLETION_TOOL_NAME}}
+        assert any(
+            "last resort" in block.get("text", "")
+            for msg in assistant.messages
+            if msg["role"] == "user"
+            for block in msg["content"]
+        )
+        assert any(r["type"] == "search_complete" and r["result"] == "abc123" for r in results)
 
     async def test_tool_config_property(self, assistant, mock_tool):
         """Test that tool_config is properly formatted."""
@@ -388,6 +460,13 @@ class TestFilterSearchAssistant:
         assert len(config["tools"]) == 2
         assert "toolSpec" in config["tools"][0]
         assert "inputSchema" in config["tools"][0]["toolSpec"]
+
+    async def test_tool_config_always_uses_auto_tool_choice(self, assistant):
+        """The main loop leaves tool selection to the model; forcing only happens in the last-ditch call."""
+        assert (await assistant.aget_tool_config())["toolChoice"] == {"auto": {}}
+
+        assistant.tool_iterations = assistant.MAX_TOOL_ITERATIONS - 1
+        assert (await assistant.aget_tool_config())["toolChoice"] == {"auto": {}}
 
     @pytest.mark.django_db
     async def test_tool_config_patches_defcodes_description_from_db(self, mock_assistant, mock_session):
@@ -526,7 +605,9 @@ class TestFilterSearchAssistant:
         mock_tool_use_create.return_value = mock_tool_use
 
         mock_search_tool.function.side_effect = DefcCodeNotRecognizedError(
-            "DEFC code not found: BAD.", model_detail="Value error, Invalid DEFC code(s): ['BAD']."
+            "DEFC code not found: BAD.",
+            model_detail="Value error, Invalid DEFC code(s): ['BAD'].",
+            instructions="Fix the DEFC codes and call execute_filter again.",
         )
 
         tool_requests = [
@@ -549,3 +630,76 @@ class TestFilterSearchAssistant:
         tool_result_message = assistant.messages[-1]
         tool_result_content = tool_result_message["content"][0]["toolResult"]["content"][0]["json"]
         assert tool_result_content["error"] == "Value error, Invalid DEFC code(s): ['BAD']."
+        assert tool_result_content["instructions"] == "Fix the DEFC codes and call execute_filter again."
+
+    @patch("usaspending_api.llm.models.db_models.ToolUse.objects.acreate", new_callable=AsyncMock)
+    async def test_handle_tool_use_omits_instructions_when_none(
+        self, mock_tool_use_create, assistant, mock_search_tool
+    ):
+        mock_tool_use = Mock()
+        mock_tool_use.id = "tool-use-457"
+        mock_tool_use.asave = AsyncMock()
+        mock_tool_use_create.return_value = mock_tool_use
+        mock_search_tool.function.side_effect = ToolUseRuntimeError("Something failed.")
+
+        tool_requests = [{"toolUse": {"toolUseId": "tool-457", "name": "execute_filter", "input": {}}}]
+        [event async for event in assistant.handle_tool_use(tool_requests, Mock())]
+
+        tool_result_content = assistant.messages[-1]["content"][0]["toolResult"]["content"][0]["json"]
+        assert tool_result_content == {"error": "Something failed."}
+
+    @patch("usaspending_api.llm.models.db_models.ToolUse.objects.acreate", new_callable=AsyncMock)
+    async def test_handle_tool_use_adds_generic_instructions_for_unexpected_errors(
+        self, mock_tool_use_create, assistant, mock_search_tool
+    ):
+        mock_tool_use = Mock()
+        mock_tool_use.id = "tool-use-458"
+        mock_tool_use.asave = AsyncMock()
+        mock_tool_use_create.return_value = mock_tool_use
+        mock_search_tool.function.side_effect = TimeoutError("timed out")
+
+        tool_requests = [{"toolUse": {"toolUseId": "tool-458", "name": "execute_filter", "input": {}}}]
+        events = [event async for event in assistant.handle_tool_use(tool_requests, Mock())]
+
+        tool_result_content = assistant.messages[-1]["content"][0]["toolResult"]["content"][0]["json"]
+        assert tool_result_content["error"] == "timed out"
+        assert tool_result_content["instructions"] == GENERIC_TOOL_FAILURE_INSTRUCTIONS
+        assert [e["message"] for e in events if e["type"] == "tool_error"] == ["Tool execution failed."]
+
+    @patch("usaspending_api.llm.models.db_models.ToolUse.objects.acreate", new_callable=AsyncMock)
+    async def test_completion_failure_records_exactly_one_tool_result(
+        self, mock_tool_use_create, assistant, mock_search_tool
+    ):
+        """If building the search_complete event fails (e.g. execute_filter returned no hash), the tool must
+        still get exactly one toolResult -- Bedrock rejects the next Converse call on duplicate toolUseIds."""
+        mock_tool_use = Mock()
+        mock_tool_use.id = "tool-use-789"
+        mock_tool_use.asave = AsyncMock()
+        mock_tool_use_create.return_value = mock_tool_use
+        mock_search_tool.function.return_value = AIToolResult(results={})
+
+        tool_requests = [{"toolUse": {"toolUseId": "tool-789", "name": "execute_filter", "input": {}}}]
+        events = [event async for event in assistant.handle_tool_use(tool_requests, Mock())]
+
+        tool_results = [block["toolResult"] for block in assistant.messages[-1]["content"]]
+        assert [r["toolUseId"] for r in tool_results] == ["tool-789"]
+        assert "error" in tool_results[0]["content"][0]["json"]
+        assert not any(e["type"] == "search_complete" for e in events)
+
+
+async def test_converse_retries_on_throttling(assistant, monkeypatch):
+    """A throttled converse call is retried with backoff and the successful response is returned."""
+    from botocore.exceptions import ClientError
+
+    monkeypatch.setattr("asyncio.sleep", AsyncMock())
+    throttled = ClientError({"Error": {"Code": "ThrottlingException", "Message": "Too many tokens"}}, "Converse")
+    success = {
+        "output": {"message": {"role": "assistant", "content": [{"text": "hi"}]}},
+        "usage": {"inputTokens": 1, "outputTokens": 1},
+        "metrics": {"latencyMs": 1},
+        "stopReason": "end_turn",
+    }
+    assistant.client.converse.side_effect = [throttled, success]
+
+    assert await assistant._converse(assistant.client) == success
+    assert assistant.client.converse.call_count == 2
