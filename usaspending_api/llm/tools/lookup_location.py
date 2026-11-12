@@ -66,7 +66,6 @@ class LocationLookupTool:
                     self._state_name_cache[state_abbr.lower()] = state_name.lower()
         return self._state_name_cache
 
-
     async def _get_state_abbreviations(self) -> dict[str, str]:
         """Lazy-load state abbreviations from PopCounty model."""
         if self._state_abbr_cache is None:
