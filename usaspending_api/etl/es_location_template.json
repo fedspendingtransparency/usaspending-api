@@ -22,6 +22,13 @@
           "filter": [
             "uppercase"
           ]
+        },
+        "word_analyzer": {
+          "type": "custom",
+          "tokenizer": "standard",
+          "filter": [
+            "uppercase"
+          ]
         }
       },
       "tokenizer": {
@@ -50,6 +57,10 @@
           },
           "keyword": {
             "type": "keyword"
+          },
+          "words": {
+            "type": "text",
+            "analyzer": "word_analyzer"
           }
         }
       },
