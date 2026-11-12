@@ -5,7 +5,17 @@ from datetime import date
 from functools import cached_property
 from typing import Annotated, Any, Callable, Literal, get_args
 
-from pydantic import BaseModel, ConfigDict, Field, RootModel, computed_field, field_validator, model_validator
+from pydantic import (
+    AfterValidator,
+    BaseModel,
+    BeforeValidator,
+    ConfigDict,
+    Field,
+    RootModel,
+    computed_field,
+    field_validator,
+    model_validator,
+)
 from pydantic_core import PydanticCustomError
 
 from usaspending_api.awards.v2.lookups.lookups import (
@@ -17,6 +27,7 @@ from usaspending_api.data.gsdm_maps import gsdm_maps
 from usaspending_api.llm.tools.helpers.code_counts import build_naics_counts, build_psc_counts, build_tas_counts
 from usaspending_api.llm.tools.helpers.code_paths import build_psc_path, build_tas_path
 from usaspending_api.references.helpers import aget_defc_code_details, get_defc_code_details
+from usaspending_api.references.models import DisasterEmergencyFundCode
 from usaspending_api.references.v2.views.filter_tree.psc_filter_tree import PSC_GROUPS
 
 
@@ -438,7 +449,7 @@ def clear_defc_rows_cache() -> None:
 def get_defc_rows() -> tuple[dict, ...]:
     """DEFC rows for the frontend-supported groups; hits the DB once per process, then cached.
 
-    Sync entry point -- used by the (necessarily synchronous) Pydantic validator in DEFCodeLists.
+    Sync entry point -- used by the (necessarily synchronous) Pydantic validator in DEFCodeDict.
     See aget_defc_rows() for the async-safe counterpart.
     """
     global _defc_rows_cache
@@ -462,7 +473,7 @@ def get_valid_defc_codes() -> frozenset[str]:
 def _format_defc_description(rows: tuple[dict, ...]) -> str:
     labels = {"covid_19": "COVID-19", "infrastructure": "Infrastructure"}
     lines = [
-        "Disaster/Emergency Fund Codes (DEFC) filter with 'require'/'exclude' lists. Only COVID-19 and "
+        "Disaster/Emergency Fund Codes (DEFC) filter with lists of valid codes. Only COVID-19 and "
         "Infrastructure DEFCs are supported (matching what the Advanced Search page allows). Use codes "
         "from the matching group:",
     ]
@@ -486,6 +497,21 @@ def build_defc_description() -> str:
 async def abuild_defc_description() -> str:
     """Async counterpart to build_defc_description(); safe to call from an async context."""
     return _format_defc_description(await aget_defc_rows())
+
+
+def _normalize_defc_codes(value: Any) -> Any:
+    if isinstance(value, list):
+        return list(dict.fromkeys(str(code).strip().upper() for code in value))
+    return value
+
+
+def _validate_defc_codes(value: list[str]) -> list[str]:
+    if not value:
+        return value
+    unknown = [code for code in value if code not in get_valid_defc_codes()]
+    if unknown:
+        raise ValueError(f"Invalid DEFC code(s): {unknown}. See the defCode field description for valid codes.")
+    return value
 
 
 RecipientType = Literal[
@@ -600,24 +626,14 @@ ExtentCompetedCode = Literal[
     "NDO",
 ]
 
+DEFCodeList = Annotated[list[str], BeforeValidator(_normalize_defc_codes), AfterValidator(_validate_defc_codes)]
 
-class DEFCodeLists(BaseModel):
+class DEFCodesDict(BaseModel):
     """Validation model for DEFC code lists"""
 
-    require: list[str] = Field(default_factory=list)
-    exclude: list[str] = Field(default_factory=list)
-
-    @field_validator("require", "exclude")
-    @classmethod
-    def validate_def_codes(cls, value: list[str]) -> list[str]:
-        """Validate DEFC codes against the DB-sourced, supported set (COVID-19 + Infrastructure)."""
-        if not value:
-            return value
-        valid_codes = get_valid_defc_codes()
-        unknown = [code for code in value if code not in valid_codes]
-        if unknown:
-            raise ValueError(f"Invalid DEFC code(s): {unknown}. See the defCodes field description for valid codes.")
-        return value
+    require: list = []
+    exclude: list = []
+    counts: list = []
 
 
 # The frontend's predefined award-amount buckets and their fixed bounds (see
@@ -787,8 +803,8 @@ class Filters(BaseModel):
     selectedCFDA: dict[str, SelectedCFDA] = Field(default_factory=dict)
     naicsCodes: NaicsCodeLists = Field(default_factory=NaicsCodeLists)
     pscCodes: PscCodeLists = Field(default_factory=PscCodeLists)
-    defCode: list[str] = []
-    defCodes: DEFCodeLists = Field(default_factory=DEFCodeLists)
+    defCode: DEFCodeList = Field(default_factory=DEFCodeList)
+    defCodes: DEFCodesDict = Field(default_factory=DEFCodesDict)
     pricingType: list[str] = Field(default_factory=list)
     setAside: list[SetAsideCode] = Field(default_factory=list)
     extentCompeted: list[ExtentCompetedCode] = Field(default_factory=list)
@@ -897,28 +913,6 @@ class Filters(BaseModel):
                 )
 
         return self
-
-
-class DEFCodeListsWithoutEnum(BaseModel):
-    """Version of DEFCodeLists without its DB-backed validator.
-    This reduces the payload send to the llm with every call."""
-
-    require: Annotated[
-        list[str],
-        Field(
-            default_factory=list,
-            description="DEFC codes that must be present. See the defCodes field description for valid codes.",
-            json_schema_extra={"examples": [["L", "M", "N"]]},
-        ),
-    ]
-    exclude: Annotated[
-        list[str],
-        Field(
-            default_factory=list,
-            description="DEFC codes to exclude. See the defCodes field description for valid codes.",
-            json_schema_extra={"examples": [["Z"]]},
-        ),
-    ]
 
 
 class ExecuteFilterInput(BaseModel):
@@ -1125,17 +1119,15 @@ class ExecuteFilterInput(BaseModel):
             "lookup_codes tool with code_type 'psc' and pass them through unchanged."
         ),
     )
-    defCodes: DEFCodeListsWithoutEnum = Field(
-        default_factory=DEFCodeListsWithoutEnum,
+    defCode: DEFCodeList = Field(
+        default_factory=list,
         description=(
-            "Disaster/Emergency Fund Codes (DEFC) filter with 'require'/'exclude' lists. Only COVID-19 and "
+            "Disaster/Emergency Fund Codes (DEFC) filter with a list of valid DEF codes. Only COVID-19 and "
             "Infrastructure DEFCs are supported."
+            f"{build_defc_description()}"
         ),
         json_schema_extra={
-            "examples": [
-                {"require": ["L", "M", "N", "O", "P", "U", "V"]},
-                {"require": ["Z", "1"]},
-            ]
+            "examples": [["L", "M", "N", "O"], ["Z", "1"]]
         },
     )
     pricingType: list[str] = Field(default_factory=list, description="Contract pricing type codes (e.g. 'A', 'B').")
