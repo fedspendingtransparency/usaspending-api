@@ -4,6 +4,7 @@ import pytest
 from asgiref.sync import sync_to_async
 from model_bakery import baker
 
+from usaspending_api.accounts.models import FederalAccount
 from usaspending_api.accounts.models.treasury_appropriation_account import TreasuryAppropriationAccount
 from usaspending_api.llm.models.py_models import Filters
 from usaspending_api.llm.tools.exceptions import (
@@ -56,9 +57,13 @@ async def _make_psc(code, description):
     )
 
 
-async def _make_cfda(program_number, program_title):
+async def _make_cfda(program_number, program_title, popular_name=None):
     return await sync_to_async(baker.make)(
-        Cfda, program_number=program_number, program_title=program_title, _save_kwargs=SAVE_NO_EMBED
+        Cfda,
+        program_number=program_number,
+        program_title=program_title,
+        popular_name=popular_name,
+        _save_kwargs=SAVE_NO_EMBED,
     )
 
 
@@ -72,33 +77,56 @@ async def _make_tas(
     bpoa=None,
     epoa=None,
     embedding=None,
+    toptier_code=None,
+    with_file_d_data=True,
+    agency_name=None,
+    agency_abbreviation=None,
 ):
-    tas = await sync_to_async(baker.make)(
-        TreasuryAppropriationAccount,
-        tas_rendering_label=label,
-        account_title=title,
-        agency_id=agency_id,
-        main_account_code=main,
-        sub_account_code=sub,
-        allocation_transfer_agency_id=ata,
-        beginning_period_of_availability=bpoa,
-        ending_period_of_availability=epoa,
-        _save_kwargs=SAVE_NO_EMBED,
-    )
-    if embedding is not None:
-        tas.embedding = embedding
-        await sync_to_async(tas.save)(**SAVE_NO_EMBED)
-    return tas
+    """Make a TAS under the federal account of its AID and main account, listed under the toptier agency with
+    toptier_code (the AID unless given, as an AID is not always a toptier code). Like the TAS filter tree, the lookup
+    only returns a TAS that has award data (File D)."""
 
+    def make():
+        toptier_code_ = toptier_code or agency_id
+        agency = ToptierAgency.objects.filter(toptier_code=toptier_code_).first() or baker.make(
+            ToptierAgency,
+            toptier_code=toptier_code_,
+            name=agency_name or f"Agency {toptier_code_}",
+            abbreviation=agency_abbreviation or f"A{toptier_code_}",
+            _save_kwargs=SAVE_NO_EMBED,
+        )
+        federal_account = FederalAccount.objects.filter(
+            agency_identifier=agency_id, main_account_code=main
+        ).first() or baker.make(
+            FederalAccount,
+            agency_identifier=agency_id,
+            main_account_code=main,
+            federal_account_code=f"{agency_id}-{main}",
+            account_title=title,
+            parent_toptier_agency=agency,
+        )
+        tas = baker.make(
+            TreasuryAppropriationAccount,
+            tas_rendering_label=label,
+            account_title=title,
+            agency_id=agency_id,
+            main_account_code=main,
+            sub_account_code=sub,
+            allocation_transfer_agency_id=ata,
+            beginning_period_of_availability=bpoa,
+            ending_period_of_availability=epoa,
+            federal_account=federal_account,
+            _save_kwargs=SAVE_NO_EMBED,
+        )
+        if with_file_d_data:
+            baker.make("search.AwardSearch", award_id=tas.pk)
+            baker.make("awards.FinancialAccountsByAwards", treasury_account=tas, award_id=tas.pk)
+        if embedding is not None:
+            tas.embedding = embedding
+            tas.save(**SAVE_NO_EMBED)
+        return tas
 
-async def _make_toptier_agency(toptier_code, name, abbreviation):
-    return await sync_to_async(baker.make)(
-        ToptierAgency,
-        toptier_code=toptier_code,
-        name=name,
-        abbreviation=abbreviation,
-        _save_kwargs=SAVE_NO_EMBED,
-    )
+    return await sync_to_async(make)()
 
 
 @pytest.fixture
@@ -187,7 +215,7 @@ class TestExactMatchShortCircuit:
         await _make_naics("541330", "Construction of buildings")
 
         config = CODE_TYPE_CONFIGS["naics"]
-        result = await tool._handle_exact_search("541330", config, "naics", {}, 20)
+        result = await tool._handle_exact_search("541330", config, "naics", 20)
         node = result["hierarchy"]["541330"]
         assert node["score"] == 1.0
 
@@ -223,7 +251,7 @@ class TestPrefixMatch:
         await _make_naics("541330", "Construction of buildings")
 
         config = CODE_TYPE_CONFIGS["naics"]
-        result = await tool._handle_exact_search("5413", config, "naics", {}, 20)
+        result = await tool._handle_exact_search("5413", config, "naics", 20)
         node = result["hierarchy"]["541330"]
         assert node["score"] == 0.95
 
@@ -317,7 +345,7 @@ class TestFinalizeResultsHierarchy:
 
         all_results = {"541330": CodeResult(code="541330", description="Engineering services", score=1.0)}
 
-        result = await tool._finalize_results(all_results, config, "naics", {}, top_k=20)
+        result = await tool._finalize_results(all_results, config, "naics", top_k=20)
 
         assert "54" in result["hierarchy"]
         assert "5413" in result["hierarchy"]["54"]["children"]
@@ -335,7 +363,7 @@ class TestFinalizeResultsHierarchy:
             "B2": CodeResult(code="B2", description="High score child", score=0.9),
         }
 
-        result = await tool._finalize_results(all_results, config, "naics", {}, top_k=20)
+        result = await tool._finalize_results(all_results, config, "naics", top_k=20)
 
         roots = list(result["hierarchy"].keys())
         assert roots[0] == "B1"  # best descendant score (0.9) wins over A1 (0.2)
@@ -348,14 +376,14 @@ class TestFinalizeResultsHierarchy:
 
         all_results = {f"C{i}": CodeResult(code=f"C{i}", description=f"desc {i}", score=float(i)) for i in range(5)}
 
-        result = await tool._finalize_results(all_results, config, "naics", {}, top_k=2)
+        result = await tool._finalize_results(all_results, config, "naics", top_k=2)
 
         assert result["total_codes"] == 2
         assert set(result["hierarchy"].keys()) == {"C4", "C3"}
 
     async def test_empty_results_returns_empty_hierarchy(self, tool):
         config = CODE_TYPE_CONFIGS["naics"]
-        result = await tool._finalize_results({}, config, "naics", {}, top_k=20)
+        result = await tool._finalize_results({}, config, "naics", top_k=20)
         assert result == {"hierarchy": {}, "total_codes": 0}
 
     async def test_non_psc_code_type_does_not_apply_tier1_grouping(self, tool, monkeypatch):
@@ -366,7 +394,7 @@ class TestFinalizeResultsHierarchy:
         monkeypatch.setattr(config, "get_all_ancestors", lambda code: [])
 
         all_results = {"33": CodeResult(code="33", description="Manufacturing", score=0.5)}
-        result = await tool._finalize_results(all_results, config, "naics", {}, top_k=20)
+        result = await tool._finalize_results(all_results, config, "naics", top_k=20)
 
         assert set(result["hierarchy"].keys()) == {"33"}
 
@@ -510,53 +538,162 @@ class TestSearchResultNode:
         assert node.children == []
 
 
-class TestAddTasAncestors:
-    async def test_toptier_ancestor_from_agency_table(self, tool):
-        await _make_toptier_agency("012", "Test Agency", "TA")
+class TestCfdaPopularName:
+    async def test_popular_name_is_part_of_the_filter_value(self, tool):
+        await _make_cfda(
+            "10.001", "Agricultural Research Basic and Applied Research", popular_name="Extramural Research"
+        )
 
-        all_results: dict[str, CodeResult] = {}
-        await tool._add_tas_ancestors({"012"}, all_results, budget_bureau_names={})
+        result = await tool.lookup_codes("10.001", "cfda")
 
-        assert "012" in all_results
-        assert all_results["012"].description == "Test Agency (TA)"
-
-    async def test_aid_main_ancestor_from_budget_bureau_names(self, tool):
-        all_results: dict[str, CodeResult] = {}
-        await tool._add_tas_ancestors({"012-0123"}, all_results, budget_bureau_names={"012-0123": "Test Bureau"})
-
-        assert all_results["012-0123"].description == "Test Bureau"
-
-    async def test_does_not_overwrite_existing_entry(self, tool):
-        await _make_toptier_agency("012", "Test Agency", "TA")
-        existing = CodeResult(code="012", description="Already present", score=1.0)
-        all_results = {"012": existing}
-
-        await tool._add_tas_ancestors({"012"}, all_results, budget_bureau_names={})
-
-        assert all_results["012"] is existing
-
-    async def test_account_without_a_bureau_is_described_by_its_best_matching_tas(self, tool):
-        all_results = {
-            "012-2020/2021-0123-000": CodeResult(code="012-2020/2021-0123-000", description="Older title", score=0.4),
-            "012-2021/2022-0123-000": CodeResult(code="012-2021/2022-0123-000", description="Newer title", score=0.9),
-            "013-2021/2022-0123-000": CodeResult(code="013-2021/2022-0123-000", description="Other agency", score=1.0),
+        node = _tree_nodes(result)["10.001"]
+        assert node["popular_name"] == "Extramural Research"
+        assert node["filter_value"] == {
+            "identifier": "10.001",
+            "program_number": "10.001",
+            "program_title": "Agricultural Research Basic and Applied Research",
+            "popular_name": "Extramural Research",
         }
 
-        await tool._add_tas_ancestors({"012-0123"}, all_results, budget_bureau_names={"012-0123": None})
 
-        assert all_results["012-0123"].description == "Newer title"
+class TestCfdaWithoutPopularName:
+    @pytest.mark.parametrize("popular_name", [None, ""])
+    async def test_empty_popular_name_is_an_empty_string(self, tool, popular_name):
+        await _make_cfda("14.257", "Prevention", popular_name=popular_name)
 
-    async def test_bureau_name_is_preferred_to_a_child_description(self, tool):
-        all_results = {"012-X-0123-000": CodeResult(code="012-X-0123-000", description="Title", score=0.9)}
+        result = await tool.lookup_codes("14.257", "cfda")
 
-        await tool._add_tas_ancestors({"012-0123"}, all_results, budget_bureau_names={"012-0123": "Test Bureau"})
+        assert _tree_nodes(result)["14.257"]["filter_value"] == {
+            "identifier": "14.257",
+            "program_number": "14.257",
+            "program_title": "Prevention",
+            "popular_name": "",
+        }
 
-        assert all_results["012-0123"].description == "Test Bureau"
 
-    async def test_missing_ancestor_data_is_silently_skipped(self, tool):
-        all_results: dict[str, CodeResult] = {}
-        await tool._add_tas_ancestors({"999"}, all_results, budget_bureau_names={})
-        assert all_results == {}
+class TestTasAgencyQueries:
+    """A query that names an agency matches the agency, which stands for all of its accounts."""
+
+    @pytest.fixture(autouse=True)
+    async def accounts(self):
+        treasury = {"agency_name": "Department of the Treasury", "agency_abbreviation": "TREAS", "toptier_code": "020"}
+        await _make_tas(
+            "020-X-6104-000", "Albanian Claims Fund, Treasury (T)", agency_id="020", main="6104", **treasury
+        )
+        await _make_tas("020-X-0150-000", "Treasury Forfeiture Fund", agency_id="020", main="0150", **treasury)
+        await _make_tas("001-X-5760-000", "Capitol Trust Account", agency_id="001", main="5760", toptier_code="001")
+        # An agency with accounts that have no award data can't be chosen
+        await _make_tas(
+            "097-X-0001-000",
+            "Defense Account",
+            agency_id="097",
+            main="0001",
+            agency_name="Department of Defense",
+            agency_abbreviation="DOD",
+            toptier_code="097",
+            with_file_d_data=False,
+        )
+
+    @pytest.mark.parametrize(
+        "query", ["treasury account", "treasury accounts", "Treasury", "TREAS", "Department of the Treasury"]
+    )
+    async def test_agency_is_the_match(self, tool, query):
+        result = await tool.lookup_codes(query, "tas")
+
+        assert len(result.results["tree"]) == 1
+        agency = result.results["tree"][0]
+        assert (agency["code"], agency["matched"], agency["filter_value"]) == ("020", True, ["020"])
+        assert agency["description"] == "Department of the Treasury (TREAS)"
+        assert agency["covers"] == 2
+        assert "children" not in agency
+        assert "The query names an agency" in result.instructions
+        assert "lookup_agencies" in result.instructions
+
+    async def test_agency_without_award_data_is_not_matched(self, tool, mock_embedding_generator, mock_get_aimodel):
+        mock_embedding_generator.agenerate_embedding.return_value = None
+
+        with pytest.raises(TasNotRecognizedError):
+            await tool.lookup_codes("defense accounts", "tas", query_fanout=None)
+
+    async def test_query_naming_more_than_the_agency_is_not_an_agency_match(
+        self, tool, mock_embedding_generator, mock_get_aimodel
+    ):
+        mock_embedding_generator.agenerate_embedding.return_value = None
+
+        with pytest.raises(TasNotRecognizedError):
+            await tool.lookup_codes("treasury forfeiture fund", "tas", query_fanout=None)
+
+
+class TestTasLineage:
+    """A TAS is listed under the agency and federal account of its federal account, as in the TAS filter tree, which is
+    not always the AID in its label (an AID of 011 is listed under the toptier agency 1100)."""
+
+    @pytest.fixture(autouse=True)
+    async def accounts(self):
+        await _make_tas("011-X-0001-000", "Presidential Account", agency_id="011", main="0001", toptier_code="1100")
+        await _make_tas("012-X-0002-000", "Ordinary Account", agency_id="012", main="0002")
+        await _make_tas("012-X-0003-000", "No Award Data", agency_id="012", main="0003", with_file_d_data=False)
+
+    async def test_tas_is_under_the_agency_of_its_federal_account(self, tool):
+        result = await tool.lookup_codes("011-0001", "tas")
+
+        nodes = _tree_nodes(result)
+        assert result.results["tree"][0]["code"] == "1100"
+        assert nodes["1100"]["description"] == "Agency 1100 (A1100)"
+        assert nodes["011-0001"]["filter_value"] == ["1100", "011-0001"]
+        assert "011" not in nodes
+
+        result = await tool.lookup_codes("011-X-0001-000", "tas")
+        assert _tree_nodes(result)["011-X-0001-000"]["filter_value"] == ["1100", "011-0001", "011-X-0001-000"]
+
+    async def test_federal_account_is_described_by_its_title(self, tool):
+        result = await tool.lookup_codes("012-0002", "tas")
+
+        assert _tree_nodes(result)["012-0002"]["description"] == "Ordinary Account"
+
+    async def test_toptier_code_finds_the_agency_whatever_the_aid(self, tool):
+        result = await tool.lookup_codes("1100", "tas")
+
+        assert [node["code"] for node in result.results["tree"]] == ["1100"]
+        assert result.results["tree"][0]["matched"]
+
+    async def test_aid_finds_the_tas_under_their_toptier_agency(self, tool):
+        result = await tool.lookup_codes("011", "tas")
+
+        assert "011-X-0001-000" in _matched_codes(result)
+        assert result.results["tree"][0]["code"] == "1100"
+
+    async def test_tas_without_award_data_is_not_returned(self, tool, mock_embedding_generator, mock_get_aimodel):
+        mock_embedding_generator.agenerate_embedding.return_value = None
+
+        with pytest.raises(TasNotRecognizedError):
+            await tool.lookup_codes("012-X-0003-000", "tas", query_fanout=None)
+
+    async def test_covers_counts_the_tas_with_award_data(self, tool):
+        await _make_tas("012-2020/2021-0002-000", "Ordinary Account", agency_id="012", main="0002")
+        await _make_tas("012-2021/2022-0002-000", "Ordinary Account", agency_id="012", main="0002")
+
+        result = await tool.lookup_codes("012", "tas")
+        nodes = _tree_nodes(result)
+        assert nodes["012"]["covers"] == 3
+        assert nodes["012"].get("children") is None
+
+        result = await tool.lookup_codes("012-0002", "tas")
+        assert _tree_nodes(result)["012-0002"]["covers"] == 3
+
+        result = await tool.lookup_codes("012-2020/2021-0002-000", "tas")
+        assert _tree_nodes(result)["012-2020/2021-0002-000"]["covers"] == 1
+
+    async def test_tas_path_copied_from_the_lookup_is_kept(self):
+        filters = await sync_to_async(Filters)(tasCodes={"require": [["1100", "011-0001", "011-X-0001-000"]]})
+
+        assert filters.tasCodes.require == [["1100", "011-0001", "011-X-0001-000"]]
+
+    async def test_path_of_a_tas_comes_from_its_federal_account(self):
+        from usaspending_api.llm.tools.helpers.code_paths import resolve_tas_path
+
+        assert await sync_to_async(resolve_tas_path)("011-X-0001-000") == ["1100", "011-0001", "011-X-0001-000"]
+        assert await sync_to_async(resolve_tas_path)("999-X-0001-000") is None
 
 
 class TestErrorHandling:
@@ -623,6 +760,7 @@ class TestNormalizeQuery:
             ("CFDA: 14.257", "cfda", "14.257"),
             ("Assistance Listing #14.257", "cfda", "14.257"),
             ("assistance listing number 93.00A", "cfda", "93.00A"),
+            ("grants for program 93.HDN please", "cfda", "93.HDN"),
             ("14.257", "cfda", "14.257"),
             ("AL14.257", "cfda", "14.257"),
             ("grants under program 14.257 please", "cfda", "14.257"),
@@ -936,11 +1074,11 @@ class TestTasAccountQueries:
         # An account code matches the accounts themselves, which are described by their titles
         assert [nodes[code]["matched"] for code in ("014-0102", "310-0102")] == [True, True]
         assert [nodes[code]["description"] for code in ("014-0102", "310-0102")] == ["Account A", "Account B"]
-        # Both periods of the 014 account are shown beneath it so the llm can choose the account or a period
-        assert {child["code"] for child in nodes["014-0102"]["children"]} == {
-            "014-2020/2021-0102-000",
-            "014-2021/2022-0102-000",
-        }
+        # The accounts are the matches, so their periods are not offered as choices, though the accounts cover them
+        assert not any("children" in nodes[code] for code in ("014-0102", "310-0102"))
+        assert [nodes[code]["covers"] for code in ("014-0102", "310-0102")] == [2, 1]
+        assert not any("-0102-000" in code for code in nodes)
+        assert "every account in the tree matches it" in result.instructions
 
     async def test_aid_main_query_matches_the_account_not_each_year(self, tool):
         result = await tool.lookup_codes("014-0102", "tas")
@@ -1048,7 +1186,7 @@ class TestDedupeTasByPeriodOfAvailability:
         mock_embedding_generator.agenerate_embedding.return_value = _unit_vector(dims, 0)
 
         config = CODE_TYPE_CONFIGS["tas"]
-        found = await tool._handle_hybrid_search("main sub", config, "tas", {}, 20, None)
+        found = await tool._handle_hybrid_search("main sub", config, "tas", 20, None)
         assert tool._find_node(found["hierarchy"], "011-2016/2016-0001-000")
         assert tool._find_node(found["hierarchy"], "011-2016/2016-0001-001")
 
@@ -1081,6 +1219,6 @@ class TestDedupeTasByPeriodOfAvailability:
         mock_embedding_generator.agenerate_embedding.return_value = _unit_vector(dims, 0)
 
         config = CODE_TYPE_CONFIGS["tas"]
-        found = await tool._handle_hybrid_search("compensation", config, "tas", {}, 20, None)
+        found = await tool._handle_hybrid_search("compensation", config, "tas", 20, None)
         assert tool._find_node(found["hierarchy"], "011-2016/2016-0001-000")
         assert tool._find_node(found["hierarchy"], "[US_PHONE_REDACTED]/2016-0001-000")

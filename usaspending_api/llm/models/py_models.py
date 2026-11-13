@@ -15,8 +15,9 @@ from usaspending_api.awards.v2.lookups.lookups import (
 )
 from usaspending_api.data.gsdm_maps import gsdm_maps
 from usaspending_api.llm.tools.helpers.code_counts import build_naics_counts, build_psc_counts, build_tas_counts
-from usaspending_api.llm.tools.helpers.code_paths import build_psc_path, build_tas_path
+from usaspending_api.llm.tools.helpers.code_paths import build_psc_path, resolve_tas_path
 from usaspending_api.references.helpers import aget_defc_code_details, get_defc_code_details
+from usaspending_api.references.models.cfda import Cfda
 from usaspending_api.references.v2.views.filter_tree.psc_filter_tree import PSC_GROUPS
 
 
@@ -393,17 +394,17 @@ class TasCodeLists(CodeLists):
     @field_validator("require", "exclude", mode="before")
     @classmethod
     def rebuild_tas_paths(cls, paths: Any) -> Any:
-        """Rebuild full paths from their TAS rendering label, which determines the agency and AID-MAIN above it,
-        rather than trusting the llm to assemble them (e.g. ["310", "310-2012", "310-2012/2012-3200-000"] becomes
-        ["310", "310-3200", "310-2012/2012-3200-000"]). Shorter paths are left as they are."""
+        """Rebuild full paths from their TAS rendering label, which determines the federal account and agency above
+        it, rather than trusting the llm to assemble them (e.g. ["310", "310-2012", "310-2012/2012-3200-000"] becomes
+        ["310", "310-3200", "310-2012/2012-3200-000"]). The agency is that of the TAS's federal account, which is not
+        always the AID in the label. Shorter paths, and paths whose TAS isn't found, are left as they are."""
         if not isinstance(paths, list):
             return paths
 
         rebuilt = []
         for path in paths:
             if isinstance(path, list) and len(path) == 3 and all(isinstance(segment, str) for segment in path):
-                full_path = build_tas_path(path[2])
-                path = full_path if len(full_path) == 3 else path
+                path = resolve_tas_path(path[2]) or path
             rebuilt.append(path)
         return rebuilt
 
@@ -825,6 +826,33 @@ class Filters(BaseModel):
             key = f"{agency_id}_{agency_type}" if agency_id is not None and agency_type else original_key
             rekeyed[key] = agency
         return rekeyed
+
+    @field_validator("selectedCFDA", mode="before")
+    @classmethod
+    def rebuild_selected_cfda(cls, value: Any) -> Any:
+        """The title and popular name of a program come from the Cfda table, not from the llm, so a program can't be
+        sent with a made up title or without its popular name (an empty string when it has none). Only the program
+        number is taken from the llm. A key that is not a program (e.g. an agency) is left as it is."""
+        if not isinstance(value, dict):
+            return value
+
+        program_numbers = [key for key in value if isinstance(key, str)]
+        programs = {
+            program.program_number: program for program in Cfda.objects.filter(program_number__in=program_numbers)
+        }
+        return {
+            key: (
+                {
+                    "identifier": key,
+                    "program_number": key,
+                    "program_title": programs[key].program_title or "",
+                    "popular_name": programs[key].popular_name or "",
+                }
+                if key in programs
+                else entry
+            )
+            for key, entry in value.items()
+        }
 
     @field_validator("selectedCFDA", mode="after")
     @classmethod

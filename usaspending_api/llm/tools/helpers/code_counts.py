@@ -12,7 +12,7 @@ These functions use the synchronous ORM. Call them from async code through sync_
 from functools import reduce
 from operator import or_
 
-from django.db.models import Count, Exists, F, OuterRef, Q
+from django.db.models import Count, Exists, F, OuterRef, Q, QuerySet
 from django.db.models.functions import Length, Substr
 
 from usaspending_api.accounts.models import TreasuryAppropriationAccount
@@ -97,15 +97,21 @@ def _tas_path_query(path: list[str]) -> Q:
     return query
 
 
+def tas_with_file_d_data() -> QuerySet:
+    """The TAS the TAS filter tree shows: those with award data (File D), annotated with the toptier agency code they
+    are listed under, which is that of their federal account and not necessarily their AID."""
+    return TreasuryAppropriationAccount.objects.annotate(
+        has_faba=Exists(faba_with_file_D_data().filter(treasury_account=OuterRef("pk"))),
+        agency=F("federal_account__parent_toptier_agency__toptier_code"),
+    ).filter(has_faba=True)
+
+
 def build_tas_counts(require: list[list[str]], exclude: list[list[str]]) -> list[dict]:
     """Count the TAS under each toptier agency. As in the TAS filter tree, only TAS with award data are counted."""
     if not require:
         return []
 
-    accounts = TreasuryAppropriationAccount.objects.annotate(
-        has_faba=Exists(faba_with_file_D_data().filter(treasury_account=OuterRef("pk"))),
-        agency=F("federal_account__parent_toptier_agency__toptier_code"),
-    ).filter(_any_of([_tas_path_query(path) for path in require]), has_faba=True)
+    accounts = tas_with_file_d_data().filter(_any_of([_tas_path_query(path) for path in require]))
     if exclude:
         accounts = accounts.exclude(_any_of([_tas_path_query(path) for path in exclude]))
 

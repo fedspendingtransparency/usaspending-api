@@ -1470,6 +1470,7 @@ class TestCodePathRebuilding:
 
         assert "one to four character" in str(exc_info.value)
 
+    @pytest.mark.django_db
     @pytest.mark.parametrize(
         "path, expected",
         [
@@ -1477,15 +1478,32 @@ class TestCodePathRebuilding:
                 ["310", "310-2012", "310-2012/2012-3200-000"],
                 ["310", "310-3200", "310-2012/2012-3200-000"],
             ),
+            # The agency is the one of the federal account, which is not always the AID in the label
             (
                 ["wrong", "wrong-0000", "019-011-X-1071-000"],
-                ["011", "011-1071", "019-011-X-1071-000"],
+                ["1100", "011-1071", "019-011-X-1071-000"],
             ),
+            # A TAS that isn't found is left as the llm wrote it
+            (["310", "310-2012", "310-2012/2012-9999-000"], ["310", "310-2012", "310-2012/2012-9999-000"]),
             (["310", "310-3200"], ["310", "310-3200"]),
             (["310"], ["310"]),
         ],
     )
     def test_tas_paths_are_rebuilt_from_the_rendering_label(self, path, expected):
+        for label, aid, main, toptier_code in (
+            ("310-2012/2012-3200-000", "310", "3200", "310"),
+            ("019-011-X-1071-000", "011", "1071", "1100"),
+        ):
+            agency = baker.make("references.ToptierAgency", toptier_code=toptier_code)
+            account = baker.make(
+                "accounts.FederalAccount",
+                agency_identifier=aid,
+                main_account_code=main,
+                federal_account_code=f"{aid}-{main}",
+                parent_toptier_agency=agency,
+            )
+            baker.make("accounts.TreasuryAppropriationAccount", tas_rendering_label=label, federal_account=account)
+
         model = TasCodeLists(require=[path], exclude=[path])
 
         assert model.require == [expected]
@@ -1498,9 +1516,57 @@ class TestCodePathRebuilding:
         assert "between 1 and 3 elements" in str(exc_info.value)
 
 
+@pytest.mark.django_db
 class TestSelectedCFDA:
     """Tests for the SelectedCFDA model and its wiring into Filters/ExecuteFilterInput.selectedCFDA
     (keyed by CFDA program number, mirroring the SelectedAgency re-keying pattern)."""
+
+    def test_title_and_popular_name_come_from_the_program(self):
+        baker.make(
+            "references.Cfda", program_number="16.014", program_title="Engaging Men and Youth", popular_name=None
+        )
+        baker.make(
+            "references.Cfda", program_number="10.001", program_title="Agricultural Research", popular_name="ARS"
+        )
+
+        filters = Filters(
+            selectedCFDA={
+                # A made up title and a missing popular name are replaced by the program's own
+                "16.014": {
+                    "identifier": "16.014",
+                    "program_number": "16.014",
+                    "program_title": "Assistance Listing 16.014",
+                },
+                "10.001": {
+                    "identifier": "10.001",
+                    "program_number": "10.001",
+                    "program_title": "wrong",
+                    "popular_name": "x",
+                },
+            }
+        )
+
+        assert filters.selectedCFDA["16.014"].model_dump() == {
+            "identifier": "16.014",
+            "program_number": "16.014",
+            "program_title": "Engaging Men and Youth",
+            "popular_name": "",
+        }
+        assert filters.selectedCFDA["10.001"].program_title == "Agricultural Research"
+        assert filters.selectedCFDA["10.001"].popular_name == "ARS"
+
+    def test_only_the_program_number_is_taken_from_the_llm(self):
+        baker.make("references.Cfda", program_number="14.257", program_title="Prevention", popular_name="")
+
+        filters = Filters(selectedCFDA={"14.257": {"program_title": "anything"}})
+
+        assert filters.selectedCFDA["14.257"].program_title == "Prevention"
+
+    def test_key_that_is_not_a_program_is_left_as_it_is(self):
+        filters = Filters(selectedCFDA={"14": {"identifier": "14", "program_number": "14", "program_title": ""}})
+
+        assert filters.selectedCFDA["14"].program_title == ""
+        assert filters.selectedCFDA["14"].popular_name is None
 
     def test_accepts_valid_entry(self):
         cfda = SelectedCFDA(identifier="10.557", program_number="10.557", program_title="WIC")
