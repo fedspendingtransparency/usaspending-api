@@ -1234,7 +1234,6 @@
         "expected_tools": [
             "lookup_location",
             "lookup_codes",
-
             "execute_filter"
         ],
         "tags": [
@@ -1925,7 +1924,7 @@
         "tags": [
             "multi_filter"
         ],
-        "notes": "Referencing range of assistance listings instead of specific one",
+        "notes": "Referencing range of assistance listings instead of specific one. The number of results are limited as we cannot generate too large of a filter.",
         "approved": false,
         "sme_validation_notes": ""
     },
@@ -1958,7 +1957,7 @@
             "multi_filter",
             "numerical"
         ],
-        "notes": "Referencing range of assistance listings instead of specific one",
+        "notes": "Referencing range of assistance listings instead of specific one. The number of results are limited as we cannot generate too large of a filter.",
         "approved": false,
         "sme_validation_notes": ""
     },
@@ -1984,7 +1983,7 @@
             "multi_filter",
             "multi_answer"
         ],
-        "notes": "Multiple range of assistance listings",
+        "notes": "Multiple range of assistance listings. The number of results are limited as we cannot generate too large of a filter.",
         "approved": false,
         "sme_validation_notes": ""
     },
@@ -2535,18 +2534,18 @@
         "expected_output": {
             "pscCodes": {
                 "require": [
-                    ["Product", "1040"],
-                    ["Product", "1045"],
-                    ["Product", "1355"],
-                    ["Product", "1356"],
-                    ["Product", "4921"],
-                    ["Product", "1005"],
-                    ["Product", "1010"],
-                    ["Product", "1015"],
-                    ["Product", "1020"],
-                    ["Product", "1025"],
-                    ["Product", "1030"],
-                    ["Product", "1035"]
+                    ["Product", "10", "1040"],
+                    ["Product", "10", "1045"],
+                    ["Product", "13", "1355"],
+                    ["Product", "13", "1356"],
+                    ["Product", "49", "4921"],
+                    ["Product", "10", "1005"],
+                    ["Product", "10", "1010"],
+                    ["Product", "10", "1015"],
+                    ["Product", "10", "1020"],
+                    ["Product", "10", "1025"],
+                    ["Product", "10", "1030"],
+                    ["Product", "10", "1035"]
                 ],
                 "exclude": [],
                 "counts": [{"count": 12, "label": "", "value": "Product"}]
@@ -2578,7 +2577,7 @@
             "$time": {"unit": "fiscal_year", "offset": -1},
             "pscCodes": {
                 "require": [
-                    ["Product", "1040"]
+                    ["Product", "10", "1040"]
                 ],
                 "exclude": [],
                 "counts": [{"count": 1, "label": "", "value": "Product"}]
@@ -3072,13 +3071,13 @@
             },
             "pscCodes": {
                 "require": [
-                    ["Service", "R415"],
-                    ["Service", "R540"],
-                    ["Service", "R544"],
-                    ["Service", "W070"],
-                    ["Service", "B540"],
+                    ["Service", "R", "R4", "R415"],
+                    ["Service", "R", "R5", "R540"],
+                    ["Service", "R", "R5", "R544"],
+                    ["Service", "W", "W0", "W070"],
+                    ["Service", "B", "B5", "B540"],
                     ["Service", "D"],
-                    ["Service", "U012"]
+                    ["Service", "U", "U0", "U012"]
                 ],
                 "exclude": [],
                 "counts": [{"count": 65, "label": "", "value": "Service"}]
@@ -3137,13 +3136,13 @@
             },
             "pscCodes": {
                 "require": [
-                    ["Service", "R415"],
-                    ["Service", "R540"],
-                    ["Service", "R544"],
-                    ["Service", "W070"],
-                    ["Service", "B540"],
+                    ["Service", "R", "R4", "R415"],
+                    ["Service", "R", "R5", "R540"],
+                    ["Service", "R", "R5", "R544"],
+                    ["Service", "W", "W0", "W070"],
+                    ["Service", "B", "B5", "B540"],
                     ["Service", "D"],
-                    ["Service", "U012"]
+                    ["Service", "U", "U0", "U012"]
                 ],
                 "exclude": [],
                 "counts": [{"count": 65, "label": "", "value": "Service"}]
@@ -3449,16 +3448,16 @@
             ],
             "pscCodes": {
                 "require": [
-                    ["Service", "F011"],
-                    ["Service", "H138"],
-                    ["Service", "H238"],
-                    ["Service", "H338"],
-                    ["Service", "H938"],
-                    ["Service", "J038"],
-                    ["Service", "K038"],
-                    ["Service", "L038"],
-                    ["Service", "N038"],
-                    ["Service", "W038"]
+                    ["Service", "F", "F0", "F011"],
+                    ["Service", "H", "H1", "H138"],
+                    ["Service", "H", "H2", "H238"],
+                    ["Service", "H", "H3", "H338"],
+                    ["Service", "H", "H9", "H938"],
+                    ["Service", "J", "J0", "J038"],
+                    ["Service", "K", "K0", "K038"],
+                    ["Service", "L", "L0", "L038"],
+                    ["Service", "N", "N0", "N038"],
+                    ["Service", "W", "W0", "W038"]
                 ],
                 "exclude": [],
                 "counts": [{"count": 10, "label": "", "value": "Service"}]
@@ -4434,7 +4433,7 @@
         "expected_output": {
             "pscCodes": {
                 "require": [
-                    ["Research and Development", "AR1"]
+                    ["Research and Development", "AR", "AR1"]
                 ],
                 "exclude": [],
                 "counts": [{"count": 7, "label": "", "value": "Research and Development"}]

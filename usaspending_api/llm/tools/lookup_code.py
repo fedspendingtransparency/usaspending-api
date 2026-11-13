@@ -75,12 +75,13 @@ MAX_CHILDREN_SHOWN = 5
 SELECTION_INSTRUCTIONS = (
     "Choose the code or codes in the tree that best represent what the user asked for. Judge each candidate by its "
     "description, its place in the tree, and its score together. A score is search similarity, not correctness, so a "
-    "lower scoring code can be the better fit. A code with matched=false was only added to show where its children "
-    "sit; it can still be the best choice if the user means its whole category. Choosing a code chooses everything "
-    "beneath it (see covers). When the user names a category, industry, or topic, choose the code whose description "
-    "is that category, even if codes beneath it score higher; those are only parts of it. Choose a code beneath it "
-    "only when the user asked for that specific thing, or when the category would include things the user did not "
-    "ask for. When a code and a code beneath it cover the same number of codes, choose the higher one. Only the "
+    "lower scoring code can be the better fit. Start with the highest code in the tree whose own description names "
+    "what the user asked for (a category, industry, or topic), even if codes beneath it score higher; choosing it "
+    "chooses everything beneath it (see covers). Choose a code beneath it only when the user asked for that narrower "
+    "thing, or when the broader code would include things the user did not ask for. Do not also choose codes beneath "
+    "a code you chose. A code with matched=false was only added to show where its children sit: choose it only if "
+    "its own description names the request, never just because its children match. When a code and a code beneath "
+    "it cover the same number of codes, choose the higher one. Only the "
     "best scoring codes beneath a code are shown; more_children counts the others, and choosing the code still "
     "covers them. Do not choose codes that are only loosely related to the request; if none of them fit, leave this "
     "filter out. Copy the filter_value of each code you choose into {destination}, and combine the codes from "
@@ -234,14 +235,13 @@ def get_parent_code(code: str, all_results: dict[str, CodeResult], config: CodeT
 class SearchResultNode:
     """Node for search results hierarchy"""
 
-    def __init__(  # noqa: PLR0913
+    def __init__(
         self,
         code: str,
         description: str,
         score: float,
         all_results: dict[str, CodeResult],
         config: CodeTypeConfig,
-        is_root: bool = True,
         popular_name: str | None = None,
     ):
         self.code = code
@@ -250,8 +250,6 @@ class SearchResultNode:
         self.popular_name = popular_name
         self.children: list[SearchResultNode] = []
         self.config = config
-
-        self._is_root = is_root
 
         # Build children
         self._populate_children(all_results)
@@ -267,7 +265,6 @@ class SearchResultNode:
                     score=child_data.score,
                     all_results=all_results,
                     config=self.config,
-                    is_root=False,
                     popular_name=child_data.popular_name,
                 )
                 self.children.append(child_node)
@@ -283,8 +280,6 @@ class SearchResultNode:
             "code": self.code,
             "description": self.description,
             "score": self.score,
-            "is_root": self.is_root,
-            "is_leaf": self.is_leaf,
             "children": {
                 child.code: child.to_dict() for child in sorted(self.children, key=lambda x: x.score, reverse=True)
             },
@@ -292,14 +287,6 @@ class SearchResultNode:
         if self.popular_name is not None:
             node["popular_name"] = self.popular_name
         return node
-
-    @property
-    def is_leaf(self) -> bool:
-        return len(self.children) == 0
-
-    @property
-    def is_root(self) -> bool:
-        return self._is_root
 
 
 class CodeLookupTool:
@@ -339,7 +326,8 @@ class CodeLookupTool:
 
         # A query that is itself a code in the hierarchy (e.g. the TAS agency "309") matches that code alone, even
         # when the node is only an ancestor of what matched. CFDA is excluded as only its programs can be chosen.
-        query_node = None if code_type == "cfda" else self._find_node(hierarchy, query)
+        node_code = hierarchy_parsers.get_psc_tree_code(query.upper()) if code_type == "psc" else query
+        query_node = None if code_type == "cfda" else self._find_node(hierarchy, node_code)
         is_exact_code = bool(query_node) and not (code_type == "psc" and query_node[0] in PSC_GROUPS)
         if is_exact_code:
             hierarchy = self._keep_only_path_to(hierarchy, query_node[0])
@@ -491,7 +479,15 @@ class CodeLookupTool:
         leaves = model.objects.annotate(code_length=Length("code")).filter(code_length=6 if code_type == "naics" else 4)
         leaves = leaves.filter(code__regex=r"^(" + "|".join(re.escape(code) for code in codes) + ")")
         leaf_codes = [leaf async for leaf in leaves.values_list("code", flat=True)]
-        return {code: sum(leaf.startswith(code) for leaf in leaf_codes) for code in codes}
+
+        def covered(code: str, leaf: str) -> bool:
+            # A three character research and development node ("AA1") doesn't cover the code ending in 0 ("AA10"),
+            # which it stands for. This is the rule the PSC filter tree and the counts use.
+            if code_type == "psc" and len(code) == 3 and hierarchy_parsers.get_psc_parent(code) == code[:2]:
+                return leaf.startswith(code) and not leaf.endswith("0")
+            return leaf.startswith(code)
+
+        return {code: sum(covered(code, leaf) for leaf in leaf_codes) for code in codes}
 
     @staticmethod
     async def _count_covered_tas(hierarchy: dict) -> dict[str, int]:
@@ -653,7 +649,7 @@ class CodeLookupTool:
             async for result in qs:
                 if result.hybrid_score < SEMANTIC_MIN_SCORE:
                     continue
-                code_value = getattr(result, config.code_field)
+                code_value = self._tree_code(code_type, getattr(result, config.code_field))
 
                 # Keep best score if duplicate
                 if code_value not in all_results or result.hybrid_score > all_results[code_value].score:
@@ -721,7 +717,7 @@ class CodeLookupTool:
     ) -> dict[str, CodeResult]:
         entries = {}
         async for result in queryset:
-            code_value = getattr(result, config.code_field)
+            code_value = CodeLookupTool._tree_code(code_type, getattr(result, config.code_field))
             entry = CodeResult(
                 code=code_value,
                 description=getattr(result, config.description_field, None),
@@ -732,6 +728,13 @@ class CodeLookupTool:
                 CodeLookupTool._add_tas_lineage(entry, result)
             entries[code_value] = entry
         return entries
+
+    @staticmethod
+    def _tree_code(code_type: str, code: str) -> str:
+        """The code of the node that stands for a code in the tree the client shows. For a research and development PSC
+        ending in 0 (e.g. "AA10") that is the three character node above its siblings ("AA1"), as the client has no
+        "AA10". Every other code is its own node."""
+        return hierarchy_parsers.get_psc_tree_code(code) if code_type == "psc" else code
 
     @staticmethod
     def _popular_name(code_type: str, result: Model) -> str | None:
@@ -753,6 +756,57 @@ class CodeLookupTool:
         entry.parent_code = account.code
         entry.ancestors = [agency, account]
 
+    async def _subset_tas_results(
+        self,
+        all_results: dict[str, CodeResult],
+        top_k: int,
+    ) -> dict[str, CodeResult]:
+        # top_k is a number of accounts, not of TAS. A TAS is one period of availability of an account, and an
+        # account can have many of them. Counting the TAS lets the periods of one agency's account fill the limit
+        # and push out the accounts of other agencies (e.g. the accounts for the main account code "0150").
+        best_scores: dict[str, float] = {}
+        for result in all_results.values():
+            account_code = result.parent_code or result.code
+            best_scores[account_code] = max(best_scores.get(account_code, 0.0), result.score)
+        top_accounts = set(sorted(best_scores, key=lambda code: (-best_scores[code], code))[:top_k])
+        all_results = {
+            code: result for code, result in all_results.items() if (result.parent_code or result.code) in top_accounts
+        }
+        for result in list(all_results.values()):
+            for ancestor in result.ancestors:
+                all_results.setdefault(ancestor.code, ancestor)
+
+        return all_results
+
+    async def _subset_results(
+        self,
+        all_results: dict[str, CodeResult],
+        config: CodeTypeConfig,
+        code_type: str,
+        top_k: int,
+    ) -> dict[str, CodeResult]:
+        top_codes = [
+            result.code for result in sorted(all_results.values(), key=lambda x: x.score, reverse=True)[:top_k]
+        ]
+        all_results = {code: result for code, result in all_results.items() if code in top_codes}
+        ancestor_codes = set()
+        for code in all_results.keys():
+            ancestor_codes.update(config.get_all_ancestors(code))
+        if ancestor_codes:
+            model = config.model_class
+            # A three character research and development PSC node ("AA1") has no row of its own. It takes the
+            # code and description of the row ending in 0 ("AA10"), which _tree_code maps back to the node.
+            db_codes = [code + "0" if code_type == "psc" and len(code) == 3 else code for code in ancestor_codes]
+            ancestors = model.objects.filter(**{f"{config.code_field}__in": db_codes})
+            async for ancestor in ancestors:
+                ancestor_code = self._tree_code(code_type, getattr(ancestor, config.code_field))
+                if ancestor_code not in all_results:
+                    all_results[ancestor_code] = CodeResult(
+                        code=ancestor_code,
+                        description=getattr(ancestor, config.description_field, None),
+                    )
+        return all_results
+
     async def _finalize_results(
         self,
         all_results: dict[str, CodeResult],
@@ -760,39 +814,23 @@ class CodeLookupTool:
         code_type: str,
         top_k: int,
     ) -> dict[str, Any]:
-        top_codes = [
-            result.code for result in sorted(all_results.values(), key=lambda x: x.score, reverse=True)[:top_k]
+        subset_results = await (
+            self._subset_tas_results(all_results, top_k)
+            if code_type.lower() == "tas"
+            else self._subset_results(all_results, config, code_type, top_k)
+        )
+        root_codes = [
+            code for code in subset_results.keys() if not self._has_parent_in_results(code, subset_results, config)
         ]
-        all_results = {code: result for code, result in all_results.items() if code in top_codes}
-        if code_type == "tas":
-            for result in list(all_results.values()):
-                for ancestor in result.ancestors:
-                    all_results.setdefault(ancestor.code, ancestor)
-        else:
-            ancestor_codes = set()
-            for code in all_results.keys():
-                ancestor_codes.update(config.get_all_ancestors(code))
-            if ancestor_codes:
-                model = config.model_class
-                ancestors = model.objects.filter(**{f"{config.code_field}__in": list(ancestor_codes)})
-                async for ancestor in ancestors:
-                    ancestor_code = getattr(ancestor, config.code_field)
-                    if ancestor_code not in all_results:
-                        all_results[ancestor_code] = CodeResult(
-                            code=ancestor_code,
-                            description=getattr(ancestor, config.description_field, None),
-                        )
-        root_codes = [code for code in all_results.keys() if not self._has_parent_in_results(code, all_results, config)]
         hierarchy = {}
         for root_code in root_codes:
-            root_data = all_results[root_code]
+            root_data = subset_results[root_code]
             root_node = SearchResultNode(
                 code=root_code,
                 description=root_data.description,
                 score=root_data.score,
-                all_results=all_results,
+                all_results=subset_results,
                 config=config,
-                is_root=True,
                 popular_name=root_data.popular_name,
             )
             hierarchy[root_code] = root_node.to_dict()
@@ -827,10 +865,7 @@ class CodeLookupTool:
                     "code": label,
                     "description": "",
                     "score": 0.0,
-                    "is_root": True,
-                    "is_leaf": False,
                     "children": {},
-                    "leaf_node_count": 0,
                 },
             )
             if label == PscGroupLabels.RESEARCH_AND_DEVELOPMENT and root_code in rd_terms:
@@ -840,10 +875,8 @@ class CodeLookupTool:
                 # The root's own node is dropped, so record whether the search matched it (and so the whole group)
                 bucket["is_group_match"] = bucket.get("is_group_match", False) or root_data.get("score", 0.0) > 0
             else:
-                root_data["is_root"] = False
                 bucket["children"][root_code] = root_data
             bucket["score"] = max(bucket["score"], root_data.get("score", 0.0))
-            bucket["leaf_node_count"] += root_data.pop("leaf_node_count", 0)
         return grouped
 
     @staticmethod
@@ -954,6 +987,10 @@ lookup_code_tool = AITool(
                from generated text embeddings. The query may also be automatically expanded into
                related variations to broaden semantic recall.
 
+            Look up one code, or one description, per call, and call the tool again for each further code or
+            code type. A query that lists several codes together (for example "111910, 111920") is not
+            understood as a list of codes.
+
             The result is a tree of the codes that matched, along with the ancestors that show where they sit in
             the hierarchy. Each code has its description, a score for how well it matched the query, whether it
             matched or is only context, how many lowest level codes it covers, and a filter_value to use in
@@ -970,10 +1007,13 @@ lookup_code_tool = AITool(
               services being purchased, a Treasury Account Symbol or federal account, or an assistance listing
               (CFDA) program for grants and other assistance programs by subject. Look codes up instead of
               writing them from memory.
-            - A subject or topic is not a keyword when a code can cover it. "Grants for mental health" is a request
-              for assistance listings (cfda), and "contracts for space technology" or "contracts for chemical
-              weapons" is a request for product and service codes (psc) or industries (naics). Look the topic up
-              with this tool; use a keyword only when no code lookup returns a fitting match.
+            - A subject asked about for a kind of award that a code system fits is a code lookup, not a keyword.
+              Grants and other assistance by subject map to assistance listings (cfda), contracts for a kind of
+              product, service, or research map to psc, and the industry of the business receiving an award maps
+              to naics. For example, "grants for rural broadband" is a cfda lookup. A general topic that is not
+              limited to one kind of award, or that spans grants and contracts, fits no single code system, so use
+              it as a keyword instead. Also use a keyword when no lookup returns a fitting code, or for a discrete
+              term that no code system describes.
             - Do not use it for DEFC or disaster codes, dollar amounts, dates or fiscal years, locations,
               agencies, recipients, award types, or set-asides. Those have their own tools or filters. An agency
               that awarded or funded the awards is found with lookup_agencies; use the tas code_type with an agency

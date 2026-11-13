@@ -38,6 +38,11 @@ class TestPscAncestors:
             ("10", set()),
             ("AG", {"A"}),
             ("AG10", {"A", "AG"}),
+            # Research and development codes sit under a three character node
+            ("AG11", {"A", "AG", "AG1"}),
+            ("AG1", {"A", "AG"}),
+            # AU skips the three character tier
+            ("AU11", {"A", "AU"}),
             ("A", set()),
         ],
     )
@@ -53,11 +58,30 @@ class TestPscParent:
             ("10", None),
             ("AG", "A"),
             ("AG10", "AG"),
+            ("AG11", "AG1"),
+            ("AG1", "AG"),
+            ("AU11", "AU"),
             ("A", None),
         ],
     )
     def test_parent(self, code, expected):
         assert hierarchy_parsers.get_psc_parent(code) == expected
+
+
+class TestPscTreeCode:
+    @pytest.mark.parametrize(
+        "code, expected",
+        [
+            ("AA10", "AA1"),
+            ("AA11", "AA11"),
+            ("AU10", "AU10"),
+            ("D310", "D310"),
+            ("1010", "1010"),
+            ("AA", "AA"),
+        ],
+    )
+    def test_tree_code(self, code, expected):
+        assert hierarchy_parsers.get_psc_tree_code(code) == expected
 
 
 class TestCfdaAncestors:

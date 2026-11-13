@@ -6,7 +6,7 @@ correct paths the llm assembled by hand.
 """
 
 from usaspending_api.accounts.models import TreasuryAppropriationAccount
-from usaspending_api.llm.tools.helpers.hierarchy_parsers import get_tas_parent
+from usaspending_api.llm.tools.helpers.hierarchy_parsers import get_psc_tree_code, get_tas_parent
 from usaspending_api.references.v2.views.filter_tree.psc_filter_tree import PSC_GROUPS, PscGroupLabels
 
 
@@ -17,11 +17,15 @@ def build_psc_path(code: str) -> list[str]:
         "B502" -> ["Service", "B", "B5", "B502"]
         "1005" -> ["Product", "10", "1005"]
         "AA11" -> ["Research and Development", "AA", "AA1", "AA11"]
+        "AA1" -> ["Research and Development", "AA", "AA1"]
+        "AA10" -> ["Research and Development", "AA", "AA1"]  (we don't return "AA10", only the node "AA1")
         "A" -> ["Research and Development"]
         "Research and Development" -> ["Research and Development"]
     """
     if code in PSC_GROUPS:
         return [str(code)]
+
+    code = get_psc_tree_code(code)
 
     if code[0].isdigit():
         group, tier_lengths = PscGroupLabels.PRODUCT, (2, 4)

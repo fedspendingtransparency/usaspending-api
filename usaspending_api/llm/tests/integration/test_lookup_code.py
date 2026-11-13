@@ -407,15 +407,12 @@ class TestGroupPscRootsByTier1:
     """
 
     @staticmethod
-    def _root_node(code, score=0.5, children=None, leaf_node_count=1):
+    def _root_node(code, score=0.5, children=None):
         return {
             "code": code,
             "description": f"description for {code}",
             "score": score,
-            "is_root": True,
-            "is_leaf": not children,
             "children": children or {},
-            "leaf_node_count": leaf_node_count,
         }
 
     def test_groups_roots_under_their_tier1_labels(self):
@@ -455,35 +452,6 @@ class TestGroupPscRootsByTier1:
 
         assert grouped["Research and Development"]["is_group_match"] is False
 
-    def test_service_and_product_roots_are_nested_as_children_and_marked_non_root(self):
-        hierarchy = {"D": self._root_node("D"), "10": self._root_node("10")}
-
-        grouped = CodeLookupTool._group_psc_roots_by_tier1(hierarchy)
-
-        assert grouped["Service"]["children"]["D"]["is_root"] is False
-        assert grouped["Product"]["children"]["10"]["is_root"] is False
-
-    def test_leaf_node_count_summed_across_roots_in_same_group(self):
-        hierarchy = {
-            "D": self._root_node("D", leaf_node_count=3),
-            "F": self._root_node("F", leaf_node_count=4),
-        }
-
-        grouped = CodeLookupTool._group_psc_roots_by_tier1(hierarchy)
-
-        assert grouped["Service"]["leaf_node_count"] == 7
-
-    def test_leaf_node_count_not_summed_across_different_groups(self):
-        hierarchy = {
-            "D": self._root_node("D", leaf_node_count=3),
-            "10": self._root_node("10", leaf_node_count=4),
-        }
-
-        grouped = CodeLookupTool._group_psc_roots_by_tier1(hierarchy)
-
-        assert grouped["Service"]["leaf_node_count"] == 3
-        assert grouped["Product"]["leaf_node_count"] == 4
-
     def test_bucket_score_is_the_best_score_among_its_roots(self):
         hierarchy = {
             "D": self._root_node("D", score=0.2),
@@ -521,7 +489,7 @@ class TestSearchResultNode:
         node = SearchResultNode(code="54", description="Root", score=0.1, all_results=all_results, config=config)
         d = node.to_dict()
 
-        assert set(d.keys()) == {"code", "description", "score", "children", "is_root", "is_leaf"}
+        assert set(d.keys()) == {"code", "description", "score", "children"}
         assert list(d["children"].keys()) == ["5413", "5411"]  # sorted by score desc
 
     def test_no_children_when_config_has_no_parent_fn(self):
@@ -569,6 +537,94 @@ class TestCfdaWithoutPopularName:
             "program_title": "Prevention",
             "popular_name": "",
         }
+
+
+class TestOneCodePerLookup:
+    """A code is looked up on its own. Several codes in one query are not read as a list of codes, which keeps the
+    llm from combining codes of different types in a single lookup."""
+
+    async def test_query_that_lists_codes_is_not_split(self, tool, mock_embedding_generator, mock_get_aimodel):
+        mock_embedding_generator.agenerate_embedding.return_value = None
+        await _make_naics("11", "Agriculture, Forestry, Fishing and Hunting")
+        await _make_naics("1111", "Oilseed and Grain Farming")
+        await _make_naics("111110", "Soybean Farming")
+        await _make_naics("111120", "Oilseed Farming")
+
+        with pytest.raises(NaicsCodeNotRecognizedError) as exc_info:
+            await tool.lookup_codes("111110, 111120", "naics", query_fanout=None)
+
+        assert "111110, 111120" in exc_info.value.model_detail
+
+    async def test_each_code_is_found_by_its_own_lookup(self, tool):
+        await _make_naics("11", "Agriculture, Forestry, Fishing and Hunting")
+        await _make_naics("1111", "Oilseed and Grain Farming")
+        await _make_naics("111110", "Soybean Farming")
+        await _make_naics("111120", "Oilseed Farming")
+
+        first = await tool.lookup_codes("111110", "naics")
+        second = await tool.lookup_codes("111120", "naics")
+
+        assert _matched_codes(first) == {"111110"}
+        assert _matched_codes(second) == {"111120"}
+
+
+class TestResearchAndDevelopmentPscTree:
+    """The client has a three character node (AA1) above the research and development codes that start the same way
+    (AA11, AA12, ...). It takes the description of AA10, and there is no AA10 for the client."""
+
+    @pytest.fixture(autouse=True)
+    async def codes(self):
+        await _make_psc("A", "Research and Development")
+        await _make_psc("AA", "Agriculture R&D")
+        await _make_psc("AA10", "Agriculture R&D Basic Research")
+        await _make_psc("AA11", "Agriculture R&D Applied Research")
+        await _make_psc("AA12", "Agriculture R&D Development")
+
+    async def test_codes_are_under_the_three_character_node(self, tool):
+        result = await tool.lookup_codes("AA11", "psc")
+
+        nodes = _tree_nodes(result)
+        assert nodes["AA11"]["filter_value"] == ["Research and Development", "AA", "AA1", "AA11"]
+        assert nodes["AA1"]["filter_value"] == ["Research and Development", "AA", "AA1"]
+        assert nodes["AA"]["filter_value"] == ["Research and Development", "AA"]
+
+    async def test_there_is_no_code_ending_in_0(self, tool):
+        result = await tool.lookup_codes("AA1", "psc")
+
+        nodes = _tree_nodes(result)
+        assert "AA10" not in nodes
+        # The node has the description of AA10, and covers the codes beneath it but not AA10 itself
+        assert nodes["AA1"]["description"] == "Agriculture R&D Basic Research"
+        assert nodes["AA1"]["covers"] == 2
+        assert nodes["AA1"]["matched"]
+
+    async def test_query_for_a_code_ending_in_0_is_the_three_character_node(self, tool):
+        result = await tool.lookup_codes("AA10", "psc")
+
+        nodes = _tree_nodes(result)
+        assert "AA10" not in nodes
+        assert nodes["AA1"]["filter_value"] == ["Research and Development", "AA", "AA1"]
+        assert "The query is itself a code" in result.instructions
+
+    async def test_two_character_code_covers_all_of_its_codes(self, tool):
+        result = await tool.lookup_codes("AA", "psc")
+
+        assert _tree_nodes(result)["AA"]["covers"] == 3
+
+
+class TestTasTopK:
+    async def test_top_k_counts_accounts_not_periods_of_availability(self, tool):
+        for year in ("2019", "2020", "2021"):
+            await _make_tas(
+                f"012-{year}/{year}-0102-000", "Account A", agency_id="012", main="0102", bpoa=year, epoa=year
+            )
+        await _make_tas("014-X-0102-000", "Account B", agency_id="014", main="0102")
+        await _make_tas("310-X-0102-000", "Account C", agency_id="310", main="0102")
+
+        result = await tool.lookup_codes("0102", "tas", top_k=2)
+
+        # The three periods of the 012 account don't use up the limit, so a second account is returned
+        assert {code for code in _tree_nodes(result) if code.endswith("-0102")} == {"012-0102", "014-0102"}
 
 
 class TestTasAgencyQueries:
@@ -1015,6 +1071,9 @@ class TestBuildFilterValue:
             ("1005", ["Product", "10", "1005"]),
             ("10", ["Product", "10"]),
             ("AA11", ["Research and Development", "AA", "AA1", "AA11"]),
+            ("AA1", ["Research and Development", "AA", "AA1"]),
+            # The client has no AA10, only the node AA1 that stands for it
+            ("AA10", ["Research and Development", "AA", "AA1"]),
             ("AU10", ["Research and Development", "AU", "AU10"]),
             ("AA", ["Research and Development", "AA"]),
         ],
