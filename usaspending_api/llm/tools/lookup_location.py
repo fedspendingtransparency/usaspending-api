@@ -53,32 +53,30 @@ class LocationLookupTool:
         self._country_code_cache = None
         self._state_name_cache = None
 
+    async def _ref_state_info(self) -> None:
+        self._state_name_cache = {}
+        self._state_abbr_cache = {}
+        counties = PopCongressionalDistrict.objects.values("state_name", "state_abbreviation").distinct()
+        async for county in counties:
+            state_name = county["state_name"]
+            state_abbr = county["state_abbreviation"]
+            if state_name and state_abbr:
+                self._state_name_cache[state_abbr.upper()] = state_name.upper()
+                self._state_name_cache[state_abbr.lower()] = state_name.lower
+                self._state_abbr_cache[state_name] = state_abbr
+                self._state_abbr_cache[state_name.lower()] = state_abbr
+                self._state_abbr_cache[state_name.upper()] = state_abbr
+
     async def _load_state_data(self) -> dict[str, str]:
         """Lazy-load state abbreviation and Names map"""
         if self._state_name_cache is None:
-            self._state_name_cache = {}
-            counties = PopCongressionalDistrict.objects.values("state_name", "state_abbreviation").distinct()
-            async for county in counties:
-                state_name = county["state_name"]
-                state_abbr = county["state_abbreviation"]
-                if state_name and state_abbr:
-                    self._state_name_cache[state_abbr.upper()] = state_name.upper()
-                    self._state_name_cache[state_abbr.lower()] = state_name.lower()
+            await self._ref_state_info()
         return self._state_name_cache
 
     async def _get_state_abbreviations(self) -> dict[str, str]:
         """Lazy-load state abbreviations from PopCounty model."""
         if self._state_abbr_cache is None:
-            self._state_abbr_cache = {}
-            counties = PopCongressionalDistrict.objects.values("state_name", "state_abbreviation").distinct()
-            async for county in counties:
-                state_name = county["state_name"]
-                state_abbr = county["state_abbreviation"]
-                if state_name and state_abbr:
-                    # Store with multiple case variations for flexible lookup
-                    self._state_abbr_cache[state_name] = state_abbr
-                    self._state_abbr_cache[state_name.lower()] = state_abbr
-                    self._state_abbr_cache[state_name.upper()] = state_abbr
+            await self._ref_state_info()
         return self._state_abbr_cache
 
     async def _get_country_codes(self) -> dict[str, str]:
@@ -164,21 +162,10 @@ class LocationLookupTool:
 
         # Replaces state abbr in city queries with state name
         if location_type == "city" and "," in query_upper:
-            city, state_abbr = [item.strip() for item in query_upper.split(",")]
+            city_info = [item.strip() for item in query_upper.split(",")]
+            state_abbr = city_info[1]
             if state_abbr in state_names.keys():
-                query_upper = city + ", " + state_names[state_abbr]
-
-        return query_upper
-
-    def _format_query(self, query: str, location_type: str, state_names: dict) -> str:
-        """Applies conditional formatting to assist fuzzy search"""
-        query_upper = query.strip().upper()
-
-        # Replaces state abbr in city queries with state name
-        if location_type == "city" and "," in query_upper:
-            city, state_abbr = [item.strip() for item in query_upper.split(",")]
-            if state_abbr in state_names.keys():
-                query_upper = city + ", " + state_names[state_abbr]
+                query_upper = city_info[0] + ", " + state_names[state_abbr]
 
         return query_upper
 
