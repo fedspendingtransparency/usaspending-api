@@ -4,6 +4,7 @@ from abc import ABC, abstractmethod
 from datetime import date
 from functools import cached_property
 from typing import Annotated, Any, Callable, Literal, get_args
+from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, RootModel, computed_field, field_validator, model_validator
 from pydantic_core import PydanticCustomError
@@ -780,7 +781,7 @@ class Filters(BaseModel):
     selectedRecipients: list[str] = Field(default_factory=list, max_length=50)
     recipientDomesticForeign: Literal["all", "foreign"] = "all"
     recipientType: list[RecipientType] = Field(default_factory=list)
-    selectedRecipientLocations: dict[str, Any] = Field(default_factory=dict)
+    selectedRecipientLocations: dict[str, SelectedLocation] = Field(default_factory=dict)
     awardType: list[str] = Field(default_factory=list)
     selectedAwardIDs: list[str] = Field(default_factory=list)
     awardAmounts: AwardAmounts = Field(default_factory=lambda: AwardAmounts({}))
@@ -934,12 +935,16 @@ class ExecuteFilterInput(BaseModel):
     keyword: list[str] = Field(
         default_factory=list,
         description=(
-            "Free-text keywords. Only for discrete terms with no matching structured filter. For literal "
-            "descriptive phrases, product/item names, addresses, or multi-term OR-style searches, use "
-            "awardDescription instead (comma-separate terms there for OR logic). Never put boolean operators "
-            "(AND/OR), quotation marks, or HTML entities in either field."
+            "Free-text search terms for topics with no matching structured filter. Each entry is one complete term "
+            "or phrase and is matched as a prefix across recipient names and award descriptions. Keep a multi-word "
+            "phrase together as ONE entry (e.g. 'artificial intelligence', never 'artificial' and 'intelligence'): "
+            "single words match unrelated awards. Every entry must be at least 3 characters, so an abbreviation "
+            "such as 'AI' is rejected; use the full phrase. Entries are combined with OR, so an award matching any one "
+            "entry is returned. List several entries to cover the common names for a topic (e.g. 'artificial "
+            "intelligence', 'machine learning', 'deep learning'); more entries find more awards. Never put boolean "
+            "operators (AND/OR), quotation marks, or HTML entities in an entry."
         ),
-        json_schema_extra={"examples": [["bridge", "repair"]]},
+        json_schema_extra={"examples": [["bridge repair", "bridge maintenance"]]},
     )
     timePeriodType: Literal["fy", "dr"] = Field(
         default="fy",
@@ -1042,7 +1047,7 @@ class ExecuteFilterInput(BaseModel):
         ),
         json_schema_extra={"examples": [["small_business"], ["woman_owned_business", "minority_owned_business"]]},
     )
-    selectedRecipientLocations: dict[str, Any] = Field(
+    selectedRecipientLocations: dict[str, SelectedLocation] = Field(
         default_factory=dict,
         description="Recipient locations keyed by identifier. Use the lookup_location tool to build these.",
     )
@@ -1209,9 +1214,11 @@ class ExecuteFilterInput(BaseModel):
     awardDescription: str = Field(
         default="",
         description=(
-            "Free-text award description search term for literal descriptive phrases, product/item names, "
-            "or addresses meant to match verbatim. For multiple terms with OR logic, comma-separate them "
-            "(e.g. 'jeep,toyota') - do not use boolean or HTML-escaped syntax."
+            "One phrase to match in the award description only, for literal descriptive phrases, product/item "
+            "names, or addresses meant to match verbatim (e.g. 'jeep rental'). It is a single phrase, not a list: "
+            "commas and boolean operators are not supported, and a comma-separated value matches nothing. To "
+            "search for several alternatives, use the keyword filter with one entry per alternative. Do not use "
+            "HTML-escaped syntax."
         ),
     )
     filterNewAwardsOnlySelected: bool = Field(default=False, description="When true, limit results to new awards only.")
@@ -1249,17 +1256,34 @@ class FilterSearchInput(BaseModel):
         description="The natural language query describing what the user wants to search for",
         json_schema_extra={"examples": ["How many contracts did the Department of Energy award in fiscal year 2025?"]},
     )
+    search_id: UUID | None = Field(
+        default=None,
+        description=(
+            "The search_id the query review returned for this same user search. Keeps the query review and "
+            "filter search sessions together in one Smart Assist search. A new search is started if this is missing "
+            "or unknown."
+        ),
+    )
 
 
 class FilterSearchEvent(BaseModel):
     search_id: str | None = None
     tool_use_id: str | None = None
-    type: Literal["search_start", "search_error", "search_complete", "tool_start", "tool_complete", "tool_error"]
+    type: Literal[
+        "search_start",
+        "search_error",
+        "search_complete",
+        "search_retry",
+        "search_explanation",
+        "tool_start",
+        "tool_complete",
+        "tool_error",
+    ]
     message: str
     result: Any = None
 
 
-class QueryAssistantInput(BaseModel):
+class QueryReviewInput(BaseModel):
     query: str = Field(
         ...,
         min_length=1,
@@ -1269,8 +1293,8 @@ class QueryAssistantInput(BaseModel):
     )
 
 
-QueryAssistantVerdict = Literal["answerable", "answerable_after_rephrase", "out_of_scope"]
-QueryAssistantReasonCode = Literal[
+QueryReviewVerdict = Literal["answerable", "answerable_after_rephrase", "out_of_scope"]
+QueryReviewReasonCode = Literal[
     "ok",
     "no_matching_data",
     "needs_comparison",
@@ -1281,10 +1305,10 @@ QueryAssistantReasonCode = Literal[
 ]
 
 
-class QueryAssistantDecision(BaseModel):
+class QueryReviewDecision(BaseModel):
     """The structured decision the model submits; also used as the tool input schema."""
 
-    verdict: QueryAssistantVerdict = Field(
+    verdict: QueryReviewVerdict = Field(
         ...,
         description=(
             "answerable: filters can be built from the query as written. "
@@ -1292,7 +1316,7 @@ class QueryAssistantDecision(BaseModel):
             "out_of_scope: no useful set of filters can be built."
         ),
     )
-    reason_code: QueryAssistantReasonCode = Field(
+    reason_code: QueryReviewReasonCode = Field(
         ..., description="Why the verdict was chosen. Use 'ok' when the verdict is answerable."
     )
     message: str = Field(
@@ -1320,9 +1344,12 @@ class QueryAssistantDecision(BaseModel):
     )
 
 
-class QueryAssistantOutput(QueryAssistantDecision):
+class QueryReviewOutput(QueryReviewDecision):
     suggestions: list[str] = Field(default_factory=list, description="Example prompts the user can click")
     suggestions_heading: str = Field(
         "Examples of searches Smart Assist can run:", description="Label shown above suggestions"
     )
-    search_id: str | None = None
+    search_id: str | None = Field(
+        default=None,
+        description="Id of the Smart Assist search. Send it back with the filter search request for the same search.",
+    )

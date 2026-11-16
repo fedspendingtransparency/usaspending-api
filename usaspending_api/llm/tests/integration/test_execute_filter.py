@@ -95,6 +95,105 @@ def _new_mock_instance():
     return mock_instance
 
 
+class TestSearchApiValidationNeedsAThread:
+    """The search API's validator looks up the valid DEFC codes in the database, which must not happen on the event
+    loop (a search for COVID spending failed three times with "You cannot call this from an async context")."""
+
+    async def test_valid_def_codes_are_accepted_when_called_from_async_code(self, mock_filter_hash):
+        covid_codes = ["L", "M", "N", "O", "P", "U", "V"]
+        clear_defc_rows_cache()
+        try:
+            for code in covid_codes:
+                await sync_to_async(baker.make)(
+                    "references.DisasterEmergencyFundCode",
+                    code=code,
+                    public_law=f"PUBLIC LAW FOR CODE {code}",
+                    title=f"TITLE FOR CODE {code}",
+                    group_name="covid_19",
+                )
+            mock_filter_hash.objects.aget.side_effect = FilterHash.DoesNotExist
+            mock_filter_hash.return_value = _new_mock_instance()
+
+            result = await execute_filter(defCodes={"require": covid_codes})
+
+            assert result.results["hash"]
+        finally:
+            clear_defc_rows_cache()
+
+
+class TestSearchApiValidation:
+    """The website sends the saved filters to the search endpoints, which reject some that Filters accepts."""
+
+    async def test_a_keyword_shorter_than_three_characters_is_rejected(self, mock_filter_hash):
+        with pytest.raises(FilterValidationError) as exc_info:
+            await execute_filter(keyword=["AI"])
+
+        assert "at least 3 characters" in exc_info.value.instructions
+        assert "'AI'" in exc_info.value.model_detail
+        assert FINAL_TOOL_RETRY_INSTRUCTIONS in exc_info.value.instructions
+        mock_filter_hash.assert_not_called()
+
+    async def test_a_full_phrase_is_accepted(self, mock_filter_hash):
+        mock_filter_hash.objects.aget.side_effect = FilterHash.DoesNotExist
+        mock_filter_hash.return_value = _new_mock_instance()
+
+        result = await execute_filter(keyword=["artificial intelligence", "machine learning"])
+
+        assert result.results["hash"]
+
+    async def test_a_fiscal_year_before_the_search_api_minimum_is_rejected(self, mock_filter_hash):
+        with pytest.raises(FilterValidationError) as exc_info:
+            await execute_filter(timePeriodType="fy", timePeriodFY=["2005"])
+
+        assert "search would reject" in exc_info.value.model_detail
+        mock_filter_hash.assert_not_called()
+
+    async def test_saved_filters_contain_no_null_values_for_the_website_to_forward(self, mock_filter_hash):
+        """The website sends saved location filters to the search API as they are, and the API rejects nulls in them
+        (a recipient location with "zip": null returned a 422 for the whole results page)."""
+        mock_filter_hash.objects.aget.side_effect = FilterHash.DoesNotExist
+        mock_filter_hash.return_value = _new_mock_instance()
+        arizona = {
+            "identifier": "USA_AZ",
+            "filter": {
+                "country": "USA",
+                "state": "AZ",
+                "county": None,
+                "city": None,
+                "zip": None,
+                "district_current": None,
+                "district_original": None,
+            },
+            "display": {"entity": "State", "standalone": "ARIZONA", "title": "ARIZONA"},
+        }
+
+        await execute_filter(selectedRecipientLocations={"USA_AZ": arizona}, timePeriodFY=["2025"])
+
+        saved = mock_filter_hash.call_args[1]["filter"]
+        assert saved["filters"]["selectedRecipientLocations"]["USA_AZ"]["filter"] == {"country": "USA", "state": "AZ"}
+
+        def none_values(value, path="filters"):
+            if isinstance(value, dict):
+                return [
+                    p
+                    for k, v in value.items()
+                    for p in ([f"{path}.{k}"] if v is None else none_values(v, f"{path}.{k}"))
+                ]
+            if isinstance(value, list):
+                return [p for i, v in enumerate(value) for p in none_values(v, f"{path}[{i}]")]
+            return []
+
+        assert none_values(saved["filters"]) == []
+
+    async def test_an_open_ended_award_amount_is_accepted(self, mock_filter_hash):
+        mock_filter_hash.objects.aget.side_effect = FilterHash.DoesNotExist
+        mock_filter_hash.return_value = _new_mock_instance()
+
+        result = await execute_filter(awardAmounts={"specific": [1000000, None]})
+
+        assert result.results["hash"]
+
+
 class TestInputValidation:
     """Test input validation and error handling."""
 
@@ -114,12 +213,15 @@ class TestInputValidation:
         assert "invalid_field" in exc_info.value.model_detail
         assert exc_info.value.instructions == FINAL_TOOL_RETRY_INSTRUCTIONS
 
-    async def test_empty_filters_accepted(self):
-        """Test that empty filters are valid."""
-        result = await execute_filter()
+    async def test_empty_filters_rejected(self):
+        """An empty filter set would save a match-everything hash that the website cannot display."""
+        with pytest.raises(FilterValidationError) as exc_info:
+            await execute_filter()
 
-        assert isinstance(result, AIToolResult)
-        assert "error" not in result
+        assert "No filters were selected" in exc_info.value.user_message
+        assert "keyword" in exc_info.value.instructions
+        assert FINAL_TOOL_RETRY_INSTRUCTIONS in exc_info.value.instructions
+        assert not await FilterHash.objects.aexists()
 
     async def test_validation_error_message_includes_details(self):
         """Test that validation errors include helpful details."""
@@ -207,7 +309,7 @@ class TestFilterProcessing:
         mock_instance = _new_mock_instance()
         mock_filter_hash.return_value = mock_instance
 
-        await execute_filter(keyword=[])
+        await execute_filter(keyword=[], awardType=["A"])
 
         call_args = mock_filter_hash.call_args
         saved_filter = call_args[1]["filter"]
@@ -829,7 +931,7 @@ class TestEdgeCases:
         mock_instance = _new_mock_instance()
         mock_filter_hash.return_value = mock_instance
 
-        result = await execute_filter(keyword=["test™", "café", "日本"])
+        result = await execute_filter(keyword=["test™", "café", "日本語"])
 
         assert isinstance(result, AIToolResult)
 
@@ -867,15 +969,12 @@ class TestEdgeCases:
 
         assert isinstance(result, AIToolResult)
 
-    async def test_empty_list_filters(self, mock_filter_hash):
-        """Test handling of empty list filters."""
-        mock_filter_hash.objects.aget.side_effect = FilterHash.DoesNotExist
-        mock_instance = _new_mock_instance()
-        mock_filter_hash.return_value = mock_instance
+    async def test_only_empty_list_filters_rejected(self, mock_filter_hash):
+        """Filters that are all empty lists select nothing, so they are rejected like an empty call."""
+        with pytest.raises(FilterValidationError):
+            await execute_filter(awardType=[], keyword=[])
 
-        result = await execute_filter(awardType=[], keyword=[])
-
-        assert isinstance(result, AIToolResult)
+        mock_filter_hash.assert_not_called()
 
 
 class TestRealWorldScenarios:

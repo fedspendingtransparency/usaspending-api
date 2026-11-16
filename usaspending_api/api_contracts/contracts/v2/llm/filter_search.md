@@ -24,6 +24,8 @@ This endpoint accepts a natural language query and returns a streaming response 
     + Attributes (object)
         + `query` (required, string)
             The natural language query to be processed by the LLM filter search.
+        + `search_id` (optional, string)
+            The `search_id` returned by `/api/v2/llm/query-review/` for this same user search, so that the query review and filter search are kept together in one Smart Assist search. If it is missing or unknown, a new search is started.
 
     + Body
 
@@ -37,7 +39,7 @@ This endpoint accepts a natural language query and returns a streaming response 
 
     + Attributes
         + `search_id` (required, string)
-            UUID identifying this search operation (the session primary key)
+            UUID identifying the Smart Assist search. It is the same `search_id` the query review returned, or a new one when the request did not include one.
         + `tool_use_id` (optional, string)
             Identifier for the specific tool being executed. Present only for tool-related events.
         + `type` (required, enum[string])
@@ -45,7 +47,9 @@ This endpoint accepts a natural language query and returns a streaming response 
             + Members
                 + `search_start` - Indicates the search has begun
                 + `search_error` - Indicates an error occurred during search
-                + `search_complete` - Indicates the search has completed successfully
+                + `search_complete` - Indicates the search has completed successfully. Its `result` is the final filter hash.
+                + `search_retry` - The saved filters matched no awards, so the model is being asked to revise them once. A `tool_start` for the revised filters follows, and `search_complete` carries the final hash.
+                + `search_explanation` - A short note on why the final filters were selected, written by the `filter-explain` assistant. Sent after `search_complete`, and omitted if it could not be written or `filter-explain` is not set up.
                 + `tool_start` - Indicates a tool execution has started
                 + `tool_complete` - Indicates a tool execution has completed
                 + `tool_error` - Indicates an error occurred during tool execution
@@ -62,6 +66,7 @@ This endpoint accepts a natural language query and returns a streaming response 
             {"search_id": "a3e2c8f1-4b6d-4e9a-9c21-7f8b2d1e5a04", "tool_use_id": "12346", "type": "tool_start", "message": "Applying filters based on contracts with an award amount greater than 3 million dollars in California for IT services in Fisacal Year 2023"}
             {"search_id": "a3e2c8f1-4b6d-4e9a-9c21-7f8b2d1e5a04", "tool_use_id": "12346", "type": "tool_complete", "message": "Finished applying filters."}
             {"search_id": "a3e2c8f1-4b6d-4e9a-9c21-7f8b2d1e5a04", "type": "search_complete", "message": "Showing results for contracts with an award amount greater than 3 million dollars in California for IT services in Fiscal Year 2023", "result": "16ebdca405791cb0f23d4c7120606fa1"}
+            {"search_id": "a3e2c8f1-4b6d-4e9a-9c21-7f8b2d1e5a04", "type": "search_explanation", "message": "Smart Assist set the award type to contracts and the amount to over $3 million because you asked for large contracts. California and fiscal year 2023 come from your location and date, and a keyword covers IT services."}
 
 # Data Structures
 
@@ -69,7 +74,7 @@ This endpoint accepts a natural language query and returns a streaming response 
 Represents a single chunk in the streaming response.
 
 + `search_id` (required, string)
-    UUID identifying the search operation.
+    UUID identifying the Smart Assist search.
 + `tool_use_id` (optional, string)
     Unique identifier for a tool execution. Only present for tool-related events.
 + `type` (required, enum[string])
@@ -77,6 +82,8 @@ Represents a single chunk in the streaming response.
         + `search_start`
         + `search_error`
         + `search_complete`
+        + `search_retry`
+        + `search_explanation`
         + `tool_start`
         + `tool_error`
         + `tool_complete`

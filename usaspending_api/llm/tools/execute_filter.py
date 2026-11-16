@@ -1,9 +1,11 @@
 import json
 import logging
+from typing import Any
 
 from asgiref.sync import sync_to_async
 from pydantic import ValidationError
 
+from usaspending_api.common.exceptions import InvalidParameterException, UnprocessableEntityException
 from usaspending_api.llm.models.py_models import (
     AITool,
     AIToolDescription,
@@ -24,6 +26,7 @@ from usaspending_api.llm.tools.exceptions import (
     TimePeriodNotParseableError,
     ToolUseRuntimeError,
 )
+from usaspending_api.llm.tools.helpers.search_filters import validate_for_search_api
 from usaspending_api.llm.tools.lookup_award import lookup_award_tool
 from usaspending_api.llm.tools.lookup_recipient import lookup_recipient_tool
 from usaspending_api.references.helpers import create_hash
@@ -148,9 +151,23 @@ async def _validate_award_ids_exist(filters: Filters) -> None:
         )
 
 
+def _drop_none_values(value: Any) -> Any:
+    """Remove dict entries whose value is None, at any depth. List items are kept, since a None can be meaningful there
+    (an open-ended award amount range is [1000000, None]).
+
+    The website forwards the saved filters to the search endpoints as they are, and they reject None values, e.g. a
+    location with "zip": null. Typed fields already omit None; this covers fields typed as Any.
+    """
+    if isinstance(value, dict):
+        return {key: _drop_none_values(item) for key, item in value.items() if item is not None}
+    if isinstance(value, list):
+        return [_drop_none_values(item) for item in value]
+    return value
+
+
 def _filter_request_from_filters(filters: Filters) -> dict:
     """Canonicalize an already-validated Filters instance into the persisted filter request shape."""
-    filter_request = FilterRequest(filters=filters).model_dump(exclude_none=True)
+    filter_request = _drop_none_values(FilterRequest(filters=filters).model_dump(exclude_none=True))
     if "keyword" in filter_request["filters"]:
         filter_request["filters"]["keyword"] = {v: v for v in filter_request["filters"]["keyword"]}
     if "selectedAwardIDs" in filter_request["filters"]:
@@ -170,9 +187,27 @@ def build_filter_request(filter_input: dict) -> dict:
     return _filter_request_from_filters(filters)
 
 
-async def execute_filter(**kwargs) -> AIToolResult:
-    logger.info(f"Starting execute_filter with {len(kwargs)} filter parameter(s)", extra={"filter_count": len(kwargs)})
+def _has_no_filters(filters: Filters) -> bool:
+    """Whether nothing was selected, i.e. every field still holds its default value."""
+    return filters.model_dump() == Filters().model_dump()
 
+
+def _validate_search_api_accepts(filter_request: dict) -> None:
+    """The search endpoints apply their own rules to saved filters; reject what they would so the model can fix it."""
+    try:
+        validate_for_search_api(filter_request)
+    except (InvalidParameterException, UnprocessableEntityException) as exc:
+        reason = str(exc.detail)
+        raise FilterValidationError(
+            "Unable to filter. One of the selected filters is not valid for search.",
+            model_detail=f"The search would reject these filters: {reason}",
+            instructions=f"Fix the filter described in 'error' (for example, a keyword must be at least 3 characters "
+            f"long, so use a complete phrase instead of an abbreviation). {FINAL_TOOL_RETRY_INSTRUCTIONS}",
+        ) from exc
+
+
+async def validate_filters(**kwargs) -> tuple[Filters, dict]:
+    """Validate the model's filter input and return the Filters plus the canonical persisted filter request."""
     try:
         # Validating and dumping the filters use the synchronous ORM, so keep both off the event loop
         filters = await sync_to_async(Filters)(**kwargs)
@@ -188,17 +223,37 @@ async def execute_filter(**kwargs) -> AIToolResult:
             ) from exc
         raise FilterValidationError(GENERIC_USER_MESSAGE, model_detail=model_detail, instructions=instructions) from exc
 
+    # An empty filter set would save a hash that matches every award, which the website cannot display.
+    if await sync_to_async(_has_no_filters)(filters):
+        raise FilterValidationError(
+            "Unable to filter. No filters were selected.",
+            model_detail="execute_filter was called without any filters.",
+            instructions=(
+                "Select at least one filter that matches the user's query. If nothing else applies, use a keyword "
+                f"taken from the query. {FINAL_TOOL_RETRY_INSTRUCTIONS}"
+            ),
+        )
+
     await _validate_agencies_exist(filters)
     await _validate_recipients_exist(filters)
     await _validate_award_ids_exist(filters)
 
     filter_request = await sync_to_async(_filter_request_from_filters)(filters)
+    # The search API's validator reads reference data (such as the valid DEFC codes) with the synchronous ORM
+    await sync_to_async(_validate_search_api_accepts)(filter_request)
 
     logger.debug(f"Filter validation successful: {list(kwargs.keys())}")
+    return filters, filter_request
 
+
+async def save_filter_request(filter_request: dict) -> str:
+    """Save the canonical filter request (if it is new) and return its hash."""
     filter_json = json.dumps(filter_request, sort_keys=True)
     hash_key = create_hash(filter_json.encode("utf-8"))
-    logger.info(f"Generated filter hash: {hash_key}", extra={"hash": hash_key, "filter_keys": list(kwargs.keys())})
+    logger.info(
+        f"Generated filter hash: {hash_key}",
+        extra={"hash": hash_key, "filter_keys": list(filter_request.get("filters", {}).keys())},
+    )
 
     try:
         await FilterHash.objects.aget(hash=hash_key)
@@ -215,6 +270,15 @@ async def execute_filter(**kwargs) -> AIToolResult:
                 model_detail=f"There was an error saving the filter hash: {e}",
                 instructions="Call execute_filter again with the same input.",
             ) from e
+
+    return hash_key
+
+
+async def execute_filter(**kwargs) -> AIToolResult:
+    logger.info(f"Starting execute_filter with {len(kwargs)} filter parameter(s)", extra={"filter_count": len(kwargs)})
+
+    _, filter_request = await validate_filters(**kwargs)
+    hash_key = await save_filter_request(filter_request)
 
     logger.info(f"Execute filter completed successfully: hash={hash_key}", extra={"hash": hash_key})
     return AIToolResult(results={"hash": hash_key})

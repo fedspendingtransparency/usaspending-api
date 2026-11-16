@@ -3951,7 +3951,10 @@
         "id": 146,
         "query": "List all awards with jeep or toyota in the award description",
         "expected_output": {
-            "awardDescription": "jeep,toyota"
+            "keyword": [
+                "jeep",
+                "toyota"
+            ]
         },
         "expected_tools": [
             "execute_filter"
@@ -3960,7 +3963,7 @@
             "single_filter",
             "multi_answer"
         ],
-        "notes": "Testing how or works to show two different award description queries",
+        "notes": "Testing how or works to show two different award description queries. Keywords are OR'd, so each alternative is its own keyword entry; awardDescription takes a single phrase and a comma-separated value matches no awards",
         "approved": false,
         "sme_validation_notes": ""
     },
@@ -5106,6 +5109,50 @@
             "numerical"
         ],
         "notes": "Tests edge case of $0 awards",
+        "approved": false,
+        "sme_validation_notes": ""
+    },
+    {
+        "id": 203,
+        "query": "How many contracts did ICE award last year?",
+        "expected_output": {
+            "awardType": [
+                "A",
+                "B",
+                "C",
+                "D"
+            ],
+            "$time": {
+                "unit": "fiscal_year",
+                "offset": -1
+            },
+            "selectedAwardingAgencies": {
+                "776_subtier": {
+                    "id": 776,
+                    "agencyType": "subtier",
+                    "toptier_flag": false,
+                    "toptier_agency": {
+                        "id": 63,
+                        "toptier_code": "070",
+                        "abbreviation": "DHS",
+                        "name": "Department of Homeland Security"
+                    },
+                    "subtier_agency": {
+                        "abbreviation": "ICE",
+                        "name": "U.S. Immigration and Customs Enforcement"
+                    }
+                }
+            }
+        },
+        "expected_tools": [
+            "lookup_agencies",
+            "execute_filter"
+        ],
+        "tags": [
+            "multi_filter",
+            "temporal"
+        ],
+        "notes": "ICE is a subagency of DHS. It should be selected as a subtier awarding agency through lookup_agencies, not used as a keyword",
         "approved": false,
         "sme_validation_notes": ""
     }

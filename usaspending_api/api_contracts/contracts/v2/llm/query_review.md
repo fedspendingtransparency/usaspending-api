@@ -1,7 +1,7 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# LLM Query Assistant [UNDER DEVELOPMENT | NOT AVAILABLE] [/api/v2/llm/query-assistant/]
+# LLM Query Review [UNDER DEVELOPMENT | NOT AVAILABLE] [/api/v2/llm/query-review/]
 
 First step of Smart Assist. Decides whether a natural language query can be turned into search filters, and may suggest a reworded query for the user to approve. The client then calls `/api/v2/llm/filter-search/` with the original or approved query.
 
@@ -55,7 +55,7 @@ If this step fails for any reason, it responds with verdict `answerable` so that
         + `suggestions_heading` (required, string)
             Label to show above `suggestions`.
         + `search_id` (optional, string, nullable)
-            UUID of the session that handled this request.
+            UUID of the Smart Assist search. Send it as `search_id` in the filter search request so both steps belong to the same search. Absent when the query review was skipped.
 
     + Body
 

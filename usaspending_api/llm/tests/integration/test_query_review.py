@@ -3,20 +3,23 @@ from unittest.mock import AsyncMock, Mock, patch
 import pytest
 from botocore.exceptions import ClientError
 
-from usaspending_api.llm.assistants.query_assistant import (
+from usaspending_api.llm.assistants.query_review import (
     DEFAULT_OUT_OF_SCOPE_MESSAGE,
     SEPARATE_QUERIES_HEADING,
     SUGGESTIONS_HEADING,
-    QueryAssistant,
+    QueryReview,
 )
 from usaspending_api.llm.models.db_models import Assistant, Session
-from usaspending_api.llm.models.py_models import QueryAssistantDecision
+from usaspending_api.llm.models.py_models import QueryReviewDecision
+
+SEARCH_ID = "22222222-2222-2222-2222-222222222222"
 
 
 @pytest.fixture
 def mock_session():
     session = Mock(spec=Session)
     session.id = "11111111-1111-1111-1111-111111111111"
+    session.search_id = "22222222-2222-2222-2222-222222222222"
     return session
 
 
@@ -24,7 +27,7 @@ def mock_session():
 def mock_assistant():
     assistant = Mock(spec=Assistant)
     assistant.ai_model = Mock(model_id="amazon.nova-pro-v1:0")
-    assistant.system_prompt = Mock(text="You are the query assistant.")
+    assistant.system_prompt = Mock(text="You are the query review.")
     assistant.inference_config = {"temperature": 0.0, "maxTokens": 1000, "stopSequences": []}
     return assistant
 
@@ -40,7 +43,7 @@ def mock_bedrock_client():
 def _bedrock_response(decision: dict | None) -> dict:
     content = [{"text": "ok"}]
     if decision is not None:
-        content = [{"toolUse": {"toolUseId": "t1", "name": QueryAssistant.TOOL_NAME, "input": decision}}]
+        content = [{"toolUse": {"toolUseId": "t1", "name": QueryReview.TOOL_NAME, "input": decision}}]
     return {
         "output": {"message": {"role": "assistant", "content": content}},
         "usage": {"inputTokens": 10, "outputTokens": 5},
@@ -56,7 +59,7 @@ def no_db_writes():
 
 
 async def _evaluate(mock_assistant, mock_session, query="q"):
-    return await QueryAssistant(mock_assistant, mock_session).evaluate(query)
+    return await QueryReview(mock_assistant, mock_session).evaluate(query)
 
 
 @pytest.mark.asyncio
@@ -66,7 +69,7 @@ async def test_answerable(mock_assistant, mock_session, mock_bedrock_client, no_
     assert output.verdict == "answerable"
     assert output.rewritten_query is None
     assert output.suggestions == []
-    assert output.search_id == mock_session.id
+    assert output.search_id == mock_session.search_id
 
 
 @pytest.mark.asyncio
@@ -87,16 +90,16 @@ async def test_rewrite(mock_assistant, mock_session, mock_bedrock_client, no_db_
 
 
 @pytest.mark.asyncio
-async def test_comparison_is_never_a_single_rewrite(mock_session):
+async def test_comparison_is_never_a_single_rewrite():
     """A model that rewrites a comparison into one combined query must be turned into out_of_scope."""
-    decision = QueryAssistantDecision(
+    decision = QueryReviewDecision(
         verdict="answerable_after_rephrase",
         reason_code="needs_comparison",
         message="Search them separately.",
         rewritten_query="Federal funding for DC in 2025; Federal funding for Wyoming in 2025",
         separate_queries=["Federal funding for DC in 2025", "Federal funding for Wyoming in 2025"],
     )
-    output = QueryAssistant.build_output(decision, mock_session)
+    output = QueryReview.build_output(decision, SEARCH_ID)
     assert output.verdict == "out_of_scope"
     assert output.rewritten_query is None
     assert output.suggestions == ["Federal funding for DC in 2025", "Federal funding for Wyoming in 2025"]
@@ -104,11 +107,11 @@ async def test_comparison_is_never_a_single_rewrite(mock_session):
 
 
 @pytest.mark.asyncio
-async def test_comparison_without_separate_queries_uses_generic_examples(mock_session):
-    decision = QueryAssistantDecision(
+async def test_comparison_without_separate_queries_uses_generic_examples():
+    decision = QueryReviewDecision(
         verdict="out_of_scope", reason_code="needs_comparison", message="Cannot compare.", separate_queries=["only one"]
     )
-    output = QueryAssistant.build_output(decision, mock_session)
+    output = QueryReview.build_output(decision, SEARCH_ID)
     assert output.suggestions_heading == SUGGESTIONS_HEADING
     assert "only one" not in output.suggestions
     assert output.suggestions
@@ -128,16 +131,16 @@ async def test_out_of_scope_gets_default_message_and_suggestions(
 
 
 @pytest.mark.asyncio
-async def test_too_broad_is_out_of_scope_with_suggestions(mock_session):
+async def test_too_broad_is_out_of_scope_with_suggestions():
     """A query with nothing to filter on is turned away with examples, not rewritten to an empty search."""
     message = "Sorry, Smart Assist needs a little more to go on. Try adding an agency, place or time period."
-    decision = QueryAssistantDecision(
+    decision = QueryReviewDecision(
         verdict="out_of_scope",
         reason_code="too_broad",
         message=message,
         rewritten_query="Federal awards",
     )
-    output = QueryAssistant.build_output(decision, mock_session)
+    output = QueryReview.build_output(decision, SEARCH_ID)
     assert output.verdict == "out_of_scope"
     assert output.message == message
     assert output.rewritten_query is None
@@ -146,11 +149,11 @@ async def test_too_broad_is_out_of_scope_with_suggestions(mock_session):
 
 
 @pytest.mark.asyncio
-async def test_rewrite_without_rewritten_query_is_answerable(mock_session):
-    decision = QueryAssistantDecision(
+async def test_rewrite_without_rewritten_query_is_answerable():
+    decision = QueryReviewDecision(
         verdict="answerable_after_rephrase", reason_code="no_matching_data", rewritten_query="  "
     )
-    assert QueryAssistant.build_output(decision, mock_session).verdict == "answerable"
+    assert QueryReview.build_output(decision, SEARCH_ID).verdict == "answerable"
 
 
 @pytest.mark.asyncio

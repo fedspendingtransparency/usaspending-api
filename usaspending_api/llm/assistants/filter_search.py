@@ -1,9 +1,10 @@
+import json
 import logging
 import time
 import uuid
 from datetime import date
 from functools import cached_property
-from typing import Any, AsyncGenerator, Callable
+from typing import Any, AsyncGenerator, Awaitable, Callable
 
 from django.db.models import Sum
 
@@ -12,30 +13,72 @@ from usaspending_api.common.helpers.aws_helpers import (
     async_aws_client,
     retry_on_throttling,
 )
-from usaspending_api.llm.models.db_models import Assistant, Message, Session, ToolUse
+from usaspending_api.llm.models.db_models import Assistant, Message, Session, SmartAssistSearch, ToolUse
 from usaspending_api.llm.models.py_models import AITool, abuild_defc_description
 from usaspending_api.llm.tools.exceptions import GENERIC_TOOL_FAILURE_INSTRUCTIONS, ToolUseRuntimeError
+from usaspending_api.llm.tools.helpers.result_counts import get_award_counts, total_award_count
+from usaspending_api.llm.tools.helpers.search_filters import to_search_filters
+from usaspending_api.references.models import FilterHash
 
 logger = logging.getLogger(__name__)
 
 
 class FilterSearchAssistant:
     MAX_TOOL_ITERATIONS = 15
+    MAX_RETRIES = 1
     COMPLETION_TOOL_NAME = "execute_filter"
     DEFAULT_SYSTEM_MESSAGE = (
         "You are USAspending search assistant. Help the user select filters to search for federal spending"
     )
 
-    def __init__(self, assistant: Assistant, tools: list[AITool], session: Session, as_of: date | None = None) -> None:
+    def __init__(  # noqa: PLR0913 - each option is a different post-search step; none can be dropped
+        self,
+        assistant: Assistant,
+        tools: list[AITool],
+        session: Session,
+        as_of: date | None = None,
+        check_results: bool = False,
+        search_id: str | None = None,
+        explainer: Callable[[str, dict], Awaitable[str | None]] | None = None,
+    ) -> None:
+        """
+        `check_results` turns on the steps that run once `execute_filter` has saved the filters: counting the awards
+        they return (and allowing one revision when there are none) and writing the "why these filters" note. It is off
+        by default so evals and direct callers see the plain search; the API view turns it on.
+
+        `explainer` writes the "why these filters" note from the query and the saved filter request (see
+        FilterExplain.explain). It runs once the filters are final, and no note is sent when there is none.
+
+        `search_id` is the id of the SmartAssistSearch this session belongs to. It is what the events report as their
+        `search_id` (the session id is used when there is none), and the final hash and explanation are saved on it.
+        """
         self.assistant = assistant
         self.as_of = as_of
         self.tools = tools
         self.tools_by_name = {tool.description.name: tool for tool in tools}
         self.session = session
+        self._search_id = search_id
         self.message_order = 0
         self.messages = []
         self.tool_iterations = 0
+        self.check_results = check_results
+        self.explainer = explainer
+        self.retries_used = 0
+        self.search_complete = False
+        # set by handle_tool_use when execute_filter succeeds and the result is still to be checked
+        self.pending_completion: dict[str, str] | None = None
+        # the last saved filters that matched nothing, kept in case the revision does not produce better ones
+        self.fallback_completion: dict[str, str] | None = None
         self._tool_config: dict[str, list[dict]] | None = None
+
+    @property
+    def search_id(self) -> str:
+        return self._search_id or str(self.session.id)
+
+    async def _record_search(self, **fields: str) -> None:
+        """Save results on the SmartAssistSearch. A no-op when this assistant was not given one (evals, tests)."""
+        if self._search_id:
+            await SmartAssistSearch.objects.filter(id=self._search_id).aupdate(**fields)
 
     @staticmethod
     def _extract_text_from_content(content: list[dict]) -> str:
@@ -191,7 +234,7 @@ class FilterSearchAssistant:
         )
 
     async def search(self, query: str) -> AsyncGenerator[dict[str, str], None]:
-        yield {"search_id": str(self.session.id), "type": "search_start", "message": "Thinking..."}
+        yield {"search_id": self.search_id, "type": "search_start", "message": "Thinking..."}
 
         logger.info(
             f"Starting filter search: session={self.session.id}, query_length={len(query)}",
@@ -211,7 +254,6 @@ class FilterSearchAssistant:
             self._sanitize_tool_use_input(response["output"]["message"]["content"])
             m = await self._create_message_from_response(response)
             stop_reason = response["stopReason"]
-            search_complete = False
 
             logger.info(
                 f"Initial filter search response received: session={self.session.id}, stop_reason={stop_reason}",
@@ -227,18 +269,22 @@ class FilterSearchAssistant:
                     "message_text": m.message,
                 },
             )
-            while stop_reason == "tool_use" and not search_complete and self.tool_iterations < self.MAX_TOOL_ITERATIONS:
+            while (
+                stop_reason == "tool_use"
+                and not self.search_complete
+                and self.tool_iterations < self.MAX_TOOL_ITERATIONS
+            ):
                 self.tool_iterations += 1
                 tool_requests = [
                     request for request in response["output"]["message"]["content"] if "toolUse" in request
                 ]
 
-                async for event in self.handle_tool_use(tool_requests, m):
+                async for event in self._relay(self.handle_tool_use(tool_requests, m)):
                     yield event
-                    if event.get("type") == "search_complete":
-                        search_complete = True
+                async for event in self._relay(self._finish_search(query)):
+                    yield event
 
-                if search_complete:
+                if self.search_complete:
                     break
 
                 response = await self._converse(client)
@@ -262,11 +308,9 @@ class FilterSearchAssistant:
                     },
                 )
 
-            if not search_complete:
-                async for event in self._aforce_completion(client, query, response, m):
+            if not self.search_complete:
+                async for event in self._complete_after_loop(client, query, response, m):
                     yield event
-                    if event.get("type") == "search_complete":
-                        search_complete = True
 
         # Calculate total token usage for this search.
         totals = await self.session.messages.aaggregate(
@@ -282,15 +326,117 @@ class FilterSearchAssistant:
             extra={
                 "session_id": str(self.session.id),
                 "tool_iterations": self.tool_iterations,
-                "search_complete": search_complete,
+                "search_complete": self.search_complete,
                 "total_input_tokens": total_input_tokens,
                 "total_output_tokens": total_output_tokens,
                 "total_tokens": total_tokens,
             },
         )
 
-        if not search_complete:
+        if not self.search_complete:
             raise RuntimeError(f"Filter search session {self.session.id} ended without completing")
+
+    async def _relay(self, events: AsyncGenerator[dict, None]) -> AsyncGenerator[dict, None]:
+        """Pass events through, noting when the search has been reported complete."""
+        async for event in events:
+            if event.get("type") == "search_complete":
+                self.search_complete = True
+            yield event
+
+    async def _complete_after_loop(
+        self, client: Any, query: str, response: dict, message: Message
+    ) -> AsyncGenerator[dict, None]:
+        """Complete a search whose tool loop ended without a checked, completed execute_filter."""
+        if self.fallback_completion:
+            # the revision after a zero-result check did not produce new filters, so keep the ones we had
+            self.pending_completion, self.fallback_completion = self.fallback_completion, None
+            async for event in self._relay(self._finish_search(query)):
+                yield event
+
+        if not self.search_complete:
+            async for event in self._relay(self._aforce_completion(client, query, response, message)):
+                yield event
+            async for event in self._relay(self._finish_search(query)):
+                yield event
+
+    def _search_complete_event(self, filter_hash: str) -> dict[str, str]:
+        return {
+            "search_id": self.search_id,
+            "type": "search_complete",
+            "result": filter_hash,
+            "message": "Search complete.",
+        }
+
+    @staticmethod
+    async def _saved_filter_request(filter_hash: str) -> dict | None:
+        saved = await FilterHash.objects.filter(hash=filter_hash).afirst()
+        return saved.filter if saved else None
+
+    async def _add_user_turn_text(self, text: str) -> None:
+        """Add text from the user to the conversation, merged into a trailing toolResult turn so roles alternate."""
+        await Message.objects.acreate(session=self.session, role="user", message=text, order=self.message_order)
+        self.message_order += 1
+        if self.messages[-1]["role"] == "user":
+            self.messages[-1]["content"].append({"text": text})
+        else:
+            self.messages.append({"role": "user", "content": [{"text": text}]})
+
+    @staticmethod
+    def _zero_results_note(filter_request: dict) -> str:
+        filters = json.dumps(to_search_filters(filter_request), default=str)
+        return (
+            f"The filters were saved, but they match no awards. The filters were: {filters}\n"
+            "Zero results can be the right answer. Check whether any filter is wrong or narrower than the user's "
+            "search (for example a place or time period the user did not ask for, a code that is too specific, or a "
+            "keyword phrase worded differently from how awards describe it; keywords are OR'd, so listing several "
+            "common names for a topic widens the search). If so, call execute_filter again with corrected filters, "
+            "using the lookup tools first if you need them. If the filters are right, reply with the single word OK "
+            "and do not call any tool."
+        )
+
+    async def _finish_search(self, query: str) -> AsyncGenerator[dict, None]:
+        """Check the awards the saved filters return. Ask for one revision if there are none, otherwise complete.
+
+        A no-op unless execute_filter just succeeded with `check_results` on. The check is advisory: if the awards
+        cannot be counted, the search simply completes.
+        """
+        completion, self.pending_completion = self.pending_completion, None
+        if completion is None:
+            return
+
+        filter_request = await self._saved_filter_request(completion["hash"])
+        counts = await get_award_counts(filter_request) if filter_request else None
+
+        if counts is not None and total_award_count(counts) == 0 and self.retries_used < self.MAX_RETRIES:
+            self.retries_used += 1
+            self.fallback_completion = completion
+            logger.info(f"Selected filters match no awards; asking for one revision: session={self.session.id}")
+            await self._add_user_turn_text(self._zero_results_note(filter_request))
+            yield {
+                "search_id": self.search_id,
+                "type": "search_retry",
+                "message": "No awards matched these filters. Checking whether they can be improved.",
+            }
+            return
+
+        self.fallback_completion = None
+        await self._record_search(final_filter_hash=completion["hash"])
+        yield self._search_complete_event(completion["hash"])
+
+        explanation = await self._explain(query, filter_request) if filter_request else None
+        if explanation:
+            await self._record_search(explanation=explanation)
+            yield {"search_id": self.search_id, "type": "search_explanation", "message": explanation}
+
+    async def _explain(self, query: str, filter_request: dict) -> str | None:
+        """The "why these filters" note, or None. Never fails the search: any problem returns None."""
+        if self.explainer is None:
+            return None
+        try:
+            return await self.explainer(query, filter_request) or None
+        except Exception as e:
+            logger.warning(f"Could not write the explanation of the selected filters: {e!r}", exc_info=True)
+            return None
 
     async def _aforce_completion(
         self, client: Any, query: str, response: dict, message: Message
@@ -303,6 +449,9 @@ class FilterSearchAssistant:
                 yield event
                 if event.get("type") == "search_complete":
                     return
+            if self.pending_completion:
+                # execute_filter succeeded in those pending calls; search() checks and completes it
+                return
 
         logger.info(
             f"Search not complete after {self.tool_iterations} tool iterations. "
@@ -350,7 +499,7 @@ class FilterSearchAssistant:
             tool = self.tools_by_name[tool_use["name"]]
 
             yield {
-                "search_id": str(self.session.id),
+                "search_id": self.search_id,
                 "type": "tool_start",
                 "tool_use_id": str(t.id),
                 "message": tool.logging(tool_use["input"]),
@@ -380,15 +529,14 @@ class FilterSearchAssistant:
 
                 completion_event = None
                 if tool.description.name == self.COMPLETION_TOOL_NAME:
-                    completion_event = {
-                        "search_id": str(self.session.id),
-                        "type": "search_complete",
-                        "result": result["results"]["hash"],
-                        "message": "Search complete.",
-                    }
+                    if self.check_results:
+                        # search() checks the saved filters before it reports the search as complete
+                        self.pending_completion = {"hash": result["results"]["hash"]}
+                    else:
+                        completion_event = self._search_complete_event(result["results"]["hash"])
 
                 yield {
-                    "search_id": str(self.session.id),
+                    "search_id": self.search_id,
                     "type": "tool_complete",
                     "tool_use_id": str(t.id),
                     "message": "Success.",
@@ -427,7 +575,7 @@ class FilterSearchAssistant:
                 )
 
                 yield {
-                    "search_id": str(self.session.id),
+                    "search_id": self.search_id,
                     "type": "tool_error",
                     "tool_use_id": str(t.id),
                     "message": error_message,
