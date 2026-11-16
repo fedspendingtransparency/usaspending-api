@@ -245,6 +245,26 @@ class TestFilterProcessing:
         # Verify hash was created (keys were sorted)
         assert isinstance(result, AIToolResult)
 
+    async def test_smart_assist_search_id_stored_alongside_filters_and_version(self, mock_filter_hash):
+        """smartAssistSearchId is persisted at the same level as filters and version, not inside filters."""
+        mock_filter_hash.objects.aget.side_effect = FilterHash.DoesNotExist
+        mock_filter_hash.return_value = _new_mock_instance()
+
+        await execute_filter(awardType=["A"], smartAssistSearchId="a3e2c8f1-4b6d-4e9a-9c21-7f8b2d1e5a04")
+
+        saved_filter = mock_filter_hash.call_args[1]["filter"]
+        assert saved_filter["smartAssistSearchId"] == "a3e2c8f1-4b6d-4e9a-9c21-7f8b2d1e5a04"
+        assert "version" in saved_filter
+        assert "smartAssistSearchId" not in saved_filter["filters"]
+
+    async def test_smart_assist_search_id_omitted_when_not_provided(self, mock_filter_hash):
+        mock_filter_hash.objects.aget.side_effect = FilterHash.DoesNotExist
+        mock_filter_hash.return_value = _new_mock_instance()
+
+        await execute_filter(awardType=["A"])
+
+        assert "smartAssistSearchId" not in mock_filter_hash.call_args[1]["filter"]
+
 
 class TestHashCreationAndStorage:
     """Test hash creation and database storage."""
