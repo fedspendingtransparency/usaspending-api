@@ -173,7 +173,7 @@ def build_filter_request(filter_input: dict) -> dict:
 async def execute_filter(**kwargs) -> AIToolResult:
     logger.info(f"Starting execute_filter with {len(kwargs)} filter parameter(s)", extra={"filter_count": len(kwargs)})
 
-    # Filters is configured with extra="forbid", so a stray smartAssistSearchId would fail validation.                                                                                    │
+    # Filters is configured with extra="forbid", so a stray smartAssistSearchId would fail validation.
     # Popping it first keeps Filters strict and moves the id to where it belongs.
     search_id = kwargs.pop("smartAssistSearchId", None)
 
