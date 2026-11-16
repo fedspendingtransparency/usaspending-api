@@ -6,7 +6,6 @@ from functools import cached_property
 from typing import Annotated, Any, Callable, Literal, get_args
 
 from pydantic import (
-    AfterValidator,
     BaseModel,
     BeforeValidator,
     ConfigDict,
@@ -466,8 +465,8 @@ async def aget_defc_rows() -> tuple[dict, ...]:
     return _defc_rows_cache
 
 
-def get_valid_defc_codes() -> frozenset[str]:
-    return frozenset(row["code"] for row in get_defc_rows())
+async def aget_valid_def_codes() -> frozenset[str]:
+    return frozenset(row["code"] for row in aget_defc_rows())
 
 
 def _format_defc_description(rows: tuple[dict, ...]) -> str:
@@ -502,15 +501,6 @@ async def abuild_defc_description() -> str:
 def _normalize_defc_codes(value: Any) -> Any:
     if isinstance(value, list):
         return list(dict.fromkeys(str(code).strip().upper() for code in value))
-    return value
-
-
-def _validate_defc_codes(value: list[str]) -> list[str]:
-    if not value:
-        return value
-    unknown = [code for code in value if code not in get_valid_defc_codes()]
-    if unknown:
-        raise ValueError(f"Invalid DEFC code(s): {unknown}. See the defCode field description for valid codes.")
     return value
 
 
@@ -626,7 +616,8 @@ ExtentCompetedCode = Literal[
     "NDO",
 ]
 
-DEFCodeList = Annotated[list[str], BeforeValidator(_normalize_defc_codes), AfterValidator(_validate_defc_codes)]
+DEFCodeList = Annotated[list[str], BeforeValidator(_normalize_defc_codes)]
+
 
 class DEFCodesDict(BaseModel):
     """Validation model for DEFC code lists"""
@@ -803,7 +794,7 @@ class Filters(BaseModel):
     selectedCFDA: dict[str, SelectedCFDA] = Field(default_factory=dict)
     naicsCodes: NaicsCodeLists = Field(default_factory=NaicsCodeLists)
     pscCodes: PscCodeLists = Field(default_factory=PscCodeLists)
-    defCode: DEFCodeList = Field(default_factory=DEFCodeList)
+    defCode: DEFCodeList = Field(default_factory=list)
     defCodes: DEFCodesDict = Field(default_factory=DEFCodesDict)
     pricingType: list[str] = Field(default_factory=list)
     setAside: list[SetAsideCode] = Field(default_factory=list)
