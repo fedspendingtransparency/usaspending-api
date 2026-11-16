@@ -26,7 +26,6 @@ from usaspending_api.data.gsdm_maps import gsdm_maps
 from usaspending_api.llm.tools.helpers.code_counts import build_naics_counts, build_psc_counts, build_tas_counts
 from usaspending_api.llm.tools.helpers.code_paths import build_psc_path, build_tas_path
 from usaspending_api.references.helpers import aget_defc_code_details, get_defc_code_details
-from usaspending_api.references.models import DisasterEmergencyFundCode
 from usaspending_api.references.v2.views.filter_tree.psc_filter_tree import PSC_GROUPS
 
 
@@ -466,7 +465,7 @@ async def aget_defc_rows() -> tuple[dict, ...]:
 
 
 async def aget_valid_def_codes() -> frozenset[str]:
-    return frozenset(row["code"] for row in aget_defc_rows())
+    return frozenset(row["code"] for row in await aget_defc_rows())
 
 
 def _format_defc_description(rows: tuple[dict, ...]) -> str:
@@ -1116,11 +1115,8 @@ class ExecuteFilterInput(BaseModel):
         description=(
             "Disaster/Emergency Fund Codes (DEFC) filter with a list of valid DEF codes. Only COVID-19 and "
             "Infrastructure DEFCs are supported."
-            f"{build_defc_description()}"
         ),
-        json_schema_extra={
-            "examples": [["L", "M", "N", "O"], ["Z", "1"]]
-        },
+        json_schema_extra={"examples": [["L", "M", "N", "O"], ["Z", "1"]]},
     )
     pricingType: list[str] = Field(default_factory=list, description="Contract pricing type codes (e.g. 'A', 'B').")
     setAside: list[str] = Field(

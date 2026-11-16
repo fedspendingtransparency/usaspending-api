@@ -12,7 +12,7 @@ from usaspending_api.llm.models.py_models import (
     FilterRequest,
     Filters,
     SelectedAgency,
-    aget_valid_def_codes
+    aget_valid_def_codes,
 )
 from usaspending_api.llm.tools.exceptions import (
     FINAL_TOOL_RETRY_INSTRUCTIONS,
@@ -155,7 +155,7 @@ async def _validate_def_codes_exist(filters: Filters) -> None:
         raise DefcCodeNotRecognizedError(
             f"DEF code not found: {', '.join(invalid)}",
             model_detail=(
-                f"Invalid DEF code(s): {invalid}. Only COVID-19 and Infrastructure DEF codes are supported.",
+                f"Invalid DEF code(s): {invalid}. Only COVID-19 and Infrastructure DEF codes are supported."
                 "Use the codes listed in the defCode field description."
             ),
             instructions=FINAL_TOOL_RETRY_INSTRUCTIONS,
