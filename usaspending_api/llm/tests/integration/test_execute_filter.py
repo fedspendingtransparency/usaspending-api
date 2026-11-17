@@ -443,7 +443,7 @@ class TestValidationErrorTranslation:
         looking like a success."""
         with pytest.raises(FilterValidationError) as exc_info:
             await execute_filter(
-                 awardAmounts={"specific": [1, 2], "range-1": [1000000, 25000000]},
+                awardAmounts={"specific": [1, 2], "range-1": [1000000, 25000000]},
                 timePeriodType="dr",
                 time_period=[{"start_date": "invalid-date", "end_date": "2023-12-31"}],
             )
