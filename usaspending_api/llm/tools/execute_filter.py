@@ -50,6 +50,7 @@ LOOKUP_OBJECT_FIELDS = {
     "selectedFundingAgencies",
     "selectedRecipients",
     "selectedAwardIDs",
+    "selectedRecipientLocations",
 }
 
 

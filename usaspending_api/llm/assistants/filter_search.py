@@ -93,10 +93,11 @@ class FilterSearchAssistant:
                         ),
                     )
 
-            if "selectedLocations" in tool_input:
-                tool_input["selectedLocations"] = cls._rekey_empty_string_key(
-                    tool_input["selectedLocations"], lambda location: location.get("identifier")
-                )
+            for field in ("selectedLocations", "selectedRecipientLocations"):
+                if field in tool_input:
+                    tool_input[field] = cls._rekey_empty_string_key(
+                        tool_input[field], lambda location: location.get("identifier")
+                    )
 
     async def _create_message_from_response(self, response: dict) -> Message:
         """Create a Message record from Bedrock's response."""

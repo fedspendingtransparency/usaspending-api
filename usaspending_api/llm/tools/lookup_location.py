@@ -393,11 +393,16 @@ lookup_location_tool = AITool(
         name="lookup_location",
         description="""
                 Search for valid location objects by name, code, zip, or congressional district
-                using fuzzy matching. Returns properly formatted SelectedLocation objects ready
-                to use in the selectedLocations filter (where work was performed) or the
-                selectedRecipientLocations filter (where recipients are located). The returned
-                'identifier' field should be used as the dictionary key. Read the instructions
-                returned with the results to choose between the two filters.
+                using fuzzy matching. Call this for every place in the user's query before calling
+                execute_filter; never write location objects yourself. Call it once per place.
+
+                Choose the filter by what the place describes:
+                - selectedRecipientLocations: where the recipients are located or based (companies, businesses,
+                    nonprofits, or recipients in a place, or awards given to recipients in a place).
+                - selectedLocations: where the work was performed or the award was delivered (awards, projects, or
+                    spending in a place).
+                Do not put the same location in both unless the user asked for both. The returned 'identifier' field
+                should be used as the dictionary key.
 
                 This tool supports:
                 - Country names and codes (e.g., 'USA', 'United States', 'Germany')

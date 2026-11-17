@@ -781,7 +781,7 @@ class Filters(BaseModel):
     selectedRecipients: list[str] = Field(default_factory=list, max_length=50)
     recipientDomesticForeign: Literal["all", "foreign"] = "all"
     recipientType: list[RecipientType] = Field(default_factory=list)
-    selectedRecipientLocations: dict[str, Any] = Field(default_factory=dict)
+    selectedRecipientLocations: dict[str, SelectedLocation] = Field(default_factory=dict)
     awardType: list[str] = Field(default_factory=list)
     selectedAwardIDs: list[str] = Field(default_factory=list)
     awardAmounts: AwardAmounts = Field(default_factory=lambda: AwardAmounts({}))
@@ -1013,8 +1013,10 @@ class ExecuteFilterInput(BaseModel):
         Field(
             default_factory=dict,
             description=(
-                "Selected locations keyed by identifier. Use the lookup_location tool to build these; "
-                "do not construct them manually."
+                "Place of performance: where the work was performed or the award was delivered, as in awards, "
+                "projects, or spending in a place. Keyed by identifier. Must come from the lookup_location tool; "
+                "do not construct these manually. If the place is where the recipients are located (companies, "
+                "businesses, or nonprofits in or based in a place), use selectedRecipientLocations instead."
             ),
         ),
     ]
@@ -1070,9 +1072,14 @@ class ExecuteFilterInput(BaseModel):
         ),
         json_schema_extra={"examples": [["small_business"], ["woman_owned_business", "minority_owned_business"]]},
     )
-    selectedRecipientLocations: dict[str, Any] = Field(
+    selectedRecipientLocations: dict[str, SelectedLocation] = Field(
         default_factory=dict,
-        description="Recipient locations keyed by identifier. Use the lookup_location tool to build these.",
+        description=(
+            "Recipient location: where the recipients are located or based, as in companies, businesses, nonprofits, "
+            "or recipients in a place, or awards given to recipients in a place. Keyed by identifier. Must come from "
+            "the lookup_location tool; do not construct these manually. If the place is where the work was performed, "
+            "use selectedLocations instead."
+        ),
     )
     awardType: list[AwardTypeLabel] = Field(
         default_factory=list,
