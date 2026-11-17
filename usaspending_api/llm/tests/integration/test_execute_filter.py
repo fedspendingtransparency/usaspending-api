@@ -410,8 +410,8 @@ class TestValidationErrorTranslation:
         with pytest.raises(DefcCodeNotRecognizedError) as exc_info:
             await execute_filter(defCodes={"require": ["NOT_REAL"]})
 
-        assert exc_info.value.user_message == "DEFC code not found: NOT_REAL."
-        assert "Invalid DEFC code(s)" in exc_info.value.model_detail
+        assert exc_info.value.user_message == "DEF code not found: NOT_REAL"
+        assert "Invalid DEF code(s)" in exc_info.value.model_detail
 
     async def test_award_amount_business_rule_failure_raises_specific_error(self):
         with pytest.raises(AwardAmountNotParseableError) as exc_info:
@@ -443,13 +443,14 @@ class TestValidationErrorTranslation:
         looking like a success."""
         with pytest.raises(FilterValidationError) as exc_info:
             await execute_filter(
-                defCodes={"require": ["NOT_REAL"]},
+                awardAmounts={"specific": [1, 2], "range-1": [1000000, 25000000]},
                 timePeriodType="dr",
                 time_period=[{"start_date": "invalid-date", "end_date": "2023-12-31"}],
             )
 
         assert exc_info.value.user_message == GENERIC_USER_MESSAGE
-        assert "NOT_REAL" in exc_info.value.model_detail
+        assert "must be the only key" in exc_info.value.model_detail
+        assert "not a valid date" in exc_info.value.model_detail
         assert exc_info.value.instructions == FINAL_TOOL_RETRY_INSTRUCTIONS
 
 
@@ -707,7 +708,7 @@ class TestAIToolImplementation:
         off the tool surface so the assistant never emits it. `treasuryAccounts` is likewise a
         deprecated field kept on `Filters` for frontend compatibility; the assistant uses `tasCodes`.
         """
-        legacy_filters_only_fields = {"defCode", "treasuryAccounts"}
+        legacy_filters_only_fields = {"defCodes", "treasuryAccounts"}
         assert set(Filters.model_fields) - set(ExecuteFilterInput.model_fields) == legacy_filters_only_fields
         assert set(ExecuteFilterInput.model_fields) - set(Filters.model_fields) == set()
 
