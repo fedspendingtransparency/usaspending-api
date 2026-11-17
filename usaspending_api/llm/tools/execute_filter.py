@@ -162,7 +162,7 @@ async def _validate_def_codes_exist(filters: Filters) -> None:
         )
 
 
-def _filter_request_from_filters(filters: Filters) -> dict:
+def _filter_request_from_filters(filters: Filters, search_id: str | None = None) -> dict:
     """Canonicalize an already-validated Filters instance into the persisted filter request shape."""
     filter_request = FilterRequest(filters=filters, smartAssistSearchId=search_id).model_dump(exclude_none=True)
     if "keyword" in filter_request["filters"]:
