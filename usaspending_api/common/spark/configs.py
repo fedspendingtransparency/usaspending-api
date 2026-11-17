@@ -22,7 +22,7 @@ LOCAL_BASIC_EXTRA_CONF = {
     # YARN or Mesos or Kubernetes) cluster manager, only client mode is supported.
     "spark.submit.deployMode": "client",
     "spark.driver.memory": "2g",
-    "spark.executor.memory": "2g",
+    "spark.executor.memory": "2g",  # In local mode this does nothing, but leaving it as-is to serve as a note
     "spark.ui.enabled": "false",  # Does the same as setting SPARK_TESTING=true env var
 }
 

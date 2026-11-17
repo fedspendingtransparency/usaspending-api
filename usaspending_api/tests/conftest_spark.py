@@ -149,6 +149,10 @@ def spark(tmp_path_factory) -> Generator["SparkSession", None, None]:
         **LOCAL_BASIC_EXTRA_CONF,
         "spark.sql.warehouse.dir": spark_sql_warehouse_dir,
         "spark.hadoop.javax.jdo.option.ConnectionURL": f"jdbc:derby:;databaseName={spark_sql_warehouse_dir}/metastore_db;create=true",  # noqa: E501
+        "spark.sql.shuffle.partitions": 4,  # test suite data doesn't need large amount of partitions / parallelism
+        "spark.default.parallelism": 4,
+        "spark.databricks.delta.snapshotPartitions": 2,
+        "spark.master": "local[2]",  # Overwriting this value for the test suite to help with parallelism
     }
     spark = configure_spark_session(
         app_name="Unit Test Session",
