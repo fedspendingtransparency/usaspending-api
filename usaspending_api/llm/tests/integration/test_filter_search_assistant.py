@@ -649,34 +649,6 @@ class TestFilterSearchAssistant:
         assert tool_result_content == {"error": "Something failed."}
 
     @patch("usaspending_api.llm.models.db_models.ToolUse.objects.acreate", new_callable=AsyncMock)
-    async def test_handle_tool_use_passes_session_id_to_completion_tool(
-        self, mock_tool_use_create, assistant, mock_search_tool, mock_session
-    ):
-        """The completion tool receives the session id (overriding any model-supplied value), and the
-        persisted ToolUse input is left as the model sent it."""
-        mock_tool_use_create.return_value = Mock(id="tool-use-458", asave=AsyncMock())
-        model_input = {"awardType": ["A"], "smartAssistSearchId": "model-supplied"}
-
-        tool_requests = [{"toolUse": {"toolUseId": "tool-458", "name": "execute_filter", "input": model_input}}]
-        [event async for event in assistant.handle_tool_use(tool_requests, Mock())]
-
-        mock_search_tool.function.assert_awaited_once_with(
-            awardType=["A"], smartAssistSearchId=str(mock_session.id)
-        )
-        assert model_input["smartAssistSearchId"] == "model-supplied"
-
-    @patch("usaspending_api.llm.models.db_models.ToolUse.objects.acreate", new_callable=AsyncMock)
-    async def test_handle_tool_use_does_not_pass_session_id_to_other_tools(
-        self, mock_tool_use_create, assistant, mock_tool
-    ):
-        mock_tool_use_create.return_value = Mock(id="tool-use-459", asave=AsyncMock())
-
-        tool_requests = [{"toolUse": {"toolUseId": "tool-459", "name": "test_tool", "input": {"query": "x"}}}]
-        [event async for event in assistant.handle_tool_use(tool_requests, Mock())]
-
-        mock_tool.function.assert_awaited_once_with(query="x")
-
-    @patch("usaspending_api.llm.models.db_models.ToolUse.objects.acreate", new_callable=AsyncMock)
     async def test_handle_tool_use_adds_generic_instructions_for_unexpected_errors(
         self, mock_tool_use_create, assistant, mock_search_tool
     ):
@@ -731,3 +703,29 @@ async def test_converse_retries_on_throttling(assistant, monkeypatch):
 
     assert await assistant._converse(assistant.client) == success
     assert assistant.client.converse.call_count == 2
+
+
+@patch("usaspending_api.llm.models.db_models.ToolUse.objects.acreate", new_callable=AsyncMock)
+async def test_handle_tool_use_passes_session_id_to_completion_tool(
+    mock_tool_use_create, assistant, mock_search_tool, mock_session
+):
+    """The completion tool receives the session id (overriding any model-supplied value), and the
+    persisted ToolUse input is left as the model sent it."""
+    mock_tool_use_create.return_value = Mock(id="tool-use-458", asave=AsyncMock())
+    model_input = {"awardType": ["A"], "smartAssistSearchId": "model-supplied"}
+
+    tool_requests = [{"toolUse": {"toolUseId": "tool-458", "name": "execute_filter", "input": model_input}}]
+    [event async for event in assistant.handle_tool_use(tool_requests, Mock())]
+
+    mock_search_tool.function.assert_awaited_once_with(awardType=["A"], smartAssistSearchId=str(mock_session.id))
+    assert model_input["smartAssistSearchId"] == "model-supplied"
+
+
+@patch("usaspending_api.llm.models.db_models.ToolUse.objects.acreate", new_callable=AsyncMock)
+async def test_handle_tool_use_does_not_pass_session_id_to_other_tools(mock_tool_use_create, assistant, mock_tool):
+    mock_tool_use_create.return_value = Mock(id="tool-use-459", asave=AsyncMock())
+
+    tool_requests = [{"toolUse": {"toolUseId": "tool-459", "name": "test_tool", "input": {"query": "x"}}}]
+    [event async for event in assistant.handle_tool_use(tool_requests, Mock())]
+
+    mock_tool.function.assert_awaited_once_with(query="x")
