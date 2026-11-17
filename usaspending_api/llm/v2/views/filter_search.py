@@ -1,6 +1,7 @@
 import logging
 from typing import Any, AsyncGenerator
 
+from asgiref.sync import sync_to_async
 from django.db.models import Sum
 from django.http import HttpRequest, StreamingHttpResponse
 from django.utils import timezone
@@ -9,6 +10,11 @@ from usaspending_api.common.helpers.decorators import browsable
 from usaspending_api.llm.assistants.filter_search import FilterSearchAssistant
 from usaspending_api.llm.models.db_models import Assistant, Session, ToolUse
 from usaspending_api.llm.models.py_models import FilterSearchEvent, FilterSearchInput
+from usaspending_api.llm.services.guardrails import (
+    BedrockGuardrailService,
+    GuardrailConfigurationError,
+    GuardrailServiceUnavailable,
+)
 from usaspending_api.llm.tools.execute_filter import execute_filter_tool
 from usaspending_api.llm.tools.list_recipient_types import list_recipient_types_tool
 from usaspending_api.llm.tools.lookup_agency import lookup_agency_tool
@@ -42,6 +48,50 @@ def _stream_response(event_source: AsyncGenerator[str, None]) -> StreamingHttpRe
     return response
 
 
+def _search_error_response(message: str) -> StreamingHttpResponse:
+    async def error_stream() -> AsyncGenerator[str, Any]:
+        yield _ndjson(FilterSearchEvent(type="search_error", message=message))
+
+    return _stream_response(error_stream())
+
+
+async def _run_query_through_guardrails(query: str) -> StreamingHttpResponse | None:
+    """
+    Run the query through Bedrock Guardrails to check for violations.
+
+    Args:
+        query: The query to check against Guardrails.
+
+    Returns:
+        StreamingHttpResponse | None: A search_error stream if the query is blocked; otherwise None.
+    """
+    try:
+        # Instantiate the service and assess the user query inside a thread.
+        def _assess() -> Any:
+            return BedrockGuardrailService().assess_input(query)
+
+        guardrail_assessment = await sync_to_async(_assess)()
+    # If Guardrails is misconfigured, return a search_error.
+    except GuardrailConfigurationError:
+        logger.exception("Filter-search request could not be moderated because Guardrails is misconfigured.")
+        return _search_error_response("The filter-search service is temporarily unavailable.")
+    # If Guardrails is unavailable or unreachable (e.g., misconfigured variables or AWS issues), return a search_error.
+    except GuardrailServiceUnavailable:
+        logger.exception("Filter-search request could not be moderated because Guardrails is unavailable.")
+        return _search_error_response("The filter-search service is temporarily unavailable.")
+
+    # If Guardrails intervenes, return a search_error.
+    if guardrail_assessment.intervened:
+        logger.warning(
+            "Filter-search request rejected by Bedrock Guardrails.",
+            extra={
+                "guardrail_action_reason": guardrail_assessment.action_reason,
+                "guardrail_assessments": guardrail_assessment.assessments,
+            },
+        )
+        return _search_error_response("The submitted request cannot be processed.")
+
+
 @browsable(
     router,
     "/filter-search/",
@@ -50,11 +100,16 @@ def _stream_response(event_source: AsyncGenerator[str, None]) -> StreamingHttpRe
 )
 async def filter_search(request: HttpRequest, payload: FilterSearchInput) -> StreamingHttpResponse:
     """
-    Streaming, LLM-powered filter search. Emits newline-delimited FilterSearchEvent
-    JSON objects (application/x-ndjson) as search progress, tool calls, and results
-    become available.
+    Streaming, LLM-powered filter search. Emits newline-delimited FilterSearchEvent JSON objects (application/x-ndjson)
+    as search progress, tool calls, and results become available.
     """
     query = payload.query
+
+    # Check query against Bedrock Guardrails.
+    # This will prevent the stream from running if Guardrails intervenes; returns a search_error event instead.
+    guardrail_response = await _run_query_through_guardrails(query)
+    if guardrail_response is not None:
+        return guardrail_response
 
     try:
         assistant_config = await Assistant.objects.select_related("ai_model", "system_prompt").aget(
