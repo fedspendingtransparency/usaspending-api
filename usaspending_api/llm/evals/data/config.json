@@ -2607,18 +2607,15 @@
         "id": 102,
         "query": "How many awards for COVID-19 Spending",
         "expected_output": {
-            "defCodes": {
-                "require": [
-                    "L",
-                    "M",
-                    "N",
-                    "O",
-                    "P",
-                    "U",
-                    "V"
-                ],
-                "exclude": []
-            }
+            "defCode": [
+                "L",
+                "M",
+                "N",
+                "O",
+                "P",
+                "U",
+                "V"
+            ]
         },
         "expected_tools": [
             "execute_filter"
@@ -2634,13 +2631,10 @@
         "id": 103,
         "query": "How many awards for infrastructure spending",
         "expected_output": {
-            "defCodes": {
-                "require": [
-                    "Z",
-                    "1"
-                ],
-                "exclude": []
-            }
+            "defCode": [
+                "Z",
+                "1"
+            ]
         },
         "expected_tools": [
             "execute_filter"
@@ -2656,12 +2650,9 @@
         "id": 104,
         "query": "Find awards with DEFC N",
         "expected_output": {
-            "defCodes": {
-                "require": [
-                    "N"
-                ],
-                "exclude": []
-            }
+            "defCode": [
+                "N"
+            ]
         },
         "expected_tools": [
             "execute_filter"
@@ -2677,13 +2668,10 @@
         "id": 105,
         "query": "Financial assistance awards with DEFC U and V",
         "expected_output": {
-            "defCodes": {
-                "require": [
-                    "U",
-                    "V"
-                ],
-                "exclude": []
-            }
+            "defCode": [
+                "U",
+                "V"
+            ]
         },
         "expected_tools": [
             "execute_filter"
@@ -2700,18 +2688,15 @@
         "id": 106,
         "query": "All assistance awards given out for COVID in 2020",
         "expected_output": {
-            "defCodes": {
-                "require": [
-                    "L",
-                    "M",
-                    "N",
-                    "O",
-                    "P",
-                    "U",
-                    "V"
-                ],
-                "exclude": []
-            },
+            "defCode": [
+                "L",
+                "M",
+                "N",
+                "O",
+                "P",
+                "U",
+                "V"
+            ],
             "timePeriodType": "dr",
             "time_period": [
                 {
@@ -2735,18 +2720,15 @@
         "id": 107,
         "query": "All assistance awards given out for COVID in 2020 to recipients in California",
         "expected_output": {
-            "defCodes": {
-                "require": [
-                    "L",
-                    "M",
-                    "N",
-                    "O",
-                    "P",
-                    "U",
-                    "V"
-                ],
-                "exclude": []
-            },
+            "defCode": [
+                "L",
+                "M",
+                "N",
+                "O",
+                "P",
+                "U",
+                "V"
+            ],
             "timePeriodType": "dr",
             "time_period": [
                 {
