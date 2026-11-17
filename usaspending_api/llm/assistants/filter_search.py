@@ -122,9 +122,9 @@ class FilterSearchAssistant:
         if self._tool_config is None:
             specs = [tool.description.model_dump() for tool in self.tools]
             for spec in specs:
-                def_codes_property = spec["input_schema"].get("properties", {}).get("defCodes")
-                if def_codes_property is not None:
-                    def_codes_property["description"] = await abuild_defc_description()
+                def_code_property = spec["input_schema"].get("properties", {}).get("defCode")
+                if def_code_property is not None:
+                    def_code_property["description"] = await abuild_defc_description()
             self._tool_config = {
                 "tools": [{"toolSpec": {"inputSchema": {"json": spec.pop("input_schema")}, **spec}} for spec in specs]
             }

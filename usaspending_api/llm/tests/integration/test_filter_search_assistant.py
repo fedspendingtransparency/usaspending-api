@@ -469,8 +469,8 @@ class TestFilterSearchAssistant:
         assert (await assistant.aget_tool_config())["toolChoice"] == {"auto": {}}
 
     @pytest.mark.django_db
-    async def test_tool_config_patches_defcodes_description_from_db(self, mock_assistant, mock_session):
-        """tool_config injects a DB-sourced defCodes description into execute_filter's schema.
+    async def test_tool_config_patches_defcode_description_from_db(self, mock_assistant, mock_session):
+        """tool_config injects a DB-sourced defCode description into execute_filter's schema.
 
         The description is patched lazily here (not at execute_filter_tool's module-import time)
         so the DB query only ever runs once real DB access is available -- see get_defc_rows/aget_defc_rows.
@@ -486,7 +486,7 @@ class TestFilterSearchAssistant:
 
         assistant = FilterSearchAssistant(assistant=mock_assistant, tools=[execute_filter_tool], session=mock_session)
         config = await assistant.aget_tool_config()
-        description = config["tools"][0]["toolSpec"]["inputSchema"]["json"]["properties"]["defCodes"]["description"]
+        description = config["tools"][0]["toolSpec"]["inputSchema"]["json"]["properties"]["defCode"]["description"]
 
         assert "TITLE FOR CODE L" in description
 
