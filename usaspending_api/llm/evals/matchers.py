@@ -262,13 +262,23 @@ class MappingSubsetMatcher:
 
         return differences
 
+    def _lists_match_unordered(self, expected: list, actual: list) -> bool:
+        """Whether each expected item is matched by a different actual item, and no actual item is left over."""
+        remaining = list(actual)
+        for expected_item in expected:
+            index = next((i for i, item in enumerate(remaining) if self._values_match(expected_item, item)), None)
+            if index is None:
+                return False
+            remaining.pop(index)
+        return not remaining
+
     def _values_match(self, expected: Any, actual: Any) -> bool:
         """
         Compare two values for equality, with case-insensitive string comparison.
 
         Handles:
         - Strings: case-insensitive comparison (unless case_sensitive=True)
-        - Lists: element-wise comparison with case-insensitive strings
+        - Lists: element-wise comparison with case-insensitive strings, ignoring order
         - Other types: direct equality
         """
         # If case-sensitive mode or not strings/lists, use direct equality.
@@ -278,10 +288,7 @@ class MappingSubsetMatcher:
             # Case-insensitive string comparison.
             match = expected.lower() == actual.lower()
         elif isinstance(expected, list) and isinstance(actual, list):
-            # Case-insensitive list comparison.
-            match = len(expected) == len(actual) and all(
-                self._values_match(e, a) for e, a in zip(expected, actual, strict=True)
-            )
+            match = (len(expected) == len(actual)) and self._lists_match_unordered(expected, actual)
         else:
             # For all other types, use direct equality.
             match = expected == actual
