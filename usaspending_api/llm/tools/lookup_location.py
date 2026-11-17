@@ -51,45 +51,32 @@ class LocationLookupTool:
         """Initialize with cached lookups from database."""
         self._state_abbr_cache = None
         self._country_code_cache = None
-        self._state_name_cache = None
-
-    async def _ref_state_info(self) -> None:
-        self._state_name_cache = {}
-        self._state_abbr_cache = {}
-        counties = PopCongressionalDistrict.objects.values("state_name", "state_abbreviation").distinct()
-        async for county in counties:
-            state_name = county["state_name"]
-            state_abbr = county["state_abbreviation"]
-            if state_name and state_abbr:
-                self._state_name_cache[state_abbr.upper()] = state_name.upper()
-                self._state_name_cache[state_abbr.lower()] = state_name.lower
-                self._state_abbr_cache[state_name] = state_abbr
-                self._state_abbr_cache[state_name.lower()] = state_abbr
-                self._state_abbr_cache[state_name.upper()] = state_abbr
-
-    async def _load_state_data(self) -> dict[str, str]:
-        """Lazy-load state abbreviation and Names map"""
-        if self._state_name_cache is None:
-            await self._ref_state_info()
-        return self._state_name_cache
 
     async def _get_state_abbreviations(self) -> dict[str, str]:
         """Lazy-load state abbreviations from PopCounty model."""
         if self._state_abbr_cache is None:
-            await self._ref_state_info()
+            state_abbrs = {}
+            async for state in PopCongressionalDistrict.objects.values("state_name", "state_abbreviation").distinct():
+                state_name = state["state_name"]
+                state_abbr = state["state_abbreviation"]
+                if state_name and state_abbr:
+                    state_abbrs[state_name] = state_abbr
+                    state_abbrs[state_name.lower()] = state_abbr
+                    state_abbrs[state_name.upper()] = state_abbr
+            self._state_abbr_cache = state_abbrs
         return self._state_abbr_cache
 
     async def _get_country_codes(self) -> dict[str, str]:
         """Lazy-load country codes from RefCountryCode model."""
         if self._country_code_cache is None:
-            self._country_code_cache = {}
-            countries = RefCountryCode.objects.values("country_name", "country_code")
-            async for country in countries:
+            country_codes = {}
+            async for country in RefCountryCode.objects.values("country_name", "country_code"):
                 country_name = country["country_name"]
                 country_code = country["country_code"]
                 if country_name and country_code:
                     # Store lowercase for case-insensitive lookup
-                    self._country_code_cache[country_name.lower()] = country_code
+                    country_codes[country_name.lower()] = country_code
+            self._country_code_cache = country_codes
         return self._country_code_cache
 
     async def lookup_location(self, query: str, location_type: str | None = None, top_k: int = 15) -> AIToolResult:
@@ -98,8 +85,7 @@ class LocationLookupTool:
 
         # Clamp top_k and query formatting
         top_k = max(1, min(top_k, 100))
-        state_names = await self._load_state_data()
-        query_upper = self._format_query(query, location_type, state_names)
+        query_upper = query_upper = query.strip().upper()
 
         logger.info(
             f"Starting location lookup: query='{query}', location_type={location_type}, top_k={top_k}",
@@ -156,19 +142,6 @@ class LocationLookupTool:
                 f"Invalid location_type. Must be one of: {', '.join(sorted(self.LOCATION_TYPES))}"
             )
 
-    def _format_query(self, query: str, location_type: str, state_names: dict) -> str:
-        """Applies conditional formatting to assist fuzzy search"""
-        query_upper = query.strip().upper()
-
-        # Replaces state abbr in city queries with state name
-        if location_type == "city" and "," in query_upper:
-            city_info = [item.strip() for item in query_upper.split(",")]
-            state_abbr = city_info[1]
-            if state_abbr in state_names.keys():
-                query_upper = city_info[0] + ", " + state_names[state_abbr]
-
-        return query_upper
-
     def _build_search(self, query_upper: str, location_type: str | None, top_k: int) -> AsyncLocationSearch:
         """Build the OpenSearch query with fuzzy matching."""
         # Enhanced search queries with better boosting strategy
@@ -178,7 +151,7 @@ class LocationLookupTool:
             # Standard match for analyzed fields
             ES_Q("match", location={"query": query_upper, "boost": 8.0}),
             # Fuzzy word match for typo tolerance (AUTO: 0 edits for 1-2 chars, 1 edit for 3-5, 2 edits for >5)
-            ES_Q("match", location__words={"query": query_upper, "operator": "and", "fuzziness": "AUTO", "boost": 5.0}),
+            ES_Q("match", location_search={"query": query_upper, "operator": "and", "boost": 5.0}),
             # Contains match for partial matches
             ES_Q("match_phrase_prefix", location__contains={"query": query_upper, "boost": 3.0}),
             # Wildcard for prefix matching
