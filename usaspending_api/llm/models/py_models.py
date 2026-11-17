@@ -621,9 +621,9 @@ DEFCodeList = Annotated[list[str], BeforeValidator(_normalize_defc_codes)]
 class DEFCodesDict(BaseModel):
     """Validation model for DEFC code lists"""
 
-    require: list = []
-    exclude: list = []
-    counts: list = []
+    require: list[str] = Field(default_factory=list)
+    exclude: list[str] = Field(default_factory=list)
+    counts: list[dict] = Field(default_factory=list)
 
 
 # The frontend's predefined award-amount buckets and their fixed bounds (see
@@ -903,6 +903,23 @@ class Filters(BaseModel):
                 )
 
         return self
+
+    @model_validator(mode="before")
+    @classmethod
+    def move_def_codes_to_def_code(cls, data: Any) -> Any:
+        """Currently (as of November 2026) the defCodes filter is not actually populated in the API request, so we move
+        any values in it to the defCode filter which is used. defCodes is only kept so the filter keeps its shape.
+        """
+        if not isinstance(data, dict) or not data.get("defCodes"):
+            return data
+        data = dict(data)
+        legacy = data.pop("defCodes")
+        if isinstance(legacy, dict):
+            if legacy.get("exclude"):
+                raise ValueError("Excluding DEFC codes is not supported. Use defCode, a list of DEFC codes to include.")
+            legacy = legacy.get("require", [])
+        data["defCode"] = [*(data.get("defCode") or []), *legacy]
+        return data
 
 
 class ExecuteFilterInput(BaseModel):
