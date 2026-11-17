@@ -965,6 +965,7 @@ class TestDefCode:
         assert filters.defCode == ["Z", "L"]
         assert filters.defCodes.model_dump() == {"require": [], "exclude": [], "counts": []}
 
+
 class TestAwardAmounts:
     """Tests for the AwardAmounts range-vs-specific validation on the Filters model"""
 
