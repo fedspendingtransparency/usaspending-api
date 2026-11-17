@@ -893,35 +893,77 @@ class TestDefCodes:
         assert filters.defCodes.require == []
         assert filters.defCodes.exclude == []
 
-    def test_def_codes_accepts_covid_codes(self):
-        codes = ["L", "M", "N", "O", "P", "U", "V"]
-        filters = Filters(defCodes={"require": codes})
+    def test_def_codes_is_always_empty(self):
+        filters = Filters(defCodes={"require": ["L", "M", "N", "O", "P", "U", "V"]})
+        assert filters.defCodes.require == []
 
-        assert filters.defCodes.require == codes
-
-    def test_def_codes_accepts_infrastructure_codes(self):
         filters = Filters(defCodes={"require": ["Z", "1"]})
+        assert filters.defCodes.require == []
 
-        assert filters.defCodes.require == ["Z", "1"]
+    def test_def_codes_exclude_is_rejected(self):
+        with pytest.raises(ValidationError, match="Excluding DEFC codes is not supported"):
+            Filters(defCodes={"exclude": ["L"]})
 
-    def test_def_codes_accepts_require_and_exclude_together(self):
-        filters = Filters(defCodes={"require": ["L"], "exclude": ["Z"]})
+    def test_def_codes_is_always_empty_by_default(self):
+        assert Filters().defCodes.model_dump() == {"require": [], "exclude": [], "counts": []}
 
-        assert filters.defCodes.require == ["L"]
-        assert filters.defCodes.exclude == ["Z"]
 
-    def test_def_codes_rejects_code_outside_covid_and_infrastructure(self):
-        """DEFC codes outside the frontend-supported groups (e.g. a code in another group) are rejected."""
-        with pytest.raises(ValidationError) as exc_info:
-            Filters(defCodes={"require": ["A"]})
+@pytest.mark.django_db
+class TestDefCode:
+    """Tests the defCode array filter. For clarification, the defCodes filter (tested above) is a dictionary with
+    `require` and `exclude` keys.
+    """
 
-        assert "defCodes" in str(exc_info.value)
+    @pytest.fixture(autouse=True)
+    def seed_defc_codes(self):
+        clear_defc_rows_cache()
+        for code in ["L", "M", "N", "O", "P", "U", "V"]:
+            baker.make(
+                "references.DisasterEmergencyFundCode",
+                code=code,
+                public_law=f"PUBLIC LAW FOR CODE {code}",
+                title=f"TITLE FOR CODE {code}",
+                group_name="covid_19",
+            )
+        for code in ["Z", "1"]:
+            baker.make(
+                "references.DisasterEmergencyFundCode",
+                code=code,
+                public_law=f"PUBLIC LAW FOR CODE {code}",
+                title=f"TITLE FOR CODE {code}",
+                group_name="infrastructure",
+            )
+        baker.make(
+            "references.DisasterEmergencyFundCode",
+            code="A",
+            public_law="PUBLIC LAW FOR CODE A",
+            title="TITLE FOR CODE A",
+            group_name="other",
+        )
+        yield
+        clear_defc_rows_cache()
 
-    def test_def_codes_rejects_unsupported_code_in_exclude(self):
-        with pytest.raises(ValidationError) as exc_info:
-            Filters(defCodes={"exclude": ["AAA"]})
+    def test_def_code_default_empty(self):
+        filters = Filters()
 
-        assert "defCodes" in str(exc_info.value)
+        assert filters.defCode == []
+        assert filters.defCode == []
+
+    def test_def_code_accepts_covid_codes(self):
+        codes = ["L", "M", "N", "O", "P", "U", "V"]
+        filters = Filters(defCode=codes)
+
+        assert filters.defCode == codes
+
+    def test_def_code_accepts_infrastructure_codes(self):
+        filters = Filters(defCode=["Z", "1"])
+
+        assert filters.defCode == ["Z", "1"]
+
+    def test_def_codes_require_is_moved_to_def_code(self):
+        filters = Filters(defCode=["Z"], defCodes={"require": ["l", "Z"]})
+        assert filters.defCode == ["Z", "L"]
+        assert filters.defCodes.model_dump() == {"require": [], "exclude": [], "counts": []}
 
 
 class TestAwardAmounts:

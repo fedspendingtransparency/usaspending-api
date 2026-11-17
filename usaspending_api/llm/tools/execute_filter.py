@@ -12,6 +12,7 @@ from usaspending_api.llm.models.py_models import (
     FilterRequest,
     Filters,
     SelectedAgency,
+    aget_valid_def_codes,
 )
 from usaspending_api.llm.tools.exceptions import (
     FINAL_TOOL_RETRY_INSTRUCTIONS,
@@ -34,7 +35,6 @@ from usaspending_api.search.models.mv_agency_autocomplete import AgencyAutocompl
 logger = logging.getLogger(__name__)
 
 _SINGLE_FIELD_ERRORS = {
-    "defCodes": DefcCodeNotRecognizedError,
     "awardAmounts": AwardAmountNotParseableError,
     "time_period": TimePeriodNotParseableError,
 }
@@ -54,11 +54,7 @@ LOOKUP_OBJECT_FIELDS = {
 
 
 def _build_user_message(field: str, kwargs: dict) -> str:
-    if field == "defCodes":
-        def_codes = kwargs.get("defCodes", {})
-        codes = [*def_codes.get("require", []), *def_codes.get("exclude", [])]
-        message = f"DEFC code not found: {', '.join(codes)}."
-    elif field == "awardAmounts":
+    if field == "awardAmounts":
         message = f"Unable to filter awards based on the criteria {kwargs.get('awardAmounts')}."
     else:
         message = "Unable to filter based on the specified time period. Try rephrasing the dates you're looking for."
@@ -148,6 +144,24 @@ async def _validate_award_ids_exist(filters: Filters) -> None:
         )
 
 
+async def _validate_def_codes_exist(filters: Filters) -> None:
+    if not filters.defCode:
+        return
+
+    valid_codes = await aget_valid_def_codes()
+    invalid = [code for code in filters.defCode if code not in valid_codes]
+
+    if invalid:
+        raise DefcCodeNotRecognizedError(
+            f"DEF code not found: {', '.join(invalid)}",
+            model_detail=(
+                f"Invalid DEF code(s): {invalid}. Only COVID-19 and Infrastructure DEF codes are supported."
+                "Use the codes listed in the defCode field description."
+            ),
+            instructions=FINAL_TOOL_RETRY_INSTRUCTIONS,
+        )
+
+
 def _filter_request_from_filters(filters: Filters) -> dict:
     """Canonicalize an already-validated Filters instance into the persisted filter request shape."""
     filter_request = FilterRequest(filters=filters).model_dump(exclude_none=True)
@@ -188,6 +202,7 @@ async def execute_filter(**kwargs) -> AIToolResult:
             ) from exc
         raise FilterValidationError(GENERIC_USER_MESSAGE, model_detail=model_detail, instructions=instructions) from exc
 
+    await _validate_def_codes_exist(filters)
     await _validate_agencies_exist(filters)
     await _validate_recipients_exist(filters)
     await _validate_award_ids_exist(filters)
