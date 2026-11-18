@@ -10,7 +10,6 @@ from usaspending_api.common.elasticsearch.search_wrappers import LocationSearch
 @pytest.mark.django_db(transaction=True)
 def test_exact_match(client, elasticsearch_location_index):
     """Test searching ES and finding an exact match"""
-
     response = client.post(
         "/api/v2/autocomplete/location", content_type="application/json", data=json.dumps({"search_text": "denmark"})
     )
@@ -25,7 +24,6 @@ def test_exact_match(client, elasticsearch_location_index):
 @pytest.mark.django_db(transaction=True)
 def test_multiple_types_of_matches(client, elasticsearch_location_index):
     """Test query with multiple types of matches"""
-
     response = client.post(
         "/api/v2/autocomplete/location", content_type="application/json", data=json.dumps({"search_text": "den"})
     )
@@ -42,7 +40,6 @@ def test_multiple_types_of_matches(client, elasticsearch_location_index):
 
 @pytest.mark.django_db(transaction=True)
 def test_congressional_district_results(client, elasticsearch_location_index):
-
     response = client.post(
         "/api/v2/autocomplete/location",
         content_type="application/json",
@@ -63,7 +60,6 @@ def test_congressional_district_results(client, elasticsearch_location_index):
 
 @pytest.mark.django_db(transaction=True)
 def test_zipcode_results(client, elasticsearch_location_index):
-
     response = client.post(
         "/api/v2/autocomplete/location",
         content_type="application/json",
@@ -81,7 +77,6 @@ def test_zipcode_results(client, elasticsearch_location_index):
 
 @pytest.mark.django_db(transaction=True)
 def test_county_results(client, elasticsearch_location_index):
-
     response = client.post(
         "/api/v2/autocomplete/location",
         content_type="application/json",
@@ -101,7 +96,6 @@ def test_county_results(client, elasticsearch_location_index):
 
 @pytest.mark.django_db(transaction=True)
 def test_no_results(client, elasticsearch_location_index):
-
     response = client.post(
         "/api/v2/autocomplete/location",
         content_type="application/json",
@@ -136,7 +130,6 @@ def test_verify_no_missing_fields(elasticsearch_location_index):
 @pytest.mark.django_db(transaction=True)
 def test_limits_by_location_type(client, elasticsearch_location_index):
     """Test that the endpoint returns (at most) 5 results of each `location_type` by default"""
-
     response = client.post(
         "/api/v2/autocomplete/location", content_type="application/json", data=json.dumps({"search_text": "texas"})
     )
