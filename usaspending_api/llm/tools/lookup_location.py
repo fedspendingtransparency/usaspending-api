@@ -2,7 +2,7 @@ import json
 import logging
 from typing import Any
 
-from opensearchpy.helpers.query import Q
+from opensearchpy.helpers.query import Q as ES_Q
 
 from usaspending_api.common.elasticsearch.search_wrappers import AsyncLocationSearch
 from usaspending_api.llm.models.py_models import (
@@ -55,36 +55,35 @@ class LocationLookupTool:
     async def _get_state_abbreviations(self) -> dict[str, str]:
         """Lazy-load state abbreviations from PopCounty model."""
         if self._state_abbr_cache is None:
-            self._state_abbr_cache = {}
-            counties = PopCongressionalDistrict.objects.values("state_name", "state_abbreviation").distinct()
-            async for county in counties:
-                state_name = county["state_name"]
-                state_abbr = county["state_abbreviation"]
+            state_abbrs = {}
+            async for state in PopCongressionalDistrict.objects.values("state_name", "state_abbreviation").distinct():
+                state_name = state["state_name"]
+                state_abbr = state["state_abbreviation"]
                 if state_name and state_abbr:
-                    # Store with multiple case variations for flexible lookup
-                    self._state_abbr_cache[state_name] = state_abbr
-                    self._state_abbr_cache[state_name.lower()] = state_abbr
-                    self._state_abbr_cache[state_name.upper()] = state_abbr
+                    state_abbrs[state_name] = state_abbr
+                    state_abbrs[state_name.lower()] = state_abbr
+                    state_abbrs[state_name.upper()] = state_abbr
+            self._state_abbr_cache = state_abbrs
         return self._state_abbr_cache
 
     async def _get_country_codes(self) -> dict[str, str]:
         """Lazy-load country codes from RefCountryCode model."""
         if self._country_code_cache is None:
-            self._country_code_cache = {}
-            countries = RefCountryCode.objects.values("country_name", "country_code")
-            async for country in countries:
+            country_codes = {}
+            async for country in RefCountryCode.objects.values("country_name", "country_code"):
                 country_name = country["country_name"]
                 country_code = country["country_code"]
                 if country_name and country_code:
                     # Store lowercase for case-insensitive lookup
-                    self._country_code_cache[country_name.lower()] = country_code
+                    country_codes[country_name.lower()] = country_code
+            self._country_code_cache = country_codes
         return self._country_code_cache
 
     async def lookup_location(self, query: str, location_type: str | None = None, top_k: int = 15) -> AIToolResult:
         # Validation
         self._validate_inputs(query, location_type)
 
-        # Clamp top_k
+        # Clamp top_k and query formatting
         top_k = max(1, min(top_k, 100))
         query_upper = query.strip().upper()
 
@@ -148,15 +147,15 @@ class LocationLookupTool:
         # Enhanced search queries with better boosting strategy
         should_queries = [
             # Exact match gets highest boost
-            Q("term", location__keyword={"value": query_upper, "boost": 10.0}),
+            ES_Q("term", location__keyword={"value": query_upper, "boost": 10.0}),
             # Standard match for analyzed fields
-            Q("match", location={"query": query_upper, "boost": 8.0}),
-            # Fuzzy match for typo tolerance (AUTO: 0 edits for 1-2 chars, 1 edit for 3-5, 2 edits for >5)
-            Q("match", location={"query": query_upper, "fuzziness": "AUTO", "boost": 5.0}),
+            ES_Q("match", location={"query": query_upper, "boost": 8.0}),
+            # Fuzzy word match for typo tolerance (AUTO: 0 edits for 1-2 chars, 1 edit for 3-5, 2 edits for >5)
+            ES_Q("match", location_search={"query": query_upper, "operator": "and", "fuzziness": "AUTO", "boost": 5.0}),
             # Contains match for partial matches
-            Q("match_phrase_prefix", location__contains={"query": query_upper, "boost": 3.0}),
+            ES_Q("match_phrase_prefix", location__contains={"query": query_upper, "boost": 3.0}),
             # Wildcard for prefix matching
-            Q("wildcard", location__keyword={"value": f"{query_upper}*", "boost": 2.0}),
+            ES_Q("wildcard", location__keyword={"value": f"{query_upper}*", "boost": 2.0}),
         ]
 
         search = AsyncLocationSearch()
