@@ -469,8 +469,8 @@ class TestFilterSearchAssistant:
         assert (await assistant.aget_tool_config())["toolChoice"] == {"auto": {}}
 
     @pytest.mark.django_db
-    async def test_tool_config_patches_defcodes_description_from_db(self, mock_assistant, mock_session):
-        """tool_config injects a DB-sourced defCodes description into execute_filter's schema.
+    async def test_tool_config_patches_defcode_description_from_db(self, mock_assistant, mock_session):
+        """tool_config injects a DB-sourced defCode description into execute_filter's schema.
 
         The description is patched lazily here (not at execute_filter_tool's module-import time)
         so the DB query only ever runs once real DB access is available -- see get_defc_rows/aget_defc_rows.
@@ -486,7 +486,7 @@ class TestFilterSearchAssistant:
 
         assistant = FilterSearchAssistant(assistant=mock_assistant, tools=[execute_filter_tool], session=mock_session)
         config = await assistant.aget_tool_config()
-        description = config["tools"][0]["toolSpec"]["inputSchema"]["json"]["properties"]["defCodes"]["description"]
+        description = config["tools"][0]["toolSpec"]["inputSchema"]["json"]["properties"]["defCode"]["description"]
 
         assert "TITLE FOR CODE L" in description
 
@@ -703,3 +703,29 @@ async def test_converse_retries_on_throttling(assistant, monkeypatch):
 
     assert await assistant._converse(assistant.client) == success
     assert assistant.client.converse.call_count == 2
+
+
+@patch("usaspending_api.llm.models.db_models.ToolUse.objects.acreate", new_callable=AsyncMock)
+async def test_handle_tool_use_passes_session_id_to_completion_tool(
+    mock_tool_use_create, assistant, mock_search_tool, mock_session
+):
+    """The completion tool receives the session id (overriding any model-supplied value), and the
+    persisted ToolUse input is left as the model sent it."""
+    mock_tool_use_create.return_value = Mock(id="tool-use-458", asave=AsyncMock())
+    model_input = {"awardType": ["A"], "smartAssistSearchId": "model-supplied"}
+
+    tool_requests = [{"toolUse": {"toolUseId": "tool-458", "name": "execute_filter", "input": model_input}}]
+    [event async for event in assistant.handle_tool_use(tool_requests, Mock())]
+
+    mock_search_tool.function.assert_awaited_once_with(awardType=["A"], smartAssistSearchId=str(mock_session.id))
+    assert model_input["smartAssistSearchId"] == "model-supplied"
+
+
+@patch("usaspending_api.llm.models.db_models.ToolUse.objects.acreate", new_callable=AsyncMock)
+async def test_handle_tool_use_does_not_pass_session_id_to_other_tools(mock_tool_use_create, assistant, mock_tool):
+    mock_tool_use_create.return_value = Mock(id="tool-use-459", asave=AsyncMock())
+
+    tool_requests = [{"toolUse": {"toolUseId": "tool-459", "name": "test_tool", "input": {"query": "x"}}}]
+    [event async for event in assistant.handle_tool_use(tool_requests, Mock())]
+
+    mock_tool.function.assert_awaited_once_with(query="x")
