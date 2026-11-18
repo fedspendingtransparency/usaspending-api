@@ -85,7 +85,7 @@ class LocationLookupTool:
 
         # Clamp top_k and query formatting
         top_k = max(1, min(top_k, 100))
-        query_upper = query_upper = query.strip().upper()
+        query_upper = query.strip().upper()
 
         logger.info(
             f"Starting location lookup: query='{query}', location_type={location_type}, top_k={top_k}",
@@ -151,7 +151,7 @@ class LocationLookupTool:
             # Standard match for analyzed fields
             ES_Q("match", location={"query": query_upper, "boost": 8.0}),
             # Fuzzy word match for typo tolerance (AUTO: 0 edits for 1-2 chars, 1 edit for 3-5, 2 edits for >5)
-            ES_Q("match", location_search={"query": query_upper, "operator": "and", "boost": 5.0}),
+            ES_Q("match", location_search={"query": query_upper, "operator": "and", "fuzziness": "AUTO", "boost": 5.0}),
             # Contains match for partial matches
             ES_Q("match_phrase_prefix", location__contains={"query": query_upper, "boost": 3.0}),
             # Wildcard for prefix matching

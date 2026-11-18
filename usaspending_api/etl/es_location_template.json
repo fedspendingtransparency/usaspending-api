@@ -105,7 +105,8 @@
       },
       "congressional_district": {
         "type": "keyword",
-        "normalizer": "uppercase_normalizer"
+        "normalizer": "uppercase_normalizer",
+        "copy_to": "location_search"
       },
       "location_search": {
         "type": "text",

@@ -13,8 +13,6 @@ LOCATION_COMPONENTS = [
     "congressional_district",
 ]
 
-LEGACY_JSON_KEYS = {"congressional_district": None}
-
 US_DATA = {"country_name": "UNITED STATES", "country_code": "USA"}
 
 

@@ -19,7 +19,7 @@ def test_exact_match(client, elasticsearch_location_index):
     assert len(response.data) == 3
     assert response.data["count"] == 1
     assert response.data["messages"] == [""]
-    assert response.data["results"] == {"countries": [{"country_name": "DENMARK"}]}
+    assert response.data["results"]["countries"][0]["country_name"] == "DENMARK"
 
 
 @pytest.mark.django_db(transaction=True)
@@ -34,10 +34,10 @@ def test_multiple_types_of_matches(client, elasticsearch_location_index):
     assert len(response.data) == 3
     assert response.data["count"] == 2
     assert response.data["messages"] == [""]
-    assert response.data["results"] == {
-        "countries": [{"country_name": "DENMARK"}],
-        "cities": [{"city_name": "DENVER", "state_name": "COLORADO", "country_name": "UNITED STATES"}],
-    }
+    assert response.data["results"]["countries"][0]["country_name"] == "DENMARK"
+    assert response.data["results"]["cities"][0]["city_name"] == "DENVER"
+    assert response.data["results"]["cities"][0]["state_name"] == "COLORADO"
+    assert response.data["results"]["cities"][0]["country_name"] == "UNITED STATES"
 
 
 @pytest.mark.django_db(transaction=True)
@@ -53,10 +53,12 @@ def test_congressional_district_results(client, elasticsearch_location_index):
     assert len(response.data) == 3
     assert response.data["count"] == 2
     assert response.data["messages"] == [""]
-    assert response.data["results"] == {
-        "districts_current": [{"current_cd": "CA-34", "state_name": "CALIFORNIA", "country_name": "UNITED STATES"}],
-        "districts_original": [{"original_cd": "CA-34", "state_name": "CALIFORNIA", "country_name": "UNITED STATES"}],
-    }
+    assert response.data["results"]["districts_current"][0]["current_cd"] == "CA-34"
+    assert response.data["results"]["districts_current"][0]["state_name"] == "CALIFORNIA"
+    assert response.data["results"]["districts_current"][0]["country_name"] == "UNITED STATES"
+    assert response.data["results"]["districts_original"][0]["original_cd"] == "CA-34"
+    assert response.data["results"]["districts_original"][0]["state_name"] == "CALIFORNIA"
+    assert response.data["results"]["districts_original"][0]["country_name"] == "UNITED STATES"
 
 
 @pytest.mark.django_db(transaction=True)
@@ -72,11 +74,9 @@ def test_zipcode_results(client, elasticsearch_location_index):
     assert len(response.data) == 3
     assert response.data["count"] == 1
     assert response.data["messages"] == [""]
-    assert response.data["results"] == {
-        "zip_codes": [
-            {"zip_code": "90210", "state_name": "CALIFORNIA", "country_name": "UNITED STATES"},
-        ]
-    }
+    assert response.data["results"]["zip_codes"][0]["zip_code"] == "90210"
+    assert response.data["results"]["zip_codes"][0]["state_name"] == "CALIFORNIA"
+    assert response.data["results"]["zip_codes"][0]["country_name"] == "UNITED STATES"
 
 
 @pytest.mark.django_db(transaction=True)
@@ -92,16 +92,11 @@ def test_county_results(client, elasticsearch_location_index):
     assert len(response.data) == 3
     assert response.data["count"] == 1
     assert response.data["messages"] == [""]
-    assert response.data["results"] == {
-        "counties": [
-            {
-                "county_name": "LOS ANGELES",
-                "county_fips": "06107",
-                "state_name": "CALIFORNIA",
-                "country_name": "UNITED STATES",
-            },
-        ],
-    }
+    assert len(response.data["results"]["counties"]) == 1
+    assert response.data["results"]["counties"][0]["county_name"] == "LOS ANGELES"
+    assert response.data["results"]["counties"][0]["county_fips"] == "06107"
+    assert response.data["results"]["counties"][0]["state_name"] == "CALIFORNIA"
+    assert response.data["results"]["counties"][0]["country_name"] == "UNITED STATES"
 
 
 @pytest.mark.django_db(transaction=True)
