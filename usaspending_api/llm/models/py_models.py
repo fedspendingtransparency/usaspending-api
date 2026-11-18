@@ -1257,6 +1257,7 @@ class FilterRequest(BaseModel):
 
     filters: Filters
     version: str = "2020-06-01"
+    smartAssistSearchId: str | None = None
 
 
 class FilterResponse(BaseModel):

@@ -358,7 +358,10 @@ class FilterSearchAssistant:
 
             tool_start_time = time.time()
             try:
-                tool_output = await tool.function(**tool_use["input"])
+                tool_kwargs = tool_use["input"]
+                if tool.description.name == self.COMPLETION_TOOL_NAME:
+                    tool_kwargs = {**tool_kwargs, "smartAssistSearchId": str(self.session.id)}
+                tool_output = await tool.function(**tool_kwargs)
                 execution_time_ms = (time.time() - tool_start_time) * 1000
                 result = tool_output.model_dump(exclude_none=True)
                 t.result = result

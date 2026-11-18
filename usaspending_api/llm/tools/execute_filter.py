@@ -162,9 +162,9 @@ async def _validate_def_codes_exist(filters: Filters) -> None:
         )
 
 
-def _filter_request_from_filters(filters: Filters) -> dict:
+def _filter_request_from_filters(filters: Filters, search_id: str | None = None) -> dict:
     """Canonicalize an already-validated Filters instance into the persisted filter request shape."""
-    filter_request = FilterRequest(filters=filters).model_dump(exclude_none=True)
+    filter_request = FilterRequest(filters=filters, smartAssistSearchId=search_id).model_dump(exclude_none=True)
     if "keyword" in filter_request["filters"]:
         filter_request["filters"]["keyword"] = {v: v for v in filter_request["filters"]["keyword"]}
     if "selectedAwardIDs" in filter_request["filters"]:
@@ -187,6 +187,10 @@ def build_filter_request(filter_input: dict) -> dict:
 async def execute_filter(**kwargs) -> AIToolResult:
     logger.info(f"Starting execute_filter with {len(kwargs)} filter parameter(s)", extra={"filter_count": len(kwargs)})
 
+    # Filters is configured with extra="forbid", so a stray smartAssistSearchId would fail validation.
+    # Popping it first keeps Filters strict and moves the id to where it belongs.
+    search_id = kwargs.pop("smartAssistSearchId", None)
+
     try:
         # Validating and dumping the filters use the synchronous ORM, so keep both off the event loop
         filters = await sync_to_async(Filters)(**kwargs)
@@ -207,7 +211,7 @@ async def execute_filter(**kwargs) -> AIToolResult:
     await _validate_recipients_exist(filters)
     await _validate_award_ids_exist(filters)
 
-    filter_request = await sync_to_async(_filter_request_from_filters)(filters)
+    filter_request = await sync_to_async(_filter_request_from_filters)(filters, search_id)
 
     logger.debug(f"Filter validation successful: {list(kwargs.keys())}")
 
