@@ -15,7 +15,7 @@
   pk: 2
   fields:
     name: filter-search
-    ai_model: 1  # claude 4.5
+    ai_model: 5  # Nova Pro
     system_prompt: 3  # filter-preference-v3 prompt
     inference_config:
       temperature: 0.0
