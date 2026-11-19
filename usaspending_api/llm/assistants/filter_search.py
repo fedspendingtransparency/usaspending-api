@@ -12,7 +12,7 @@ from usaspending_api.common.helpers.aws_helpers import (
     async_aws_client,
     retry_on_throttling,
 )
-from usaspending_api.llm.models.db_models import Assistant, Message, Session, ToolUse
+from usaspending_api.llm.models.db_models import Assistant, Message, Session, SmartAssistSearch, ToolUse
 from usaspending_api.llm.models.py_models import AITool, abuild_defc_description
 from usaspending_api.llm.tools.exceptions import GENERIC_TOOL_FAILURE_INSTRUCTIONS, ToolUseRuntimeError
 
@@ -26,16 +26,37 @@ class FilterSearchAssistant:
         "You are USAspending search assistant. Help the user select filters to search for federal spending"
     )
 
-    def __init__(self, assistant: Assistant, tools: list[AITool], session: Session, as_of: date | None = None) -> None:
+    def __init__(
+        self,
+        assistant: Assistant,
+        tools: list[AITool],
+        session: Session,
+        as_of: date | None = None,
+        search_id: str | None = None,
+    ) -> None:
+        """
+        `search_id` is the id of the SmartAssistSearch this session belongs to. It is what the events report as their
+        `search_id` (the session id is used when there is none), and the final hash is saved on it.
+        """
         self.assistant = assistant
         self.as_of = as_of
         self.tools = tools
         self.tools_by_name = {tool.description.name: tool for tool in tools}
         self.session = session
+        self._search_id = search_id
         self.message_order = 0
         self.messages = []
         self.tool_iterations = 0
         self._tool_config: dict[str, list[dict]] | None = None
+
+    @property
+    def search_id(self) -> str:
+        return self._search_id or str(self.session.id)
+
+    async def _record_search(self, **fields: str) -> None:
+        """Save results on the SmartAssistSearch. A no-op when this assistant was not given one (evals, tests)."""
+        if self._search_id:
+            await SmartAssistSearch.objects.filter(id=self._search_id).aupdate(**fields)
 
     @staticmethod
     def _extract_text_from_content(content: list[dict]) -> str:
@@ -191,7 +212,7 @@ class FilterSearchAssistant:
         )
 
     async def search(self, query: str) -> AsyncGenerator[dict[str, str], None]:
-        yield {"search_id": str(self.session.id), "type": "search_start", "message": "Thinking..."}
+        yield {"search_id": self.search_id, "type": "search_start", "message": "Thinking..."}
 
         logger.info(
             f"Starting filter search: session={self.session.id}, query_length={len(query)}",
@@ -350,7 +371,7 @@ class FilterSearchAssistant:
             tool = self.tools_by_name[tool_use["name"]]
 
             yield {
-                "search_id": str(self.session.id),
+                "search_id": self.search_id,
                 "type": "tool_start",
                 "tool_use_id": str(t.id),
                 "message": tool.logging(tool_use["input"]),
@@ -360,7 +381,7 @@ class FilterSearchAssistant:
             try:
                 tool_kwargs = tool_use["input"]
                 if tool.description.name == self.COMPLETION_TOOL_NAME:
-                    tool_kwargs = {**tool_kwargs, "smartAssistSearchId": str(self.session.id)}
+                    tool_kwargs = {**tool_kwargs, "smartAssistSearchId": self.search_id}
                 tool_output = await tool.function(**tool_kwargs)
                 execution_time_ms = (time.time() - tool_start_time) * 1000
                 result = tool_output.model_dump(exclude_none=True)
@@ -383,15 +404,16 @@ class FilterSearchAssistant:
 
                 completion_event = None
                 if tool.description.name == self.COMPLETION_TOOL_NAME:
+                    await self._record_search(final_filter_hash=result["results"]["hash"])
                     completion_event = {
-                        "search_id": str(self.session.id),
+                        "search_id": self.search_id,
                         "type": "search_complete",
                         "result": result["results"]["hash"],
                         "message": "Search complete.",
                     }
 
                 yield {
-                    "search_id": str(self.session.id),
+                    "search_id": self.search_id,
                     "type": "tool_complete",
                     "tool_use_id": str(t.id),
                     "message": "Success.",
@@ -430,7 +452,7 @@ class FilterSearchAssistant:
                 )
 
                 yield {
-                    "search_id": str(self.session.id),
+                    "search_id": self.search_id,
                     "type": "tool_error",
                     "tool_use_id": str(t.id),
                     "message": error_message,

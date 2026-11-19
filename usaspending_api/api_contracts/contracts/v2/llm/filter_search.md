@@ -24,6 +24,8 @@ This endpoint accepts a natural language query and returns a streaming response 
     + Attributes (object)
         + `query` (required, string)
             The natural language query to be processed by the LLM filter search.
+        + `search_id` (optional, string)
+            The `search_id` returned by `/api/v2/llm/query-review/` for this same user search, so that the query review and filter search are kept together in one Smart Assist search. If it is missing or unknown, a new search is started.
 
     + Body
 
@@ -36,8 +38,8 @@ This endpoint accepts a natural language query and returns a streaming response 
     The response is a stream of newline-delimited JSON objects. Each chunk represents a different stage of the search process.
 
     + Attributes
-        + `search_id` (optional string)
-            UUID identifying this search operation (the session primary key)
+        + `search_id` (required, string)
+            UUID identifying the Smart Assist search. It is the same `search_id` the query review returned, or a new one when the request did not include one.
         + `tool_use_id` (optional, string)
             Identifier for the specific tool being executed. Present only for tool-related events.
         + `type` (required, enum[string])
@@ -45,7 +47,7 @@ This endpoint accepts a natural language query and returns a streaming response 
             + Members
                 + `search_start` - Indicates the search has begun
                 + `search_error` - Indicates an error occurred during search
-                + `search_complete` - Indicates the search has completed successfully
+                + `search_complete` - Indicates the search has completed successfully. Its `result` is the final filter hash.
                 + `tool_start` - Indicates a tool execution has started
                 + `tool_complete` - Indicates a tool execution has completed
                 + `tool_error` - Indicates an error occurred during tool execution
@@ -73,8 +75,8 @@ This endpoint accepts a natural language query and returns a streaming response 
 ## StreamChunk (object)
 Represents a single chunk in the streaming response.
 
-+ `search_id` (optional, string)
-    UUID identifying the search operation.
++ `search_id` (required, string)
+    UUID identifying the Smart Assist search.
 + `tool_use_id` (optional, string)
     Unique identifier for a tool execution. Only present for tool-related events.
 + `type` (required, enum[string])

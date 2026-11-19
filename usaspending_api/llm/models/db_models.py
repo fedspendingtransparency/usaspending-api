@@ -30,11 +30,49 @@ class Prompts(models.Model):
         ordering = ["-created_at"]
 
 
+class SmartAssistSearch(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False, serialize=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    ended_at = models.DateTimeField(null=True, blank=True, help_text="When the last session of this search ended")
+    original_query = models.TextField(blank=True, default="", help_text="What the user typed")
+    approved_query = models.TextField(
+        blank=True,
+        default="",
+        help_text="The query the filters were selected for (the user's, or their approved rewrite)",
+    )
+    final_filter_hash = models.TextField(blank=True, default="", help_text="The FilterHash of the final filters")
+    explanation = models.TextField(blank=True, default="", help_text="Why the final filters were selected")
+
+    def __str__(self) -> str:
+        return f"SmartAssistSearch {self.id} ({self.created_at:%Y-%m-%d %H:%M})"
+
+    class Meta:
+        db_table = "smart_assist_search"
+        ordering = ["-created_at"]
+        indexes = [models.Index(fields=["-created_at"]), models.Index(fields=["final_filter_hash"])]
+
+
 class Session(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False, serialize=False)
     ai_model = models.ForeignKey(AIModel, on_delete=models.SET_NULL, null=True, related_name="sessions")
     tools = models.JSONField(default=list)
     system_prompt = models.ForeignKey(Prompts, on_delete=models.SET_NULL, null=True, related_name="sessions")
+    assistant = models.ForeignKey(
+        "Assistant",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="sessions",
+        help_text="The assistant (e.g. query-review, filter-search) that ran this session",
+    )
+    search = models.ForeignKey(
+        SmartAssistSearch,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="sessions",
+        help_text="The user search this session is part of. Deleting the search deletes its sessions and messages",
+    )
     started_at = models.DateTimeField(auto_now_add=True)
     ended_at = models.DateTimeField(null=True, blank=True)
     feedback = models.BooleanField(default=None, null=True, blank=True, help_text="positive=True, negative=False")

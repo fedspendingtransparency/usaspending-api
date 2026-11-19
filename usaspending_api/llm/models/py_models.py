@@ -4,6 +4,7 @@ from abc import ABC, abstractmethod
 from datetime import date
 from functools import cached_property
 from typing import Annotated, Any, Callable, Literal, get_args
+from uuid import UUID
 
 from pydantic import (
     BaseModel,
@@ -1274,11 +1275,98 @@ class FilterSearchInput(BaseModel):
         description="The natural language query describing what the user wants to search for",
         json_schema_extra={"examples": ["How many contracts did the Department of Energy award in fiscal year 2025?"]},
     )
+    search_id: UUID | None = Field(
+        default=None,
+        description=(
+            "The search_id the query review returned for this same user search. Keeps the query review and "
+            "filter search sessions together in one Smart Assist search. A new search is started if this is missing "
+            "or unknown."
+        ),
+    )
 
 
 class FilterSearchEvent(BaseModel):
     search_id: str | None = None
     tool_use_id: str | None = None
-    type: Literal["search_start", "search_error", "search_complete", "tool_start", "tool_complete", "tool_error"]
+    type: Literal[
+        "search_start",
+        "search_error",
+        "search_complete",
+        "tool_start",
+        "tool_complete",
+        "tool_error",
+    ]
     message: str
     result: Any = None
+
+
+class QueryReviewInput(BaseModel):
+    query: str = Field(
+        ...,
+        min_length=1,
+        max_length=1000,
+        description="The natural language query the user typed into Smart Assist",
+        json_schema_extra={"examples": ["How much has been spent, as of today, on the Iran war?"]},
+    )
+
+
+QueryReviewVerdict = Literal["answerable", "answerable_after_rephrase", "out_of_scope"]
+QueryReviewReasonCode = Literal[
+    "ok",
+    "no_matching_data",
+    "needs_comparison",
+    "needs_aggregation",
+    "ambiguous_time_period",
+    "not_a_search",
+    "too_broad",
+]
+
+
+class QueryReviewDecision(BaseModel):
+    """The structured decision the model submits; also used as the tool input schema."""
+
+    verdict: QueryReviewVerdict = Field(
+        ...,
+        description=(
+            "answerable: filters can be built from the query as written. "
+            "answerable_after_rephrase: filters can be built only after the query is reworded. "
+            "out_of_scope: no useful set of filters can be built."
+        ),
+    )
+    reason_code: QueryReviewReasonCode = Field(
+        ..., description="Why the verdict was chosen. Use 'ok' when the verdict is answerable."
+    )
+    message: str = Field(
+        "",
+        description=(
+            "One or two plain sentences for the user. Required unless the verdict is answerable. "
+            "Refer to the product as Smart Assist, never 'the tool'. Say what Smart Assist cannot do, or what the "
+            "rewritten query will search for."
+        ),
+    )
+    rewritten_query: str | None = Field(
+        None,
+        description=(
+            "The reworded query, describing exactly ONE search. Only for answerable_after_rephrase. "
+            "Never invent dates, amounts or names, and never combine several searches into one."
+        ),
+    )
+    separate_queries: list[str] = Field(
+        default_factory=list,
+        max_length=3,
+        description=(
+            "Only when reason_code is needs_comparison: one complete search per item being compared, built from the "
+            "user's own words and constraints (for example 'Federal funding for Wyoming in 2025'). Otherwise empty."
+        ),
+    )
+
+
+class QueryReviewOutput(QueryReviewDecision):
+    suggestions: list[str] = Field(default_factory=list, description="Example prompts the user can click")
+    suggestions_heading: str = Field(
+        "Examples of searches Smart Assist can run:", description="Label shown above suggestions"
+    )
+    search_id: str | None = Field(
+        default=None,
+        description="Id of the Smart Assist search. Send it back with the filter search request for the same search.",
+    )

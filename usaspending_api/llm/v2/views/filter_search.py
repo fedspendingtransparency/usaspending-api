@@ -1,20 +1,18 @@
 import logging
 from typing import Any, AsyncGenerator
 
-from asgiref.sync import sync_to_async
-from django.db.models import Sum
 from django.http import HttpRequest, StreamingHttpResponse
-from django.utils import timezone
 
 from usaspending_api.common.helpers.decorators import browsable
 from usaspending_api.llm.assistants.filter_search import FilterSearchAssistant
-from usaspending_api.llm.models.db_models import Assistant, Session, ToolUse
+from usaspending_api.llm.models.db_models import Assistant, Session, SmartAssistSearch
 from usaspending_api.llm.models.py_models import FilterSearchEvent, FilterSearchInput
 from usaspending_api.llm.services.guardrails import (
     BedrockGuardrailService,
     GuardrailConfigurationError,
     GuardrailServiceUnavailable,
 )
+from usaspending_api.llm.session_logging import finish_session
 from usaspending_api.llm.tools.execute_filter import execute_filter_tool
 from usaspending_api.llm.tools.list_recipient_types import list_recipient_types_tool
 from usaspending_api.llm.tools.lookup_agency import lookup_agency_tool
@@ -126,14 +124,25 @@ async def filter_search(request: HttpRequest, payload: FilterSearchInput) -> Str
     if assistant_config.system_prompt is None:
         logger.warning("Active filter-search Assistant has no system prompt; using the default.")
 
+    # Join the Smart Assist search the query review started, or start one if there is none (or it is unknown)
+    search = await SmartAssistSearch.objects.filter(id=payload.search_id).afirst() if payload.search_id else None
+    if payload.search_id and search is None:
+        logger.warning(f"Unknown search_id {payload.search_id}; starting a new Smart Assist search.")
+    if search is None:
+        search = await SmartAssistSearch.objects.acreate(original_query=query)
+    await SmartAssistSearch.objects.filter(id=search.id).aupdate(approved_query=query)
+
     session = await Session.objects.acreate(
+        search=search,
         ai_model=ai_model,
+        assistant=assistant_config,
         tools=[tool.description.name for tool in tools],
         system_prompt=assistant_config.system_prompt,
     )
     logger.info(
-        f"Filter search session initialized: session_id={session.id}, model={ai_model.name}",
+        f"Filter search session initialized: search_id={search.id}, session_id={session.id}, model={ai_model.name}",
         extra={
+            "search_id": str(search.id),
             "session_id": str(session.id),
             "model_id": ai_model.model_id,
             "model_name": ai_model.name,
@@ -143,7 +152,12 @@ async def filter_search(request: HttpRequest, payload: FilterSearchInput) -> Str
         },
     )
 
-    assistant = FilterSearchAssistant(assistant=assistant_config, tools=tools, session=session)
+    assistant = FilterSearchAssistant(
+        assistant=assistant_config,
+        tools=tools,
+        session=session,
+        search_id=str(search.id),
+    )
 
     async def event_stream() -> AsyncGenerator[str, Any]:
         try:
@@ -153,32 +167,12 @@ async def filter_search(request: HttpRequest, payload: FilterSearchInput) -> Str
             logger.error(f"Error during filter search: {e}", exc_info=True)
             yield _ndjson(
                 FilterSearchEvent(
-                    search_id=str(session.id),
+                    search_id=str(search.id),
                     type="search_error",
                     message="We are unable to provide an answer to your question at this time.",
                 )
             )
         finally:
-            session.ended_at = timezone.now()
-            await session.asave(update_fields=["ended_at"])
-
-            totals = await session.messages.aaggregate(
-                input_tokens=Sum("input_tokens"), output_tokens=Sum("output_tokens")
-            )
-            message_count = await session.messages.acount()
-            tool_use_count = await ToolUse.objects.filter(message__session=session).acount()
-            duration_seconds = (session.ended_at - session.started_at).total_seconds()
-
-            logger.info(
-                f"Filter search session completed: session_id={session.id}, duration={duration_seconds:.3f}s",
-                extra={
-                    "session_id": str(session.id),
-                    "duration_seconds": duration_seconds,
-                    "message_count": message_count,
-                    "tool_use_count": tool_use_count,
-                    "total_tokens": (totals["input_tokens"] or 0) + (totals["output_tokens"] or 0),
-                    "model_id": ai_model.model_id,
-                },
-            )
+            await finish_session(session, "Filter search")
 
     return _stream_response(event_stream())
