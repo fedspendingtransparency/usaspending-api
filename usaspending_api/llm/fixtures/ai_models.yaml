@@ -2,13 +2,13 @@
   pk: 1
   fields:
     name: claude 4.5
-    model_id: anthropic.claude-sonnet-4-5-20250929-v1:0
+    model_id: us-gov.anthropic.claude-sonnet-4-5-20250929-v1:0
     provider: anthropic
 - model: llm.aimodel
   pk: 2
   fields:
     name: claude 3.7
-    model_id: anthropic.claude-3-7-sonnet-20250219-v1:0
+    model_id: us-gov.anthropic.claude-3-7-sonnet-20250219-v1:0
     provider: anthropic
 - model: llm.aimodel
   pk: 3

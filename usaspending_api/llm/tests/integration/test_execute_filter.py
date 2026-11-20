@@ -14,6 +14,7 @@ from usaspending_api.llm.models.py_models import (
     clear_defc_rows_cache,
 )
 from usaspending_api.llm.tools.exceptions import (
+    FINAL_TOOL_RETRY_INSTRUCTIONS,
     AgencyNotRecognizedError,
     AwardAmountNotParseableError,
     AwardNotRecognizedError,
@@ -25,7 +26,6 @@ from usaspending_api.llm.tools.exceptions import (
 )
 from usaspending_api.llm.tools.execute_filter import (
     GENERIC_USER_MESSAGE,
-    RETRY_INSTRUCTION,
     execute_filter,
     execute_filter_tool,
 )
@@ -112,7 +112,7 @@ class TestInputValidation:
 
         assert exc_info.value.user_message == GENERIC_USER_MESSAGE
         assert "invalid_field" in exc_info.value.model_detail
-        assert exc_info.value.model_detail.endswith(RETRY_INSTRUCTION)
+        assert exc_info.value.instructions == FINAL_TOOL_RETRY_INSTRUCTIONS
 
     async def test_empty_filters_accepted(self):
         """Test that empty filters are valid."""
@@ -244,6 +244,26 @@ class TestFilterProcessing:
 
         # Verify hash was created (keys were sorted)
         assert isinstance(result, AIToolResult)
+
+    async def test_smart_assist_search_id_stored_alongside_filters_and_version(self, mock_filter_hash):
+        """smartAssistSearchId is persisted at the same level as filters and version, not inside filters."""
+        mock_filter_hash.objects.aget.side_effect = FilterHash.DoesNotExist
+        mock_filter_hash.return_value = _new_mock_instance()
+
+        await execute_filter(awardType=["A"], smartAssistSearchId="a3e2c8f1-4b6d-4e9a-9c21-7f8b2d1e5a04")
+
+        saved_filter = mock_filter_hash.call_args[1]["filter"]
+        assert saved_filter["smartAssistSearchId"] == "a3e2c8f1-4b6d-4e9a-9c21-7f8b2d1e5a04"
+        assert "version" in saved_filter
+        assert "smartAssistSearchId" not in saved_filter["filters"]
+
+    async def test_smart_assist_search_id_omitted_when_not_provided(self, mock_filter_hash):
+        mock_filter_hash.objects.aget.side_effect = FilterHash.DoesNotExist
+        mock_filter_hash.return_value = _new_mock_instance()
+
+        await execute_filter(awardType=["A"])
+
+        assert "smartAssistSearchId" not in mock_filter_hash.call_args[1]["filter"]
 
 
 class TestHashCreationAndStorage:
@@ -410,8 +430,8 @@ class TestValidationErrorTranslation:
         with pytest.raises(DefcCodeNotRecognizedError) as exc_info:
             await execute_filter(defCodes={"require": ["NOT_REAL"]})
 
-        assert exc_info.value.user_message == "DEFC code not found: NOT_REAL."
-        assert "Invalid DEFC code(s)" in exc_info.value.model_detail
+        assert exc_info.value.user_message == "DEF code not found: NOT_REAL"
+        assert "Invalid DEF code(s)" in exc_info.value.model_detail
 
     async def test_award_amount_business_rule_failure_raises_specific_error(self):
         with pytest.raises(AwardAmountNotParseableError) as exc_info:
@@ -443,14 +463,15 @@ class TestValidationErrorTranslation:
         looking like a success."""
         with pytest.raises(FilterValidationError) as exc_info:
             await execute_filter(
-                defCodes={"require": ["NOT_REAL"]},
+                awardAmounts={"specific": [1, 2], "range-1": [1000000, 25000000]},
                 timePeriodType="dr",
                 time_period=[{"start_date": "invalid-date", "end_date": "2023-12-31"}],
             )
 
         assert exc_info.value.user_message == GENERIC_USER_MESSAGE
-        assert "NOT_REAL" in exc_info.value.model_detail
-        assert exc_info.value.model_detail.endswith(RETRY_INSTRUCTION)
+        assert "must be the only key" in exc_info.value.model_detail
+        assert "not a valid date" in exc_info.value.model_detail
+        assert exc_info.value.instructions == FINAL_TOOL_RETRY_INSTRUCTIONS
 
 
 class TestAwardTypeNames:
@@ -506,6 +527,7 @@ class TestAgencyExistenceValidation:
         assert "Department of Agriculture" in exc_info.value.user_message
         assert "Unresolvable selected agencies" in exc_info.value.model_detail
         assert "exactly as returned by lookup_agencies" in exc_info.value.model_detail
+        assert "unchanged" in exc_info.value.instructions
 
 
 async def _make_agency_rows(subtier_count: int) -> tuple[ToptierAgency, list[Agency]]:
@@ -600,6 +622,7 @@ class TestRecipientExistenceValidation:
 
         assert "Totally Fake Recipient" in exc_info.value.user_message
         assert "Unresolvable selected recipients" in exc_info.value.model_detail
+        assert "lookup_recipient" in exc_info.value.instructions
 
     async def test_multiple_unresolvable_recipients_are_all_listed(self):
         with patch(
@@ -659,6 +682,7 @@ class TestAwardIdExistenceValidation:
         assert "FAKE_AWARD_ID" in exc_info.value.user_message
         assert "Unresolvable selected award IDs" in exc_info.value.model_detail
         assert "lookup_recipient" in exc_info.value.model_detail
+        assert exc_info.value.instructions == FINAL_TOOL_RETRY_INSTRUCTIONS
         assert "lookup_recipient" not in exc_info.value.user_message
 
 
@@ -704,7 +728,7 @@ class TestAIToolImplementation:
         off the tool surface so the assistant never emits it. `treasuryAccounts` is likewise a
         deprecated field kept on `Filters` for frontend compatibility; the assistant uses `tasCodes`.
         """
-        legacy_filters_only_fields = {"defCode", "treasuryAccounts"}
+        legacy_filters_only_fields = {"defCodes", "treasuryAccounts"}
         assert set(Filters.model_fields) - set(ExecuteFilterInput.model_fields) == legacy_filters_only_fields
         assert set(ExecuteFilterInput.model_fields) - set(Filters.model_fields) == set()
 

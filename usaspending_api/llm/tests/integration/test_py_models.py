@@ -893,35 +893,77 @@ class TestDefCodes:
         assert filters.defCodes.require == []
         assert filters.defCodes.exclude == []
 
-    def test_def_codes_accepts_covid_codes(self):
-        codes = ["L", "M", "N", "O", "P", "U", "V"]
-        filters = Filters(defCodes={"require": codes})
+    def test_def_codes_is_always_empty(self):
+        filters = Filters(defCodes={"require": ["L", "M", "N", "O", "P", "U", "V"]})
+        assert filters.defCodes.require == []
 
-        assert filters.defCodes.require == codes
-
-    def test_def_codes_accepts_infrastructure_codes(self):
         filters = Filters(defCodes={"require": ["Z", "1"]})
+        assert filters.defCodes.require == []
 
-        assert filters.defCodes.require == ["Z", "1"]
+    def test_def_codes_exclude_is_rejected(self):
+        with pytest.raises(ValidationError, match="Excluding DEFC codes is not supported"):
+            Filters(defCodes={"exclude": ["L"]})
 
-    def test_def_codes_accepts_require_and_exclude_together(self):
-        filters = Filters(defCodes={"require": ["L"], "exclude": ["Z"]})
+    def test_def_codes_is_always_empty_by_default(self):
+        assert Filters().defCodes.model_dump() == {"require": [], "exclude": [], "counts": []}
 
-        assert filters.defCodes.require == ["L"]
-        assert filters.defCodes.exclude == ["Z"]
 
-    def test_def_codes_rejects_code_outside_covid_and_infrastructure(self):
-        """DEFC codes outside the frontend-supported groups (e.g. a code in another group) are rejected."""
-        with pytest.raises(ValidationError) as exc_info:
-            Filters(defCodes={"require": ["A"]})
+@pytest.mark.django_db
+class TestDefCode:
+    """Tests the defCode array filter. For clarification, the defCodes filter (tested above) is a dictionary with
+    `require` and `exclude` keys.
+    """
 
-        assert "defCodes" in str(exc_info.value)
+    @pytest.fixture(autouse=True)
+    def seed_defc_codes(self):
+        clear_defc_rows_cache()
+        for code in ["L", "M", "N", "O", "P", "U", "V"]:
+            baker.make(
+                "references.DisasterEmergencyFundCode",
+                code=code,
+                public_law=f"PUBLIC LAW FOR CODE {code}",
+                title=f"TITLE FOR CODE {code}",
+                group_name="covid_19",
+            )
+        for code in ["Z", "1"]:
+            baker.make(
+                "references.DisasterEmergencyFundCode",
+                code=code,
+                public_law=f"PUBLIC LAW FOR CODE {code}",
+                title=f"TITLE FOR CODE {code}",
+                group_name="infrastructure",
+            )
+        baker.make(
+            "references.DisasterEmergencyFundCode",
+            code="A",
+            public_law="PUBLIC LAW FOR CODE A",
+            title="TITLE FOR CODE A",
+            group_name="other",
+        )
+        yield
+        clear_defc_rows_cache()
 
-    def test_def_codes_rejects_unsupported_code_in_exclude(self):
-        with pytest.raises(ValidationError) as exc_info:
-            Filters(defCodes={"exclude": ["AAA"]})
+    def test_def_code_default_empty(self):
+        filters = Filters()
 
-        assert "defCodes" in str(exc_info.value)
+        assert filters.defCode == []
+        assert filters.defCode == []
+
+    def test_def_code_accepts_covid_codes(self):
+        codes = ["L", "M", "N", "O", "P", "U", "V"]
+        filters = Filters(defCode=codes)
+
+        assert filters.defCode == codes
+
+    def test_def_code_accepts_infrastructure_codes(self):
+        filters = Filters(defCode=["Z", "1"])
+
+        assert filters.defCode == ["Z", "1"]
+
+    def test_def_codes_require_is_moved_to_def_code(self):
+        filters = Filters(defCode=["Z"], defCodes={"require": ["l", "Z"]})
+        assert filters.defCode == ["Z", "L"]
+        assert filters.defCodes.model_dump() == {"require": [], "exclude": [], "counts": []}
 
 
 class TestAwardAmounts:
@@ -1470,6 +1512,7 @@ class TestCodePathRebuilding:
 
         assert "one to four character" in str(exc_info.value)
 
+    @pytest.mark.django_db
     @pytest.mark.parametrize(
         "path, expected",
         [
@@ -1477,15 +1520,32 @@ class TestCodePathRebuilding:
                 ["310", "310-2012", "310-2012/2012-3200-000"],
                 ["310", "310-3200", "310-2012/2012-3200-000"],
             ),
+            # The agency is the one of the federal account, which is not always the AID in the label
             (
                 ["wrong", "wrong-0000", "019-011-X-1071-000"],
-                ["011", "011-1071", "019-011-X-1071-000"],
+                ["1100", "011-1071", "019-011-X-1071-000"],
             ),
+            # A TAS that isn't found is left as the llm wrote it
+            (["310", "310-2012", "310-2012/2012-9999-000"], ["310", "310-2012", "310-2012/2012-9999-000"]),
             (["310", "310-3200"], ["310", "310-3200"]),
             (["310"], ["310"]),
         ],
     )
     def test_tas_paths_are_rebuilt_from_the_rendering_label(self, path, expected):
+        for label, aid, main, toptier_code in (
+            ("310-2012/2012-3200-000", "310", "3200", "310"),
+            ("019-011-X-1071-000", "011", "1071", "1100"),
+        ):
+            agency = baker.make("references.ToptierAgency", toptier_code=toptier_code)
+            account = baker.make(
+                "accounts.FederalAccount",
+                agency_identifier=aid,
+                main_account_code=main,
+                federal_account_code=f"{aid}-{main}",
+                parent_toptier_agency=agency,
+            )
+            baker.make("accounts.TreasuryAppropriationAccount", tas_rendering_label=label, federal_account=account)
+
         model = TasCodeLists(require=[path], exclude=[path])
 
         assert model.require == [expected]
@@ -1498,9 +1558,57 @@ class TestCodePathRebuilding:
         assert "between 1 and 3 elements" in str(exc_info.value)
 
 
+@pytest.mark.django_db
 class TestSelectedCFDA:
     """Tests for the SelectedCFDA model and its wiring into Filters/ExecuteFilterInput.selectedCFDA
     (keyed by CFDA program number, mirroring the SelectedAgency re-keying pattern)."""
+
+    def test_title_and_popular_name_come_from_the_program(self):
+        baker.make(
+            "references.Cfda", program_number="16.014", program_title="Engaging Men and Youth", popular_name=None
+        )
+        baker.make(
+            "references.Cfda", program_number="10.001", program_title="Agricultural Research", popular_name="ARS"
+        )
+
+        filters = Filters(
+            selectedCFDA={
+                # A made up title and a missing popular name are replaced by the program's own
+                "16.014": {
+                    "identifier": "16.014",
+                    "program_number": "16.014",
+                    "program_title": "Assistance Listing 16.014",
+                },
+                "10.001": {
+                    "identifier": "10.001",
+                    "program_number": "10.001",
+                    "program_title": "wrong",
+                    "popular_name": "x",
+                },
+            }
+        )
+
+        assert filters.selectedCFDA["16.014"].model_dump() == {
+            "identifier": "16.014",
+            "program_number": "16.014",
+            "program_title": "Engaging Men and Youth",
+            "popular_name": "",
+        }
+        assert filters.selectedCFDA["10.001"].program_title == "Agricultural Research"
+        assert filters.selectedCFDA["10.001"].popular_name == "ARS"
+
+    def test_only_the_program_number_is_taken_from_the_llm(self):
+        baker.make("references.Cfda", program_number="14.257", program_title="Prevention", popular_name="")
+
+        filters = Filters(selectedCFDA={"14.257": {"program_title": "anything"}})
+
+        assert filters.selectedCFDA["14.257"].program_title == "Prevention"
+
+    def test_key_that_is_not_a_program_is_left_as_it_is(self):
+        filters = Filters(selectedCFDA={"14": {"identifier": "14", "program_number": "14", "program_title": ""}})
+
+        assert filters.selectedCFDA["14"].program_title == ""
+        assert filters.selectedCFDA["14"].popular_name is None
 
     def test_accepts_valid_entry(self):
         cfda = SelectedCFDA(identifier="10.557", program_number="10.557", program_title="WIC")

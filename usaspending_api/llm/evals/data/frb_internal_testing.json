@@ -1,0 +1,688 @@
+[
+  {
+    "id": 1,
+    "query": "Grants to Texas universities",
+    "expected_output": {
+      "awardType": [
+        "02",
+        "03",
+        "04",
+        "F001"
+      ],
+      "recipientType": [
+        "higher_education"
+      ],
+      "selectedRecipientLocations": {
+        "USA_TX": {
+          "identifier": "USA_TX",
+          "filter": {
+            "country": "USA",
+            "state": "TX"
+          },
+          "display": {
+            "entity": "State",
+            "standalone": "Texas",
+            "title": "Texas"
+          }
+        }
+      }
+    },
+    "expected_tools": [
+      "lookup_location",
+      "list_recipient_types",
+      "execute_filter"
+    ],
+    "tags": [
+      "multi_filter",
+      "location",
+      "internal_testing"
+    ],
+    "approved": false,
+    "notes": "Testing found Texas applied as a keyword instead of a location. Draft assumes universities map to recipient type higher_education and Texas to recipient location; place of performance may also be acceptable."
+  },
+  {
+    "id": 2,
+    "query": "Department of Defense contracts",
+    "expected_output": {
+      "selectedAwardingAgencies": {
+        "1173_toptier": {
+          "id": 1173,
+          "agencyType": "toptier",
+          "toptier_flag": true,
+          "toptier_agency": {
+            "id": 126,
+            "toptier_code": "097",
+            "abbreviation": "DOD",
+            "name": "Department of Defense"
+          }
+        }
+      },
+      "awardType": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ]
+    },
+    "expected_tools": [
+      "lookup_agencies",
+      "execute_filter"
+    ],
+    "tags": [
+      "multi_filter",
+      "internal_testing"
+    ],
+    "approved": false,
+    "notes": "Passed in internal testing; included as a regression check."
+  },
+  {
+    "id": 3,
+    "query": "Contracts awarded to Boeing in 2024",
+    "expected_output": {
+      "selectedRecipients": [
+        "BOEING"
+      ],
+      "awardType": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "timePeriodType": "fy",
+      "timePeriodFY": [
+        "2024"
+      ]
+    },
+    "expected_tools": [
+      "lookup_recipient",
+      "execute_filter"
+    ],
+    "tags": [
+      "multi_filter",
+      "temporal",
+      "internal_testing"
+    ],
+    "approved": false,
+    "notes": "Testing selected a single recipient name variant and returned no results. Draft assumes all Boeing variants are expected (see case 17 in config) and fiscal-year interpretation of 2024."
+  },
+  {
+    "id": 4,
+    "query": "Defense contracts awarded in Texas during FY2025",
+    "expected_output": {
+      "selectedAwardingAgencies": {
+        "1173_toptier": {
+          "id": 1173,
+          "agencyType": "toptier",
+          "toptier_flag": true,
+          "toptier_agency": {
+            "id": 126,
+            "toptier_code": "097",
+            "abbreviation": "DOD",
+            "name": "Department of Defense"
+          }
+        }
+      },
+      "awardType": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "selectedLocations": {
+        "USA_TX": {
+          "identifier": "USA_TX",
+          "filter": {
+            "country": "USA",
+            "state": "TX"
+          },
+          "display": {
+            "entity": "State",
+            "standalone": "Texas",
+            "title": "Texas"
+          }
+        }
+      },
+      "timePeriodType": "fy",
+      "timePeriodFY": [
+        "2025"
+      ]
+    },
+    "expected_tools": [
+      "lookup_agencies",
+      "lookup_location",
+      "execute_filter"
+    ],
+    "tags": [
+      "multi_filter",
+      "temporal",
+      "location",
+      "internal_testing"
+    ],
+    "approved": false,
+    "notes": "Testing found no recipient location applied and an unexpected NAICS filter added. Draft expects place of performance; recipient location may also be acceptable."
+  },
+  {
+    "id": 5,
+    "query": "DoD",
+    "expected_output": {
+      "selectedAwardingAgencies": {
+        "1173_toptier": {
+          "id": 1173,
+          "agencyType": "toptier",
+          "toptier_flag": true,
+          "toptier_agency": {
+            "id": 126,
+            "toptier_code": "097",
+            "abbreviation": "DOD",
+            "name": "Department of Defense"
+          }
+        }
+      }
+    },
+    "expected_tools": [
+      "lookup_agencies",
+      "execute_filter"
+    ],
+    "tags": [
+      "single_filter",
+      "variation",
+      "internal_testing"
+    ],
+    "approved": false,
+    "notes": "Synonym check: all three phrasings should produce the same awarding agency."
+  },
+  {
+    "id": 6,
+    "query": "Department of Defense",
+    "expected_output": {
+      "selectedAwardingAgencies": {
+        "1173_toptier": {
+          "id": 1173,
+          "agencyType": "toptier",
+          "toptier_flag": true,
+          "toptier_agency": {
+            "id": 126,
+            "toptier_code": "097",
+            "abbreviation": "DOD",
+            "name": "Department of Defense"
+          }
+        }
+      }
+    },
+    "expected_tools": [
+      "lookup_agencies",
+      "execute_filter"
+    ],
+    "tags": [
+      "single_filter",
+      "variation",
+      "internal_testing"
+    ],
+    "approved": false,
+    "notes": "Synonym check."
+  },
+  {
+    "id": 7,
+    "query": "Pentagon",
+    "expected_output": {
+      "selectedAwardingAgencies": {
+        "1173_toptier": {
+          "id": 1173,
+          "agencyType": "toptier",
+          "toptier_flag": true,
+          "toptier_agency": {
+            "id": 126,
+            "toptier_code": "097",
+            "abbreviation": "DOD",
+            "name": "Department of Defense"
+          }
+        }
+      }
+    },
+    "expected_tools": [
+      "lookup_agencies",
+      "execute_filter"
+    ],
+    "tags": [
+      "single_filter",
+      "variation",
+      "internal_testing"
+    ],
+    "approved": false,
+    "notes": "Testing resolved a different agency. Colloquial name for the Department of Defense."
+  },
+  {
+    "id": 8,
+    "query": "Kansas",
+    "expected_output": {
+      "selectedLocations": {
+        "USA_KS": {
+          "identifier": "USA_KS",
+          "filter": {
+            "country": "USA",
+            "state": "KS"
+          },
+          "display": {
+            "entity": "State",
+            "standalone": "Kansas",
+            "title": "Kansas"
+          }
+        }
+      }
+    },
+    "expected_tools": [
+      "lookup_location",
+      "execute_filter"
+    ],
+    "tags": [
+      "single_filter",
+      "location",
+      "variation",
+      "internal_testing"
+    ],
+    "approved": false,
+    "notes": "Location format check: all three phrasings should produce the same location filter. Draft uses place of performance; recipient location may also be acceptable."
+  },
+  {
+    "id": 9,
+    "query": "KS",
+    "expected_output": {
+      "selectedLocations": {
+        "USA_KS": {
+          "identifier": "USA_KS",
+          "filter": {
+            "country": "USA",
+            "state": "KS"
+          },
+          "display": {
+            "entity": "State",
+            "standalone": "Kansas",
+            "title": "Kansas"
+          }
+        }
+      }
+    },
+    "expected_tools": [
+      "lookup_location",
+      "execute_filter"
+    ],
+    "tags": [
+      "single_filter",
+      "location",
+      "variation",
+      "internal_testing"
+    ],
+    "approved": false,
+    "notes": "State abbreviation variant."
+  },
+  {
+    "id": 10,
+    "query": "State of Kansas",
+    "expected_output": {
+      "selectedLocations": {
+        "USA_KS": {
+          "identifier": "USA_KS",
+          "filter": {
+            "country": "USA",
+            "state": "KS"
+          },
+          "display": {
+            "entity": "State",
+            "standalone": "Kansas",
+            "title": "Kansas"
+          }
+        }
+      }
+    },
+    "expected_tools": [
+      "lookup_location",
+      "execute_filter"
+    ],
+    "tags": [
+      "single_filter",
+      "location",
+      "variation",
+      "internal_testing"
+    ],
+    "approved": false,
+    "notes": "Full-phrase variant."
+  },
+  {
+    "id": 11,
+    "query": "Spending in 2024",
+    "expected_output": {
+      "timePeriodType": "fy",
+      "timePeriodFY": [
+        "2024"
+      ]
+    },
+    "expected_tools": [
+      "execute_filter"
+    ],
+    "tags": [
+      "single_filter",
+      "temporal",
+      "internal_testing"
+    ],
+    "approved": false,
+    "notes": "Year without qualifier defaults to fiscal year. Testing saw a completed search with no results shown."
+  },
+  {
+    "id": 12,
+    "query": "Fiscal year 2024 spending",
+    "expected_output": {
+      "timePeriodType": "fy",
+      "timePeriodFY": [
+        "2024"
+      ]
+    },
+    "expected_tools": [
+      "execute_filter"
+    ],
+    "tags": [
+      "single_filter",
+      "temporal",
+      "internal_testing"
+    ],
+    "approved": false,
+    "notes": "Explicit fiscal year. Testing saw a completed search with no results shown."
+  },
+  {
+    "id": 13,
+    "query": "Calendar year 2024 spending",
+    "expected_output": {
+      "timePeriodType": "dr",
+      "time_period": [
+        {
+          "start_date": "2024-01-01",
+          "end_date": "2024-12-31"
+        }
+      ]
+    },
+    "expected_tools": [
+      "execute_filter"
+    ],
+    "tags": [
+      "single_filter",
+      "temporal",
+      "internal_testing"
+    ],
+    "approved": false,
+    "notes": "Explicit calendar year becomes a date range. Passed in internal testing."
+  },
+  {
+    "id": 14,
+    "query": "Healthcare spending",
+    "expected_output": {
+      "keyword": [
+        "healthcare"
+      ]
+    },
+    "expected_tools": [
+      "execute_filter"
+    ],
+    "tags": [
+      "single_filter",
+      "broad",
+      "ambiguous",
+      "internal_testing"
+    ],
+    "approved": false,
+    "notes": "Ambiguous topic should fall back to a keyword. Passed in internal testing."
+  },
+  {
+    "id": 15,
+    "query": "NASA contracts",
+    "expected_output": {
+      "selectedAwardingAgencies": {
+        "862_toptier": {
+          "id": 862,
+          "agencyType": "toptier",
+          "toptier_flag": true,
+          "toptier_agency": {
+            "id": 72,
+            "toptier_code": "080",
+            "abbreviation": "NASA",
+            "name": "National Aeronautics and Space Administration"
+          }
+        }
+      },
+      "awardType": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ]
+    },
+    "expected_tools": [
+      "lookup_agencies",
+      "execute_filter"
+    ],
+    "tags": [
+      "multi_filter",
+      "ambiguous",
+      "internal_testing"
+    ],
+    "approved": false,
+    "notes": "Testing accepted NASA as a keyword plus contracts. Draft expects the awarding agency; decide whether keyword is also acceptable."
+  },
+  {
+    "id": 16,
+    "query": "Technology awards",
+    "expected_output": {
+      "keyword": [
+        "technology"
+      ]
+    },
+    "expected_tools": [
+      "execute_filter"
+    ],
+    "tags": [
+      "single_filter",
+      "broad",
+      "ambiguous",
+      "internal_testing"
+    ],
+    "approved": false,
+    "notes": "Generic award type adds no filter; topic becomes a keyword. Passed in internal testing."
+  },
+  {
+    "id": 17,
+    "query": "Defence contracts",
+    "expected_output": {
+      "selectedAwardingAgencies": {
+        "1173_toptier": {
+          "id": 1173,
+          "agencyType": "toptier",
+          "toptier_flag": true,
+          "toptier_agency": {
+            "id": 126,
+            "toptier_code": "097",
+            "abbreviation": "DOD",
+            "name": "Department of Defense"
+          }
+        }
+      },
+      "awardType": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ]
+    },
+    "expected_tools": [
+      "lookup_agencies",
+      "execute_filter"
+    ],
+    "tags": [
+      "multi_filter",
+      "variation",
+      "internal_testing"
+    ],
+    "approved": false,
+    "notes": "British spelling. Testing applied only the award type and ignored the misspelled agency."
+  },
+  {
+    "id": 18,
+    "query": "Departmnt of Education",
+    "expected_output": {
+      "selectedAwardingAgencies": {
+        "1068_toptier": {
+          "id": 1068,
+          "agencyType": "toptier",
+          "toptier_flag": true,
+          "toptier_agency": {
+            "id": 80,
+            "toptier_code": "091",
+            "abbreviation": "ED",
+            "name": "Department of Education"
+          }
+        }
+      }
+    },
+    "expected_tools": [
+      "lookup_agencies",
+      "execute_filter"
+    ],
+    "tags": [
+      "single_filter",
+      "variation",
+      "internal_testing"
+    ],
+    "approved": false,
+    "notes": "Misspelling should be corrected. Passed in internal testing."
+  },
+  {
+    "id": 19,
+    "query": "Lockheed",
+    "expected_output": {
+      "selectedRecipients": [
+        "LOCKHEED MARTIN CORPORATION"
+      ]
+    },
+    "expected_tools": [
+      "lookup_recipient",
+      "execute_filter"
+    ],
+    "tags": [
+      "single_filter",
+      "variation",
+      "internal_testing"
+    ],
+    "approved": false,
+    "notes": "Partial recipient name should resolve to the full name. Passed in internal testing; a keyword was also considered acceptable."
+  },
+  {
+    "id": 20,
+    "query": "NIH",
+    "expected_output": {
+      "selectedAwardingAgencies": {
+        "830_subtier": {
+          "id": 830,
+          "agencyType": "subtier",
+          "toptier_flag": false,
+          "toptier_agency": {
+            "id": 68,
+            "toptier_code": "075",
+            "abbreviation": "HHS",
+            "name": "Department of Health and Human Services"
+          },
+          "subtier_agency": {
+            "abbreviation": "NIH",
+            "name": "National Institutes of Health"
+          }
+        }
+      }
+    },
+    "expected_tools": [
+      "lookup_agencies",
+      "execute_filter"
+    ],
+    "tags": [
+      "single_filter",
+      "variation",
+      "internal_testing"
+    ],
+    "approved": false,
+    "notes": "Abbreviation of a sub-agency. Passed in internal testing."
+  },
+  {
+    "id": 21,
+    "query": "What programs received funding for veterans in Korea during 2025?",
+    "expected_output": {
+      "keyword": [
+        "veterans"
+      ],
+      "selectedLocations": {
+        "KOR": {
+          "identifier": "KOR",
+          "filter": {
+            "country": "KOR"
+          },
+          "display": {
+            "entity": "Country",
+            "standalone": "KOREA, SOUTH",
+            "title": "KOREA, SOUTH"
+          }
+        }
+      },
+      "timePeriodType": "fy",
+      "timePeriodFY": [
+        "2025"
+      ]
+    },
+    "expected_tools": [
+      "lookup_location",
+      "execute_filter"
+    ],
+    "tags": [
+      "multi_filter",
+      "temporal",
+      "location",
+      "internal_testing"
+    ],
+    "approved": false,
+    "notes": "Testing applied Korea as a state (KR) instead of a country. Korea is ambiguous (South or North); draft assumes South Korea (KOR). Verify the identifier and display text against lookup_location output."
+  },
+  {
+    "id": 22,
+    "query": "What programs received funding for women owned small businesses in Missouri during 2025?",
+    "expected_output": {
+      "recipientType": [
+        "women_owned_small_business"
+      ],
+      "selectedRecipientLocations": {
+        "USA_MO": {
+          "identifier": "USA_MO",
+          "filter": {
+            "country": "USA",
+            "state": "MO"
+          },
+          "display": {
+            "entity": "State",
+            "standalone": "Missouri",
+            "title": "Missouri"
+          }
+        }
+      },
+      "timePeriodType": "fy",
+      "timePeriodFY": [
+        "2025"
+      ]
+    },
+    "expected_tools": [
+      "lookup_location",
+      "list_recipient_types",
+      "execute_filter"
+    ],
+    "tags": [
+      "complex",
+      "multi_filter",
+      "temporal",
+      "location",
+      "internal_testing"
+    ],
+    "approved": false,
+    "notes": "Testing found no time period applied despite 2025 in the query. Draft assumes businesses in Missouri map to recipient location; place of performance may also be acceptable."
+  }
+]

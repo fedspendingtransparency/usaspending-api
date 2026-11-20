@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from opensearchpy import ConnectionTimeout
 
-from usaspending_api.llm.tools.exceptions import AwardNotRecognizedError
+from usaspending_api.llm.tools.exceptions import AwardNotRecognizedError, InvalidToolInputError
 from usaspending_api.llm.tools.lookup_award import ES_LOOKUP_TIMEOUT_SECONDS, AwardLookupTool, lookup_award_tool
 from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
 
@@ -107,10 +107,11 @@ class TestLookupAward:
 
         assert result.results["award"]["piid"] == "W91CRB18D0001"
 
-    async def test_empty_query_returns_error_without_raising(self, tool):
-        result = await tool.lookup_award("   ")
+    async def test_empty_query_raises_invalid_input_with_instructions(self, tool):
+        with pytest.raises(InvalidToolInputError, match="Query cannot be empty") as exc_info:
+            await tool.lookup_award("   ")
 
-        assert result.results["error"] == "Query cannot be empty"
+        assert exc_info.value.instructions
 
     async def test_no_match_raises_award_not_recognized_error(self, tool, award_index):
         with pytest.raises(AwardNotRecognizedError, match="NOT_A_REAL_AWARD_ID"):
@@ -120,8 +121,9 @@ class TestLookupAward:
         with pytest.raises(AwardNotRecognizedError) as exc_info:
             await tool.lookup_award("HR1JA12FSM63")
 
-        assert "lookup_recipient" in exc_info.value.model_detail
+        assert "lookup_recipient" in exc_info.value.instructions
         assert "lookup_recipient" not in exc_info.value.user_message
+        assert "lookup_recipient" not in exc_info.value.model_detail
 
 
 class TestLookupAwardFailures:

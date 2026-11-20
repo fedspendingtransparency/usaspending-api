@@ -38,6 +38,12 @@ class TestListRecipientTypesFunction:
         output = await list_recipient_types()
         assert output.results == RECIPIENT_TYPES
 
+    async def test_explains_where_the_values_go(self):
+        result = await list_recipient_types()
+
+        assert "recipientType" in result.instructions
+        assert "lookup_recipient" in result.instructions
+
     async def test_callable_with_no_input(self):
         """The assistant invokes tools as `await function(**tool_input)`; this tool takes no input."""
         output = await list_recipient_types_tool.function(**{})

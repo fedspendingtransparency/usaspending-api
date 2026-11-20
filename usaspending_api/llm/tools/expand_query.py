@@ -1,6 +1,10 @@
 import logging
 
-from usaspending_api.common.helpers.aws_helpers import async_aws_client
+from usaspending_api.common.helpers.aws_helpers import (
+    NO_BOTOCORE_RETRIES_CONFIG,
+    async_aws_client,
+    retry_on_throttling,
+)
 from usaspending_api.llm.models.db_models import AIModel
 
 logger = logging.getLogger(__name__)
@@ -56,9 +60,9 @@ async def expand_query(query: str, model: AIModel, num_variations: int = 3) -> l
             }
         ]
         model_id = model.model_id
-        async with async_aws_client("bedrock-runtime") as client:
+        async with async_aws_client("bedrock-runtime", config=NO_BOTOCORE_RETRIES_CONFIG) as client:
             # First call to get tool use
-            response = await client.converse(
+            response = await retry_on_throttling(client.converse)(
                 modelId=model_id,
                 messages=messages,
                 toolConfig=tool_config,

@@ -5,9 +5,27 @@ from opensearchpy.helpers.query import Q as ES_Q
 
 from usaspending_api.common.elasticsearch.search_wrappers import AsyncRecipientSearch
 from usaspending_api.llm.models.py_models import AITool, AIToolDescription, AIToolResult
+from usaspending_api.llm.tools.exceptions import InvalidToolInputError
 from usaspending_api.search.v2.es_sanitization import es_sanitize
 
 logger = logging.getLogger(__name__)
+
+RECIPIENT_NAMES_INSTRUCTIONS = (
+    "These names are fuzzy matches ordered by relevance, and many are unrelated businesses or people with a similar "
+    "name. Use only the names that refer to what the user named: usually the single best match for each recipient "
+    "they named, plus another only when it is clearly the same organization under another legal name or the user "
+    "asked for related entities. Do not include every result. Use the names exactly as returned in selectedRecipients."
+)
+IDENTIFIER_MATCH_INSTRUCTIONS = (
+    "The query matched this identifier exactly, so it is the recipient. Use it as returned in selectedRecipients."
+)
+NO_RECIPIENT_INSTRUCTIONS = (
+    "No recipient matched this query. This is not an error. Do not repeat the same query, and do not use a name that "
+    "was not returned. If the query is an award identifier (a contract number, PIID, FAIN, or award number) rather "
+    "than a recipient, use lookup_award instead. If the user was describing a kind of recipient (such as small "
+    "businesses or universities) rather than naming one, use list_recipient_types instead. Otherwise leave the "
+    "recipient filter out and continue with the other filters."
+)
 
 
 class RecipientLookupTool:
@@ -30,7 +48,7 @@ class RecipientLookupTool:
         Search for recipients by name, uei, duns, and return recipient names.
         """
         if not query or not query.strip():
-            return AIToolResult(results={"error": "Query cannot be empty."})
+            raise InvalidToolInputError("Query cannot be empty")
 
         top_k = max(1, min(top_k, 100))
         query_upper = es_sanitize(query).strip().upper()
@@ -50,7 +68,7 @@ class RecipientLookupTool:
             )
         except Exception as exception:
             logger.error(f"OpenSearch query failed for query='{query}': {str(exception)}", exc_info=True)
-            return AIToolResult(results={"error": str(exception)})
+            raise
         finally:
             if search.client is not None:
                 await search.client.close()
@@ -73,7 +91,15 @@ class RecipientLookupTool:
             f"Recipient lookup completed: query='{query}', recipient_names_count={recipient_count}",
             extra={"query": query, "recipient_names_count": recipient_count},
         )
-        return AIToolResult(results=result)
+        is_identifier_match = any(self._matched_identifier(hit.to_dict(), query_upper) for hit in response.hits)
+        instructions = self._build_instructions(recipient_count, is_identifier_match)
+        return AIToolResult(results=result, instructions=instructions)
+
+    @staticmethod
+    def _build_instructions(recipient_count: int, is_identifier_match: bool) -> str:
+        if recipient_count == 0:
+            return NO_RECIPIENT_INSTRUCTIONS
+        return IDENTIFIER_MATCH_INSTRUCTIONS if is_identifier_match else RECIPIENT_NAMES_INSTRUCTIONS
 
     def _build_search(self, query_upper: str, top_k: int) -> AsyncRecipientSearch:
         should_queries = []
@@ -146,11 +172,12 @@ Returns recipient_names: a list of strings. When the query is an exact match for
 since identifiers are unique and unambiguous. Name queries never short-circuit this way, even on an
 exact name match - all fuzzy-matched recipient names are returned, since an exact text match is not
 necessarily the best or intended match (e.g. "ACME CORP" vs. "ACME CORPORATION"). Review every name
-returned and pick the one that best fits the user's query rather than assuming the first result.
+returned and pick the names that best fit the user's query rather than assuming the first result. Pick all
+of the names that are close variants of the same organization (e.g. "ACME CORP" and "ACME CORP."), since the
+data often records one organization under slightly different names.
 
-When no recipients are found, a "messages" key explains that zero results were returned - this is
-not an error, and you should still call execute_filter using the information you already have
-rather than quitting.
+When no recipients are found, an empty list is returned - this is not an error, and you should
+still call execute_filter using the information you already have rather than quitting.
 
 Supported inputs:
 - Recipient names (eg 'BOEING COMPANY', 'Lockheed Martin')

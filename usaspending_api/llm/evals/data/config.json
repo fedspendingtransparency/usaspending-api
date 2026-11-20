@@ -145,8 +145,8 @@
                 "04",
                 "F001"
             ],
-            "timePeriodFY": ["2026"]
-        },
+            "$time": {"unit": "fiscal_year", "offset": -1}
+            },
         "expected_tools": [
             "lookup_award",
             "execute_filter"
@@ -184,7 +184,9 @@
                 "SPE7M118F42Z8"
             ],
             "selectedRecipients": [
-                "LOCKHEED MARTIN CORPORATION"
+                "LOCKHEED MARTIN",
+                "LOCKHEED MARTIN CORPORATION",
+                "LOCKHEED MARTIN CORP"
             ]
         },
         "expected_tools": [
@@ -204,7 +206,8 @@
         "query": "How much did Elon Musk's company receive in funding so far?",
         "expected_output": {
             "selectedRecipients": [
-                "SPACE EXPLORATION TECHNOLOGIES CORP."
+                "SPACE EXPLORATION TECHNOLOGIES CORP.",
+                "SPACE EXPLORATION TECHNOLOGIES CORP"
             ]
         },
         "expected_tools": [
@@ -278,9 +281,8 @@
                     }
                 }
             },
-            "timePeriodType": "fy",
-            "timePeriodFY": ["2026"]
-        },
+            "$time": {"unit": "fiscal_year", "offset": -1}
+            },
         "expected_tools": [
             "lookup_recipient",
             "lookup_agencies",
@@ -311,9 +313,8 @@
                     }
                 }
             },
-            "timePeriodType": "dr",
-                "time_period": [{"start_date": "2026-09-01", "end_date": "2026-09-30"}]
-        },
+            "$time": {"unit": "month", "offset": -1}
+            },
         "expected_tools": [
             "lookup_agencies",
             "execute_filter"
@@ -330,7 +331,15 @@
         "id": 17,
         "query": "Show me all contracts for Lockheed, Boeing and General Dynamics",
         "expected_output": {
-            "selectedRecipients": ["LOCKHEED MARTIN CORPORATION", "BOEING", "GENERAL DYNAMICS CORPORATION"],
+            "selectedRecipients": [
+                "LOCKHEED MARTIN",
+                "LOCKHEED MARTIN CORPORATION",
+                "BOEING",
+                "BOEING COMPANY",
+                "BOEING COMPANY, THE",
+                "GENERAL DYNAMICS CORPORATION",
+                "GENERAL DYNAMICS CORP"
+            ],
             "awardType": [
                 "A",
                 "B",
@@ -400,20 +409,20 @@
         "query": "How much is being spent on grants for healthcare?",
         "expected_output": {
             "selectedCFDA": {
-                "93.00A": {"identifier": "93.00A", "program_number": "93.00A", "program_title": "Indian Health Service Domestic Violence Forensic Healthcare Services"},
-                "93.078": {"identifier": "93.078", "program_number": "93.078", "program_title": "Strengthening Emergency Care Delivery in the United States Healthcare System through Health Information and Promotion "},
-                "93.226": {"identifier": "93.226", "program_number": "93.226", "program_title": "Research on Healthcare Costs, Quality and Outcomes"},
-                "93.391": {"identifier": "93.391", "program_number": "93.391", "program_title": "Activities to Support State, Tribal, Local and Territorial (STLT) Health Department Response to Public Health or Healthcare Crises"},
-                "93.428": {"identifier": "93.428", "program_number": "93.428", "program_title": "Strengthening Emergency Care Delivery in the United States Healthcare System through Health Information and Promotion"},
-                "93.440": {"identifier": "93.440", "program_number": "93.440", "program_title": "National Project Management of the Healthcare Communities Knowledge Gateway "},
-                "93.450": {"identifier": "93.450", "program_number": "93.450", "program_title": "Ebola Healthcare Preparedness and Response for Select Cities with Enhanced Airport Entrance Screenings from Affected Countries in West Africa"},
-                "93.457": {"identifier": "93.457", "program_number": "93.457", "program_title": "Planning Grant for Healthcare and Public Health Sector Cybersecurity Information Sharing"},
-                "93.691": {"identifier": "93.691", "program_number": "93.691", "program_title": "Integrating the Healthcare Enterprise FHIR Cooperative Agreement Program"},
-                "93.717": {"identifier": "93.717", "program_number": "93.717", "program_title": "ARRA - Preventing Healthcare-Associated Infections"},
-                "93.720": {"identifier": "93.720", "program_number": "93.720", "program_title": "ARRA - Survey and Certification Ambulatory Surgical Center Healthcare-Associated Infection (ASC-HAI) Prevention Initiative"},
-                "93.801": {"identifier": "93.801", "program_number": "93.801", "program_title": "Ebola Healthcare Preparedness and Response for Select Cities with Enhanced Airport Entrance Screenings from Affected Countries in West Africa"},
-                "93.835": {"identifier": "93.835", "program_number": "93.835", "program_title": "Planning Grant for Healthcare and Public Health Sector Cybersecurity Information Sharing"},
-                "93.968": {"identifier": "93.968", "program_number": "93.968", "program_title": "Achieving Healthcare Efficiency through Accountable Design (AHEAD) Model"}
+                "93.00A": {"identifier": "93.00A", "program_number": "93.00A", "program_title": "Indian Health Service Domestic Violence Forensic Healthcare Services", "popular_name": "Indian Health Service Domestic Violence Forensic Healthcare Services"},
+                "93.078": {"identifier": "93.078", "program_number": "93.078", "program_title": "Strengthening Emergency Care Delivery in the United States Healthcare System through Health Information and Promotion ", "popular_name": ""},
+                "93.226": {"identifier": "93.226", "program_number": "93.226", "program_title": "Research on Healthcare Costs, Quality and Outcomes", "popular_name": ""},
+                "93.391": {"identifier": "93.391", "program_number": "93.391", "program_title": "Activities to Support State, Tribal, Local and Territorial (STLT) Health Department Response to Public Health or Healthcare Crises", "popular_name": "CDC Partner Crisis Response NOFO"},
+                "93.428": {"identifier": "93.428", "program_number": "93.428", "program_title": "Strengthening Emergency Care Delivery in the United States Healthcare System through Health Information and Promotion", "popular_name": ""},
+                "93.440": {"identifier": "93.440", "program_number": "93.440", "program_title": "National Project Management of the Healthcare Communities Knowledge Gateway ", "popular_name": "Knowledge Gateway, Healthcare Communities \n\n"},
+                "93.450": {"identifier": "93.450", "program_number": "93.450", "program_title": "Ebola Healthcare Preparedness and Response for Select Cities with Enhanced Airport Entrance Screenings from Affected Countries in West Africa", "popular_name": ""},
+                "93.457": {"identifier": "93.457", "program_number": "93.457", "program_title": "Planning Grant for Healthcare and Public Health Sector Cybersecurity Information Sharing", "popular_name": ""},
+                "93.691": {"identifier": "93.691", "program_number": "93.691", "program_title": "Integrating the Healthcare Enterprise FHIR Cooperative Agreement Program", "popular_name": "IHE FHIR"},
+                "93.717": {"identifier": "93.717", "program_number": "93.717", "program_title": "ARRA - Preventing Healthcare-Associated Infections", "popular_name": ""},
+                "93.720": {"identifier": "93.720", "program_number": "93.720", "program_title": "ARRA - Survey and Certification Ambulatory Surgical Center Healthcare-Associated Infection (ASC-HAI) Prevention Initiative", "popular_name": "ASC-HAI Initiative - Recovery Act"},
+                "93.801": {"identifier": "93.801", "program_number": "93.801", "program_title": "Ebola Healthcare Preparedness and Response for Select Cities with Enhanced Airport Entrance Screenings from Affected Countries in West Africa", "popular_name": ""},
+                "93.835": {"identifier": "93.835", "program_number": "93.835", "program_title": "Planning Grant for Healthcare and Public Health Sector Cybersecurity Information Sharing", "popular_name": ""},
+                "93.968": {"identifier": "93.968", "program_number": "93.968", "program_title": "Achieving Healthcare Efficiency through Accountable Design (AHEAD) Model", "popular_name": "States Advancing AHEAD"}
             },
             "awardType": [
                 "02",
@@ -482,10 +491,11 @@
         "query": "How many awards were given to Space Exploration Technologies (SpaceX) in the last 5 years?",
         "expected_output": {
             "selectedRecipients": [
-                "SPACE EXPLORATION TECHNOLOGIES CORP."
+                "SPACE EXPLORATION TECHNOLOGIES CORP.",
+                "SPACE EXPLORATION TECHNOLOGIES CORP"
             ],
-            "timePeriodFY": ["2023", "2023", "2024", "2025", "2026"]
-        },
+            "$time": {"unit": "fiscal_year", "offset": -1, "span": 5}
+            },
         "expected_tools": [
             "lookup_recipient",
             "execute_filter"
@@ -539,13 +549,7 @@
         "id": 26,
         "query": "Total funding given to companies in Virginia last quarter?",
         "expected_output": {
-            "timePeriodType": "dr",
-            "time_period": [
-                {
-                    "start_date": "2026-07-01",
-                    "end_date": "2026-09-30"
-                }
-            ],
+            "$time": {"unit": "fiscal_quarter", "offset": -1},
             "recipientType": [
                 "business",
                 "minority_owned_business",
@@ -596,13 +600,7 @@
         "id": 27,
         "query": "Total funding given to recipients in Virginia last quarter?",
         "expected_output": {
-            "timePeriodType": "dr",
-            "time_period": [
-                {
-                    "start_date": "2026-07-01",
-                    "end_date": "2026-09-30"
-                }
-            ],
+            "$time": {"unit": "fiscal_quarter", "offset": -1},
             "selectedRecipientLocations": {
                 "USA_VA": {
                     "identifier": "USA_VA",
@@ -726,10 +724,7 @@
         "id": 30,
         "query": "How much funding did USAID give to overseas companies last fiscal year?",
         "expected_output": {
-            "timePeriodType": "fy",
-            "timePeriodFY": [
-                "2026"
-            ],
+            "$time": {"unit": "fiscal_year", "offset": -1},
             "selectedFundingAgencies": {
                 "801_toptier": {
                     "id": 801,
@@ -912,15 +907,10 @@
         "id": 36,
         "query": "How much was contracted to Booz Allen for AI last month?",
         "expected_output": {
-            "timePeriodType": "dr",
-            "time_period": [
-                {
-                    "start_date": "2026-09-01",
-                    "end_date": "2026-09-30"
-                }
-            ],
+            "$time": {"unit": "month", "offset": -1},
             "selectedRecipients": [
-                "Booz Allen"
+                "BOOZ ALLEN HAMILTON INC.",
+                "BOOZ ALLEN HAMILTON INC"
             ],
             "awardType": [
                 "A",
@@ -975,10 +965,7 @@
         "id": 38,
         "query": "How many loans were given to small businesses by the SBA last year?",
         "expected_output": {
-            "timePeriodType": "fy",
-            "timePeriodFY": [
-                "2026"
-            ],
+            "$time": {"unit": "fiscal_year", "offset": -1},
             "awardType": [
                 "07",
                 "08",
@@ -1078,10 +1065,7 @@
         "id": 42,
         "query": "How many contract idvs were given to companies in the DMV last year?",
         "expected_output": {
-            "timePeriodType": "fy",
-            "timePeriodFY": [
-                "2026"
-            ],
+            "$time": {"unit": "fiscal_year", "offset": -1},
             "awardType": [
                 "IDV_A",
                 "IDV_B",
@@ -1150,10 +1134,7 @@
         "id": 43,
         "query": "How much funding did CBP receive for this fiscal year?",
         "expected_output": {
-            "timePeriodType": "fy",
-            "timePeriodFY": [
-                "2027"
-            ],
+            "$time": {"unit": "fiscal_year", "offset": 0},
             "selectedFundingAgencies": {
                 "778_subtier": {
                     "id": 778,
@@ -1188,24 +1169,21 @@
         "id": 44,
         "query": "Which state received the most funding for medicare last FY?",
         "expected_output": {
-            "timePeriodType": "fy",
-            "timePeriodFY": [
-                "2026"
-            ],
+            "$time": {"unit": "fiscal_year", "offset": -1},
             "selectedCFDA": {
-                "93.071": {"identifier": "93.071", "program_number": "93.071", "program_title": "Medicare Enrollment Assistance Program"},
-                "93.518": {"identifier": "93.518", "program_number": "93.518", "program_title": "Affordable Care Act - Medicare Improvements for Patients and Providers"},
-                "93.626": {"identifier": "93.626", "program_number": "93.626", "program_title": "Affordable Care Act State Health Insurance Assistance Program (SHIP) and Aging and Disability Resource Center (ADRC) Options Counseling for Medicare-Medicaid Individuals in States with Approved Financial Alignment Models"},
-                "93.628": {"identifier": "93.628", "program_number": "93.628", "program_title": "Affordable Care Act Implementation Support for State Demonstrations to Integrate Care for Medicare-Medicaid Enrollees "},
-                "93.634": {"identifier": "93.634", "program_number": "93.634", "program_title": "Support for Ombudsman and Beneficiary Counseling Programs for States Participating in Financial Alignment Model Demonstrations for Dually Eligible Individuals"},
-                "93.773": {"identifier": "93.773", "program_number": "93.773", "program_title": "Medicare Hospital Insurance"},
-                "93.770": {"identifier": "93.770", "program_number": "93.770", "program_title": "Medicare Prescription Drug Coverage"},
-                "93.774": {"identifier": "93.774", "program_number": "93.774", "program_title": "Medicare Supplementary Medical Insurance"},
-                "93.777": {"identifier": "93.777", "program_number": "93.777", "program_title": "State Survey and Certification of Health Care Providers and Suppliers (Title XVIII) Medicare"},
-                "93.779": {"identifier": "93.779", "program_number": "93.779", "program_title": "Centers for Medicare and Medicaid Services (CMS) Research, Demonstrations and Evaluations"},
-                "93.783": {"identifier": "93.783", "program_number": "93.783", "program_title": "Medicare Transitional Drug Assistance Program for States"},
-                "93.829": {"identifier": "93.829", "program_number": "93.829", "program_title": "Section 223 Demonstration Programs to Improve Community Mental Health Services"},
-                "93.986": {"identifier": "93.986", "program_number": "93.986", "program_title": "Medicare Access and CHIP Reauthorization Act (MACRA) Funding Opportunity: Measure Development for the Quality Payment Program"}
+                "93.071": {"identifier": "93.071", "program_number": "93.071", "program_title": "Medicare Enrollment Assistance Program", "popular_name": "MIPPA"},
+                "93.518": {"identifier": "93.518", "program_number": "93.518", "program_title": "Affordable Care Act - Medicare Improvements for Patients and Providers", "popular_name": "(ACA MIPPA)"},
+                "93.626": {"identifier": "93.626", "program_number": "93.626", "program_title": "Affordable Care Act State Health Insurance Assistance Program (SHIP) and Aging and Disability Resource Center (ADRC) Options Counseling for Medicare-Medicaid Individuals in States with Approved Financial Alignment Models", "popular_name": "SHIP and ADRC Options Counseling for Medicare-Medicaid Individuals in States with Approved Financial Alignment Models"},
+                "93.628": {"identifier": "93.628", "program_number": "93.628", "program_title": "Affordable Care Act Implementation Support for State Demonstrations to Integrate Care for Medicare-Medicaid Enrollees ", "popular_name": "ACA Implementation Support for State Demonstrations (ISSD)\n"},
+                "93.634": {"identifier": "93.634", "program_number": "93.634", "program_title": "Support for Ombudsman and Beneficiary Counseling Programs for States Participating in Financial Alignment Model Demonstrations for Dually Eligible Individuals", "popular_name": "Support for Demonstration Ombudsman Programs Serving Beneficiaries of State Demonstrations to Integrate Care for Medicare-Medicaid "},
+                "93.773": {"identifier": "93.773", "program_number": "93.773", "program_title": "Medicare Hospital Insurance", "popular_name": "(Medicare Part A)"},
+                "93.770": {"identifier": "93.770", "program_number": "93.770", "program_title": "Medicare Prescription Drug Coverage", "popular_name": "(Medicare Part D)"},
+                "93.774": {"identifier": "93.774", "program_number": "93.774", "program_title": "Medicare Supplementary Medical Insurance", "popular_name": "(Medicare Part B)"},
+                "93.777": {"identifier": "93.777", "program_number": "93.777", "program_title": "State Survey and Certification of Health Care Providers and Suppliers (Title XVIII) Medicare", "popular_name": ""},
+                "93.779": {"identifier": "93.779", "program_number": "93.779", "program_title": "Centers for Medicare and Medicaid Services (CMS) Research, Demonstrations and Evaluations", "popular_name": "(CMS Research)"},
+                "93.783": {"identifier": "93.783", "program_number": "93.783", "program_title": "Medicare Transitional Drug Assistance Program for States", "popular_name": ""},
+                "93.829": {"identifier": "93.829", "program_number": "93.829", "program_title": "Section 223 Demonstration Programs to Improve Community Mental Health Services", "popular_name": "Section 223 of the Protecting Access Medicare Act (PAMA) of 2014, Certified Community Behavioral Health Clinic Demonstration (CCBHC)"},
+                "93.986": {"identifier": "93.986", "program_number": "93.986", "program_title": "Medicare Access and CHIP Reauthorization Act (MACRA) Funding Opportunity: Measure Development for the Quality Payment Program", "popular_name": "N/A"}
             }
         },
         "expected_tools": [
@@ -1224,13 +1202,7 @@
         "id": 45,
         "query": "Which agencies financed construction contracts in Texas last month?",
         "expected_output": {
-            "timePeriodType": "dr",
-            "time_period": [
-                {
-                    "start_date": "2026-09-01",
-                    "end_date": "2026-09-30"
-                }
-            ],
+            "$time": {"unit": "month", "offset": -1},
             "awardType": [
                 "A",
                 "B",
@@ -1262,7 +1234,6 @@
         "expected_tools": [
             "lookup_location",
             "lookup_codes",
-
             "execute_filter"
         ],
         "tags": [
@@ -1297,7 +1268,7 @@
                 }
             },
             "selectedCFDA": {
-                "16.110": {"identifier": "16.110", "program_number": "16.110", "program_title": "Education and Enforcement of the Antidiscrimination Provision of the Immigration and Nationality Act"}
+                "16.110": {"identifier": "16.110", "program_number": "16.110", "program_title": "Education and Enforcement of the Antidiscrimination Provision of the Immigration and Nationality Act", "popular_name": "Office of Special Counsel"}
             }
         },
         "expected_tools": [
@@ -1318,10 +1289,7 @@
         "id": 47,
         "query": "What was the total amount of funding that went to black owned businesses last year?",
         "expected_output": {
-            "timePeriodType": "fy",
-            "timePeriodFY": [
-                "2026"
-            ],
+            "$time": {"unit": "fiscal_year", "offset": -1},
             "recipientType": [
                 "black_american_owned_business"
             ]
@@ -1452,10 +1420,7 @@
         "id": 56,
         "query": "All contracts over $100000 awarded to small businesses, minority owned businesses and veteran owned businesses in Tennessee last year",
         "expected_output": {
-            "timePeriodType": "fy",
-            "timePeriodFY": [
-                "2026"
-            ],
+            "$time": {"unit": "fiscal_year", "offset": -1},
             "recipientType": [
                 "small_business",
                 "minority_owned_business",
@@ -1664,10 +1629,7 @@
         "id": 64,
         "query": "Find all grants between $100000 and $200000 last year",
         "expected_output": {
-            "timePeriodType": "fy",
-            "timePeriodFY": [
-                "2026"
-            ],
+            "$time": {"unit": "fiscal_year", "offset": -1},
             "awardType": [
                 "02",
                 "03",
@@ -1758,10 +1720,7 @@
                 "IDV_D",
                 "IDV_E"
             ],
-            "timePeriodType": "fy",
-            "timePeriodFY": [
-                "2026"
-            ],
+            "$time": {"unit": "fiscal_year", "offset": -1},
             "selectedAwardingAgencies": {
                 "766_toptier": {
                     "id": 766,
@@ -1800,7 +1759,7 @@
                 "F001"
             ],
             "selectedCFDA": {
-                "14.257": {"identifier": "14.257", "program_number": "14.257", "program_title": "Homelessness Prevention and Rapid Re-Housing Program (Recovery Act Funded)"}
+                "14.257": {"identifier": "14.257", "program_number": "14.257", "program_title": "Homelessness Prevention and Rapid Re-Housing Program (Recovery Act Funded)", "popular_name": ""}
             }
         },
         "expected_tools": [
@@ -1826,7 +1785,7 @@
                 "F001"
             ],
             "selectedCFDA": {
-                "14.257": {"identifier": "14.257", "program_number": "14.257", "program_title": "Homelessness Prevention and Rapid Re-Housing Program (Recovery Act Funded)"}
+                "14.257": {"identifier": "14.257", "program_number": "14.257", "program_title": "Homelessness Prevention and Rapid Re-Housing Program (Recovery Act Funded)", "popular_name": ""}
             }
         },
         "expected_tools": [
@@ -1852,23 +1811,23 @@
                 "F001"
             ],
             "selectedCFDA": {
-                "14.020": {"identifier": "14.020", "program_number": "14.020", "program_title": "Youth Homeless System Improvement Grants"},
-                "14.235": {"identifier": "14.235", "program_number": "14.235", "program_title": "Supportive Housing Program"},
-                "14.257": {"identifier": "14.257", "program_number": "14.257", "program_title": "Homelessness Prevention and Rapid Re-Housing Program (Recovery Act Funded)"},
-                "14.260": {"identifier": "14.260", "program_number": "14.260", "program_title": "Veterans Homelessness Prevention Demonstration Program"},
-                "14.261": {"identifier": "14.261", "program_number": "14.261", "program_title": "National Homeless Data Analysis Project (NHDAP)"},
-                "14.262": {"identifier": "14.262", "program_number": "14.262", "program_title": "Homeless Prevention and Rapid Re-Housing Program Technical Assistance"},
-                "14.276": {"identifier": "14.276", "program_number": "14.276", "program_title": "Youth Homelessness Demonstration Program"},
-                "14.277": {"identifier": "14.277", "program_number": "14.277", "program_title": "Youth Homeless System Improvement Grants"},
-                "17.805": {"identifier": "17.805", "program_number": "17.805", "program_title": "Homeless Veterans\u2019 Reintegration Program "},
-                "64.024": {"identifier": "64.024", "program_number": "64.024", "program_title": "VA Homeless Providers Grant and Per Diem Program"},
-                "84.196": {"identifier": "84.196", "program_number": "84.196", "program_title": "Education for Homeless Children and Youth"},
-                "84.383": {"identifier": "84.383", "program_number": "84.383", "program_title": "Homeless Education Disaster Assistance Program"},
-                "84.387": {"identifier": "84.387", "program_number": "84.387", "program_title": "Education for Homeless Children and Youth, Recovery Act"},
-                "93.150": {"identifier": "93.150", "program_number": "93.150", "program_title": "Projects for Assistance in Transition from Homelessness (PATH)"},
-                "93.224": {"identifier": "93.224", "program_number": "93.224", "program_title": "Health Center Program"},
-                "93.550": {"identifier": "93.550", "program_number": "93.550", "program_title": "Transitional Living for Homeless Youth"},
-                "93.557": {"identifier": "93.557", "program_number": "93.557", "program_title": "Education and Prevention Grants to Reduce Sexual Abuse of Runaway, Homeless and Street Youth"}
+                "14.020": {"identifier": "14.020", "program_number": "14.020", "program_title": "Youth Homeless System Improvement Grants", "popular_name": "YHSIG"},
+                "14.235": {"identifier": "14.235", "program_number": "14.235", "program_title": "Supportive Housing Program", "popular_name": "(Transitional Housing; Permanent Housing for Homeless Persons with Disabilities; Innovative Supportive Housing; Supportive Services for Homeless Persons not in Conjunction  with Supportive Housing; Safe Havens; and HMIS)"},
+                "14.257": {"identifier": "14.257", "program_number": "14.257", "program_title": "Homelessness Prevention and Rapid Re-Housing Program (Recovery Act Funded)", "popular_name": ""},
+                "14.260": {"identifier": "14.260", "program_number": "14.260", "program_title": "Veterans Homelessness Prevention Demonstration Program", "popular_name": "(VHPD)"},
+                "14.261": {"identifier": "14.261", "program_number": "14.261", "program_title": "National Homeless Data Analysis Project (NHDAP)", "popular_name": "National Homeless Data Analysis Project (NHDAP)"},
+                "14.262": {"identifier": "14.262", "program_number": "14.262", "program_title": "Homeless Prevention and Rapid Re-Housing Program Technical Assistance", "popular_name": ""},
+                "14.276": {"identifier": "14.276", "program_number": "14.276", "program_title": "Youth Homelessness Demonstration Program", "popular_name": "Youth Homelessness Demonstration Program"},
+                "14.277": {"identifier": "14.277", "program_number": "14.277", "program_title": "Youth Homeless System Improvement Grants", "popular_name": "YHSIG"},
+                "17.805": {"identifier": "17.805", "program_number": "17.805", "program_title": "Homeless Veterans\u2019 Reintegration Program ", "popular_name": "The Homeless Veterans’ Reintegration Program"},
+                "64.024": {"identifier": "64.024", "program_number": "64.024", "program_title": "VA Homeless Providers Grant and Per Diem Program", "popular_name": ""},
+                "84.196": {"identifier": "84.196", "program_number": "84.196", "program_title": "Education for Homeless Children and Youth", "popular_name": ""},
+                "84.383": {"identifier": "84.383", "program_number": "84.383", "program_title": "Homeless Education Disaster Assistance Program", "popular_name": ""},
+                "84.387": {"identifier": "84.387", "program_number": "84.387", "program_title": "Education for Homeless Children and Youth, Recovery Act", "popular_name": ""},
+                "93.150": {"identifier": "93.150", "program_number": "93.150", "program_title": "Projects for Assistance in Transition from Homelessness (PATH)", "popular_name": "Projects for Assistance in Transition from Homelessness"},
+                "93.224": {"identifier": "93.224", "program_number": "93.224", "program_title": "Health Center Program", "popular_name": "Health Center Program"},
+                "93.550": {"identifier": "93.550", "program_number": "93.550", "program_title": "Transitional Living for Homeless Youth", "popular_name": "Transitional Living Program and Maternity Group Homes"},
+                "93.557": {"identifier": "93.557", "program_number": "93.557", "program_title": "Education and Prevention Grants to Reduce Sexual Abuse of Runaway, Homeless and Street Youth", "popular_name": "Street Outreach Program"}
             }
         },
         "expected_tools": [
@@ -1888,7 +1847,7 @@
         "query": "Find all awards under AL 14.257",
         "expected_output": {
             "selectedCFDA": {
-                "14.257": {"identifier": "14.257", "program_number": "14.257", "program_title": "Homelessness Prevention and Rapid Re-Housing Program (Recovery Act Funded)"}
+                "14.257": {"identifier": "14.257", "program_number": "14.257", "program_title": "Homelessness Prevention and Rapid Re-Housing Program (Recovery Act Funded)", "popular_name": ""}
             }
         },
         "expected_tools": [
@@ -1908,7 +1867,7 @@
         "query": "Find all awards under ALN 14.257",
         "expected_output": {
             "selectedCFDA": {
-                "14.257": {"identifier": "14.257", "program_number": "14.257", "program_title": "Homelessness Prevention and Rapid Re-Housing Program (Recovery Act Funded)"}
+                "14.257": {"identifier": "14.257", "program_number": "14.257", "program_title": "Homelessness Prevention and Rapid Re-Housing Program (Recovery Act Funded)", "popular_name": ""}
             }
         },
         "expected_tools": [
@@ -1928,7 +1887,7 @@
         "query": "Find all awards under CFDA 14.257",
         "expected_output": {
             "selectedCFDA": {
-                "14.257": {"identifier": "14.257", "program_number": "14.257", "program_title": "Homelessness Prevention and Rapid Re-Housing Program (Recovery Act Funded)"}
+                "14.257": {"identifier": "14.257", "program_number": "14.257", "program_title": "Homelessness Prevention and Rapid Re-Housing Program (Recovery Act Funded)", "popular_name": ""}
             }
         },
         "expected_tools": [
@@ -1965,7 +1924,7 @@
         "tags": [
             "multi_filter"
         ],
-        "notes": "Referencing range of assistance listings instead of specific one",
+        "notes": "Referencing range of assistance listings instead of specific one. The number of results are limited as we cannot generate too large of a filter.",
         "approved": false,
         "sme_validation_notes": ""
     },
@@ -1998,7 +1957,7 @@
             "multi_filter",
             "numerical"
         ],
-        "notes": "Referencing range of assistance listings instead of specific one",
+        "notes": "Referencing range of assistance listings instead of specific one. The number of results are limited as we cannot generate too large of a filter.",
         "approved": false,
         "sme_validation_notes": ""
     },
@@ -2024,7 +1983,7 @@
             "multi_filter",
             "multi_answer"
         ],
-        "notes": "Multiple range of assistance listings",
+        "notes": "Multiple range of assistance listings. The number of results are limited as we cannot generate too large of a filter.",
         "approved": false,
         "sme_validation_notes": ""
     },
@@ -2033,7 +1992,8 @@
         "query": "How many awards did Space Exploration Technologies (SpaceX) receive?",
         "expected_output": {
             "selectedRecipients": [
-                "SPACE EXPLORATION TECHNOLOGIES CORP."
+                "SPACE EXPLORATION TECHNOLOGIES CORP.",
+                "SPACE EXPLORATION TECHNOLOGIES CORP"
             ]
         },
         "expected_tools": [
@@ -2052,7 +2012,8 @@
         "query": "Find all awards to Space Exploration Technologies (SpaceX)",
         "expected_output": {
             "selectedRecipients": [
-                "SPACE EXPLORATION TECHNOLOGIES CORP."
+                "SPACE EXPLORATION TECHNOLOGIES CORP.",
+                "SPACE EXPLORATION TECHNOLOGIES CORP"
             ]
         },
         "expected_tools": [
@@ -2171,7 +2132,7 @@
         "query": "Show me awards with AL 12.103",
         "expected_output": {
             "selectedCFDA": {
-                "12.103": {"identifier": "12.103", "program_number": "12.103", "program_title": "Emergency Operations Flood Response and Post Flood Response"}
+                "12.103": {"identifier": "12.103", "popular_name": "(Public Law 84-99 Code 200 Program)", "program_title": "Emergency Operations Flood Response and Post Flood Response", "program_number": "12.103"}
             }
         },
         "expected_tools": [
@@ -2409,10 +2370,7 @@
         "id": 94,
         "query": "Awards with NAICS 111910 for last year",
         "expected_output": {
-            "timePeriodType": "fy",
-            "timePeriodFY": [
-                "2026"
-            ],
+            "$time": {"unit": "fiscal_year", "offset": -1},
             "naicsCodes": {
                 "require": [
                     "111910"
@@ -2576,18 +2534,18 @@
         "expected_output": {
             "pscCodes": {
                 "require": [
-                    ["Product", "1040"],
-                    ["Product", "1045"],
-                    ["Product", "1355"],
-                    ["Product", "1356"],
-                    ["Product", "4921"],
-                    ["Product", "1005"],
-                    ["Product", "1010"],
-                    ["Product", "1015"],
-                    ["Product", "1020"],
-                    ["Product", "1025"],
-                    ["Product", "1030"],
-                    ["Product", "1035"]
+                    ["Product", "10", "1040"],
+                    ["Product", "10", "1045"],
+                    ["Product", "13", "1355"],
+                    ["Product", "13", "1356"],
+                    ["Product", "49", "4921"],
+                    ["Product", "10", "1005"],
+                    ["Product", "10", "1010"],
+                    ["Product", "10", "1015"],
+                    ["Product", "10", "1020"],
+                    ["Product", "10", "1025"],
+                    ["Product", "10", "1030"],
+                    ["Product", "10", "1035"]
                 ],
                 "exclude": [],
                 "counts": [{"count": 12, "label": "", "value": "Product"}]
@@ -2616,13 +2574,10 @@
         "id": 101,
         "query": "Contracts for chemical weapons last year",
         "expected_output": {
-            "timePeriodType": "fy",
-            "timePeriodFY": [
-                "2026"
-            ],
+            "$time": {"unit": "fiscal_year", "offset": -1},
             "pscCodes": {
                 "require": [
-                    ["Product", "1040"]
+                    ["Product", "10", "1040"]
                 ],
                 "exclude": [],
                 "counts": [{"count": 1, "label": "", "value": "Product"}]
@@ -2651,18 +2606,15 @@
         "id": 102,
         "query": "How many awards for COVID-19 Spending",
         "expected_output": {
-            "defCodes": {
-                "require": [
-                    "L",
-                    "M",
-                    "N",
-                    "O",
-                    "P",
-                    "U",
-                    "V"
-                ],
-                "exclude": []
-            }
+            "defCode": [
+                "L",
+                "M",
+                "N",
+                "O",
+                "P",
+                "U",
+                "V"
+            ]
         },
         "expected_tools": [
             "execute_filter"
@@ -2678,13 +2630,10 @@
         "id": 103,
         "query": "How many awards for infrastructure spending",
         "expected_output": {
-            "defCodes": {
-                "require": [
-                    "Z",
-                    "1"
-                ],
-                "exclude": []
-            }
+            "defCode": [
+                "Z",
+                "1"
+            ]
         },
         "expected_tools": [
             "execute_filter"
@@ -2700,12 +2649,9 @@
         "id": 104,
         "query": "Find awards with DEFC N",
         "expected_output": {
-            "defCodes": {
-                "require": [
-                    "N"
-                ],
-                "exclude": []
-            }
+            "defCode": [
+                "N"
+            ]
         },
         "expected_tools": [
             "execute_filter"
@@ -2721,13 +2667,10 @@
         "id": 105,
         "query": "Financial assistance awards with DEFC U and V",
         "expected_output": {
-            "defCodes": {
-                "require": [
-                    "U",
-                    "V"
-                ],
-                "exclude": []
-            }
+            "defCode": [
+                "U",
+                "V"
+            ]
         },
         "expected_tools": [
             "execute_filter"
@@ -2744,18 +2687,15 @@
         "id": 106,
         "query": "All assistance awards given out for COVID in 2020",
         "expected_output": {
-            "defCodes": {
-                "require": [
-                    "L",
-                    "M",
-                    "N",
-                    "O",
-                    "P",
-                    "U",
-                    "V"
-                ],
-                "exclude": []
-            },
+            "defCode": [
+                "L",
+                "M",
+                "N",
+                "O",
+                "P",
+                "U",
+                "V"
+            ],
             "timePeriodType": "dr",
             "time_period": [
                 {
@@ -2779,18 +2719,15 @@
         "id": 107,
         "query": "All assistance awards given out for COVID in 2020 to recipients in California",
         "expected_output": {
-            "defCodes": {
-                "require": [
-                    "L",
-                    "M",
-                    "N",
-                    "O",
-                    "P",
-                    "U",
-                    "V"
-                ],
-                "exclude": []
-            },
+            "defCode": [
+                "L",
+                "M",
+                "N",
+                "O",
+                "P",
+                "U",
+                "V"
+            ],
             "timePeriodType": "dr",
             "time_period": [
                 {
@@ -2828,14 +2765,14 @@
     },
     {
         "id": 108,
-        "query": "Awards with TAS 310-2012/2012-3200-000",
+        "query": "Awards with TAS 012-2012/2012-0150-000",
         "expected_output": {
             "tasCodes": {
                 "require": [
-                    ["310", "310-3200", "310-2012/2012-3200-000"]
+                    ["012", "012-0150", "012-2012/2012-0150-000"]
                 ],
                 "exclude": [],
-                "counts": [{"count": 1, "label": "Access Board (USAB)", "value": "310"}]
+                "counts": [{"count": 1, "label": "Department of Agriculture (USDA)", "value": "012"}]
             }
         },
         "expected_tools": [
@@ -2851,17 +2788,18 @@
     },
     {
         "id": 109,
-        "query": "Find all awards with Treasury Account Symbol 310-2012/2012-3200-000",
+        "query": "Find all awards with Treasury Account Symbol 012-2012/2012-0150-000",
         "expected_output": {
             "tasCodes": {
                 "require": [
-                    ["310", "310-3200", "310-2012/2012-3200-000"]
+                    ["012", "012-0150", "012-2012/2012-0150-000"]
                 ],
                 "exclude": [],
-                "counts": [{"count": 1, "label": "Access Board (USAB)", "value": "310"}]
+                "counts": [{"count": 1, "label": "Department of Agriculture (USDA)", "value": "012"}]
             }
         },
         "expected_tools": [
+            "lookup_codes",
             "execute_filter"
         ],
         "tags": [
@@ -2873,14 +2811,18 @@
     },
     {
         "id": 110,
-        "query": "How much spending under treasury account 3200",
+        "query": "How much spending under treasury account 0150",
         "expected_output": {
             "tasCodes": {
                 "require": [
-                    ["310", "310-3200"]
+                    ["020", "020-0150"],
+                    ["012", "012-0150"]
                 ],
                 "exclude": [],
-                "counts": [{"count": 15, "label": "Access Board (USAB)", "value": "310"}]
+                "counts": [
+                    {"count": 2, "label": "Department of the Treasury (TREAS)", "value": "020"},
+                    {"count": 1, "label": "Department of Agriculture (USDA)", "value": "012"}
+                ]
             }
         },
         "expected_tools": [
@@ -2896,14 +2838,18 @@
     },
     {
         "id": 111,
-        "query": "What awards are under federal account 3200",
+        "query": "What awards are under federal account 0150",
         "expected_output": {
             "tasCodes": {
                 "require": [
-                    ["310", "310-3200"]
+                    ["020", "020-0150"],
+                    ["012", "012-0150"]
                 ],
                 "exclude": [],
-                "counts": [{"count": 15, "label": "Access Board (USAB)", "value": "310"}]
+                "counts": [
+                    {"count": 2, "label": "Department of the Treasury (TREAS)", "value": "020"},
+                    {"count": 1, "label": "Department of Agriculture (USDA)", "value": "012"}
+                ]
             }
         },
         "expected_tools": [
@@ -3047,13 +2993,7 @@
         "id": 117,
         "query": "List all fixed price and time and materials contracts awarded last month",
         "expected_output": {
-            "timePeriodType": "dr",
-            "time_period": [
-                {
-                    "start_date": "2026-09-01",
-                    "end_date": "2026-09-30"
-                }
-            ],
+            "$time": {"unit": "month", "offset": -1},
             "pricingType": [
                 "A",
                 "B",
@@ -3086,10 +3026,7 @@
         "id": 118,
         "query": "Show me cost reimbursement contracts awarded to small businesses in Virginia last year for technology services",
         "expected_output": {
-            "timePeriodType": "fy",
-            "timePeriodFY": [
-                "2026"
-            ],
+            "$time": {"unit": "fiscal_year", "offset": -1},
             "pricingType": [
                 "R",
                 "S",
@@ -3116,13 +3053,13 @@
             },
             "pscCodes": {
                 "require": [
-                    ["Service", "R415"],
-                    ["Service", "R540"],
-                    ["Service", "R544"],
-                    ["Service", "W070"],
-                    ["Service", "B540"],
+                    ["Service", "R", "R4", "R415"],
+                    ["Service", "R", "R5", "R540"],
+                    ["Service", "R", "R5", "R544"],
+                    ["Service", "W", "W0", "W070"],
+                    ["Service", "B", "B5", "B540"],
                     ["Service", "D"],
-                    ["Service", "U012"]
+                    ["Service", "U", "U0", "U012"]
                 ],
                 "exclude": [],
                 "counts": [{"count": 65, "label": "", "value": "Service"}]
@@ -3154,10 +3091,7 @@
         "id": 119,
         "query": "Find all cost reimbursement contracts set aside for small businesses in Virginia last year for technology services",
         "expected_output": {
-            "timePeriodType": "fy",
-            "timePeriodFY": [
-                "2026"
-            ],
+            "$time": {"unit": "fiscal_year", "offset": -1},
             "pricingType": [
                 "R",
                 "S",
@@ -3184,13 +3118,13 @@
             },
             "pscCodes": {
                 "require": [
-                    ["Service", "R415"],
-                    ["Service", "R540"],
-                    ["Service", "R544"],
-                    ["Service", "W070"],
-                    ["Service", "B540"],
+                    ["Service", "R", "R4", "R415"],
+                    ["Service", "R", "R5", "R540"],
+                    ["Service", "R", "R5", "R544"],
+                    ["Service", "W", "W0", "W070"],
+                    ["Service", "B", "B5", "B540"],
                     ["Service", "D"],
-                    ["Service", "U012"]
+                    ["Service", "U", "U0", "U012"]
                 ],
                 "exclude": [],
                 "counts": [{"count": 65, "label": "", "value": "Service"}]
@@ -3349,10 +3283,7 @@
         "id": 125,
         "query": "How many fixed priced contracts set aside for veteran owned business last year for consulting services were there?",
         "expected_output": {
-            "timePeriodType": "fy",
-            "timePeriodFY": [
-                "2026"
-            ],
+            "$time": {"unit": "fiscal_year", "offset": -1},
             "pricingType": [
                 "A",
                 "B",
@@ -3487,10 +3418,7 @@
         "id": 129,
         "query": "All no bid contracts awarded last year for mining services",
         "expected_output": {
-            "timePeriodType": "fy",
-            "timePeriodFY": [
-                "2026"
-            ],
+            "$time": {"unit": "fiscal_year", "offset": -1},
             "extentCompeted": [
                 "B"
             ],
@@ -3502,16 +3430,16 @@
             ],
             "pscCodes": {
                 "require": [
-                    ["Service", "F011"],
-                    ["Service", "H138"],
-                    ["Service", "H238"],
-                    ["Service", "H338"],
-                    ["Service", "H938"],
-                    ["Service", "J038"],
-                    ["Service", "K038"],
-                    ["Service", "L038"],
-                    ["Service", "N038"],
-                    ["Service", "W038"]
+                    ["Service", "F", "F0", "F011"],
+                    ["Service", "H", "H1", "H138"],
+                    ["Service", "H", "H2", "H238"],
+                    ["Service", "H", "H3", "H338"],
+                    ["Service", "H", "H9", "H938"],
+                    ["Service", "J", "J0", "J038"],
+                    ["Service", "K", "K0", "K038"],
+                    ["Service", "L", "L0", "L038"],
+                    ["Service", "N", "N0", "N038"],
+                    ["Service", "W", "W0", "W038"]
                 ],
                 "exclude": [],
                 "counts": [{"count": 10, "label": "", "value": "Service"}]
@@ -3614,33 +3542,33 @@
         "query": "List all grants for mental health",
         "expected_output": {
             "selectedCFDA": {
-                "16.033": {"identifier": "16.033", "program_number": "16.033", "program_title": "Collaborative Mental Health and Anti-Recidivism Initiative"},
-                "16.070": {"identifier": "16.070", "program_number": "16.070", "program_title": "Law Enforcement Mental Health and Wellness Act"},
-                "16.745": {"identifier": "16.745", "program_number": "16.745", "program_title": "Criminal and Juvenile Justice and Mental Health Collaboration Program"},
-                "64.019": {"identifier": "64.019", "program_number": "64.019", "program_title": "Veterans Rehabilitation_Alcohol and Drug Dependence"},
-                "64.043": {"identifier": "64.043", "program_number": "64.043", "program_title": "VHA Mental Health Residential"},
-                "64.048": {"identifier": "64.048", "program_number": "64.048", "program_title": "VHA Mental Health clinics"},
-                "93.104": {"identifier": "93.104", "program_number": "93.104", "program_title": "Comprehensive Community Mental Health Services for Children with Serious Emotional Disturbances (SED)"},
-                "93.156": {"identifier": "93.156", "program_number": "93.156", "program_title": "Geriatric Training for Physicians, Dentists and Behavioral/Mental Health Professionals"},
-                "93.242": {"identifier": "93.242", "program_number": "93.242", "program_title": "Mental Health Research Grants"},
-                "93.243": {"identifier": "93.243", "program_number": "93.243", "program_title": "Substance Abuse and Mental Health Services Projects of Regional and National Significance"},
-                "93.244": {"identifier": "93.244", "program_number": "93.244", "program_title": "Mental Health Clinical and AIDS Service-Related Training Grants"},
-                "93.24C": {"identifier": "93.24C", "program_number": "93.24C", "program_title": "Mental Health Research - Research Centers"},
-                "93.24N": {"identifier": "93.24N", "program_number": "93.24N", "program_title": "Mental Health Research - Training, Institutional"},
-                "93.24R": {"identifier": "93.24R", "program_number": "93.24R", "program_title": "Mental Health Research - Research Projects"},
-                "93.24S": {"identifier": "93.24S", "program_number": "93.24S", "program_title": "Mental Health Research - SBIR/STTR"},
-                "93.24T": {"identifier": "93.24T", "program_number": "93.24T", "program_title": "Mental Health Research - Training, Individual"},
-                "93.24X": {"identifier": "93.24X", "program_number": "93.24X", "program_title": "Mental Health Research - Other Research"},
-                "93.275": {"identifier": "93.275", "program_number": "93.275", "program_title": "Substance Abuse and Mental Health Services-Access to Recovery"},
-                "93.281": {"identifier": "93.281", "program_number": "93.281", "program_title": "Mental Health Research Career/Scientist Development Awards"},
-                "93.282": {"identifier": "93.282", "program_number": "93.282", "program_title": "Mental Health National Research Service Awards for Research Training"},
-                "93.532": {"identifier": "93.532", "program_number": "93.532", "program_title": "Center for Mental Health Services Projects of Regional and National Significance"},
-                "93.534": {"identifier": "93.534", "program_number": "93.534", "program_title": "Affordable Care Act Program for Early Detection of Certain Medical Conditions Related to Environmental Health Hazards"},
-                "93.538": {"identifier": "93.538", "program_number": "93.538", "program_title": "Affordable Care Act - National Environmental Public Health Tracking Program-Network Implementation"},
-                "93.828": {"identifier": "93.828", "program_number": "93.828", "program_title": "Pediatric Mental Health Care Access Grants"},
-                "93.829": {"identifier": "93.829", "program_number": "93.829", "program_title": "Section 223 Demonstration Programs to Improve Community Mental Health Services"},
-                "93.958": {"identifier": "93.958", "program_number": "93.958", "program_title": "Block Grants for Community Mental Health Services"},
-                "93.982": {"identifier": "93.982", "program_number": "93.982", "program_title": "Mental Health Disaster Assistance and Emergency Mental Health"}
+                "16.033": {"identifier": "16.033", "program_number": "16.033", "program_title": "Collaborative Mental Health and Anti-Recidivism Initiative", "popular_name": ""},
+                "16.070": {"identifier": "16.070", "program_number": "16.070", "program_title": "Law Enforcement Mental Health and Wellness Act", "popular_name": "Law Enforcement Mental Health and Wellness Act (LEMHWA)"},
+                "16.745": {"identifier": "16.745", "program_number": "16.745", "program_title": "Criminal and Juvenile Justice and Mental Health Collaboration Program", "popular_name": "Criminal and Juvenile Justice and Mental Health Collaboration Program"},
+                "64.019": {"identifier": "64.019", "program_number": "64.019", "program_title": "Veterans Rehabilitation_Alcohol and Drug Dependence", "popular_name": "(Substance Abuse Treatment Program, Mental Health and Behavioral\nSciences Service)"},
+                "64.043": {"identifier": "64.043", "program_number": "64.043", "program_title": "VHA Mental Health Residential", "popular_name": ""},
+                "64.048": {"identifier": "64.048", "program_number": "64.048", "program_title": "VHA Mental Health clinics", "popular_name": ""},
+                "93.104": {"identifier": "93.104", "program_number": "93.104", "program_title": "Comprehensive Community Mental Health Services for Children with Serious Emotional Disturbances (SED)", "popular_name": "Comprehensive Community Mental Health Services for Children with Serious Emotional Disturbances (SED)"},
+                "93.156": {"identifier": "93.156", "program_number": "93.156", "program_title": "Geriatric Training for Physicians, Dentists and Behavioral/Mental Health Professionals", "popular_name": "Geriatric Training for Physicians, Dentists and Behavioral/Mental Health Professionals (GTPD)"},
+                "93.242": {"identifier": "93.242", "program_number": "93.242", "program_title": "Mental Health Research Grants", "popular_name": ""},
+                "93.243": {"identifier": "93.243", "program_number": "93.243", "program_title": "Substance Abuse and Mental Health Services Projects of Regional and National Significance", "popular_name": "Substance Abuse and Mental Health Services Projects of Regional and National Significance"},
+                "93.244": {"identifier": "93.244", "program_number": "93.244", "program_title": "Mental Health Clinical and AIDS Service-Related Training Grants", "popular_name": ""},
+                "93.24C": {"identifier": "93.24C", "program_number": "93.24C", "program_title": "Mental Health Research - Research Centers", "popular_name": ""},
+                "93.24N": {"identifier": "93.24N", "program_number": "93.24N", "program_title": "Mental Health Research - Training, Institutional", "popular_name": ""},
+                "93.24R": {"identifier": "93.24R", "program_number": "93.24R", "program_title": "Mental Health Research - Research Projects", "popular_name": ""},
+                "93.24S": {"identifier": "93.24S", "program_number": "93.24S", "program_title": "Mental Health Research - SBIR/STTR", "popular_name": ""},
+                "93.24T": {"identifier": "93.24T", "program_number": "93.24T", "program_title": "Mental Health Research - Training, Individual", "popular_name": ""},
+                "93.24X": {"identifier": "93.24X", "program_number": "93.24X", "program_title": "Mental Health Research - Other Research", "popular_name": ""},
+                "93.275": {"identifier": "93.275", "program_number": "93.275", "program_title": "Substance Abuse and Mental Health Services-Access to Recovery", "popular_name": "ATR I, ATR II, ATRIII"},
+                "93.281": {"identifier": "93.281", "program_number": "93.281", "program_title": "Mental Health Research Career/Scientist Development Awards", "popular_name": "(Research Career/Scientist Development )"},
+                "93.282": {"identifier": "93.282", "program_number": "93.282", "program_title": "Mental Health National Research Service Awards for Research Training", "popular_name": "(NRSA Program)"},
+                "93.532": {"identifier": "93.532", "program_number": "93.532", "program_title": "Center for Mental Health Services Projects of Regional and National Significance", "popular_name": "Center for Mental Health Services Projects of Regional and National Significance"},
+                "93.534": {"identifier": "93.534", "program_number": "93.534", "program_title": "Affordable Care Act Program for Early Detection of Certain Medical Conditions Related to Environmental Health Hazards", "popular_name": "Agency for Toxic Disease Registry, Division of Health Studies"},
+                "93.538": {"identifier": "93.538", "program_number": "93.538", "program_title": "Affordable Care Act - National Environmental Public Health Tracking Program-Network Implementation", "popular_name": "National Center for Environmental Health, Division of Environmental Hazards and Health Effects, Environmental Health Tracking Branch"},
+                "93.828": {"identifier": "93.828", "program_number": "93.828", "program_title": "Pediatric Mental Health Care Access Grants", "popular_name": "Pediatric Mental Health Care Access Grants"},
+                "93.829": {"identifier": "93.829", "program_number": "93.829", "program_title": "Section 223 Demonstration Programs to Improve Community Mental Health Services", "popular_name": "Section 223 of the Protecting Access Medicare Act (PAMA) of 2014, Certified Community Behavioral Health Clinic Demonstration (CCBHC)"},
+                "93.958": {"identifier": "93.958", "program_number": "93.958", "program_title": "Block Grants for Community Mental Health Services", "popular_name": "Block Grants for Community Mental Health Services"},
+                "93.982": {"identifier": "93.982", "program_number": "93.982", "program_title": "Mental Health Disaster Assistance and Emergency Mental Health", "popular_name": "Mental Health Disaster Assistance and Emergency Mental Health"}
             },
             "awardType": [
                 "02",
@@ -3668,8 +3596,8 @@
         "query": "List all grants for mental health clinics",
         "expected_output": {
             "selectedCFDA": {
-                "64.048": {"identifier": "64.048", "program_number": "64.048", "program_title": "VHA Mental Health clinics"},
-                "93.244": {"identifier": "93.244", "program_number": "93.244", "program_title": "Mental Health Clinical and AIDS Service-Related Training Grants"}
+                "64.048": {"identifier": "64.048", "program_number": "64.048", "program_title": "VHA Mental Health clinics", "popular_name": ""},
+                "93.244": {"identifier": "93.244", "program_number": "93.244", "program_title": "Mental Health Clinical and AIDS Service-Related Training Grants", "popular_name": ""}
             },
             "awardType": [
                 "02",
@@ -3716,7 +3644,7 @@
         "query": "Find all grants for national defense",
         "expected_output": {
             "selectedCFDA": {
-                "12.006": {"identifier": "12.006", "program_number": "12.006", "program_title": "National Defense Education Program"}
+                "12.006": {"identifier": "12.006", "program_number": "12.006", "program_title": "National Defense Education Program", "popular_name": "Science, Technology, Engineering and Mathematics (STEM) Education, Outreach, and Workforce Development Programs"}
             },
             "awardType": [
                 "02",
@@ -3794,10 +3722,7 @@
         "id": 139,
         "query": "All spending on the updates to the White house ball room this year",
         "expected_output": {
-            "timePeriodType": "fy",
-            "timePeriodFY": [
-                "2027"
-            ],
+            "$time": {"unit": "fiscal_year", "offset": 0},
             "keyword": [
                 "updates to the White house ball room"
             ]
@@ -3890,7 +3815,8 @@
         "query": "All the Space Exploration Technologies (SpaceX) contracts in Texas",
         "expected_output": {
             "selectedRecipients": [
-                "SPACE EXPLORATION TECHNOLOGIES CORP."
+                "SPACE EXPLORATION TECHNOLOGIES CORP.",
+                "SPACE EXPLORATION TECHNOLOGIES CORP"
             ],
             "selectedLocations": {
                 "USA_TX": {
@@ -4032,10 +3958,7 @@
         "id": 147,
         "query": "All contracts with 123 Main St. in the award description last year",
         "expected_output": {
-            "timePeriodType": "fy",
-            "timePeriodFY": [
-                "2026"
-            ],
+            "$time": {"unit": "fiscal_year", "offset": -1},
             "awardDescription": "123 Main St.",
             "awardType": [
                 "A",
@@ -4125,10 +4048,7 @@
         "id": 151,
         "query": "All awards over 1 trillion last fiscal year",
         "expected_output": {
-            "timePeriodType": "fy",
-            "timePeriodFY": [
-                "2026"
-            ],
+            "$time": {"unit": "fiscal_year", "offset": -1},
             "awardAmounts": {
                 "specific": [
                     1000000000000,
@@ -4199,12 +4119,9 @@
         "id": 153,
         "query": "Show me all awards for assistance listing 16.014 last year",
         "expected_output": {
-            "timePeriodType": "fy",
-            "timePeriodFY": [
-                "2026"
-            ],
+            "$time": {"unit": "fiscal_year", "offset": -1},
             "selectedCFDA": {
-                "16.014": {"identifier": "16.014", "program_number": "16.014", "program_title": "Engaging Men and Youth in Preventing Domestic Violence, Dating Violence, Sexual Assault, and Stalking"}
+                "16.014": {"identifier": "16.014", "program_number": "16.014", "program_title": "Engaging Men and Youth in Preventing Domestic Violence, Dating Violence, Sexual Assault, and Stalking", "popular_name": ""}
             }
         },
         "expected_tools": [
@@ -4224,7 +4141,7 @@
         "query": "All awards for assistance listing 16.014 in Arizona",
         "expected_output": {
             "selectedCFDA": {
-                "16.014": {"identifier": "16.014", "program_number": "16.014", "program_title": "Engaging Men and Youth in Preventing Domestic Violence, Dating Violence, Sexual Assault, and Stalking"}
+                "16.014": {"identifier": "16.014", "program_number": "16.014", "program_title": "Engaging Men and Youth in Preventing Domestic Violence, Dating Violence, Sexual Assault, and Stalking", "popular_name": ""}
             },
             "selectedLocations": {
                 "USA_AZ": {
@@ -4256,18 +4173,15 @@
     },
     {
         "id": 155,
-        "query": "List all spending under Treasury Account Symbol 310-2012/2012-3200-000 last fiscal year",
+        "query": "List all spending under Treasury Account Symbol 012-2012/2012-0150-000 last fiscal year",
         "expected_output": {
-            "timePeriodType": "fy",
-            "timePeriodFY": [
-                "2026"
-            ],
+            "$time": {"unit": "fiscal_year", "offset": -1},
             "tasCodes": {
                 "require": [
-                    ["310", "310-3200", "310-2012/2012-3200-000"]
+                    ["012", "012-0150", "012-2012/2012-0150-000"]
                 ],
                 "exclude": [],
-                "counts": [{"count": 1, "label": "Access Board (USAB)", "value": "310"}]
+                "counts": [{"count": 1, "label": "Department of Agriculture (USDA)", "value": "012"}]
             }
         },
         "expected_tools": [
@@ -4284,17 +4198,17 @@
     },
     {
         "id": 156,
-        "query": "All spending under federal accounts 310 and 302",
+        "query": "All spending under federal accounts 310 and 012",
         "expected_output": {
             "tasCodes": {
                 "require": [
                     ["310"],
-                    ["302"]
+                    ["012"]
                 ],
                 "exclude": [],
                 "counts": [
-                    {"count": 15, "label": "Access Board (USAB)", "value": "310"},
-                    {"count": 9, "label": "Administrative Conference of the U.S. (ACUS)", "value": "302"}
+                    {"count": 1, "label": "Access Board (USAB)", "value": "310"},
+                    {"count": 282, "label": "Department of Agriculture (USDA)", "value": "012"}
                 ]
             }
         },
@@ -4390,13 +4304,7 @@
         "id": 160,
         "query": "All contracts that available for competition in Utah so far this year",
         "expected_output": {
-            "timePeriodType": "dr",
-            "time_period": [
-                {
-                    "start_date": "2026-10-01",
-                    "end_date": "2026-10-05"
-                }
-            ],
+            "$time": {"unit": "fiscal_year", "offset": 0, "to_date": true, "as": "dr"},
             "extentCompeted": [
                 "A"
             ],
@@ -4480,7 +4388,7 @@
         "query": "Show me all grants for space technology",
         "expected_output": {
             "selectedCFDA": {
-                "43.012": {"identifier": "43.012", "program_number": "43.012", "program_title": "Space Technology"}
+                "43.012": {"identifier": "43.012", "program_number": "43.012", "program_title": "Space Technology", "popular_name": "STMD, Space Tech"}
             },
             "awardType": [
                 "02",
@@ -4507,7 +4415,7 @@
         "expected_output": {
             "pscCodes": {
                 "require": [
-                    ["Research and Development", "AR1"]
+                    ["Research and Development", "AR", "AR1"]
                 ],
                 "exclude": [],
                 "counts": [{"count": 7, "label": "", "value": "Research and Development"}]
@@ -4617,10 +4525,7 @@
         "id": 170,
         "query": "Show me all awards given to Nonprofits this year",
         "expected_output": {
-            "timePeriodType": "fy",
-            "timePeriodFY": [
-                "2027"
-            ],
+            "$time": {"unit": "fiscal_year", "offset": 0},
             "recipientType": [
                 "nonprofit"
             ]
@@ -4642,7 +4547,9 @@
         "query": "Boeing contracts",
         "expected_output": {
             "selectedRecipients": [
-                "Boeing"
+                "BOEING",
+                "BOEING COMPANY",
+                "BOEING COMPANY, THE"
             ],
             "awardType": [
                 "A",
@@ -4667,10 +4574,7 @@
         "id": 175,
         "query": "How much taxpayer dollars went to defense contractors this year?",
         "expected_output": {
-            "timePeriodType": "fy",
-            "timePeriodFY": [
-                "2027"
-            ],
+            "$time": {"unit": "fiscal_year", "offset": 0},
             "keyword": [
                 "defense"
             ]
@@ -4788,10 +4692,7 @@
         "id": 181,
         "query": "How much did we give to foreign aid last year?",
         "expected_output": {
-            "timePeriodType": "fy",
-            "timePeriodFY": [
-                "2026"
-            ],
+            "$time": {"unit": "fiscal_year", "offset": -1},
             "locationDomesticForeign": "foreign"
         },
         "expected_tools": [
@@ -4836,10 +4737,7 @@
         "id": 183,
         "query": "8(a) contracts in the last year",
         "expected_output": {
-            "timePeriodType": "fy",
-            "timePeriodFY": [
-                "2026"
-            ],
+            "$time": {"unit": "fiscal_year", "offset": -1},
             "setAside": [
                 "8A",
                 "8AN",

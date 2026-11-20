@@ -1,33 +1,27 @@
 import logging
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any, Callable, Literal
 
 from django.contrib.postgres.search import TrigramSimilarity
-from django.db.models import F, FloatField, Model, Q, QuerySet, Value, Window
-from django.db.models.functions import Greatest, RowNumber
+from django.db.models import Count, Exists, F, FloatField, Model, OuterRef, Q, QuerySet, Value, Window
+from django.db.models.functions import Greatest, Length, RowNumber
 from pgvector.django import CosineDistance
 
 from usaspending_api.accounts.models.treasury_appropriation_account import TreasuryAppropriationAccount
 from usaspending_api.llm.embeddings.embedding_generator import EmbeddingGenerator
 from usaspending_api.llm.models.db_models import AIModel
-from usaspending_api.llm.models.py_models import (
-    AITool,
-    AIToolDescription,
-    AIToolResult,
-    NaicsCodeLists,
-    PscCodeLists,
-    SelectedCFDA,
-    TasCodeLists,
-)
+from usaspending_api.llm.models.py_models import AITool, AIToolDescription, AIToolResult, SelectedCFDA
 from usaspending_api.llm.tools.exceptions import (
     AssistanceListingNotRecognizedError,
+    InvalidToolInputError,
     NaicsCodeNotRecognizedError,
     PscCodeNotRecognizedError,
     TasNotRecognizedError,
 )
 from usaspending_api.llm.tools.expand_query import expand_query
 from usaspending_api.llm.tools.helpers import hierarchy_parsers
+from usaspending_api.llm.tools.helpers.code_counts import tas_with_file_d_data
 from usaspending_api.llm.tools.helpers.code_paths import build_psc_path, build_tas_path
 from usaspending_api.references.models import ToptierAgency
 from usaspending_api.references.models.cfda import Cfda
@@ -44,18 +38,89 @@ CODE_NOT_RECOGNIZED_ERRORS = {
     "tas": (TasNotRecognizedError, "TAS not found"),
 }
 
-# Semantic search always returns its nearest neighbors, however loosely related. Only results scoring at least this
-# fraction of the best match are selected, and no more than the maximum number of them.
-SEMANTIC_MIN_RELATIVE_SCORE = 0.8
-# A match must also score at least this much, so a query with nothing related returns an error instead of its single
-# nearest neighbor.
-SEMANTIC_MIN_ABSOLUTE_SCORE = 0.3
-# A more specific code replaces its ancestor only if it scores at least this much higher
-SEMANTIC_DESCENDANT_MARGIN = 0.05
+CODE_NOT_FOUND_INSTRUCTIONS = (
+    "Try a shorter or more general query (e.g. a top-level category, a partial code, or a single keyword instead of a "
+    "full phrase), or try a different code_type if the query may describe a different kind of code. If no reasonable "
+    "match exists, omit this filter."
+)
+# A query that isn't an assistance listing number is usually a mis-formatted code or a program name
+CFDA_NOT_FOUND_INSTRUCTIONS = (
+    "Do not retry the same string. If the query was an assistance listing number, strip any prefix such as 'AL' or "
+    "'CFDA' and search with just the number, or search by the program name instead. Retry at most once; if there is "
+    "still no match, omit this filter."
+)
+# TAS lookups are often attempted for values that are not treasury accounts at all (dates, fiscal years, topics)
+TAS_NOT_FOUND_INSTRUCTIONS = (
+    "Treasury accounts are identified by agency, account number, or account title. Do not use this tool for dates, "
+    "fiscal years, time periods, or general topics; those belong to other filters. Do not retry the same string. "
+    "If the value is not a treasury account, omit this filter and continue."
+)
+NOT_FOUND_INSTRUCTIONS = {"cfda": CFDA_NOT_FOUND_INSTRUCTIONS, "tas": TAS_NOT_FOUND_INSTRUCTIONS}
 
-# Queries that are a TAS main account ("3200") or AID-MAIN ("014-0102") rather than the start of a rendering label
+# Semantic search always returns its nearest neighbors, however loosely related. A match must score at least this much,
+# so a query with nothing related returns an error instead of its nearest neighbors. Choosing among the codes that
+# pass is left to the llm, which sees their scores.
+SEMANTIC_MIN_SCORE = 0.3
+
+# Where the llm puts the codes it chooses, by code type. {inclusion} is 'require' or 'exclude'.
+FILTER_DESTINATIONS = {
+    "naics": "naicsCodes.{inclusion} (a list of the filter_value strings)",
+    "psc": "pscCodes.{inclusion} (a list of the filter_value paths)",
+    "tas": "tasCodes.{inclusion} (a list of the filter_value paths)",
+    "cfda": "selectedCFDA (an object keyed by program number, with the filter_value as each value)",
+}
+# Children shown beneath a code. A code with many near duplicates beneath it (e.g. the variants of a PSC category) is
+# summarized by its own description and covers count instead of listing all of them.
+MAX_CHILDREN_SHOWN = 5
+SELECTION_INSTRUCTIONS = (
+    "Choose the code or codes in the tree that best represent what the user asked for. Judge each candidate by its "
+    "description, its place in the tree, and its score together. A score is search similarity, not correctness, so a "
+    "lower scoring code can be the better fit. Start with the highest code in the tree whose own description names "
+    "what the user asked for (a category, industry, or topic), even if codes beneath it score higher; choosing it "
+    "chooses everything beneath it (see covers). Choose a code beneath it only when the user asked for that narrower "
+    "thing, or when the broader code would include things the user did not ask for. Do not also choose codes beneath "
+    "a code you chose. A code with matched=false was only added to show where its children sit: choose it only if "
+    "its own description names the request, never just because its children match. When a code and a code beneath "
+    "it cover the same number of codes, choose the higher one. Only the "
+    "best scoring codes beneath a code are shown; more_children counts the others, and choosing the code still "
+    "covers them. Do not choose codes that are only loosely related to the request; if none of them fit, leave this "
+    "filter out. Copy the filter_value of each code you choose into {destination}, and combine the codes from "
+    "separate lookups. "
+)
+EXACT_MATCH_INSTRUCTIONS = (
+    "The query is itself a code, so it is the only code matched. Use it unless the user meant something else. Copy "
+    "its filter_value into {destination}. "
+)
+# A main account code ("0150") is the account number of the accounts of several agencies, each of which matches it
+ACCOUNT_MATCH_INSTRUCTIONS = (
+    "The query is an account code, so every account in the tree matches it, one for each agency that has one. Choose "
+    "the accounts the user asked for: all of them unless the user named an agency, in which case only that "
+    "agency's. Copy the filter_value of each account you choose into {destination}. "
+)
+# The query names an agency, so the accounts the user means are all of the accounts beneath it
+AGENCY_MATCH_INSTRUCTIONS = (
+    "The query names an agency, so the agency is the match and the accounts beneath it are all covered. Choose the "
+    "agency to include all of its accounts, unless the user asked for specific accounts. If the user asked for awards "
+    "from or by this agency and did not mention accounts, use lookup_agencies instead of this filter. Copy the "
+    "filter_value of each agency you choose into {destination}. "
+)
+CODE_TYPE_INSTRUCTIONS = {
+    "tas": (
+        "Prefer an account (the AID-MAIN level) to one of its periods of availability unless the user named a "
+        "period, and choose an agency only when the user means all of its accounts."
+    ),
+}
+
+# Queries that are a TAS main account ("3200") or AID-MAIN ("014-0102") rather than the start of a rendering label.
+# There is overlap between the MAIN and AGENCY patterns, but that is left intentionally to allow more specific use
+# as needed.
 TAS_MAIN_ACCOUNT_PATTERN = re.compile(r"\d{4}")
 TAS_AID_MAIN_PATTERN = re.compile(r"\d{3}-\d{4}")
+# A toptier agency code (e.g. "309" or "1100"), which a TAS is listed under whatever the AID in its label is
+TAS_AGENCY_CODE_PATTERN = re.compile(r"\d{3,4}")
+# What a code scores when it is the query, or the query is the start of it
+EXACT_MATCH_SCORE = 1.0
+PREFIX_MATCH_SCORE = 0.95
 # Queries beginning with a digit are codes (e.g. "3200", "14.257"); expanding them only produces unrelated variations
 NUMERIC_CODE_QUERY_PATTERN = re.compile(r"\d[0-9A-Za-z./-]*")
 
@@ -66,8 +131,28 @@ CODE_LABEL_PATTERNS = {
     "psc": re.compile(r"(?:PSC|product and service codes?)\b[\s:#.-]*(?=(?-i:[A-Z0-9]{1,4})\b)", re.I),
     "tas": re.compile(r"(?:TAS|treasury account(?: symbols?)?)\b[\s:#.-]*(?=\d)", re.I),
 }
-# An assistance listing program number (e.g. "14.257" or "93.00A") inside a longer query
-CFDA_PROGRAM_NUMBER_PATTERN = re.compile(r"(?<!\d)\d{2}\.\d{2}[0-9A-Za-z]\b")
+# An assistance listing program number (e.g. "14.257" or "93.HDN") inside a longer query
+CFDA_PROGRAM_NUMBER_PATTERN = re.compile(r"(?<!\d)\d{2}\.[0-9A-Za-z]{3}\b")
+# Words of a TAS query that do not help to name an agency: what is being asked for ("treasury accounts" is about the
+# accounts of Treasury) and filler words
+TAS_AGENCY_QUERY_STOPWORDS = frozenset(
+    "account accounts symbol symbols tas tafs federal department dept of the for under in from by and to all".split()
+)
+
+
+def _tas_queryset() -> QuerySet:
+    """The TAS the TAS filter tree shows (those with award data), each with the agency and federal account it is
+    listed under. That agency is the one of its federal account, which is not always the AID in the TAS label."""
+    return (
+        tas_with_file_d_data()
+        .filter(agency__isnull=False, federal_account__federal_account_code__isnull=False)
+        .annotate(
+            agency_name=F("federal_account__parent_toptier_agency__name"),
+            agency_abbreviation=F("federal_account__parent_toptier_agency__abbreviation"),
+            federal_account_code=F("federal_account__federal_account_code"),
+            federal_account_title=F("federal_account__account_title"),
+        )
+    )
 
 
 @dataclass
@@ -79,6 +164,13 @@ class CodeTypeConfig:
     description_field: str
     get_parent_code: Callable[[str], Any]
     get_all_ancestors: Callable[[str], Any]
+    # The records that can be returned, when that is not every row of the model
+    get_queryset: Callable[[], QuerySet] | None = None
+    # Other fields a query is matched against as text, like the description
+    extra_text_fields: tuple[str, ...] = ()
+
+    def queryset(self) -> QuerySet:
+        return self.get_queryset() if self.get_queryset else self.model_class.objects.all()
 
 
 # Configuration for each supported code type
@@ -103,6 +195,7 @@ CODE_TYPE_CONFIGS = {
         description_field="program_title",
         get_parent_code=hierarchy_parsers.get_cfda_parent,
         get_all_ancestors=hierarchy_parsers.get_cfda_ancestors,
+        extra_text_fields=("popular_name",),
     ),
     "tas": CodeTypeConfig(
         model_class=TreasuryAppropriationAccount,
@@ -110,15 +203,8 @@ CODE_TYPE_CONFIGS = {
         description_field="account_title",
         get_parent_code=hierarchy_parsers.get_tas_parent,
         get_all_ancestors=hierarchy_parsers.get_tas_ancestors,
+        get_queryset=_tas_queryset,
     ),
-}
-
-
-# The filter model used to validate and format the codes found for each code type (CFDA has no require/exclude lists)
-CODE_LISTS_MODELS = {
-    "naics": NaicsCodeLists,
-    "psc": PscCodeLists,
-    "tas": TasCodeLists,
 }
 
 
@@ -130,7 +216,20 @@ class CodeResult:
     description: str | None
     score: float = 0.0
     matched_query: str | None = None
-    budget_bureau_name: str | None = None  # only used for tas results
+    popular_name: str | None = None  # only used for cfda results
+    # Only used for tas results, whose parents come from the database instead of the code. A parent of "" is none.
+    parent_code: str | None = None
+    ancestors: list["CodeResult"] = field(default_factory=list)  # the agency and federal account above a tas
+
+
+def get_parent_code(code: str, all_results: dict[str, CodeResult], config: CodeTypeConfig) -> str | None:
+    """The code above a code in the hierarchy. A TAS is listed under its federal account and that account under its
+    agency, which the TAS code can't say (the agency is not always the AID), so those come with the result. For every
+    other code type the parent is found from the code."""
+    result = all_results.get(code)
+    if result is not None and result.parent_code is not None:
+        return result.parent_code or None
+    return config.get_parent_code(code) if config.get_parent_code else None
 
 
 class SearchResultNode:
@@ -143,15 +242,14 @@ class SearchResultNode:
         score: float,
         all_results: dict[str, CodeResult],
         config: CodeTypeConfig,
-        is_root: bool = True,
+        popular_name: str | None = None,
     ):
         self.code = code
         self.description = description
         self.score = score
+        self.popular_name = popular_name
         self.children: list[SearchResultNode] = []
         self.config = config
-
-        self._is_root = is_root
 
         # Build children
         self._populate_children(all_results)
@@ -160,45 +258,35 @@ class SearchResultNode:
         """Build children from results that extend this code"""
 
         for child_code, child_data in all_results.items():
-            if self._is_direct_child(child_code):
+            if self._is_direct_child(child_code, all_results):
                 child_node = SearchResultNode(
                     code=child_code,
                     description=child_data.description,
                     score=child_data.score,
                     all_results=all_results,
                     config=self.config,
-                    is_root=False,
+                    popular_name=child_data.popular_name,
                 )
                 self.children.append(child_node)
 
-    def _is_direct_child(self, other_code: str) -> bool:
+    def _is_direct_child(self, other_code: str, all_results: dict[str, CodeResult]) -> bool:
         """Check if other_code is a direct child of this code"""
-        if not self.config.get_parent_code:
-            return False
-        parent = self.config.get_parent_code(other_code)
-        return parent == self.code
+        return get_parent_code(other_code, all_results, self.config) == self.code
 
     def to_dict(self) -> dict:
         """Convert to dictionary format"""
 
-        return {
+        node = {
             "code": self.code,
             "description": self.description,
             "score": self.score,
-            "is_root": self.is_root,
-            "is_leaf": self.is_leaf,
             "children": {
                 child.code: child.to_dict() for child in sorted(self.children, key=lambda x: x.score, reverse=True)
             },
         }
-
-    @property
-    def is_leaf(self) -> bool:
-        return len(self.children) == 0
-
-    @property
-    def is_root(self) -> bool:
-        return self._is_root
+        if self.popular_name is not None:
+            node["popular_name"] = self.popular_name
+        return node
 
 
 class CodeLookupTool:
@@ -215,66 +303,216 @@ class CodeLookupTool:
         """
         Hybrid search for various code types combining text matching and vector similarity.
 
-        Returns the matched codes in the shape the execute_filter tool expects for that code type.
+        Returns the matched codes with their ancestors as a tree, so the llm can choose the codes that best fit the
+        request using their descriptions, scores, and place in the hierarchy.
         """
 
         if msg := await self.validate_input(code_type, inclusion):
-            return AIToolResult(results={"error": msg})
+            raise InvalidToolInputError(msg)
 
         config = CODE_TYPE_CONFIGS[code_type]
-        budget_bureau_names = {}
         query = self._normalize_query(query, code_type)
 
-        codes = await self._handle_exact_search(query, config, code_type, budget_bureau_names, top_k)
-        is_semantic_search = codes is None
-        if is_semantic_search:
-            codes = await self._handle_hybrid_search(query, config, code_type, budget_bureau_names, top_k, query_fanout)
+        codes = await self._handle_exact_search(query, config, code_type, top_k)
+        is_agency_query = False
+        if codes is None and code_type == "tas":
+            codes = await self._handle_agency_search(query, config, top_k)
+            is_agency_query = codes is not None
+        if codes is None:
+            codes = await self._handle_hybrid_search(query, config, code_type, top_k, query_fanout)
+        hierarchy = codes["hierarchy"]
+        if code_type == "tas" and self._is_tas_account_query(query):
+            hierarchy = self._mark_tas_accounts_matched(hierarchy)
 
-        # A query that is itself a code in the hierarchy (e.g. the TAS agency "309") selects that code alone, even
-        # when the node is only an ancestor of what matched. CFDA is excluded as only its programs can be selected.
-        query_node = None if code_type == "cfda" else self._find_node(codes["hierarchy"], query)
-        if query_node and not (code_type == "psc" and query_node[0] in PSC_GROUPS):
-            selected = [query_node]
-        else:
-            # Semantic search returns anything loosely related, so only keep results close to the best match
-            min_score = 0.0
-            margin = 0.0
-            if is_semantic_search:
-                best_score = max(
-                    (self._get_best_score_in_tree(node) for node in codes["hierarchy"].values()), default=0
-                )
-                min_score = max(best_score * SEMANTIC_MIN_RELATIVE_SCORE, SEMANTIC_MIN_ABSOLUTE_SCORE)
-                margin = SEMANTIC_DESCENDANT_MARGIN
-                logger.info(
-                    f"Semantic {code_type} search for '{query}': best score {best_score:.3f}, cutoff {min_score:.3f}"
-                )
-            selected = self._select_matched_nodes(codes["hierarchy"], code_type, min_score, margin)
-            if is_semantic_search:
-                selected = sorted(selected, key=lambda item: item[1]["score"], reverse=True)
-                logger.info(
-                    f"Selected {code_type} codes: {[(code, round(node['score'], 3)) for code, node in selected]}"
-                )
-        if len(selected) == 0:
+        # A query that is itself a code in the hierarchy (e.g. the TAS agency "309") matches that code alone, even
+        # when the node is only an ancestor of what matched. CFDA is excluded as only its programs can be chosen.
+        node_code = hierarchy_parsers.get_psc_tree_code(query.upper()) if code_type == "psc" else query
+        query_node = None if code_type == "cfda" else self._find_node(hierarchy, node_code)
+        is_exact_code = bool(query_node) and not (code_type == "psc" and query_node[0] in PSC_GROUPS)
+        if is_exact_code:
+            hierarchy = self._keep_only_path_to(hierarchy, query_node[0])
+        # A main account code ("0150") is not a node itself, but it is the account code of every account it finds.
+        # Those accounts are the exact matches, so their periods of availability are not offered as choices.
+        is_account_query = code_type == "tas" and not is_exact_code and self._is_tas_account_query(query)
+        if is_account_query:
+            hierarchy = self._keep_only_accounts(hierarchy)
+        if not hierarchy:
             error_class, label = CODE_NOT_RECOGNIZED_ERRORS[code_type]
-            raise error_class(f"{label}: {query}")
+            raise error_class(
+                f"{label}: {query}",
+                instructions=NOT_FOUND_INSTRUCTIONS.get(code_type, CODE_NOT_FOUND_INSTRUCTIONS),
+            )
 
-        if code_type == "cfda":
-            programs = {
-                code: SelectedCFDA(identifier=code, program_number=code, program_title=node["description"]).model_dump(
-                    exclude_none=True
-                )
-                for code, node in selected
-                if "." in code
+        covered_counts = await (
+            self._count_covered_tas(hierarchy)
+            if code_type == "tas"
+            else self._count_covered_codes(hierarchy, code_type)
+        )
+        tree = self._order_output_nodes(self._rank_output_nodes(hierarchy, code_type, covered_counts))
+        logger.info(f"Returning {code_type} tree for '{query}' with {codes['total_codes']} codes")
+
+        return AIToolResult(
+            results={"code_type": code_type, "inclusion": inclusion, "query": query, "tree": tree},
+            instructions=self._build_instructions(
+                code_type, inclusion, is_exact_code, is_account_query, is_agency_query
+            ),
+        )
+
+    @staticmethod
+    def _build_instructions(
+        code_type: str,
+        inclusion: str,
+        is_exact_code: bool,
+        is_account_query: bool = False,
+        is_agency_query: bool = False,
+    ) -> str:
+        """How the llm should choose among the codes returned and where to put the ones it chooses."""
+        destination = FILTER_DESTINATIONS[code_type].format(inclusion=inclusion)
+        if is_account_query:
+            return ACCOUNT_MATCH_INSTRUCTIONS.format(destination=destination)
+        if is_agency_query:
+            return AGENCY_MATCH_INSTRUCTIONS.format(destination=destination)
+        template = EXACT_MATCH_INSTRUCTIONS if is_exact_code else SELECTION_INSTRUCTIONS
+        return template.format(destination=destination) + CODE_TYPE_INSTRUCTIONS.get(code_type, "")
+
+    @staticmethod
+    def _keep_only_accounts(hierarchy: dict) -> dict:
+        """Reduce a TAS hierarchy to its agencies and their accounts (the AID-MAIN level), dropping the periods of
+        availability beneath each account."""
+        return {
+            agency_code: {
+                **agency,
+                "children": {
+                    account_code: {**account, "children": {}}
+                    for account_code, account in agency.get("children", {}).items()
+                },
             }
-            return AIToolResult(results={"selectedCFDA": programs})
+            for agency_code, agency in hierarchy.items()
+        }
 
-        values = [self._build_filter_value(code, code_type) for code, _ in selected]
-        if code_type == "tas" and (is_semantic_search or self._is_tas_account_query(query)):
-            # Periods of availability of one account are near duplicates, so select the account instead of each year
-            values = [list(account) for account in dict.fromkeys(tuple(path[:2]) for path in values)]
-        code_lists = CODE_LISTS_MODELS[code_type](**{inclusion: values})
-        # 'counts' is calculated with the sync ORM when it's read, so leave it out of what is returned
-        return AIToolResult(results={f"{code_type}Codes": code_lists.model_dump(exclude={"counts"})})
+    def _keep_only_path_to(self, hierarchy: dict, code: str) -> dict:
+        """Reduce a hierarchy to the nodes from a root down to a code, dropping everything beneath that code. The code
+        was asked for by name, so it counts as an exact match even when it was only in the hierarchy as an ancestor
+        (e.g. a TAS agency)."""
+        for node_code, node in hierarchy.items():
+            if node_code.lower() == code.lower():
+                return {node_code: {**node, "score": node["score"] or 1.0, "children": {}}}
+            if children := self._keep_only_path_to(node.get("children", {}), code):
+                return {node_code: {**node, "children": children}}
+        return {}
+
+    def _rank_output_nodes(
+        self, nodes: dict, code_type: str, covered_counts: dict[str, int], path: list[str] | None = None
+    ) -> list[tuple[float, dict]]:
+        """Format sibling hierarchy nodes for the llm, each with the best score found beneath it. path is the codes
+        above these nodes.
+
+        A PSC Tier1 group ('Service', 'Product', 'Research and Development') is only a label unless the search matched
+        the group itself (the R&D "A" row), so an unmatched group is left out and its children take its place. The
+        filter_value of each code already starts with its group."""
+        ranked = []
+        for code, node in nodes.items():
+            if code_type == "psc" and code in PSC_GROUPS and not node.get("is_group_match"):
+                ranked.extend(self._rank_output_nodes(node.get("children", {}), code_type, covered_counts, path))
+            else:
+                output = self._build_output_node(code, node, code_type, covered_counts, path)
+                ranked.append((self._get_best_score_in_tree(node), output))
+        return ranked
+
+    def _build_output_node(
+        self, code: str, node: dict, code_type: str, covered_counts: dict[str, int], path: list[str] | None = None
+    ) -> dict:
+        """Format a hierarchy node for the llm: what the code is, how well it matched, and the value to use for it in
+        execute_filter. Only the best scoring children are shown; more_children counts the rest, which are still
+        covered when the node is chosen."""
+        output = {
+            "code": code,
+            "description": node["description"],
+            "score": round(node["score"], 2),
+            "matched": node["score"] > 0,
+        }
+        if node.get("popular_name"):
+            output["popular_name"] = node["popular_name"]
+        if code in covered_counts:
+            output["covers"] = covered_counts[code]
+        node_path = [*(path or []), code]
+        # An assistance listing agency is not a program, so it can't be filtered on
+        if code_type != "cfda" or "." in code:
+            output["filter_value"] = self._build_filter_value(
+                code, code_type, node["description"], node.get("popular_name"), node_path
+            )
+
+        ranked_children = self._rank_output_nodes(node.get("children", {}), code_type, covered_counts, node_path)
+        children = self._order_output_nodes(ranked_children)
+        if children:
+            output["children"] = children[:MAX_CHILDREN_SHOWN]
+            if len(children) > MAX_CHILDREN_SHOWN:
+                output["more_children"] = len(children) - MAX_CHILDREN_SHOWN
+        return output
+
+    @staticmethod
+    def _order_output_nodes(ranked: list[tuple[float, dict]]) -> list[dict]:
+        """Order formatted nodes by the best score beneath each, highest first. Nodes with the same score are ordered by
+        code so that the order doesn't depend on the order in which the search found them."""
+        return [output for _, output in sorted(ranked, key=lambda item: (-item[0], str(item[1]["code"])))]
+
+    @staticmethod
+    async def _count_covered_codes(hierarchy: dict, code_type: str) -> dict[str, int]:
+        """Count the lowest level codes (6 digit NAICS, 4 character PSC) under each code in the tree, which is how much
+        of the filter choosing it covers."""
+        if code_type not in ("naics", "psc"):
+            return {}
+
+        def tree_codes(nodes: dict) -> list[str]:
+            codes = []
+            for code, node in nodes.items():
+                # PSC Tier1 groups are labels, not codes
+                if not (code_type == "psc" and code in PSC_GROUPS):
+                    codes.append(code)
+                codes.extend(tree_codes(node.get("children", {})))
+            return codes
+
+        codes = tree_codes(hierarchy)
+        if not codes:
+            return {}
+        model = CODE_TYPE_CONFIGS[code_type].model_class
+        leaves = model.objects.annotate(code_length=Length("code")).filter(code_length=6 if code_type == "naics" else 4)
+        leaves = leaves.filter(code__regex=r"^(" + "|".join(re.escape(code) for code in codes) + ")")
+        leaf_codes = [leaf async for leaf in leaves.values_list("code", flat=True)]
+
+        def covered(code: str, leaf: str) -> bool:
+            # A three character research and development node ("AA1") doesn't cover the code ending in 0 ("AA10"),
+            # which it stands for. This is the rule the PSC filter tree and the counts use.
+            if code_type == "psc" and len(code) == 3 and hierarchy_parsers.get_psc_parent(code) == code[:2]:
+                return leaf.startswith(code) and not leaf.endswith("0")
+            return leaf.startswith(code)
+
+        return {code: sum(covered(code, leaf) for leaf in leaf_codes) for code in codes}
+
+    @staticmethod
+    async def _count_covered_tas(hierarchy: dict) -> dict[str, int]:
+        """Count the TAS with award data under each agency and federal account in the tree, as the TAS filter tree
+        does. The tree's TAS are each one TAS."""
+        agency_codes = list(hierarchy)
+        accounts = (
+            tas_with_file_d_data()
+            .filter(agency__in=agency_codes)
+            .values("agency", "federal_account__federal_account_code")
+            .annotate(total=Count("treasury_account_identifier"))
+        )
+        counts: dict[str, int] = {}
+        async for row in accounts:
+            for code in (row["agency"], row["federal_account__federal_account_code"]):
+                counts[code] = counts.get(code, 0) + row["total"]
+
+        def add_tas(nodes: dict, depth: int = 0) -> None:
+            for code, node in nodes.items():
+                if depth >= 2:
+                    counts[code] = 1
+                add_tas(node.get("children", {}), depth + 1)
+
+        add_tas(hierarchy)
+        return counts
 
     @staticmethod
     def _normalize_query(query: str, code_type: str) -> str:
@@ -312,30 +550,55 @@ class CodeLookupTool:
         query: str,
         config: CodeTypeConfig,
         code_type: Literal["naics", "psc", "cfda", "tas"],
-        budget_bureau_names: dict[str, str],
         top_k: int,
     ) -> dict[str, Any] | None:
         exact_qs, prefix_qs = self._query_exact_and_prefix_matches(config, query)
 
         # Exact and prefix code matches skip embeddings/fanout entirely
         if await exact_qs.aexists() or await prefix_qs.aexists():
-            exact_results = await self._build_result_entries(
-                exact_qs, config, code_type, score=1.0, budget_bureau_names=budget_bureau_names
-            )
-            prefix_results = await self._build_result_entries(
-                prefix_qs, config, code_type, score=0.95, budget_bureau_names=budget_bureau_names
-            )
+            exact_results = await self._build_result_entries(exact_qs, config, code_type, score=EXACT_MATCH_SCORE)
+            prefix_results = await self._build_result_entries(prefix_qs, config, code_type, score=PREFIX_MATCH_SCORE)
             all_results = prefix_results | exact_results
-            return await self._finalize_results(all_results, config, code_type, budget_bureau_names, top_k)
+            return await self._finalize_results(all_results, config, code_type, top_k)
         else:
             return None
+
+    async def _handle_agency_search(self, query: str, config: CodeTypeConfig, top_k: int) -> dict[str, Any] | None:
+        """Match a TAS query that names an agency (e.g. "treasury accounts") to the toptier agency, which stands for
+        all of the accounts beneath it. Only agencies with TAS that the TAS filter tree shows can be matched. None
+        when the query doesn't name an agency, such as a query for a specific account by its title."""
+        words = [word for word in re.findall(r"[a-z0-9]+", query.lower()) if word not in TAS_AGENCY_QUERY_STOPWORDS]
+        if not words or any(len(word) < 2 for word in words):
+            return None
+
+        # Every word must be a whole word of the agency's name or abbreviation, so a query naming more than the agency
+        # (e.g. an account title) is not an agency match
+        matches = Q()
+        for word in words:
+            word_pattern = rf"\y{re.escape(word)}\y"
+            matches &= Q(name__iregex=word_pattern) | Q(abbreviation__iregex=word_pattern)
+        agencies = ToptierAgency.objects.filter(matches).filter(
+            Exists(tas_with_file_d_data().filter(agency=OuterRef("toptier_code")))
+        )
+
+        all_results = {}
+        async for agency in agencies:
+            named_in_full = query.strip().lower() in (agency.name.lower(), (agency.abbreviation or "").lower())
+            all_results[agency.toptier_code] = CodeResult(
+                code=agency.toptier_code,
+                description=f"{agency.name} ({agency.abbreviation})",
+                score=EXACT_MATCH_SCORE if named_in_full else PREFIX_MATCH_SCORE,
+                parent_code="",
+            )
+        if not all_results:
+            return None
+        return await self._finalize_results(all_results, config, "tas", top_k)
 
     async def _handle_hybrid_search(
         self,
         query: str,
         config: CodeTypeConfig,
         code_type: Literal["naics", "psc", "cfda", "tas"],
-        budget_bureau_names: dict[str, str],
         top_k: int,
         query_fanout: int | None = 3,
     ) -> dict[str, Any]:
@@ -365,11 +628,12 @@ class CodeLookupTool:
                 continue
 
             # Perform hybrid search
-            qs = model.objects.filter(embedding__isnull=False)
+            qs = config.queryset().filter(embedding__isnull=False)
 
             code_similarity = TrigramSimilarity(config.code_field, q)
             desc_similarity = TrigramSimilarity(config.description_field, q)
-            text_score = Greatest(code_similarity, desc_similarity)
+            extra_similarities = [TrigramSimilarity(field_name, q) for field_name in config.extra_text_fields]
+            text_score = Greatest(code_similarity, desc_similarity, *extra_similarities)
 
             qs = qs.annotate(
                 vector_distance=CosineDistance("embedding", embedding),
@@ -383,7 +647,9 @@ class CodeLookupTool:
             qs = qs.order_by("-hybrid_score")[:top_k]
 
             async for result in qs:
-                code_value = getattr(result, config.code_field)
+                if result.hybrid_score < SEMANTIC_MIN_SCORE:
+                    continue
+                code_value = self._tree_code(code_type, getattr(result, config.code_field))
 
                 # Keep best score if duplicate
                 if code_value not in all_results or result.hybrid_score > all_results[code_value].score:
@@ -393,36 +659,35 @@ class CodeLookupTool:
                         description=description_value,
                         score=result.hybrid_score,
                         matched_query=q,
+                        popular_name=self._popular_name(code_type, result),
                     )
-                    if code_type == "tas" and hasattr(result, "budget_bureau_name"):
-                        entry.budget_bureau_name = result.budget_bureau_name
-                        parts = code_value.split("-")
-                        if len(parts) >= 4:
-                            aid = parts[-4]
-                            main = parts[-2]
-                            budget_bureau_names[f"{aid}-{main}"] = result.budget_bureau_name
+                    if code_type == "tas":
+                        self._add_tas_lineage(entry, result)
                     all_results[code_value] = entry
 
-        return await self._finalize_results(all_results, config, code_type, budget_bureau_names, top_k)
+        return await self._finalize_results(all_results, config, code_type, top_k)
 
     @staticmethod
     def _query_exact_and_prefix_matches(config: CodeTypeConfig, query: str) -> tuple[QuerySet, QuerySet]:
         """Look up exact (case-insensitive) and prefix matches on the code field."""
         code_field = config.code_field
         model = config.model_class
-        exact_qs = model.objects.filter(**{f"{code_field}__iexact": query})
+        exact_qs = config.queryset().filter(**{f"{code_field}__iexact": query})
         prefix_filter = Q(**{f"{code_field}__istartswith": query})
 
-        # TAS rendering labels start with the agency, so an account code ("3200" or "014-0102") would never be a prefix
-        # of one. Match those on the account's own fields instead.
+        # TAS rendering labels start with the AID, so an account code ("3200" or "014-0102") would never be a prefix
+        # of one. Match those on the account's own fields instead. A toptier agency code ("1100") can also differ from
+        # the AID of its TAS, so match it on the agency the TAS are listed under as well.
         if model is TreasuryAppropriationAccount:
+            if TAS_AGENCY_CODE_PATTERN.fullmatch(query):
+                prefix_filter |= Q(agency=query)
             if TAS_MAIN_ACCOUNT_PATTERN.fullmatch(query):
                 prefix_filter |= Q(main_account_code=query)
             elif TAS_AID_MAIN_PATTERN.fullmatch(query):
                 agency_id, main_account_code = query.split("-")
                 prefix_filter |= Q(agency_id=agency_id, main_account_code=main_account_code)
 
-        prefix_qs = model.objects.filter(prefix_filter).exclude(**{f"{code_field}__iexact": query})
+        prefix_qs = config.queryset().filter(prefix_filter).exclude(**{f"{code_field}__iexact": query})
         return exact_qs, prefix_qs
 
     @staticmethod
@@ -449,33 +714,77 @@ class CodeLookupTool:
         config: CodeTypeConfig,
         code_type: str,
         score: float,
-        budget_bureau_names: dict[str, str],
     ) -> dict[str, CodeResult]:
         entries = {}
         async for result in queryset:
-            code_value = getattr(result, config.code_field)
+            code_value = CodeLookupTool._tree_code(code_type, getattr(result, config.code_field))
             entry = CodeResult(
                 code=code_value,
                 description=getattr(result, config.description_field, None),
                 score=score,
+                popular_name=CodeLookupTool._popular_name(code_type, result),
             )
-            if code_type == "tas" and hasattr(result, "budget_bureau_name"):
-                entry.budget_bureau_name = result.budget_bureau_name
-                parts = code_value.split("-")
-                if len(parts) >= 3:
-                    aid_main = f"{parts[0]}-{parts[2]}"
-                    budget_bureau_names[aid_main] = result.budget_bureau_name
+            if code_type == "tas":
+                CodeLookupTool._add_tas_lineage(entry, result)
             entries[code_value] = entry
         return entries
 
-    async def _finalize_results(
+    @staticmethod
+    def _tree_code(code_type: str, code: str) -> str:
+        """The code of the node that stands for a code in the tree the client shows. For a research and development PSC
+        ending in 0 (e.g. "AA10") that is the three character node above its siblings ("AA1"), as the client has no
+        "AA10". Every other code is its own node."""
+        return hierarchy_parsers.get_psc_tree_code(code) if code_type == "psc" else code
+
+    @staticmethod
+    def _popular_name(code_type: str, result: Model) -> str | None:
+        """The popular name of an assistance listing, which is an empty string when it has none, as the client sends
+        it. Other code types have none."""
+        return (getattr(result, "popular_name", None) or "") if code_type == "cfda" else None
+
+    @staticmethod
+    def _add_tas_lineage(entry: CodeResult, tas: TreasuryAppropriationAccount) -> None:
+        """Record the agency and federal account a TAS is listed under, which come from its federal account and not
+        from the AID in its label (an AID of 011 is listed under the toptier agency 1100). They are described as the
+        TAS filter tree describes them."""
+        agency = CodeResult(
+            code=tas.agency, description=f"{tas.agency_name} ({tas.agency_abbreviation})", parent_code=""
+        )
+        account = CodeResult(
+            code=tas.federal_account_code, description=tas.federal_account_title, parent_code=agency.code
+        )
+        entry.parent_code = account.code
+        entry.ancestors = [agency, account]
+
+    async def _subset_tas_results(
+        self,
+        all_results: dict[str, CodeResult],
+        top_k: int,
+    ) -> dict[str, CodeResult]:
+        # top_k is a number of accounts, not of TAS. A TAS is one period of availability of an account, and an
+        # account can have many of them. Counting the TAS lets the periods of one agency's account fill the limit
+        # and push out the accounts of other agencies (e.g. the accounts for the main account code "0150").
+        best_scores: dict[str, float] = {}
+        for result in all_results.values():
+            account_code = result.parent_code or result.code
+            best_scores[account_code] = max(best_scores.get(account_code, 0.0), result.score)
+        top_accounts = set(sorted(best_scores, key=lambda code: (-best_scores[code], code))[:top_k])
+        all_results = {
+            code: result for code, result in all_results.items() if (result.parent_code or result.code) in top_accounts
+        }
+        for result in list(all_results.values()):
+            for ancestor in result.ancestors:
+                all_results.setdefault(ancestor.code, ancestor)
+
+        return all_results
+
+    async def _subset_results(
         self,
         all_results: dict[str, CodeResult],
         config: CodeTypeConfig,
         code_type: str,
-        budget_bureau_names: dict,
         top_k: int,
-    ) -> dict[str, Any]:
+    ) -> dict[str, CodeResult]:
         top_codes = [
             result.code for result in sorted(all_results.values(), key=lambda x: x.score, reverse=True)[:top_k]
         ]
@@ -484,29 +793,45 @@ class CodeLookupTool:
         for code in all_results.keys():
             ancestor_codes.update(config.get_all_ancestors(code))
         if ancestor_codes:
-            if code_type == "tas":
-                await self._add_tas_ancestors(ancestor_codes, all_results, budget_bureau_names)
-            else:
-                model = config.model_class
-                ancestors = model.objects.filter(**{f"{config.code_field}__in": list(ancestor_codes)})
-                async for ancestor in ancestors:
-                    ancestor_code = getattr(ancestor, config.code_field)
-                    if ancestor_code not in all_results:
-                        all_results[ancestor_code] = CodeResult(
-                            code=ancestor_code,
-                            description=getattr(ancestor, config.description_field, None),
-                        )
-        root_codes = [code for code in all_results.keys() if not self._has_parent_in_results(code, all_results, config)]
+            model = config.model_class
+            # A three character research and development PSC node ("AA1") has no row of its own. It takes the
+            # code and description of the row ending in 0 ("AA10"), which _tree_code maps back to the node.
+            db_codes = [code + "0" if code_type == "psc" and len(code) == 3 else code for code in ancestor_codes]
+            ancestors = model.objects.filter(**{f"{config.code_field}__in": db_codes})
+            async for ancestor in ancestors:
+                ancestor_code = self._tree_code(code_type, getattr(ancestor, config.code_field))
+                if ancestor_code not in all_results:
+                    all_results[ancestor_code] = CodeResult(
+                        code=ancestor_code,
+                        description=getattr(ancestor, config.description_field, None),
+                    )
+        return all_results
+
+    async def _finalize_results(
+        self,
+        all_results: dict[str, CodeResult],
+        config: CodeTypeConfig,
+        code_type: str,
+        top_k: int,
+    ) -> dict[str, Any]:
+        subset_results = await (
+            self._subset_tas_results(all_results, top_k)
+            if code_type.lower() == "tas"
+            else self._subset_results(all_results, config, code_type, top_k)
+        )
+        root_codes = [
+            code for code in subset_results.keys() if not self._has_parent_in_results(code, subset_results, config)
+        ]
         hierarchy = {}
         for root_code in root_codes:
-            root_data = all_results[root_code]
+            root_data = subset_results[root_code]
             root_node = SearchResultNode(
                 code=root_code,
                 description=root_data.description,
                 score=root_data.score,
-                all_results=all_results,
+                all_results=subset_results,
                 config=config,
-                is_root=True,
+                popular_name=root_data.popular_name,
             )
             hierarchy[root_code] = root_node.to_dict()
         if code_type == "psc":
@@ -540,10 +865,7 @@ class CodeLookupTool:
                     "code": label,
                     "description": "",
                     "score": 0.0,
-                    "is_root": True,
-                    "is_leaf": False,
                     "children": {},
-                    "leaf_node_count": 0,
                 },
             )
             if label == PscGroupLabels.RESEARCH_AND_DEVELOPMENT and root_code in rd_terms:
@@ -553,43 +875,29 @@ class CodeLookupTool:
                 # The root's own node is dropped, so record whether the search matched it (and so the whole group)
                 bucket["is_group_match"] = bucket.get("is_group_match", False) or root_data.get("score", 0.0) > 0
             else:
-                root_data["is_root"] = False
                 bucket["children"][root_code] = root_data
             bucket["score"] = max(bucket["score"], root_data.get("score", 0.0))
-            bucket["leaf_node_count"] += root_data.pop("leaf_node_count", 0)
         return grouped
 
     @staticmethod
-    async def _add_tas_ancestors(
-        ancestor_codes: set[str], all_results: dict[str, CodeResult], budget_bureau_names: dict[str, str]
-    ) -> None:
-        """
-        Special handling for TAS ancestors which come from multiple sources:
-        - Top tier (3-digit): toptier_agency table
-        - Middle tier (AID-MAIN): budget_bureau_name from original results (no DB record)
-        - Full rendering label: TreasuryAppropriationAccount table
-        """
-        # Separate ancestor codes by type
-        toptier_codes = set()
-        aid_main_codes = set()
-        for code in ancestor_codes:
-            if "-" in code:
-                aid_main_codes.add(code)
-            else:
-                toptier_codes.add(code)
-        for aid_main, bureau_name in budget_bureau_names.items():
-            if aid_main in aid_main_codes and aid_main not in all_results:
-                all_results[aid_main] = CodeResult(code=aid_main, description=bureau_name)
+    def _is_tas_account_query(query: str) -> bool:
+        """Whether a query is an account code (a main account like "3200" or AID-MAIN like "014-0102") rather than a
+        TAS rendering label."""
+        return bool(TAS_MAIN_ACCOUNT_PATTERN.fullmatch(query) or TAS_AID_MAIN_PATTERN.fullmatch(query))
 
-        # Add top-tier ancestors from toptier_agency table
-        if toptier_codes:
-            toptier_agencies = ToptierAgency.objects.filter(toptier_code__in=list(toptier_codes))
-
-            async for agency in toptier_agencies:
-                if agency.toptier_code not in all_results:
-                    # Use abbreviation if available, otherwise name
-                    description = f"{agency.name} ({agency.abbreviation})"
-                    all_results[agency.toptier_code] = CodeResult(code=agency.toptier_code, description=description)
+    def _mark_tas_accounts_matched(self, hierarchy: dict) -> dict:
+        """An account code query matches the accounts themselves. Their AID-MAIN nodes are only in the hierarchy as
+        ancestors of the matching TAS, with no score, which makes the periods of availability beneath them look like
+        the match instead of the account."""
+        marked = {}
+        for code, node in hierarchy.items():
+            is_unscored_account = bool(TAS_AID_MAIN_PATTERN.fullmatch(code)) and not node["score"]
+            marked[code] = {
+                **node,
+                "score": PREFIX_MATCH_SCORE if is_unscored_account else node["score"],
+                "children": self._mark_tas_accounts_matched(node.get("children", {})),
+            }
+        return marked
 
     def _get_best_score_in_tree(self, node: dict) -> float:
         """Recursively find the best score in a tree"""
@@ -605,11 +913,8 @@ class CodeLookupTool:
     @staticmethod
     def _has_parent_in_results(code: str, all_results: dict[str, CodeResult], config: CodeTypeConfig) -> bool:
         """Check if code's parent exists in results"""
-        if not config.get_parent_code:
-            return False
-
-        parent_code = config.get_parent_code(code)
-        return parent_code and parent_code in all_results
+        parent_code = get_parent_code(code, all_results, config)
+        return bool(parent_code) and parent_code in all_results
 
     def _count_codes_in_tree(self, node: dict) -> int:
         """Recursively count codes in tree"""
@@ -628,46 +933,29 @@ class CodeLookupTool:
                 return found
         return None
 
-    def _select_matched_nodes(
-        self, hierarchy: dict, code_type: str, min_score: float = 0.0, margin: float = 0.0
-    ) -> list[tuple[str, dict]]:
-        """Pick the codes the search actually matched, as (code, node) pairs.
-
-        The hierarchy also holds ancestors that were only added for context (they have a score of 0), and selecting
-        one of those would select everything beneath it. PSC Tier1 group labels are skipped for the same reason, unless
-        the search matched the group itself (the R&D "A" row, flagged with is_group_match), in which case the whole
-        group is selected.
-
-        A matched code covers all of the codes beneath it, so its descendants aren't selected separately. The
-        exception is a descendant that scored higher than the code itself by more than the margin: the search found
-        something clearly more specific, so that is selected instead of the broader code.
-        """
-        selected = []
-        for code, node in hierarchy.items():
-            children = node.get("children", {})
-            # Group labels are only selectable when the search matched the group itself (the "A" row, for R&D)
-            is_psc_group_label = code_type == "psc" and code in PSC_GROUPS and not node.get("is_group_match")
-            is_match = node["score"] > 0 and node["score"] >= min_score and not is_psc_group_label
-            best_descendant_score = max((self._get_best_score_in_tree(child) for child in children.values()), default=0)
-            if is_match and best_descendant_score <= node["score"] + margin:
-                selected.append((code, node))
-            else:
-                selected.extend(self._select_matched_nodes(children, code_type, min_score, margin))
-        return selected
-
     @staticmethod
-    def _is_tas_account_query(query: str) -> bool:
-        """Whether a query is an account code (a main account like "3200" or AID-MAIN like "014-0102") rather than a
-        TAS rendering label."""
-        return bool(TAS_MAIN_ACCOUNT_PATTERN.fullmatch(query) or TAS_AID_MAIN_PATTERN.fullmatch(query))
-
-    @staticmethod
-    def _build_filter_value(code: str, code_type: str) -> str | list[str]:
-        """Format a code the way the filter's 'require'/'exclude' expect it: a flat code for NAICS and a path from the
-        root node down for PSC and TAS."""
-        if code_type == "naics":
-            return code
-        return build_tas_path(code) if code_type == "tas" else build_psc_path(code)
+    def _build_filter_value(
+        code: str,
+        code_type: Literal["naics", "psc", "cfda", "tas"],
+        description: str | None = None,
+        popular_name: str | None = None,
+        path: list[str] | None = None,
+    ) -> str | list[str] | dict:
+        """Format a code the way execute_filter expects it: a flat code for NAICS, a path from the root node down for
+        PSC and TAS, and the program object for an assistance listing. A TAS path is the codes above it in the search
+        tree when given, as the agency it is listed under can't be found from its code alone."""
+        match code_type:
+            case "naics":
+                result = code
+            case "cfda":
+                result = SelectedCFDA(
+                    identifier=code, program_number=code, program_title=description, popular_name=popular_name
+                ).model_dump(exclude_none=True)
+            case "tas":
+                result = path or build_tas_path(code)
+            case "psc":
+                result = build_psc_path(code)
+        return result
 
 
 lookup_code_tool = AITool(
@@ -683,7 +971,11 @@ lookup_code_tool = AITool(
             - naics: North American Industry Classification System codes
             - psc: Product and Service Codes
             - cfda: Catalog of Federal Domestic Assistance program numbers
-            - tas: Treasury Account Symbol components
+            - tas: Treasury accounts, identified by agency, main account number, or account title. To select all
+              of the accounts of an agency, query with the agency's name, abbreviation, or code.
+
+            Never use this tool for dates, fiscal years (e.g. "FY25"), quarters, or other time periods; those are
+            handled by the time period filters.
 
             Matching behavior (in priority order):
             1. Exact match: if the query exactly matches a code (case-insensitive), only that
@@ -695,32 +987,64 @@ lookup_code_tool = AITool(
                from generated text embeddings. The query may also be automatically expanded into
                related variations to broaden semantic recall.
 
-            The matched codes are returned ready to use in the execute_filter tool, under the key for the
-            code_type (naicsCodes, pscCodes, tasCodes, or selectedCFDA). For naics, psc, and tas the codes are
-            placed in "require" or "exclude" based on the inclusion value. Pass the returned value to
-            execute_filter unchanged; do not edit the codes or add counts, which are calculated for you. Only
-            codes that matched the query are returned. A code that covers others (for example the NAICS sector
-            "23") selects everything beneath it. If nothing matches, an error is returned: retry with a
-            different or simpler query, or continue without the filter if it isn't essential.
+            Look up one code, or one description, per call, and call the tool again for each further code or
+            code type. A query that lists several codes together (for example "111910, 111920") is not
+            understood as a list of codes.
+
+            The result is a tree of the codes that matched, along with the ancestors that show where they sit in
+            the hierarchy. Each code has its description, a score for how well it matched the query, whether it
+            matched or is only context, how many lowest level codes it covers, and a filter_value to use in
+            execute_filter. Only the best scoring children of a code are listed. You choose which codes to use, so
+            read the instructions returned with the tree: they explain how to choose and where the filter_value of
+            each code goes.
+            Choosing a code includes everything beneath it. The tree can contain codes that are only loosely
+            related, so do not choose a code just because it is listed. If nothing matches, an error is returned
+            with instructions: follow them, do not repeat the same query, and continue without the filter if it
+            isn't essential.
 
             When to use this tool:
             - Use it whenever the request involves a NAICS code or industry, a PSC code or the products or
               services being purchased, a Treasury Account Symbol or federal account, or an assistance listing
               (CFDA) program for grants and other assistance programs by subject. Look codes up instead of
               writing them from memory.
-            - Do not use it for DEFC or disaster codes, dollar amounts, dates, locations, agencies, recipients,
-              award types, or set-asides. Those have their own tools or filters.
+            - A subject asked about for a kind of award that a code system fits is a code lookup, not a keyword.
+              Grants and other assistance by subject map to assistance listings (cfda), contracts for a kind of
+              product, service, or research map to psc, and the industry of the business receiving an award maps
+              to naics. For example, "grants for rural broadband" is a cfda lookup. A general topic that is not
+              limited to one kind of award, or that spans grants and contracts, fits no single code system, so use
+              it as a keyword instead. Also use a keyword when no lookup returns a fitting code, or for a discrete
+              term that no code system describes.
+            - Do not use it for DEFC or disaster codes, dollar amounts, dates or fiscal years, locations,
+              agencies, recipients, award types, or set-asides. Those have their own tools or filters. An agency
+              that awarded or funded the awards is found with lookup_agencies; use the tas code_type with an agency
+              only when the user asks for the agency's accounts.
             - Words that are part of a company, organization, or person's name are never an industry, product, or
               program.
+
+            Choosing between naics and psc:
+            - naics describes the industry the recipient business operates in (for example "companies in the mining
+              industry").
+            - psc describes what the government is buying: a product, a service, or research and development
+              (for example "contracts for research and development" or "contracts for weapons").
+            - If the request is for the work or items being purchased rather than the kind of business receiving the
+              award, use psc. Use both only when the user asks about both.
         """,
         input_schema={
             "type": "object",
             "properties": {
-                "query": {"type": "string", "description": "Code or description to search for"},
+                "query": {
+                    "type": "string",
+                    "description": "A code, or a description of what the code covers. Not a date or time period.",
+                },
                 "code_type": {
                     "type": "string",
                     "enum": ["naics", "psc", "cfda", "tas"],
-                    "description": "Type of code to search for",
+                    "description": (
+                        "Type of code to search for. Use naics for the industry of the recipient business and psc for "
+                        "the product, service, or research being purchased. Use tas only when the user names a "
+                        "Treasury account, federal account, or account title, or the accounts of an agency (query "
+                        "with the agency's name); never for dates, fiscal years, or time periods."
+                    ),
                 },
                 "inclusion": {
                     "type": "string",
