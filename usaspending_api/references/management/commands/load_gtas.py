@@ -68,8 +68,12 @@ class Command(mixins.ETLMixin, BaseCommand):
         total_obligation_objs = [GTASSF133Balances(**values) for values in total_obligation_values]
 
         logger.info("Loading new GTAS records into database")
-        new_rec_count = len(GTASSF133Balances.objects.bulk_create(total_obligation_objs))
-        logger.info(f"Loaded: {new_rec_count:,} records")
+        try:
+            new_rec_count = len(GTASSF133Balances.objects.bulk_create(total_obligation_objs))
+            logger.info(f"Loaded: {new_rec_count:,} records")
+        except Exception as e:
+            logger.error(f"Error during bulk_create: {type(e).__name__}: {str(e)}")
+            raise
 
         load_rec = self._execute_dml_sql(self.tas_fk_sql, "Populating TAS foreign keys")
         logger.info(f"Set {load_rec:,} TAS FKs in GTAS table, {new_rec_count - load_rec:,} NULLs")
@@ -120,24 +124,24 @@ class Command(mixins.ETLMixin, BaseCommand):
     def column_statements(self) -> str:
         simple_fields = [
             f"""COALESCE(SUM(
-                CASE WHEN line IN ({','.join([str(elem) for elem in val])})
+                CASE WHEN line IN ({",".join([str(elem) for elem in val])})
                 THEN sf.amount ELSE 0 END
             ), 0.0) AS {key},"""
             for key, val in DERIVED_COLUMNS.items()
         ]
         inverted_fields = [
             f"""COALESCE(SUM(
-                CASE WHEN line IN ({','.join([str(elem) for elem in val])})
+                CASE WHEN line IN ({",".join([str(elem) for elem in val])})
                 THEN sf.amount * -1 ELSE 0 END
             ), 0.0) AS {key},"""
             for key, val in INVERTED_DERIVED_COLUMNS.items()
         ]
         year_specific_fields = [
             f"""COALESCE(SUM(CASE
-                    WHEN line IN ({','.join([str(elem) for elem in val["before_year"]])})
+                    WHEN line IN ({",".join([str(elem) for elem in val["before_year"]])})
                         AND fiscal_year < {val["change_year"]}
                     THEN sf.amount * -1
-                    WHEN line IN ({','.join([str(elem) for elem in val["year_and_after"]])})
+                    WHEN line IN ({",".join([str(elem) for elem in val["year_and_after"]])})
                         AND fiscal_year >= {val["change_year"]}
                     THEN sf.amount * -1
                     ELSE 0
