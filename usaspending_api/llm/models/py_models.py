@@ -1279,6 +1279,53 @@ class FilterSearchInput(BaseModel):
 class FilterSearchEvent(BaseModel):
     search_id: str | None = None
     tool_use_id: str | None = None
-    type: Literal["search_start", "search_error", "search_complete", "tool_start", "tool_complete", "tool_error"]
+    type: Literal[
+        "search_start",
+        "search_error",
+        "search_complete",
+        "tool_start",
+        "tool_complete",
+        "tool_error",
+        "search_blocked",
+        "out_of_scope",
+    ]
     message: str
     result: Any = None
+
+
+QueryReviewVerdict = Literal["answerable", "answerable_after_rephrase", "out_of_scope"]
+
+
+class QueryReviewDecision(BaseModel):
+    """The structured decision the model submits; also used as the tool input schema."""
+
+    verdict: QueryReviewVerdict = Field(
+        ...,
+        description=(
+            "answerable: filters can be built from the query as written. "
+            "answerable_after_rephrase: filters can be built only after the query is reworded. "
+            "out_of_scope: no useful set of filters can be built."
+        ),
+    )
+    message: str = Field(
+        "",
+        description=(
+            "One or two plain sentences for the user. Required unless the verdict is answerable. "
+            "Refer to the product as Smart Assist, never 'the tool'. Say what Smart Assist cannot do, or what the "
+            "rewritten query will search for."
+        ),
+    )
+    rewritten_query: str | None = Field(
+        None,
+        description=(
+            "The reworded query, describing exactly ONE search. Only for answerable_after_rephrase. "
+            "Never invent dates, amounts or names, and never combine several searches into one."
+        ),
+    )
+
+
+class QueryReviewOutput(QueryReviewDecision):
+    search_id: str | None = Field(
+        default=None,
+        description="Id of the Smart Assist search. Send it back with the filter search request for the same search.",
+    )
