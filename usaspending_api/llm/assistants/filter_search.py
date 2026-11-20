@@ -212,8 +212,6 @@ class FilterSearchAssistant:
         )
 
     async def search(self, query: str) -> AsyncGenerator[dict[str, str], None]:
-        yield {"search_id": self.search_id, "type": "search_start", "message": "Thinking..."}
-
         logger.info(
             f"Starting filter search: session={self.session.id}, query_length={len(query)}",
             extra={

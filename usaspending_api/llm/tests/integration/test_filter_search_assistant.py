@@ -169,8 +169,7 @@ class TestFilterSearchAssistant:
             async for event in assistant.search("test query"):
                 results.append(event)
 
-        assert len(results) == 1
-        assert results[0]["type"] == "search_start"
+        assert results == []
         assert assistant.client.converse.call_count == 2  # Initial call + forced last-ditch call
         # User query, assistant reply, last-ditch instruction, last-ditch assistant reply
         assert mock_message_create.call_count == 4

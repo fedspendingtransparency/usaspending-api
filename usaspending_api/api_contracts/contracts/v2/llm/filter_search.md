@@ -5,9 +5,15 @@ HOST: https://api.usaspending.gov
 
 This endpoint provides a streaming response for LLM-powered search operations with advanced filtering capabilities. The response is delivered as a series of JSON chunks, allowing real-time updates on search progress, tool execution, and results.
 
-**Status:** Under Development, Not currently available  
+Every request starts with a query review. The review decides whether the question can be turned into search filters, and runs automatically. No approval is needed from the user:
 
+- **Approved:** the search runs on the query as written.
+- **Approved with rephrase:** the search runs on a reworded query. The reworded query is reported in the `search_start` event.
+- **Out of scope:** the search does not run. The stream ends with an `out_of_scope` event whose `message` explains why.
 
+If the query review cannot run, the search continues with the query as written.
+
+**Status:** Under Development, Not currently available
 
 ## POST
 
@@ -23,9 +29,7 @@ This endpoint accepts a natural language query and returns a streaming response 
 
     + Attributes (object)
         + `query` (required, string)
-            The natural language query to be processed by the LLM filter search.
-        + `search_id` (optional, string)
-            The `search_id` returned by `/api/v2/llm/query-review/` for this same user search, so that the query review and filter search are kept together in one Smart Assist search. If it is missing or unknown, a new search is started.
+            The natural language query to be processed by the LLM filter search. 1 to 1000 characters.
 
     + Body
 
@@ -34,72 +38,108 @@ This endpoint accepts a natural language query and returns a streaming response 
             }
 
 + Response 200 (application/x-ndjson)
-    
+
     The response is a stream of newline-delimited JSON objects. Each chunk represents a different stage of the search process.
 
     + Attributes
-        + `search_id` (required, string)
-            UUID identifying the Smart Assist search. It is the same `search_id` the query review returned, or a new one when the request did not include one.
+        + `search_id` (optional, string)
+            UUID identifying the Smart Assist search. Present on every event except the `search_error` and `search_blocked` events returned when the request is stopped before a search is created (see Request Moderation).
         + `tool_use_id` (optional, string)
-            Identifier for the specific tool being executed. Present only for tool-related events.
+            Identifier for the specific step or tool being executed. Present only for `tool_start`, `tool_complete` and `tool_error` events. The query review uses this type of event, with its own `tool_use_id`.
         + `type` (required, enum[string])
             The type of event in the streaming response.
             + Members
-                + `search_start` - Indicates the search has begun
-                + `search_error` - Indicates an error occurred during search
-                + `search_complete` - Indicates the search has completed successfully. Its `result` is the final filter hash.
-                + `tool_start` - Indicates a tool execution has started
-                + `tool_complete` - Indicates a tool execution has completed
-                + `tool_error` - Indicates an error occurred during tool execution
+                + `tool_start` - A step or tool has started. The first one is the query review ("Reviewing your search").
+                + `tool_complete` - A step or tool has finished.
+                + `tool_error` - A tool failed. The search continues.
+                + `search_start` - The search has begun. `message` states the query being searched. `result` holds the original and searched queries.
+                + `search_complete` - Terminal. The search completed. `result` is the final filter hash.
+                + `search_error` - Terminal. An error occurred, or the service is unavailable.
+                + `search_blocked` - Terminal. The request was rejected by content moderation. Nothing was searched.
+                + `out_of_scope` - Terminal. The query review decided Smart Assist cannot build a search for this question. `message` explains why.
         + `message` (required, string)
             Human-readable message describing the current event or status.
-        + `result` (optional, object)
-            Contains the hash of the filter search result. Present only with `search_complete` events.
+        + `result` (optional, object | string)
+            Extra data for the event. For `search_start`, an object with `original_query` and `query` (the query being searched, which differs from the original when it was rephrased). For `search_complete`, the filter hash. Null for all other events.
 
-    + Body
+    + Body (query searched as written)
 
-            {"search_id": "a3e2c8f1-4b6d-4e9a-9c21-7f8b2d1e5a04", "type": "search_start", "message": "Thinking..."}
+            {"search_id": "a3e2c8f1-4b6d-4e9a-9c21-7f8b2d1e5a04", "tool_use_id": "9b1d…", "type": "tool_start", "message": "Reviewing your search"}
+            {"search_id": "a3e2c8f1-4b6d-4e9a-9c21-7f8b2d1e5a04", "tool_use_id": "9b1d…", "type": "tool_complete", "message": "Review complete."}
+            {"search_id": "a3e2c8f1-4b6d-4e9a-9c21-7f8b2d1e5a04", "type": "search_start", "message": "Searching for Show me all contracts greater than $3M in California for IT services in 2023", "result": {"original_query": "Show me all contracts greater than $3M in California for IT services in 2023", "query": "Show me all contracts greater than $3M in California for IT services in 2023"}}
             {"search_id": "a3e2c8f1-4b6d-4e9a-9c21-7f8b2d1e5a04", "tool_use_id": "12345", "type": "tool_start", "message": "Searching for location: California"}
-            {"search_id": "a3e2c8f1-4b6d-4e9a-9c21-7f8b2d1e5a04", "tool_use_id": "12345", "type": "tool_complete", "message": "Finished searching for location."}
-            {"search_id": "a3e2c8f1-4b6d-4e9a-9c21-7f8b2d1e5a04", "tool_use_id": "12346", "type": "tool_start", "message": "Applying filters based on contracts with an award amount greater than 3 million dollars in California for IT services in Fisacal Year 2023"}
-            {"search_id": "a3e2c8f1-4b6d-4e9a-9c21-7f8b2d1e5a04", "tool_use_id": "12346", "type": "tool_complete", "message": "Finished applying filters."}
-            {"search_id": "a3e2c8f1-4b6d-4e9a-9c21-7f8b2d1e5a04", "type": "search_complete", "message": "Showing results for contracts with an award amount greater than 3 million dollars in California for IT services in Fiscal Year 2023", "result": "16ebdca405791cb0f23d4c7120606fa1"}
+            {"search_id": "a3e2c8f1-4b6d-4e9a-9c21-7f8b2d1e5a04", "tool_use_id": "12345", "type": "tool_complete", "message": "Success."}
+            {"search_id": "a3e2c8f1-4b6d-4e9a-9c21-7f8b2d1e5a04", "tool_use_id": "12346", "type": "tool_start", "message": "Applying filters based on contracts with an award amount greater than 3 million dollars in California for IT services in Fiscal Year 2023"}
+            {"search_id": "a3e2c8f1-4b6d-4e9a-9c21-7f8b2d1e5a04", "tool_use_id": "12346", "type": "tool_complete", "message": "Success."}
+            {"search_id": "a3e2c8f1-4b6d-4e9a-9c21-7f8b2d1e5a04", "type": "search_complete", "message": "Search complete.", "result": "16ebdca405791cb0f23d4c7120606fa1"}
 
-    If the submitted request is rejected by the configured Amazon Bedrock Guardrail, or the Guardrail is unavailable, the stream contains a single `search_error` event (without a `search_id`, since no search session is created). The endpoint fails closed, so unmoderated content is not processed or stored.
+    + Body (query rephrased by the review)
 
-            {"type": "search_error", "message": "The submitted request cannot be processed."}
-            {"type": "search_error", "message": "The filter-search service is temporarily unavailable."}
+            {"search_id": "a3e2c8f1-4b6d-4e9a-9c21-7f8b2d1e5a04", "tool_use_id": "9b1d…", "type": "tool_start", "message": "Reviewing your search"}
+            {"search_id": "a3e2c8f1-4b6d-4e9a-9c21-7f8b2d1e5a04", "tool_use_id": "9b1d…", "type": "tool_complete", "message": "Review complete."}
+            {"search_id": "a3e2c8f1-4b6d-4e9a-9c21-7f8b2d1e5a04", "type": "search_start", "message": "Searching for Department of Defense contracts", "result": {"original_query": "Pentagon contracts", "query": "Department of Defense contracts"}}
+            …
+
+    + Body (out of scope)
+
+            {"search_id": "a3e2c8f1-4b6d-4e9a-9c21-7f8b2d1e5a04", "tool_use_id": "9b1d…", "type": "tool_start", "message": "Reviewing your search"}
+            {"search_id": "a3e2c8f1-4b6d-4e9a-9c21-7f8b2d1e5a04", "tool_use_id": "9b1d…", "type": "tool_complete", "message": "Review complete."}
+            {"search_id": "a3e2c8f1-4b6d-4e9a-9c21-7f8b2d1e5a04", "type": "out_of_scope", "message": "Sorry, Smart Assist can't help with this question. Awards are not labeled by conflict, so the data doesn't show spending on the Iran war."}
+
+## Event Order
+
+1. If the request is stopped by moderation, the stream is a single `search_blocked` or `search_error` event. See Request Moderation.
+2. `tool_start` ("Reviewing your search"), then `tool_complete`.
+3. Either:
+    - `search_start`, then any number of `tool_start` / `tool_complete` / `tool_error` events, then a terminal `search_complete` or `search_error`; or
+    - a terminal `out_of_scope`. Nothing else follows.
+
+Every stream ends with exactly one terminal event: `search_complete`, `search_error`, `search_blocked` or `out_of_scope`. Clients should treat an unrecognized `type` as non-terminal so that new event types can be added without breaking them.
+
+## Request Moderation
+
+Requests are checked by an Amazon Bedrock Guardrail before anything else runs, and no search is created for a request that fails the check. The endpoint fails closed, so unmoderated content is not processed or stored. These events have no `search_id`.
+
+If the request is rejected by the Guardrail, the stream contains a single `search_blocked` event. The `message` is generic and does not say what was matched.
+
+        {"type": "search_blocked", "message": "The submitted request cannot be processed."}
+
+If the Guardrail is unavailable or misconfigured, the stream contains a single `search_error` event.
+
+        {"type": "search_error", "message": "The filter-search service is temporarily unavailable."}
 
 # Data Structures
 
 ## StreamChunk (object)
 Represents a single chunk in the streaming response.
 
-+ `search_id` (required, string)
-    UUID identifying the Smart Assist search.
++ `search_id` (optional, string)
+    UUID identifying the Smart Assist search. Absent on moderation events.
 + `tool_use_id` (optional, string)
-    Unique identifier for a tool execution. Only present for tool-related events.
+    Unique identifier for a step or tool execution. Only present for tool events.
 + `type` (required, enum[string])
     + Members
-        + `search_start`
-        + `search_error`
-        + `search_complete`
         + `tool_start`
-        + `tool_error`
         + `tool_complete`
+        + `tool_error`
+        + `search_start`
+        + `search_complete`
+        + `search_error`
+        + `search_blocked`
+        + `out_of_scope`
 + `message` (required, string)
     Descriptive message about the current event.
-+ `result` (optional, object)
-    Contains results or output data when applicable.
++ `result` (optional, object | string)
+    Results or output data when applicable.
 
 ## Error Handling
 
-When an error occurs, the stream will include a chunk with `type` set to either `search_error` or `tool_error`:
+When an error ends the search, the stream includes a chunk with `type` set to `search_error`. A failed tool is reported with `tool_error`, which is not terminal.
 
 ```json
 {
     "search_id": "a3e2c8f1-4b6d-4e9a-9c21-7f8b2d1e5a04",
     "type": "search_error",
-    "message": "Failed to process query: Invalid filter syntax"
+    "message": "We are unable to provide an answer to your question at this time."
 }
 ```

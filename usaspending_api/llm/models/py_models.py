@@ -4,7 +4,6 @@ from abc import ABC, abstractmethod
 from datetime import date
 from functools import cached_property
 from typing import Annotated, Any, Callable, Literal, get_args
-from uuid import UUID
 
 from pydantic import (
     BaseModel,
@@ -1275,14 +1274,6 @@ class FilterSearchInput(BaseModel):
         description="The natural language query describing what the user wants to search for",
         json_schema_extra={"examples": ["How many contracts did the Department of Energy award in fiscal year 2025?"]},
     )
-    search_id: UUID | None = Field(
-        default=None,
-        description=(
-            "The search_id the query review returned for this same user search. Keeps the query review and "
-            "filter search sessions together in one Smart Assist search. A new search is started if this is missing "
-            "or unknown."
-        ),
-    )
 
 
 class FilterSearchEvent(BaseModel):
@@ -1295,19 +1286,11 @@ class FilterSearchEvent(BaseModel):
         "tool_start",
         "tool_complete",
         "tool_error",
+        "search_blocked",
+        "out_of_scope",
     ]
     message: str
     result: Any = None
-
-
-class QueryReviewInput(BaseModel):
-    query: str = Field(
-        ...,
-        min_length=1,
-        max_length=1000,
-        description="The natural language query the user typed into Smart Assist",
-        json_schema_extra={"examples": ["How much has been spent, as of today, on the Iran war?"]},
-    )
 
 
 QueryReviewVerdict = Literal["answerable", "answerable_after_rephrase", "out_of_scope"]
