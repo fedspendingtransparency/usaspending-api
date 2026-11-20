@@ -48,6 +48,8 @@ def _stream_response(event_source: AsyncGenerator[str, None]) -> StreamingHttpRe
     return response
 
 
+BLOCKED_MESSAGE = "Smart Assist can't answer that, please try a different search."
+ERROR_MESSAGE = "An error has occurred."
 REVIEW_START_MESSAGE = "Reviewing your search"
 REVIEW_COMPLETE_MESSAGE = "Review complete."
 
@@ -78,11 +80,11 @@ async def _run_query_through_guardrails(query: str) -> StreamingHttpResponse | N
     # If Guardrails is misconfigured, return a search_error.
     except GuardrailConfigurationError:
         logger.exception("Filter-search request could not be moderated because Guardrails is misconfigured.")
-        return _single_event_response("search_error", "The filter-search service is temporarily unavailable.")
+        return _single_event_response("search_error", ERROR_MESSAGE)
     # If Guardrails is unavailable or unreachable (e.g., misconfigured variables or AWS issues), return a search_error.
     except GuardrailServiceUnavailable:
         logger.exception("Filter-search request could not be moderated because Guardrails is unavailable.")
-        return _single_event_response("search_error", "The filter-search service is temporarily unavailable.")
+        return _single_event_response("search_error", ERROR_MESSAGE)
 
     # If Guardrails intervenes, return a search_blocked.
     if guardrail_assessment.intervened:
@@ -93,7 +95,7 @@ async def _run_query_through_guardrails(query: str) -> StreamingHttpResponse | N
                 "guardrail_assessments": guardrail_assessment.assessments,
             },
         )
-        return _single_event_response("search_blocked", "The submitted request cannot be processed.")
+        return _single_event_response("search_blocked", BLOCKED_MESSAGE)
 
 
 async def _review_query(review: QueryReview, query: str) -> QueryReviewOutput | None:
@@ -144,7 +146,7 @@ async def filter_search(request: HttpRequest, payload: FilterSearchInput) -> Str
             name="filter-search", is_active=True
         )
     except Assistant.DoesNotExist:
-        return _single_event_response("search_error", "Active filter-search Assistant not found.")
+        return _single_event_response("search_error", ERROR_MESSAGE)
 
     ai_model = assistant_config.ai_model
     if assistant_config.system_prompt is None:
@@ -229,7 +231,7 @@ async def filter_search(request: HttpRequest, payload: FilterSearchInput) -> Str
                 FilterSearchEvent(
                     search_id=search_id,
                     type="search_error",
-                    message="We are unable to provide an answer to your question at this time.",
+                    message=ERROR_MESSAGE,
                 )
             )
         finally:

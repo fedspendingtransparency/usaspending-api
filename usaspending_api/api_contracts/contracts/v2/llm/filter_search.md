@@ -100,13 +100,13 @@ Every stream ends with exactly one terminal event: `search_complete`, `search_er
 
 Requests are checked by an Amazon Bedrock Guardrail before anything else runs, and no search is created for a request that fails the check. The endpoint fails closed, so unmoderated content is not processed or stored. These events have no `search_id`.
 
-If the request is rejected by the Guardrail, the stream contains a single `search_blocked` event. The `message` is generic and does not say what was matched.
+If the request is rejected by the Guardrail, the stream contains a single `search_blocked` event. The `message` is always the same and does not say what was matched.
 
-        {"type": "search_blocked", "message": "The submitted request cannot be processed."}
+        {"type": "search_blocked", "message": "Smart Assist can't answer that, please try a different search."}
 
 If the Guardrail is unavailable or misconfigured, the stream contains a single `search_error` event.
 
-        {"type": "search_error", "message": "The filter-search service is temporarily unavailable."}
+        {"type": "search_error", "message": "Sorry an error occurred."}
 
 # Data Structures
 
@@ -140,6 +140,6 @@ When an error ends the search, the stream includes a chunk with `type` set to `s
 {
     "search_id": "a3e2c8f1-4b6d-4e9a-9c21-7f8b2d1e5a04",
     "type": "search_error",
-    "message": "We are unable to provide an answer to your question at this time."
+    "message": "An error has occurred."
 }
 ```

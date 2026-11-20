@@ -30,4 +30,6 @@ def test_filter_search_guardrail_intervention_returns_search_blocked(mock_servic
 
     body = "".join(c.decode() if isinstance(c, bytes) else c for c in asyncio.run(_collect()))
     events = [json.loads(line) for line in body.splitlines()]
-    assert events == [{"type": "search_blocked", "message": "The submitted request cannot be processed."}]
+    assert events == [
+        {"type": "search_blocked", "message": "Smart Assist can't answer that, please try a different search."}
+    ]
