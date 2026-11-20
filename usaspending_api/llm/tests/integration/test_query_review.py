@@ -85,12 +85,8 @@ async def test_rewrite(mock_assistant, mock_session, mock_bedrock_client, no_db_
 
 
 @pytest.mark.asyncio
-async def test_out_of_scope_gets_default_message(
-    mock_assistant, mock_session, mock_bedrock_client, no_db_writes
-):
-    mock_bedrock_client.converse.return_value = _bedrock_response(
-        {"verdict": "out_of_scope", "message": " "}
-    )
+async def test_out_of_scope_gets_default_message(mock_assistant, mock_session, mock_bedrock_client, no_db_writes):
+    mock_bedrock_client.converse.return_value = _bedrock_response({"verdict": "out_of_scope", "message": " "})
     output = await _evaluate(mock_assistant, mock_session)
     assert output.verdict == "out_of_scope"
     assert output.message == DEFAULT_OUT_OF_SCOPE_MESSAGE
@@ -123,3 +119,8 @@ async def test_throttling_is_retried(mock_assistant, mock_session, mock_bedrock_
     output = await _evaluate(mock_assistant, mock_session)
     assert output.verdict == "answerable"
     assert mock_bedrock_client.converse.call_count == 2
+
+
+def test_decision_tool_is_forced(mock_assistant, mock_session):
+    tool_config = QueryReview(mock_assistant, mock_session).tool_config
+    assert tool_config["toolChoice"] == {"tool": {"name": QueryReview.TOOL_NAME}}

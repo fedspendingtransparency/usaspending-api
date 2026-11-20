@@ -1,6 +1,7 @@
 import logging
 from typing import Any, AsyncGenerator
 
+from asgiref.sync import sync_to_async
 from django.http import HttpRequest, StreamingHttpResponse
 
 from usaspending_api.common.helpers.decorators import browsable

@@ -78,7 +78,7 @@ class QueryReview:
                     }
                 }
             ],
-            "toolChoice": {"auto": {}},
+            "toolChoice": {"tool": {"name": self.TOOL_NAME}},
         }
 
     @retry_on_throttling
@@ -103,24 +103,23 @@ class QueryReview:
     @classmethod
     def build_output(cls, decision: QueryReviewDecision, search_id: str | None) -> QueryReviewOutput:
         """Normalize the model's decision so the response is always safe for the frontend to act on."""
-        if decision.verdict == "answerable_after_rephrase":
-            rewritten = (decision.rewritten_query or "").strip()
-            if not rewritten:
-                # A rewrite verdict with nothing to approve is not actionable; let the search proceed as typed.
-                return cls._answerable(search_id)
-            return QueryReviewOutput(
+        output = cls._answerable(search_id)
+        rewritten = (decision.rewritten_query or "").strip()
+        # A rewrite verdict with nothing to approve is not actionable; let the search proceed as typed.
+        if decision.verdict == "answerable_after_rephrase" and rewritten:
+            output = QueryReviewOutput(
                 verdict="answerable_after_rephrase",
                 message=decision.message,
                 rewritten_query=rewritten,
                 search_id=search_id,
             )
-        if decision.verdict == "out_of_scope":
-            return QueryReviewOutput(
+        elif decision.verdict == "out_of_scope":
+            output = QueryReviewOutput(
                 verdict="out_of_scope",
                 message=decision.message.strip() or DEFAULT_OUT_OF_SCOPE_MESSAGE,
                 search_id=search_id,
             )
-        return cls._answerable(search_id)
+        return output
 
     async def evaluate(self, query: str) -> QueryReviewOutput:
         """Return the decision for ``query``. Raises on Bedrock failures; the caller decides how to fail."""

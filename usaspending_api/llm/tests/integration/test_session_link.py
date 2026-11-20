@@ -3,7 +3,7 @@
 together."""
 
 import uuid
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 from asgiref.sync import sync_to_async
@@ -61,6 +61,13 @@ def test_query_review_starts_a_search_and_returns_its_id(client, query_review_co
     assert session.search == search
     assert session.assistant == query_review_config
     assert session.ended_at is not None
+
+
+@pytest.fixture(autouse=True)
+def mock_guardrails():
+    with patch("usaspending_api.llm.v2.views.filter_search.BedrockGuardrailService") as service:
+        service.return_value.assess_input.return_value = MagicMock(intervened=False)
+        yield service
 
 
 def test_filter_search_joins_the_search_the_query_review_started(client, filter_search_config):

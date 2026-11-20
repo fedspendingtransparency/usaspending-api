@@ -35,7 +35,7 @@ def test_query_review_rejects_rarely_and_only_real_comparisons():
 
     assert "It is a last resort" in text
     assert 'Do not rewrite it as "Awards mentioning <topic>"' in text
-    assert "A list of things to search together is not a comparison" in text
+    assert "it is one search with several values, so it is answerable" in text
     assert "Never put a company, agency, person or place in the rewrite that the user did not name" in text
 
 
