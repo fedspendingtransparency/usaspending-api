@@ -8,6 +8,12 @@
       "number_of_replicas": 0
     },
     "analysis": {
+      "normalizer": {
+        "uppercase_normalizer": {
+          "type": "custom",
+          "filter": ["uppercase"]
+        }
+      },
       "analyzer": {
         "contains_analyzer": {
           "type": "custom",
@@ -19,6 +25,13 @@
         "whole_string_analyzer": {
           "type": "custom",
           "tokenizer": "keyword",
+          "filter": [
+            "uppercase"
+          ]
+        },
+        "word_analyzer": {
+          "type": "custom",
+          "tokenizer": "standard",
           "filter": [
             "uppercase"
           ]
@@ -52,6 +65,52 @@
             "type": "keyword"
           }
         }
+      },
+      "country_name": {
+        "type": "keyword",
+        "normalizer": "uppercase_normalizer",
+        "copy_to": "location_search"
+      },
+      "country_code": {
+        "type": "keyword",
+        "normalizer": "uppercase_normalizer",
+        "copy_to": "location_search"
+      },
+      "state_name": {
+        "type": "keyword",
+        "normalizer": "uppercase_normalizer",
+        "copy_to": "location_search"
+      },
+      "state_abbreviation": {
+        "type": "keyword",
+        "normalizer": "uppercase_normalizer",
+        "copy_to": "location_search"
+      },
+      "city_name": {
+        "type": "keyword",
+        "normalizer": "uppercase_normalizer",
+        "copy_to": "location_search"
+      },
+      "county_name": {
+        "type": "keyword",
+        "normalizer": "uppercase_normalizer",
+        "copy_to": "location_search"
+      },
+      "zip_code": {
+        "type": "keyword",
+        "copy_to": "location_search"
+      },
+      "county_fips": {
+        "type": "keyword"
+      },
+      "congressional_district": {
+        "type": "keyword",
+        "normalizer": "uppercase_normalizer",
+        "copy_to": "location_search"
+      },
+      "location_search": {
+        "type": "text",
+        "analyzer": "word_analyzer"
       },
       "location_json": {
         "type": "object",
