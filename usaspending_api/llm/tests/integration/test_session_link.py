@@ -44,7 +44,7 @@ def _add_message(session: Session, order: int, input_tokens: int, output_tokens:
 
 def test_query_review_starts_a_search_and_returns_its_id(client, query_review_config):
     def evaluate(self, query):
-        return QueryReviewOutput(verdict="answerable", reason_code="ok", search_id=self.search_id)
+        return QueryReviewOutput(verdict="answerable", search_id=self.search_id)
 
     with patch("usaspending_api.llm.assistants.query_review.QueryReview.evaluate", evaluate):
         response = client.post(

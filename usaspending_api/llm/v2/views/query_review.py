@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 def _fail_open(search: SmartAssistSearch | None = None) -> QueryReviewOutput:
     """If this step cannot run, let the query go straight to filter search as typed."""
-    return QueryReviewOutput(verdict="answerable", reason_code="ok", search_id=str(search.id) if search else None)
+    return QueryReviewOutput(verdict="answerable", search_id=str(search.id) if search else None)
 
 
 @browsable(
@@ -26,7 +26,7 @@ def _fail_open(search: SmartAssistSearch | None = None) -> QueryReviewOutput:
 )
 async def query_review(request: HttpRequest, payload: QueryReviewInput) -> QueryReviewOutput:
     """
-    First step of Smart Assist. Decides whether the query can be turned into search filters, and may suggest a
+    First step of Smart Assist. Decides whether the query can be turned into search filters, and may return a
     reworded query for the user to approve. If this step fails for any reason, it reports the query as answerable
     so that filter search can still run.
     """
@@ -45,13 +45,12 @@ async def query_review(request: HttpRequest, payload: QueryReviewInput) -> Query
     try:
         output = await review.evaluate(payload.query)
         logger.info(
-            f"Query review decision: search_id={search.id}, verdict={output.verdict}, reason_code={output.reason_code}",
+            f"Query review decision: search_id={search.id}, verdict={output.verdict}",
             extra={
                 "search_id": str(search.id),
                 "session_id": str(session.id),
                 "model_id": assistant_config.ai_model.model_id,
                 "verdict": output.verdict,
-                "reason_code": output.reason_code,
                 "query_length": len(payload.query),
             },
         )

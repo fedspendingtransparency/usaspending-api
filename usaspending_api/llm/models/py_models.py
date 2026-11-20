@@ -1311,15 +1311,6 @@ class QueryReviewInput(BaseModel):
 
 
 QueryReviewVerdict = Literal["answerable", "answerable_after_rephrase", "out_of_scope"]
-QueryReviewReasonCode = Literal[
-    "ok",
-    "no_matching_data",
-    "needs_comparison",
-    "needs_aggregation",
-    "ambiguous_time_period",
-    "not_a_search",
-    "too_broad",
-]
 
 
 class QueryReviewDecision(BaseModel):
@@ -1332,9 +1323,6 @@ class QueryReviewDecision(BaseModel):
             "answerable_after_rephrase: filters can be built only after the query is reworded. "
             "out_of_scope: no useful set of filters can be built."
         ),
-    )
-    reason_code: QueryReviewReasonCode = Field(
-        ..., description="Why the verdict was chosen. Use 'ok' when the verdict is answerable."
     )
     message: str = Field(
         "",
@@ -1351,21 +1339,9 @@ class QueryReviewDecision(BaseModel):
             "Never invent dates, amounts or names, and never combine several searches into one."
         ),
     )
-    separate_queries: list[str] = Field(
-        default_factory=list,
-        max_length=3,
-        description=(
-            "Only when reason_code is needs_comparison: one complete search per item being compared, built from the "
-            "user's own words and constraints (for example 'Federal funding for Wyoming in 2025'). Otherwise empty."
-        ),
-    )
 
 
 class QueryReviewOutput(QueryReviewDecision):
-    suggestions: list[str] = Field(default_factory=list, description="Example prompts the user can click")
-    suggestions_heading: str = Field(
-        "Examples of searches Smart Assist can run:", description="Label shown above suggestions"
-    )
     search_id: str | None = Field(
         default=None,
         description="Id of the Smart Assist search. Send it back with the filter search request for the same search.",

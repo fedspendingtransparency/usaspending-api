@@ -32,14 +32,12 @@ def test_query_review_returns_decision(client):
 
     model = AIModel.objects.create(name="nova pro test", model_id="amazon.nova-pro-v1:0", provider="amazon")
     Assistant.objects.create(name="query-review", ai_model=model, is_active=True, inference_config={})
-    output = QueryReviewOutput(
-        verdict="out_of_scope", reason_code="no_matching_data", message="No wealth data.", suggestions=["a"]
-    )
+    output = QueryReviewOutput(verdict="out_of_scope", message="No wealth data.")
     with patch("usaspending_api.llm.assistants.query_review.QueryReview.evaluate", return_value=output):
         resp = client.post(URL, content_type="application/json", data={"query": "billionaires"})
     assert resp.status_code == 200
     assert resp.json()["verdict"] == "out_of_scope"
-    assert resp.json()["suggestions"] == ["a"]
+    assert resp.json()["message"] == "No wealth data."
 
 
 @pytest.mark.parametrize("query", ["", "x" * 1001])

@@ -7,15 +7,12 @@ from usaspending_api.common.helpers.aws_helpers import (
     retry_on_throttling,
 )
 from usaspending_api.llm.assistants.filter_search import FilterSearchAssistant
-from usaspending_api.llm.assistants.query_review_suggestions import suggestions_for
 from usaspending_api.llm.models.db_models import Assistant, Message, Session, SmartAssistSearch
 from usaspending_api.llm.models.py_models import QueryReviewDecision, QueryReviewOutput
 
 logger = logging.getLogger(__name__)
 
 DEFAULT_OUT_OF_SCOPE_MESSAGE = "Smart Assist can't build a search for this question."
-SUGGESTIONS_HEADING = "Examples of searches Smart Assist can run:"
-SEPARATE_QUERIES_HEADING = "Search them one at a time:"
 
 
 async def open_query_review(
@@ -101,52 +98,29 @@ class QueryReview:
 
     @classmethod
     def _answerable(cls, search_id: str | None) -> QueryReviewOutput:
-        return QueryReviewOutput(verdict="answerable", reason_code="ok", search_id=search_id)
+        return QueryReviewOutput(verdict="answerable", search_id=search_id)
 
     @classmethod
     def build_output(cls, decision: QueryReviewDecision, search_id: str | None) -> QueryReviewOutput:
         """Normalize the model's decision so the response is always safe for the frontend to act on."""
-        verdict = decision.verdict
-        if verdict != "answerable" and decision.reason_code == "needs_comparison":
-            # One approved rewrite becomes one filter set, so a comparison can never be a single rewrite.
-            verdict = "out_of_scope"
-
-        output = cls._answerable(search_id)
-        if verdict == "answerable_after_rephrase":
-            # A rewrite verdict with nothing to approve is not actionable; let the search proceed as typed.
-            output = cls._rewrite_output(decision, search_id) or output
-        elif verdict == "out_of_scope":
-            output = cls._out_of_scope_output(decision, search_id)
-        return output
-
-    @classmethod
-    def _rewrite_output(cls, decision: QueryReviewDecision, search_id: str | None) -> QueryReviewOutput | None:
-        rewritten = (decision.rewritten_query or "").strip()
-        if not rewritten:
-            return None
-        return QueryReviewOutput(
-            verdict="answerable_after_rephrase",
-            reason_code=decision.reason_code,
-            message=decision.message,
-            rewritten_query=rewritten,
-            search_id=search_id,
-        )
-
-    @classmethod
-    def _out_of_scope_output(cls, decision: QueryReviewDecision, search_id: str | None) -> QueryReviewOutput:
-        suggestions = suggestions_for(decision.reason_code)
-        heading = SUGGESTIONS_HEADING
-        separate = list(dict.fromkeys(q.strip() for q in decision.separate_queries if q.strip()))
-        if decision.reason_code == "needs_comparison" and len(separate) >= 2:
-            suggestions, heading = separate[:3], SEPARATE_QUERIES_HEADING
-        return QueryReviewOutput(
-            verdict="out_of_scope",
-            reason_code=decision.reason_code,
-            message=decision.message.strip() or DEFAULT_OUT_OF_SCOPE_MESSAGE,
-            suggestions=suggestions,
-            suggestions_heading=heading,
-            search_id=search_id,
-        )
+        if decision.verdict == "answerable_after_rephrase":
+            rewritten = (decision.rewritten_query or "").strip()
+            if not rewritten:
+                # A rewrite verdict with nothing to approve is not actionable; let the search proceed as typed.
+                return cls._answerable(search_id)
+            return QueryReviewOutput(
+                verdict="answerable_after_rephrase",
+                message=decision.message,
+                rewritten_query=rewritten,
+                search_id=search_id,
+            )
+        if decision.verdict == "out_of_scope":
+            return QueryReviewOutput(
+                verdict="out_of_scope",
+                message=decision.message.strip() or DEFAULT_OUT_OF_SCOPE_MESSAGE,
+                search_id=search_id,
+            )
+        return cls._answerable(search_id)
 
     async def evaluate(self, query: str) -> QueryReviewOutput:
         """Return the decision for ``query``. Raises on Bedrock failures; the caller decides how to fail."""
