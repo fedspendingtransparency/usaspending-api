@@ -42,7 +42,7 @@ To assist developers it is possible to leverage pre-commit hooks to run several 
 
 Which will add itself to your local git repo config and begin to operate in the background. If you do not wish to participate in pre-commits, you can either uninstall pre-commit or commit your code with the --no-verify switch. Code checks will continue to occur in GitHub Actions, this is just a way to short circuit certain common errors that can be quickly and easily caught before wasting GitHub Action runners.
 
-**IMPORTANT** If Black updates any files, the commit will fail and those files will be moved out of the git staging area (obviously, since they have been edited). You will need to re-add those files to staging (`git add` or however you do it using the GUI) before you re-commit your commit.
+**IMPORTANT** If Ruff updates any files, the commit will fail and those files will be moved out of the git staging area (obviously, since they have been edited). You will need to re-add those files to staging (`git add` or however you do it using the GUI) before you re-commit your commit.
 
 ## Automated Tests
 In conjunction with the above code syntax checks, it is recommended to run tests locally before pushing code and opening PRs
