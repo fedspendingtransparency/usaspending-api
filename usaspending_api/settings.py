@@ -110,6 +110,7 @@ AWS_BEDROCK_GUARDRAIL_AWS_REGION = os.environ.get(
 AWS_BEDROCK_GUARDRAIL_VERSION_CACHE_SECONDS = int(os.environ.get("AWS_BEDROCK_GUARDRAIL_VERSION_CACHE_SECONDS", "300"))
 
 # AWS locations for CSV files
+MONTHLY_PATH = "/mnt/data/"
 CSV_LOCAL_PATH = str(REPO_DIR / "csv_downloads") + "/"
 DOWNLOAD_ENV = os.environ.get("DOWNLOAD_ENV", "")
 BULK_DOWNLOAD_LOCAL_PATH = str(REPO_DIR / "bulk_downloads") + "/"
