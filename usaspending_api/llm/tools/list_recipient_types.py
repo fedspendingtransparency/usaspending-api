@@ -1,5 +1,13 @@
 from usaspending_api.llm.models.py_models import AITool, AIToolDescription, AIToolResult
 
+RECIPIENT_TYPE_INSTRUCTIONS = (
+    "Put the values that fit what the user described in recipientType, using the value strings exactly as listed. "
+    "Use the most specific value that fits (for example a small business value for small businesses), and a "
+    "category's general value, the first in its group, when the user names the whole category. Include a value for "
+    "every kind of recipient the user listed. Use this for kinds of recipients; use lookup_recipient only for "
+    "recipients the user named."
+)
+
 RECIPIENT_TYPES: dict[str, list[dict[str, str]]] = {
     "General business": [
         {"value": "business", "label": "Any business entity"},
@@ -100,7 +108,7 @@ RECIPIENT_TYPES: dict[str, list[dict[str, str]]] = {
 
 
 async def list_recipient_types() -> AIToolResult:
-    return AIToolResult(results=RECIPIENT_TYPES)
+    return AIToolResult(results=RECIPIENT_TYPES, instructions=RECIPIENT_TYPE_INSTRUCTIONS)
 
 
 list_recipient_types_tool = AITool(

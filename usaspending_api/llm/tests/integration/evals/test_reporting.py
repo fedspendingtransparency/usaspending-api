@@ -4,7 +4,7 @@ import json
 from openpyxl import load_workbook
 
 from usaspending_api.llm.evals.models import EvalCase, EvalResult, EvalSummary, MatchResult
-from usaspending_api.llm.evals.reporting import report_to_dict, write_csv, write_xlsx
+from usaspending_api.llm.evals.reporting import render_text, report_to_dict, throttling_warning, write_csv, write_xlsx
 
 
 def summary():
@@ -112,6 +112,51 @@ def test_write_xlsx_creates_summary_and_case_results_sheets(tmp_path):
     assert workbook["Evaluation"]["A3"].value == "2"
     assert workbook["Evaluation"]["D3"].value == "NOT RUN"
     assert workbook["Evaluation"]["O3"].value == "N/A"
+
+
+def throttled_summary():
+    base = summary()
+    throttled = EvalResult(
+        case_name="3",
+        passed=False,
+        score=0.0,
+        error="Session completed without a successful execute_filter call. Search failed with ThrottlingException: x",
+    )
+    return EvalSummary(
+        assistant=base.assistant,
+        dataset=base.dataset,
+        results=(*base.results, throttled),
+        score=0.25,
+        passed=False,
+        fail_under=base.fail_under,
+        unrun_cases=base.unrun_cases,
+        unrun_reasons=base.unrun_reasons,
+    )
+
+
+def test_no_throttling_warning_without_throttled_cases(tmp_path):
+    assert throttling_warning(summary()) is None
+    assert report_to_dict(summary())["summary"]["throttled_count"] == 0
+    assert "WARNING" not in render_text(summary())
+
+    output_path = tmp_path / "report.xlsx"
+    write_xlsx(summary(), output_path)
+    values = [row[0] for row in load_workbook(output_path, read_only=True)["Summary"].iter_rows(values_only=True)]
+    assert "WARNING" not in values
+
+
+def test_throttled_cases_are_flagged_in_every_report_format(tmp_path):
+    throttled = throttled_summary()
+
+    assert "1 case(s) failed with ThrottlingException" in throttling_warning(throttled)
+    assert report_to_dict(throttled)["summary"]["throttled_count"] == 1
+    assert "WARNING: 1 case(s) failed with ThrottlingException" in render_text(throttled)
+
+    output_path = tmp_path / "report.xlsx"
+    write_xlsx(throttled, output_path)
+    rows = {row[0]: row[1] for row in load_workbook(output_path, read_only=True)["Summary"].iter_rows(values_only=True)}
+    assert rows["throttled_count"] == "1"
+    assert "ThrottlingException" in rows["WARNING"]
 
 
 def test_write_csv_creates_case_results_file(tmp_path):

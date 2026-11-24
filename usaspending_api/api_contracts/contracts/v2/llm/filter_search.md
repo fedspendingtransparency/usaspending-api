@@ -36,7 +36,7 @@ This endpoint accepts a natural language query and returns a streaming response 
     The response is a stream of newline-delimited JSON objects. Each chunk represents a different stage of the search process.
 
     + Attributes
-        + `search_id` (required, string)
+        + `search_id` (optional string)
             UUID identifying this search operation (the session primary key)
         + `tool_use_id` (optional, string)
             Identifier for the specific tool being executed. Present only for tool-related events.
@@ -63,12 +63,17 @@ This endpoint accepts a natural language query and returns a streaming response 
             {"search_id": "a3e2c8f1-4b6d-4e9a-9c21-7f8b2d1e5a04", "tool_use_id": "12346", "type": "tool_complete", "message": "Finished applying filters."}
             {"search_id": "a3e2c8f1-4b6d-4e9a-9c21-7f8b2d1e5a04", "type": "search_complete", "message": "Showing results for contracts with an award amount greater than 3 million dollars in California for IT services in Fiscal Year 2023", "result": "16ebdca405791cb0f23d4c7120606fa1"}
 
+    If the submitted request is rejected by the configured Amazon Bedrock Guardrail, or the Guardrail is unavailable, the stream contains a single `search_error` event (without a `search_id`, since no search session is created). The endpoint fails closed, so unmoderated content is not processed or stored.
+
+            {"type": "search_error", "message": "The submitted request cannot be processed."}
+            {"type": "search_error", "message": "The filter-search service is temporarily unavailable."}
+
 # Data Structures
 
 ## StreamChunk (object)
 Represents a single chunk in the streaming response.
 
-+ `search_id` (required, string)
++ `search_id` (optional, string)
     UUID identifying the search operation.
 + `tool_use_id` (optional, string)
     Unique identifier for a tool execution. Only present for tool-related events.

@@ -39,12 +39,21 @@ class AgencyLookupTool:
     VECTOR_DISTANCE_THRESHOLD = 0.75
 
     SEMANTIC_ONLY_INSTRUCTIONS = (
-        "STOP AND READ: no exact or prefix match was found for this query. The results below are weak "
+        "STOP AND READ: no exact or prefix match was found for this query. The results below are "
         "semantic-similarity guesses and may be completely wrong. Many entities that sound like government "
         "agencies -- state, local, tribal, or foreign government bodies, universities, hospitals, and "
         "companies -- are RECIPIENTS of federal funding, not federal agencies. "
-        "Do NOT select one of these results and do NOT tell the user there is no federal data unless you "
-        "have first called lookup_recipient with this entity's name and confirmed it has no matches either."
+        "If none of these results seem correct, do NOT select one of these results and do NOT tell the user there is "
+        "no federal data unless you have first called lookup_recipient with this entity's name and confirmed it has no "
+        "matches either."
+    )
+
+    MATCH_INSTRUCTIONS = (
+        "Use only the agencies the user named, exactly as returned and with their keys. Choose the filter by the "
+        "user's wording: selectedFundingAgencies when they ask which agency provided or gave the money, as in funded "
+        "by or funding from an agency; selectedAwardingAgencies when they ask which agency awarded or issued the "
+        "awards, or when it is not clear. When a toptier agency and one of its subtier agencies both match, use the "
+        "one the user's wording refers to: the department or agency as a whole, or a specific bureau or office."
     )
 
     NO_MATCH_INSTRUCTIONS = (
@@ -72,11 +81,11 @@ class AgencyLookupTool:
 
         if not entries:
             user_message = f"Unable to filter. We couldn't find an agency with the name: {query}"
-            raise AgencyNotRecognizedError(user_message, model_detail=f"{user_message}. {self.NO_MATCH_INSTRUCTIONS}")
+            raise AgencyNotRecognizedError(user_message, instructions=self.NO_MATCH_INSTRUCTIONS)
 
         results = AIToolResult(
             results={f"{entry.id}_{entry.agencyType}": entry.model_dump() for entry in entries},
-            instructions=self.SEMANTIC_ONLY_INSTRUCTIONS if semantic_only else None,
+            instructions=self.SEMANTIC_ONLY_INSTRUCTIONS if semantic_only else self.MATCH_INSTRUCTIONS,
         )
 
         return results
@@ -198,7 +207,7 @@ lookup_agency_tool = AITool(
                         },
                         ...
                     },
-                    "instructions": null   # or a string -- READ THIS if present, see below
+                    "instructions": "..."   # READ THIS, see below
                 }
             "results" is keyed by "{id}_{agencyType}" (e.g. "803_toptier").
 
@@ -215,8 +224,9 @@ lookup_agency_tool = AITool(
 
             Results are ordered toptier agencies first, then alphabetically.
 
-            "instructions" is non-null whenever the match came from semantic search only (no exact or
-            prefix hit) -- this means the results are weak guesses, and the entity may not be a federal
+            "instructions" is always present: read it to choose between selectedAwardingAgencies and
+            selectedFundingAgencies. When the match came from semantic search only (no exact or
+            prefix hit) it is a warning -- this means the results are weak guesses, and the entity may not be a federal
             agency at all (it could be a recipient of federal funds instead, e.g. a state, local, tribal,
             or foreign government body, a university, hospital, or company). When this happens, you MUST
             call lookup_recipient before selecting a result or concluding there's no federal data. The same

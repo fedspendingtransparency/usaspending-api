@@ -401,7 +401,41 @@ async def test_run_eval_case_rejects_search_error(monkeypatch):
     case = make_case()
 
     # Execution fails when get_final_filter_output finds no successful execute_filter
-    with pytest.raises(ExecutionError, match="without a successful execute_filter call"):
+    with pytest.raises(ExecutionError, match="without a successful execute_filter call.*Search failed with Bedrock"):
         await run_eval_case(case)
 
     session.asave.assert_awaited_once_with(update_fields=["ended_at"])
+
+
+async def test_run_eval_case_includes_exception_type_and_message_in_error(monkeypatch):
+    """A non-throttling exception from search() is reported with its type and message in the case error."""
+
+    async def failing_search(query):
+        raise TimeoutError("Read timeout on endpoint URL")
+        yield  # pragma: no cover - makes this an async generator
+
+    assistant_instance = Mock()
+    assistant_instance.search = Mock(side_effect=failing_search)
+    session = Mock()
+    session.asave = AsyncMock()
+
+    async def fake_get_active_filter_search_assistant():
+        return Mock()
+
+    async def fake_create_eval_session(value):
+        return session
+
+    async def fake_get_tool_calls(value):
+        return ()
+
+    async def fake_get_final_filter_output(session):
+        raise ExecutionError("Session completed without a successful execute_filter call.")
+
+    monkeypatch.setattr(filter_search, "get_active_filter_search_assistant", fake_get_active_filter_search_assistant)
+    monkeypatch.setattr(filter_search, "create_eval_session", fake_create_eval_session)
+    monkeypatch.setattr(filter_search, "FilterSearchAssistant", Mock(return_value=assistant_instance))
+    monkeypatch.setattr(filter_search, "get_tool_calls", fake_get_tool_calls)
+    monkeypatch.setattr(filter_search, "get_final_filter_output", fake_get_final_filter_output)
+
+    with pytest.raises(ExecutionError, match="Search failed with TimeoutError: Read timeout on endpoint URL"):
+        await run_eval_case(make_case())

@@ -12,8 +12,10 @@ from usaspending_api.llm.models.py_models import (
     FilterRequest,
     Filters,
     SelectedAgency,
+    aget_valid_def_codes,
 )
 from usaspending_api.llm.tools.exceptions import (
+    FINAL_TOOL_RETRY_INSTRUCTIONS,
     AgencyNotRecognizedError,
     AwardAmountNotParseableError,
     AwardNotRecognizedError,
@@ -33,21 +35,26 @@ from usaspending_api.search.models.mv_agency_autocomplete import AgencyAutocompl
 logger = logging.getLogger(__name__)
 
 _SINGLE_FIELD_ERRORS = {
-    "defCodes": DefcCodeNotRecognizedError,
     "awardAmounts": AwardAmountNotParseableError,
     "time_period": TimePeriodNotParseableError,
 }
 
 GENERIC_USER_MESSAGE = "Failed to select filters."
-RETRY_INSTRUCTION = "Fix the input based on the error above and call execute_filter again."
+LOOKUP_OBJECT_INSTRUCTIONS = (
+    "Selected locations, agencies, recipients, and award IDs must be passed exactly as returned by their lookup "
+    "tool, unchanged. Do not construct them yourself; call the lookup tool again if you no longer have the result."
+)
+LOOKUP_OBJECT_FIELDS = {
+    "selectedLocations",
+    "selectedAwardingAgencies",
+    "selectedFundingAgencies",
+    "selectedRecipients",
+    "selectedAwardIDs",
+}
 
 
 def _build_user_message(field: str, kwargs: dict) -> str:
-    if field == "defCodes":
-        def_codes = kwargs.get("defCodes", {})
-        codes = [*def_codes.get("require", []), *def_codes.get("exclude", [])]
-        message = f"DEFC code not found: {', '.join(codes)}."
-    elif field == "awardAmounts":
+    if field == "awardAmounts":
         message = f"Unable to filter awards based on the criteria {kwargs.get('awardAmounts')}."
     else:
         message = "Unable to filter based on the specified time period. Try rephrasing the dates you're looking for."
@@ -83,8 +90,9 @@ async def _validate_agencies_exist(filters: Filters) -> None:
             f"Unable to filter. These agencies could not be verified: {', '.join(invalid)}.",
             model_detail=(
                 f"Unresolvable selected agencies: {invalid}. Use the agency entries exactly as returned by "
-                "lookup_agencies (same id, agencyType, and toptier_agency); call lookup_agencies again if needed."
+                "lookup_agencies (same id, agencyType, and toptier_agency)."
             ),
+            instructions=f"{LOOKUP_OBJECT_INSTRUCTIONS} {FINAL_TOOL_RETRY_INSTRUCTIONS}",
         )
 
 
@@ -101,6 +109,10 @@ async def _validate_recipients_exist(filters: Filters) -> None:
             f"Unable to filter. These recipients could not be verified: {', '.join(invalid)}. "
             "Call lookup_recipient for each and choose one of the returned recipient names.",
             model_detail=f"Unresolvable selected recipients: {invalid}",
+            instructions=(
+                "Call lookup_recipient for each unresolved name and use one of the returned recipient names exactly. "
+                f"{FINAL_TOOL_RETRY_INSTRUCTIONS}"
+            ),
         )
 
 
@@ -128,12 +140,31 @@ async def _validate_award_ids_exist(filters: Filters) -> None:
                 "or names rather than award IDs -- call lookup_recipient with each and, if it matches, use "
                 "selectedRecipients instead of selectedAwardIDs."
             ),
+            instructions=FINAL_TOOL_RETRY_INSTRUCTIONS,
         )
 
 
-def _filter_request_from_filters(filters: Filters) -> dict:
+async def _validate_def_codes_exist(filters: Filters) -> None:
+    if not filters.defCode:
+        return
+
+    valid_codes = await aget_valid_def_codes()
+    invalid = [code for code in filters.defCode if code not in valid_codes]
+
+    if invalid:
+        raise DefcCodeNotRecognizedError(
+            f"DEF code not found: {', '.join(invalid)}",
+            model_detail=(
+                f"Invalid DEF code(s): {invalid}. Only COVID-19 and Infrastructure DEF codes are supported."
+                "Use the codes listed in the defCode field description."
+            ),
+            instructions=FINAL_TOOL_RETRY_INSTRUCTIONS,
+        )
+
+
+def _filter_request_from_filters(filters: Filters, search_id: str | None = None) -> dict:
     """Canonicalize an already-validated Filters instance into the persisted filter request shape."""
-    filter_request = FilterRequest(filters=filters).model_dump(exclude_none=True)
+    filter_request = FilterRequest(filters=filters, smartAssistSearchId=search_id).model_dump(exclude_none=True)
     if "keyword" in filter_request["filters"]:
         filter_request["filters"]["keyword"] = {v: v for v in filter_request["filters"]["keyword"]}
     if "selectedAwardIDs" in filter_request["filters"]:
@@ -156,21 +187,31 @@ def build_filter_request(filter_input: dict) -> dict:
 async def execute_filter(**kwargs) -> AIToolResult:
     logger.info(f"Starting execute_filter with {len(kwargs)} filter parameter(s)", extra={"filter_count": len(kwargs)})
 
+    # Filters is configured with extra="forbid", so a stray smartAssistSearchId would fail validation.
+    # Popping it first keeps Filters strict and moves the id to where it belongs.
+    search_id = kwargs.pop("smartAssistSearchId", None)
+
     try:
         # Validating and dumping the filters use the synchronous ORM, so keep both off the event loop
         filters = await sync_to_async(Filters)(**kwargs)
     except ValidationError as exc:
         fields = {error["loc"][0] if error["loc"] else None for error in exc.errors()}
-        model_detail = f"{exc}\n\n{RETRY_INSTRUCTION}"
+        model_detail = str(exc)
+        instructions = FINAL_TOOL_RETRY_INSTRUCTIONS
+        if fields & LOOKUP_OBJECT_FIELDS:
+            instructions = f"{LOOKUP_OBJECT_INSTRUCTIONS} {instructions}"
         if len(fields) == 1 and (field := next(iter(fields))) in _SINGLE_FIELD_ERRORS:
-            raise _SINGLE_FIELD_ERRORS[field](_build_user_message(field, kwargs), model_detail=model_detail) from exc
-        raise FilterValidationError(GENERIC_USER_MESSAGE, model_detail=model_detail) from exc
+            raise _SINGLE_FIELD_ERRORS[field](
+                _build_user_message(field, kwargs), model_detail=model_detail, instructions=instructions
+            ) from exc
+        raise FilterValidationError(GENERIC_USER_MESSAGE, model_detail=model_detail, instructions=instructions) from exc
 
+    await _validate_def_codes_exist(filters)
     await _validate_agencies_exist(filters)
     await _validate_recipients_exist(filters)
     await _validate_award_ids_exist(filters)
 
-    filter_request = await sync_to_async(_filter_request_from_filters)(filters)
+    filter_request = await sync_to_async(_filter_request_from_filters)(filters, search_id)
 
     logger.debug(f"Filter validation successful: {list(kwargs.keys())}")
 
@@ -191,6 +232,7 @@ async def execute_filter(**kwargs) -> AIToolResult:
             raise ToolUseRuntimeError(
                 "There was an error saving the search filters. Please try again.",
                 model_detail=f"There was an error saving the filter hash: {e}",
+                instructions="Call execute_filter again with the same input.",
             ) from e
 
     logger.info(f"Execute filter completed successfully: hash={hash_key}", extra={"hash": hash_key})

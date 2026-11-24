@@ -1,4 +1,5 @@
 from dataclasses import dataclass, field
+from datetime import date
 from typing import Any
 
 
@@ -46,6 +47,7 @@ class EvalCase:
     expected_tool_calls: tuple[str, ...] = ()
     expected_output: dict[str, Any] = field(default_factory=dict)
     metadata: dict[str, Any] = field(default_factory=dict)
+    as_of: date | None = None
 
 
 @dataclass(frozen=True)
